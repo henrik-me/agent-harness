@@ -19,7 +19,7 @@
 
 - **CS06 complete** (closed 2026-05-03). Delivered: 9 linter scripts (`check-context`, `check-workboard`, `check-architecture`, `check-clickstop`, `check-instructions`, `check-readme`, `check-composed-blocks`, `check-workflow-pins`, `check-public-artifact`), 9 test files, 50+ fixtures under `tests/fixtures/cs06/`, `bin/harness.mjs` `cmdLint` rewritten as a 10-linter aggregator with `--only`/`--skip`. **333 tests pass total** (253+80 new). 3 GPT-5.5 review rounds (R1=4 blockers+4 non-blockers, R2=1 blocker+1 non-blocker, R3=GO). 6 additional learnings filed (LRN-038 through LRN-043). 2 planned CSs filed (CS06b: shared-parser refactor + cross-link validation; CS07: generic policy linters). `harness lint` aggregator now functional: 8 of 10 linters runnable against this repo (public-artifact skipped — mandatory from CS15a). First true 9-way parallel sub-agent dispatch; zero file races, zero rogue commits. Squash-merged PR #15 as `161b9f3`.
 
-**CS07 (generic policy linters) ready to claim.**
+**CS07 (generic policy linters) is now active (claimed by yoga-ah on branch cs07/content).**
 
 ## Architecture pointer
 
@@ -27,7 +27,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS06 is complete; CS07 is ready to claim.
+- None. CS06 is complete; CS07 is now active.
 
 ## CS plan
 

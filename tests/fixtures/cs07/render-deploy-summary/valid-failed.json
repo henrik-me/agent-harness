@@ -1,0 +1,15 @@
+{
+  "deployment": {
+    "name": "api-service",
+    "version": "1.2.3",
+    "environment": "staging",
+    "status": "failed",
+    "started_at": "2026-05-01T10:00:00Z",
+    "ended_at": "2026-05-01T10:02:00Z",
+    "commit_sha": "deadbeef1234",
+    "commit_message": "fix: bad migration",
+    "components": [
+      { "name": "db-migrate", "status": "failed", "details": "timeout after 120s" }
+    ]
+  }
+}

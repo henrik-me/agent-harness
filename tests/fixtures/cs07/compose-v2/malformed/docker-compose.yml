@@ -1,0 +1,7 @@
+services:
+  web:
+    image: nginx:latest
+    ports: [
+      invalid yaml here
+  - "80:80"
+  unclosed: bracket

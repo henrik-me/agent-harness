@@ -1,0 +1,5 @@
+feat: add new feature
+
+This commit adds a useful new feature to the codebase.
+
+Co-authored-by: Alice <alice@example.com>

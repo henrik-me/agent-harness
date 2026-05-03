@@ -41,7 +41,7 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
-  lint              Run all harness structural linters (10 linters)
+  lint              Run all harness structural + policy linters (13 linters)
   harvest           Run harvest procedure (STUB — full impl in later CS)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
@@ -120,6 +120,9 @@ Run all harness linters against the repo. Aggregates results from:
   - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
   - check-workflow-pins.mjs (.github/workflows/)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
+  - check-pr-body.mjs     (.github/PR_BODY.md if present)
+  - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
+  - check-compose-v2.mjs  (compose.yaml or docker-compose.yml if present)
 
 Linters whose target does not exist are skipped (and noted in the summary).
 
@@ -661,6 +664,31 @@ async function cmdLint(args, _global) {
         : null,
       target: publicDir,
     },
+    // CS07: generic policy linters. Targets are project-level files that may
+    // not exist in every consumer repo; skipped by the standard target-not-found logic.
+    {
+      name: 'pr-body',
+      script: 'check-pr-body.mjs',
+      args: ['--file', path.join(cwd, '.github', 'PR_BODY.md')],
+      target: path.join(cwd, '.github', 'PR_BODY.md'),
+    },
+    {
+      name: 'commit-trailers',
+      script: 'check-commit-trailers.mjs',
+      args: ['--file', path.join(cwd, '.git', 'COMMIT_EDITMSG')],
+      target: path.join(cwd, '.git', 'COMMIT_EDITMSG'),
+    },
+    {
+      name: 'compose-v2',
+      script: 'check-compose-v2.mjs',
+      args: existsSync(path.join(cwd, 'compose.yaml'))
+        ? ['--file', path.join(cwd, 'compose.yaml')]
+        : ['--file', path.join(cwd, 'docker-compose.yml')],
+      target: existsSync(path.join(cwd, 'compose.yaml'))
+        ? path.join(cwd, 'compose.yaml')
+        : path.join(cwd, 'docker-compose.yml'),
+    },
+    // render-deploy-summary is a renderer not a checker; not invoked by `harness lint`
   ];
 
   const results = [];

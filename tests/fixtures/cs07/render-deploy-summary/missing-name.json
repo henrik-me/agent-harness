@@ -1,0 +1,12 @@
+{
+  "deployment": {
+    "version": "1.0.0",
+    "environment": "production",
+    "status": "succeeded",
+    "started_at": "2026-05-01T10:00:00Z",
+    "ended_at": "2026-05-01T10:01:00Z",
+    "commit_sha": "abc123",
+    "commit_message": "initial deploy",
+    "components": []
+  }
+}

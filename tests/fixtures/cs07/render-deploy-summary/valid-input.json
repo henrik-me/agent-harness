@@ -1,0 +1,16 @@
+{
+  "deployment": {
+    "name": "api-service",
+    "version": "1.2.3",
+    "environment": "production",
+    "status": "succeeded",
+    "started_at": "2026-05-01T10:00:00Z",
+    "ended_at": "2026-05-01T10:05:00Z",
+    "commit_sha": "abc1234def5678",
+    "commit_message": "feat: add rate limiting",
+    "components": [
+      { "name": "web", "status": "succeeded", "details": "3 instances" },
+      { "name": "worker", "status": "succeeded" }
+    ]
+  }
+}

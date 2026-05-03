@@ -1,0 +1,10 @@
+{
+  "version": "v0.1.0",
+  "project": { "name": "test", "agent_suffix": "test" },
+  "public_artifact_redaction": {
+    "shadow-report": {
+      "forbidden_field_patterns": ["\\.corp\\."],
+      "allowed_placeholders": []
+    }
+  }
+}

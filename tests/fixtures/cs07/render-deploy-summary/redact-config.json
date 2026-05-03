@@ -1,0 +1,8 @@
+{
+  "public_artifact_redaction": {
+    "deploy-summary": {
+      "forbidden_field_patterns": ["\\.corp\\."],
+      "allowed_placeholders": []
+    }
+  }
+}

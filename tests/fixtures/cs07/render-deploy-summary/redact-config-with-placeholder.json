@@ -1,0 +1,10 @@
+{
+  "version": "v0.1.0",
+  "project": { "name": "test", "agent_suffix": "test" },
+  "public_artifact_redaction": {
+    "deploy-summary": {
+      "forbidden_field_patterns": ["\\.corp\\."],
+      "allowed_placeholders": ["api.corp.placeholder"]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "deployment": {
+    "name": "api-service",
+    "version": "2.0.0",
+    "environment": "staging",
+    "status": "in-progress",
+    "started_at": "2026-05-01T10:00:00Z",
+    "ended_at": null,
+    "commit_sha": "cafebabe9999",
+    "commit_message": "chore: bump deps",
+    "components": [
+      { "name": "web", "status": "in-progress" }
+    ]
+  }
+}
