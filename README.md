@@ -2,7 +2,7 @@
 
 Multi-agent process harness — extracted from [`henrik-me/guesswhatisnext`](https://github.com/henrik-me/guesswhatisnext) for reuse across projects.
 
-> **Status:** pre-v0.1.0 — bootstrapping under CS01. Not yet consumable. See [`project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
+> **Status:** pre-v0.1.0 — bootstrapping under CS01. Not yet consumable. See [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
 
 ## What this is
 
@@ -47,7 +47,7 @@ npx -y github:henrik-me/agent-harness#v0.1.0 sync
 
 ## How this repo governs itself
 
-This repo follows the harness from CS01. Bootstrap proto docs (INSTRUCTIONS, CONVENTIONS, OPERATIONS, REVIEWS, TRACKING, RETROSPECTIVES) are hand-authored; from CS11 onward they are produced by `harness sync` against the canonical `template/managed/` + `template/composed/` (with local blocks preserved) and a CI gate prevents drift. Seeded project-state docs (CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD) are preserved as-is. Project-owned files (this README, LICENSE, package.json, .gitignore, .editorconfig) are excluded from sync entirely. See [INSTRUCTIONS.md](INSTRUCTIONS.md) and [`project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md).
+This repo follows the harness from CS01. Bootstrap proto docs (INSTRUCTIONS, CONVENTIONS, OPERATIONS, REVIEWS, TRACKING, RETROSPECTIVES) are hand-authored; from CS11 onward they are produced by `harness sync` against the canonical `template/managed/` + `template/composed/` (with local blocks preserved) and a CI gate prevents drift. Seeded project-state docs (CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD) are preserved as-is. Project-owned files (this README, LICENSE, package.json, .gitignore, .editorconfig) are excluded from sync entirely. See [INSTRUCTIONS.md](INSTRUCTIONS.md) and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md).
 
 ## License
 

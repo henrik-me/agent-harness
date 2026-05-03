@@ -69,8 +69,8 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 - `package.json` (private:true initially), MIT `LICENSE`, `.gitignore`, `.editorconfig`
 - Hand-authored `INSTRUCTIONS.md`, `CONVENTIONS.md`, `OPERATIONS.md`, `REVIEWS.md`, `TRACKING.md`, `RETROSPECTIVES.md`, `CONTEXT.md`, `WORKBOARD.md`, `LEARNINGS.md`, `ARCHITECTURE.md`, `README.md` (project-owned, never synced), `.github/copilot-instructions.md`, `.github/pull_request_template.md`, `.github/CODEOWNERS`
 - `project/clickstops/{planned,active,done}/.gitkeep`
-- The two pre-CS01 planning artifacts (`harness-extraction-plan.md`, `harness-cs-plan.md`) moved into `project/clickstops/active/active_cs01_bootstrap-repo.md` (or referenced from it)
-- Branch protection on `main` from day 1: PR required (with documented one-time exception for repo bootstrap), no force pushes, no deletions
+- The two pre-CS01 planning artifacts (`harness-extraction-plan.md`, `harness-cs-plan.md`) moved into `project/clickstops/done/done_cs01_bootstrap-repo.md` (or referenced from it)
+- Branch protection on `main`: **deferred to CS15b** per [LRN-001](../../../LEARNINGS.md). Requires GitHub Pro on private repos; user chose discipline-only enforcement for CS01–CS14.
 **Exit:** Empty `WORKBOARD.md` initialised with orchestrator table; CS01 itself filed under `project/clickstops/done/` to demonstrate the lifecycle.
 **Parallelisable:** No (foundational; process discipline starts mid-CS01 once branch protection is on).
 **Depends on:** prerequisites checklist
@@ -262,7 +262,7 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 1. CS11 self-host CI gate has been green for ≥ all of CS12–CS14
 2. `harness sync --check` runs in < 5s; `harness lint` runs in < 10s
 3. `LEARNINGS.md` contains ≥ 3 `applied` learnings from CS12–CS14 demonstrating the harvest loop works
-4. No `open` learnings older than 14 days tagged `process` or `architectural`
+4. **All `open` learnings dispositioned** (status `applied` / `obsolete` / `deferred` with explicit `deferred-until`) — per [LRN-003](../../../LEARNINGS.md). Tightens prior wording (was: "no stale `open` learnings older than 14 days tagged `process` or `architectural`"). Zero `open` learnings of any age before CS15b proceeds.
 5. Hot-fix stability counter (per GPT-5.5 #16): ≥ 1 CS landed cleanly with no harness changes during execution
 
 *Branch protection on `main` configured (still private):*
@@ -554,8 +554,9 @@ CS01, CS11, CS18b, CS19/PR-2 (PILOT-B against migration branch) are deliberately
 |---|---|---|
 | **Spirit phase** | CS01–CS10 | Manual discipline. I follow the model from human conventions; CI mostly absent until linters land in CS05–CS07. Mistakes recoverable. |
 | **Self-host phase** | CS11–CS14 | Mechanical via `harness self-check` CI gate. Drift impossible without template change. |
-| **Public-readiness phase** | CS15a | All branch-protection rules active (still private); tiny-PR claim model live; secret-scan + IP review complete. |
-| **Public-enforced phase** | CS15b+ | Repo public; signed commits required; full PR policy enforced; `check-public-artifact` mandatory. |
+| **Spirit phase / discipline-only** | CS01–CS14 | Manual discipline + GPT-5.5 review on every PR. Branch protection deferred to CS15b per [LRN-001](../../../LEARNINGS.md) (private-repo branch protection requires GitHub Pro). CI gates land progressively: linters from CS05+, self-host gate from CS11. |
+| **Public-readiness phase** | CS15a | Ruleset configured (still private — Ruleset doesn't take effect until CS15b public flip); workboard-auto-approve workflow + GitHub App built; secret-scan + IP review complete; all `open` learnings dispositioned per [LRN-003](../../../LEARNINGS.md). |
+| **Public-enforced phase** | CS15b+ | Repo public → Ruleset live; signed commits required; full PR policy mechanically enforced; `check-public-artifact` mandatory. |
 
 ### Per-CS loop (every CS, all phases)
 

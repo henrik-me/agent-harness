@@ -1,10 +1,10 @@
 # CS01 — Bootstrap repo + skeleton + proto process docs
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** `cs01/bootstrap-repo`
+**Branch:** `cs01/close-out` (post-bootstrap close-out PR)
 **Started:** 2026-05-02T22:00Z
-**Closed:** —
+**Closed:** 2026-05-03T05:00Z
 
 ## Goal
 
@@ -49,17 +49,24 @@ The two artifacts authored before CS01 — [`harness-extraction-plan.md`](./harn
 | Author seeded skeletons | done | yoga-ah | CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD, README |
 | Move planning artifacts to CS01 folder | done | yoga-ah | This folder now contains both `harness-cs-plan.md` and `harness-extraction-plan.md` |
 | Author this active CS01 file | done | yoga-ah | (you're reading it) |
-| One-time bootstrap commit to `main` | pending | yoga-ah | Documented exception in OPERATIONS.md — **the only direct-to-main push** |
-| Configure branch protection on `main` | pending | yoga-ah | Immediately after bootstrap commit; PR-required for all subsequent changes |
-| Branch `cs01/close-out` for CS01 close-out | pending | yoga-ah | Moves CS01 file to `done/`, updates WORKBOARD, files LEARNINGS — goes through normal PR flow (no direct-to-main) |
+| One-time bootstrap commit to `main` | done | yoga-ah | Commit `a977933`, pushed; documented exception in OPERATIONS.md — **the only direct-to-main push** |
+| ~~Configure branch protection on `main`~~ | **deferred to CS15b** | — | Discovered branch protection requires GitHub Pro on private repos — see [LRN-001](../../../LEARNINGS.md). User chose discipline-only model for CS01–CS14; mechanical enforcement begins at CS15b (public flip). |
+| Verify discipline-only model documented | done | yoga-ah | OPERATIONS.md § Enforcement model; INSTRUCTIONS.md Quick Reference; LEARNINGS LRN-001 applied |
+| Branch `cs01/close-out` for CS01 close-out | done | yoga-ah | Per discipline-only PR loop |
 | Local review of bootstrap state with GPT-5.5 | done | yoga-ah | Per REVIEWS.md — covered the bootstrap commit |
-| Local review of close-out PR with GPT-5.5 | pending | yoga-ah | Per REVIEWS.md |
-| Open close-out PR | pending | yoga-ah | Normal small PR with user review |
-| Move CS01 file to `done/` (via PR) | pending | yoga-ah | Final step in close-out PR |
-| File LEARNINGS (via close-out PR) | pending | yoga-ah | Anything surprising during bootstrap |
+| File LEARNINGS for CS01 | done | yoga-ah | LRN-001 (branch-protection wall), LRN-002 (surface in `harness init`), LRN-003 (tighten CS15b harvest invariant), LRN-004 (LEARNINGS schema discipline pre-CS05) |
+| File planned CS04a (`harness init` detects private-tier) | done | yoga-ah | `project/clickstops/planned/planned_cs04a_harness-init-detect-private-tier.md` |
+| Local review of close-out PR with GPT-5.5 | pending | yoga-ah | Per REVIEWS.md — must pass before merge; iterate until clean |
+| Open close-out PR | pending | yoga-ah | Discipline-only PR; self-mergeable per user authorisation 2026-05-02 *after* GPT-5.5 review clean |
+| Move CS01 directory to `done/` (in close-out PR) | pending | yoga-ah | `git mv project/clickstops/done/done_cs01_bootstrap-repo project/clickstops/done/done_cs01_bootstrap-repo`; rename inner file too |
+| Update WORKBOARD (remove CS01 from Active Work) | pending | yoga-ah | In close-out PR |
+| Update CONTEXT.md (CS01 complete) | pending | yoga-ah | In close-out PR |
+| Squash-merge close-out PR | pending | yoga-ah | After GPT-5.5 review clean; self-merge per user authorisation |
 
 ## Notes / Learnings
 
-This CS is partially executed via direct-commit-to-main (the bootstrap commit only) per the documented exception in OPERATIONS.md. **From the second commit onward, branch protection is in force and the per-CS loop applies normally — including CS01's own close-out, which lands via a regular `cs01/close-out` PR.**
+This CS is partially executed via direct-commit-to-main (the bootstrap commit only) per the documented exception in OPERATIONS.md. **From the second commit onward, branch protection is in force *by discipline* (CS01–CS14) — see [LRN-001](../../../LEARNINGS.md) for why mechanical enforcement is deferred to CS15b.** Close-out PR `cs01/close-out` follows the normal small-PR loop with mandatory GPT-5.5 review pre-merge.
 
-The two pre-CS01 planning artifacts are kept in this folder rather than promoted to root because they are historical/contextual, not active process docs. They will move with this CS file to `done/` at close-out, using the directory form documented in [TRACKING.md § Clickstop lifecycle](../../TRACKING.md#clickstop-lifecycle).
+The two pre-CS01 planning artifacts are kept in this folder rather than promoted to root because they are historical/contextual, not active process docs. They move with this CS file to `done/` at close-out, using the directory form documented in [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle).
+
+Four learnings captured during CS01 (LRN-001 through LRN-004); all `applied`. One downstream planned CS filed (CS04a). The CS01 close-out commit lands these in the same PR.

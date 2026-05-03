@@ -7,7 +7,7 @@ This is the **bootstrap** version of the orchestrator workflow doc. It supersede
 Re-read this section after every `git pull`, even if INSTRUCTIONS.md didn't change.
 
 - **Session start:** `git pull`; derive your agent ID per [TRACKING.md § Agent Identification](TRACKING.md#agent-identification); state your derived ID + "INSTRUCTIONS.md re-read complete @ \<SHA\>" in your first response. Treat session resume as session start for this rule.
-- **Claiming a CS:** see [OPERATIONS.md § Claim](OPERATIONS.md#claim). **Only the CS01 bootstrap commit goes direct to `main`.** From commit 2 onward, every change — including WORKBOARD claim/closeout — goes through a PR. Until CS15a these are normal small PRs with user review labeled `workboard-only`; from CS15a onward the auto-approve bot (Decision #23) handles them.
+- **Claiming a CS:** see [OPERATIONS.md § Claim](OPERATIONS.md#claim). **Only the CS01 bootstrap commit goes direct to `main`.** From commit 2 onward, every change — including WORKBOARD claim/closeout — goes through a PR. **CS01–CS14 are discipline-only** (private-repo branch protection requires GitHub Pro — see [LRN-001](LEARNINGS.md)). **CS15b+ is mechanically enforced** via Rulesets configured at CS15a. Until CS15a these are normal small PRs with user review labeled `workboard-only`; from CS15a onward the auto-approve bot (Decision #23) handles them.
 - **Closing a CS:** rename `active_csNN_*.md` → `done_csNN_*.md` and move to `project/clickstops/done/`; remove from WORKBOARD; update [CONTEXT.md](CONTEXT.md) if codebase state changed; capture learnings in [LEARNINGS.md](LEARNINGS.md).
 - **Implementation model:** Claude Opus 4.7 1M (orchestrator). Sub-tasks: Haiku for mechanical, Sonnet for non-trivial.
 - **Local review:** GPT-5.5 rubber-duck mandatory before opening any PR and before committing any template change. Fallback per [REVIEWS.md](REVIEWS.md) (Sonnet 4.6 for non-high-risk only, with the independence invariant; user waiver always allowed).
@@ -41,4 +41,4 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md didn't chan
 - Codebase state → [CONTEXT.md](CONTEXT.md)
 - Architecture → [ARCHITECTURE.md](ARCHITECTURE.md)
 - Accumulated knowledge → [LEARNINGS.md](LEARNINGS.md)
-- The CS plan that drives all of this → [project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md)
+- The CS plan that drives all of this → [project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)
