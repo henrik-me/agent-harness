@@ -95,22 +95,24 @@ array. See [ADR 0002](0002-readme-ownership.md).
 
 ### File-class declaration
 
-File classes are declared in `harness.config.json` via three top-level arrays. Each entry
-is a path (relative to the consumer repo root) or a glob. Per-file overrides are allowed
-for a small number of fields.
+File classes are declared in `harness.config.json` via three top-level **objects** (one per class). Each object has a required `files` array of paths (relative to the consumer repo root) and an optional `overrides` object for per-file configuration. The schema (`schemas/harness.config.schema.json`) is the authoritative spec.
 
 ```json
 {
-  "managed": ["INSTRUCTIONS.md", "OPERATIONS.md", "REVIEWS.md"],
-  "composed": ["CONVENTIONS.md"],
-  "seeded": ["CONTEXT.md", "ARCHITECTURE.md", "LEARNINGS.md", "WORKBOARD.md"]
+  "managed": { "files": ["INSTRUCTIONS.md", "TRACKING.md", "RETROSPECTIVES.md"] },
+  "composed": {
+    "files": ["CONVENTIONS.md", "OPERATIONS.md", "REVIEWS.md"],
+    "overrides": {
+      "CONVENTIONS.md": { "local_blocks": ["conventions.project"] },
+      "OPERATIONS.md": { "local_blocks": ["operations.project-deploy"] },
+      "REVIEWS.md":   { "local_blocks": ["reviews.project-gates"] }
+    }
+  },
+  "seeded":   { "files": ["CONTEXT.md", "ARCHITECTURE.md", "LEARNINGS.md", "WORKBOARD.md"] }
 }
 ```
 
-The harness validates that every file in `template/managed/`, `template/composed/`, and
-`template/seeded/` is covered by exactly one class entry in the consumer's config. Files
-not covered by any class entry and not in `excluded[]` cause `harness sync` to exit
-non-zero.
+Globs are **NOT** interpreted in `files` arrays — list paths explicitly. The harness validates that every file in `template/managed/`, `template/composed/`, and `template/seeded/` is covered by exactly one class entry in the consumer's config. Files not covered by any class entry and not in the top-level `excluded[]` array cause `harness sync` to exit non-zero.
 
 ---
 
@@ -167,9 +169,7 @@ The parser exits non-zero (and refuses to write any output) on:
 | Malformed marker (ID regex fail) | `<!-- harness:local-start id=My Block -->` |
 | Orphan end marker | `local-end id=X` with no preceding `local-start id=X` |
 
-Marker-looking text inside fenced or indented code blocks is silently ignored (not an
-error), which allows template files and how-to docs to include marker examples without
-triggering the parser.
+Marker-looking text inside fenced or indented code blocks is **rejected as a parser error unless escaped** (per cs-plan CS03 spec). This is intentional: to demonstrate marker syntax in documentation or examples, escape the leading angle bracket (e.g. `<​!-- harness:local-start id=foo -->` with a zero-width space, or use HTML-entity escaping `&lt;!-- harness:local-start id=foo -->`). The fail-closed default prevents accidental capture of example content as live blocks. CS03 will document the exact escape syntax in `lib/composed.mjs` doc-comments and `check-composed-blocks.mjs` test fixtures.
 
 ### Legacy-content fail-closed invariant
 
@@ -201,7 +201,7 @@ entry for each composed file includes a `blocks[]` array. Each block record:
 ```json
 {
   "id": "conventions.project",
-  "source_line_range": [42, 58],
+  "source_line_range": { "start": 42, "end": 58 },
   "body_hash": "<sha256-of-block-body>",
   "template_marker_hash": "<sha256-of-marker-line-in-template>",
   "provenance": "user-authored"
@@ -211,7 +211,7 @@ entry for each composed file includes a `blocks[]` array. Each block record:
 | Field | Meaning |
 |---|---|
 | `id` | Block identifier matching the marker |
-| `source_line_range` | `[startLine, endLine]` (1-indexed, inclusive) in the rendered output; used for precise drift reporting |
+| `source_line_range` | Object `{ "start": <int>, "end": <int> }`, 1-indexed inclusive line numbers in the rendered output; used for precise drift reporting |
 | `body_hash` | SHA-256 of the block body (content between the markers); used by `harness sync --check` to detect consumer edits |
 | `template_marker_hash` | SHA-256 of the marker lines as they appear in the template; used to detect marker renames/deletions across harness versions |
 | `provenance` | One of `user-authored` (written by the project team), `seeded-empty` (block was empty when first created; not yet edited), `migrated-from-legacy` (content came from a pre-harness file via `legacy_composed_mapping.json`) |

@@ -4,12 +4,16 @@
   "title": "Agent Harness configuration",
   "description": "Root configuration schema for a harness.config.json file. Declares the pinned harness version, project identity, file-class memberships, scaffold opt-ins, linter settings, templating variables, composed-block allowlists, optional block migration specs, and public-artifact redaction rules.",
   "type": "object",
-  "required": ["project"],
+  "required": ["version", "project"],
   "additionalProperties": false,
   "properties": {
     "$schema": {
       "type": "string",
       "description": "Optional self-reference to this schema's $id for IDE autocomplete. Tools like VS Code use this to validate the config against the schema. Set to 'https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json' or to a relative path during local development."
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Free-form note (single string). JSON has no native comment syntax, so this key carries human-readable context (e.g. 'this config models the post-CS19 state'). Ignored by the sync engine."
     },
     "version": {
       "type": "string",

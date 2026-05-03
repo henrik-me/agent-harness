@@ -1,4 +1,6 @@
 {
+  "$schema": "../schemas/harness.config.schema.json",
+  "_comment": "Worked example for henrik-me/guesswhatisnext post-CS19 migration. RETROSPECTIVES.md and READMEGUIDE.md are not present in gwn today (2026-05-03); they will be created by CS19 sync from template/managed/ (authored in CS08).",
   "version": "v0.1.0",
   "project": {
     "name": "Guess What's Next",

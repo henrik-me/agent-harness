@@ -1,4 +1,5 @@
 {
+  "$schema": "../schemas/harness.config.schema.json",
   "version": "v0.1.0",
   "project": {
     "name": "Sub Invaders",

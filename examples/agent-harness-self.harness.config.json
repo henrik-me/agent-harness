@@ -1,4 +1,5 @@
 {
+  "$schema": "../schemas/harness.config.schema.json",
   "version": "self",
   "project": {
     "name": "agent-harness",

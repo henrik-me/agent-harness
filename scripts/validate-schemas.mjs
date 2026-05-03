@@ -3,13 +3,22 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import yaml from 'js-yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
+
+// Expected fixture counts (per CS02 close-out spec). Lower bounds are asserted
+// at the end of the script to catch accidental fixture removals (per GPT-5.5
+// CS02 review suggestion #9).
+const EXPECTED_MIN = {
+  schemas: 3,
+  examples: 3,
+  learnings: 5
+};
 
 const results = {
   schemaValidation: [],
@@ -19,7 +28,9 @@ const results = {
   failed: 0
 };
 
-// 1. Validate schemas self-validate
+// 1. Validate schemas self-validate (using Ajv2020 with validateSchema: true
+//    so future malformed Draft-2020-12 schemas are actually caught — per
+//    GPT-5.5 CS02 review non-blocking #4)
 console.log('=== Schema Self-Validation ===\n');
 
 const schemaFiles = [
@@ -33,12 +44,17 @@ for (const schemaFile of schemaFiles) {
   try {
     const schemaContent = fs.readFileSync(fullPath, 'utf8');
     const schema = JSON.parse(schemaContent);
-    
-    // Create a fresh AJV instance for each schema to avoid ID conflicts
-    const ajv = new Ajv({ spec: 'draft2020', strict: false, validateSchema: false });
+
+    // Fresh Ajv2020 instance per schema to avoid $id conflicts; validateSchema:true
+    // asserts the document is itself a valid Draft-2020-12 schema.
+    const ajv = new Ajv2020({ strict: false, validateSchema: true });
     addFormats(ajv);
+    const valid = ajv.validateSchema(schema);
+    if (!valid) {
+      throw new Error('schema is not a valid Draft-2020-12 document: ' + JSON.stringify(ajv.errors));
+    }
     ajv.compile(schema);
-    
+
     console.log(`✓ ${schemaFile}`);
     results.schemaValidation.push({ file: schemaFile, status: 'pass' });
     results.passed++;
@@ -56,7 +72,7 @@ const harness_config_schema_path = path.join(repoRoot, 'schemas/harness.config.s
 const harness_config_schema_content = fs.readFileSync(harness_config_schema_path, 'utf8');
 const harness_config_schema = JSON.parse(harness_config_schema_content);
 
-const ajv_examples = new Ajv({ spec: 'draft2020', strict: false, validateSchema: false });
+const ajv_examples = new Ajv2020({ strict: false, validateSchema: false });
 addFormats(ajv_examples);
 const validate_harness_config = ajv_examples.compile(harness_config_schema);
 
@@ -104,7 +120,7 @@ const learnings_schema_path = path.join(repoRoot, 'schemas/learning.schema.json'
 const learnings_schema_content = fs.readFileSync(learnings_schema_path, 'utf8');
 const learnings_schema = JSON.parse(learnings_schema_content);
 
-const ajv_learnings = new Ajv({ spec: 'draft2020', strict: false, validateSchema: false });
+const ajv_learnings = new Ajv2020({ strict: false, validateSchema: false });
 addFormats(ajv_learnings);
 const validate_learning = ajv_learnings.compile(learnings_schema);
 
@@ -147,6 +163,27 @@ if (learningEntries.length === 0) {
       results.failed++;
     }
   }
+}
+
+// 4. Assert minimum fixture counts (per GPT-5.5 review suggestion #9)
+console.log('\n=== Fixture Count Assertions ===\n');
+const counts = {
+  schemas: results.schemaValidation.filter(r => r.status === 'pass').length,
+  examples: results.exampleValidation.filter(r => r.status === 'pass').length,
+  learnings: results.learningValidation.filter(r => r.status === 'pass').length
+};
+let countOk = true;
+for (const [kind, expected] of Object.entries(EXPECTED_MIN)) {
+  if (counts[kind] < expected) {
+    console.log(`✗ ${kind}: ${counts[kind]} passed; expected at least ${expected}`);
+    results.failed++;
+    countOk = false;
+  } else {
+    console.log(`✓ ${kind}: ${counts[kind]} passed (≥${expected})`);
+  }
+}
+if (!countOk) {
+  console.log('\n(A fixture may have been accidentally removed.)');
 }
 
 // Summary
