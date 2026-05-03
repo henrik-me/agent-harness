@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS04 close-out: LRN-026..031 added)
+> **Last updated:** 2026-05-03 (CS05 close-out: LRN-032..037 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -655,6 +655,126 @@ claim_area: planning
 **Evidence:** CS04 review history: R1=7 blockers (wrong regex, silent --config, exit-0 stubs, --dry-run alias missing, Windows spawnSync, --help forwarding, pack whitelist); R2=1 blocker (--dry-run alias regression from R1 fix); R3=GO. Sub-agents: `cs04-cli` (initial, 0 commits), `cs04-fixes-r1` (fixed all 7 R1 blockers, 0 commits), orchestrator inline (R2 --dry-run alias fix, 0 commits by sub-agent).
 
 **Disposition:** Update cs-plan planning notes for user-facing CSs (CS04, CS07, CS08+ template-rendered outputs) to budget 3 review rounds minimum. No code change needed; calibration data point complementing LRN-024.
+
+### LRN-032
+
+```yaml
+id: LRN-032
+date: 2026-05-03
+category: process
+source_cs: CS05
+status: applied
+tags: [cli, linter, subcommand, cwd, explicit-path, cs06]
+claim_area: cli-ux
+```
+
+**Problem:** During CS05 R1, GPT-5.5 caught that `cmdLint` in `bin/harness.mjs` spawned `check-learnings.mjs` without passing `--file`, so the linter resolved the target file relative to the script's own location inside the harness package — validating the harness's own `LEARNINGS.md` regardless of the consumer-repo `--cwd` value passed to the CLI.
+
+**Finding:** A `harness <subcommand>` wrapper that invokes a linter script MUST pass an explicit consumer-cwd-relative file path to that script. Inferring the path from `import.meta.url` or `process.cwd()` inside the script is wrong when the script is installed as a package dependency and the consumer repo is a different directory. Fix: `cmdLint` constructs `path.join(cwd, 'LEARNINGS.md')` and passes it as `--file` to `check-learnings.mjs`.
+
+**Evidence:** GPT-5.5 R1 blocker caught in CS05 review round 1. Fixed in `cs05-fixes-r1` commit.
+
+**Disposition:** Applied in `bin/harness.mjs` `cmdLint`. Pattern for CS06+ linter wrappers: every `harness lint` sub-invocation must explicitly pass the consumer-cwd-relative target path. Document in CS08 canonical OPERATIONS.md CLI conventions block.
+
+### LRN-033
+
+```yaml
+id: LRN-033
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS05
+status: applied
+tags: [linter, doc-schema, error-handling, fail-closed, silent-skip]
+claim_area: docs-schema
+```
+
+**Problem:** `parseFrontmatterBlocks` in an early `lib/doc-schema.mjs` draft caught `js-yaml` parse errors and `continue`d, silently skipping the malformed block. A broken LRN entry therefore vanished from linting output with no ERROR surfaced — a fail-open behaviour.
+
+**Finding:** Silent skipping of malformed structured data is a fail-closed violation. A parser that swallows errors gives false confidence that the document is clean. Fix: malformed blocks that contain an `id: LRN-` line are NOT silently skipped — they produce a `parseError` result and the linter emits an ERROR for them.
+
+**Evidence:** GPT-5.5 R1 blocker in CS05 review. Fixed in `cs05-fixes-r1`.
+
+**Disposition:** Applied in `lib/doc-schema.mjs` + `scripts/check-learnings.mjs`. Pattern for all future doc-schema parsers: any block that looks like a structured entry (i.e. contains an `id:` matching the document's entry-id pattern) and fails to parse MUST surface as an error, never be silently dropped.
+
+### LRN-034
+
+```yaml
+id: LRN-034
+date: 2026-05-03
+category: operational
+source_cs: CS05
+status: applied
+tags: [doc-schema, regex, markdown, trailing-whitespace, robustness]
+claim_area: docs-schema
+```
+
+**Problem:** Initial `parseFrontmatterBlocks` matched markdown fence lines with exact string comparisons (`` '```yaml' `` and `` '```' ``). Files edited by certain editors append trailing spaces or carriage returns to fence lines, causing the parser to miss valid fences and silently skip entries.
+
+**Finding:** Strict text matching on markdown fence lines is brittle. The canonical patterns from day one should tolerate trailing whitespace: `` /^\s*```yaml\s*$/ `` (open fence) and `` /^\s*```\s*$/ `` (close fence). Both match lines with leading/trailing whitespace and normalize the check across editors and line-ending styles.
+
+**Evidence:** CS05 R1+R2 fix cycle; `cs05-fixes-r1` updated `lib/doc-schema.mjs` to use these regex patterns.
+
+**Disposition:** Applied in `lib/doc-schema.mjs`. Canonical regex patterns documented here. CS06+ linters that parse any fenced-block format MUST use these patterns (or equivalent) from day one.
+
+### LRN-035
+
+```yaml
+id: LRN-035
+date: 2026-05-03
+category: architectural
+source_cs: CS05
+status: applied
+tags: [doc-schema, parser, entry-boundary, id-pattern, specificity]
+claim_area: docs-schema
+```
+
+**Problem:** An early entry-boundary classifier in `parseFrontmatterBlocks` used a generic `/id:/` check to decide whether a parsed YAML block was an "entry start". This caused embedded YAML examples (which themselves contain `id:` keys) in LRN body text to be misclassified as entry boundaries, corrupting body extraction for the surrounding real entry.
+
+**Finding:** Entry-boundary classification in doc parsers must match the actual entry-id pattern for the document type (e.g. `/id: LRN-\d+/` for LEARNINGS.md), not a generic `id:` key match. The initial fix used `/id:/`; a second round tightened it to `/id: LRN-\d+/`. Pattern: classify by the most specific shape, not the most general one.
+
+**Evidence:** Two-round finding — initial fix (R1) used `/id:/`, second fix (R2) caught that embedded examples still broke extraction and tightened the regex. Applied in `cs05-fixes-r1` and inline R2 orchestrator fix.
+
+**Disposition:** Applied in `lib/doc-schema.mjs`. Future doc-schema parsers MUST use the document-specific id pattern (e.g. `LRN-\d+`, `ADR-\d+`, etc.) as the entry-boundary discriminant. Generic `id:` matching is explicitly prohibited.
+
+### LRN-036
+
+```yaml
+id: LRN-036
+date: 2026-05-03
+category: process
+source_cs: CS05
+status: applied
+tags: [tests, stub-promotion, exit-code, test-maintenance]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS04 had a `lint` subcommand test that asserted exit code 3 (stub / planned-but-not-implemented). CS05 promoted `lint` from stub to functional. The test asserting exit 3 was not updated, causing a test failure in the CS05 content PR until caught and fixed.
+
+**Finding:** When promoting a stub subcommand to functional, the implementing CS must search all tests for the stub's characteristic exit code (exit 3 per LRN-028) and message, and update them in the same commit. The test update is not optional — it documents the intent change from "not implemented" to "implemented".
+
+**Evidence:** CS05 R1 fix round: `cs05-fixes-r1` updated `tests/cli.test.mjs` lint test from exit 3 assertion to exit 0 + lint output assertion.
+
+**Disposition:** Applied in `tests/cli.test.mjs`. Pattern for future stub-promotion CSs: the sub-agent briefing MUST include a step "search tests for exit-3 assertions on `<subcommand>` and update them."
+
+### LRN-037
+
+```yaml
+id: LRN-037
+date: 2026-05-03
+category: process
+source_cs: CS05
+status: applied
+tags: [sub-agents, test-count, over-achievement, minimums-not-exact-counts, briefing]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS05 sub-agent briefings specified "minimum 10 tests" and "minimum 7 doc-schema tests". The actual sub-agents (`cs05-content` and `cs05-fixes-r1`) delivered 12 and 10 tests respectively. There was momentary concern that over-delivering was out-of-scope scope-creep.
+
+**Finding:** Sub-agent self-deviation toward MORE tests is a GOOD signal, not a problem. `cs05-content` created 12 tests instead of the 10-test minimum; `cs05-fixes-r1` created 10 doc-schema tests instead of 7. These over-achievements caught real bugs (e.g. `resolveLinks` contract drift). Sub-agent briefings should specify **minimums**, not exact counts. Exact-count specifications create artificial pressure to stop at the minimum and may suppress coverage of discovered edge cases.
+
+**Evidence:** CS05 test delta: 224 → 253 (+29 tests). Breakdown: 12 check-learnings (cs05-content r0) + 10 doc-schema unit tests (cs05-fixes-r1) + 1 cli.test.mjs lint test update + 1 R2 regression test (orchestrator inline) + 5 additional regression tests across r1 fixtures = 29. Over-delivery (12>10 minimum, 10>7 minimum) caught real contract drift in `resolveLinks` (NB-6).
+
+**Disposition:** Update sub-agent briefing template (when canonicalized in CS08 OPERATIONS.md) to specify test minimums only, never exact counts. Note: orchestrator should celebrate rather than flag over-delivery on tests.
 
 ## Obsolete
 
