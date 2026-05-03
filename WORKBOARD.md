@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-03T18:00Z (CS04 close-out)
+> **Last updated:** 2026-05-03T19:00Z (CS05 claimed)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS; CS05 is planned and ready to claim | — | — | — | 2026-05-03T18:00Z | _(none)_ |
+| CS05 | Doc-schema lib + first reference linter (`check-learnings.mjs`) | claimed | yoga-ah | cs05/content | 2026-05-03 | _(none)_ |
 
 ## Recently Completed
 
