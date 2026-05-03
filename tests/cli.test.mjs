@@ -192,14 +192,14 @@ describe('harness whoami', () => {
 });
 
 // ---------------------------------------------------------------------------
-// lint (STUB)
+// lint (now functional — runs check-learnings.mjs)
 // ---------------------------------------------------------------------------
 
 describe('harness lint', () => {
-  it('exits 3 with not-yet-implemented message', () => {
+  it('exits 0 against the real LEARNINGS.md', () => {
     const r = run(['lint']);
-    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
-    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
+    assert.equal(r.status, 0, `Expected exit 0 (linter passed); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(r.stdout.includes('check-learnings summary') || r.stdout.includes('✅'), `Expected lint summary in stdout; got:\n${r.stdout}`);
   });
 
   it('lint --help exits 0', () => {
