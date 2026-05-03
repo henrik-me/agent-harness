@@ -365,12 +365,12 @@ async function cmdInit(args, global) {
   }
 
   const configDest = path.join(targetDir, 'harness.config.json');
+  const configExists = existsSync(configDest);
 
-  if (existsSync(configDest)) {
+  if (configExists) {
     process.stderr.write(
-      `Warning: harness.config.json already exists at ${configDest} — skipping (use manual edit to update).\n`
+      `Warning: harness.config.json already exists at ${configDest} — skipping config write (use manual edit to update).\n`
     );
-    return;
   }
 
   // Determine source config
@@ -389,27 +389,36 @@ async function cmdInit(args, global) {
 
   mkdirSync(targetDir, { recursive: true });
 
-  if (configSource) {
-    copyFileSync(configSource, configDest);
-    process.stdout.write(`Created harness.config.json (from example: ${fromExample}) at ${configDest}\n`);
-  } else {
-    // Write minimal scaffolded config
-    const pkg = readPackageJSON();
-    const scaffold = {
-      $schema: '../schemas/harness.config.schema.json',
-      version: pkg.version,
-      project: {
-        name: path.basename(targetDir),
-        agent_suffix: 'XX',
-      },
-      managed: { files: [] },
-      composed: { files: [] },
-      seeded: { files: [] },
-      scaffolds: [],
-      excluded: [],
-    };
-    writeFileSync(configDest, JSON.stringify(scaffold, null, 2) + '\n', 'utf8');
-    process.stdout.write(`Created harness.config.json at ${configDest}\n`);
+  if (!configExists) {
+    if (configSource) {
+      copyFileSync(configSource, configDest);
+      process.stdout.write(`Created harness.config.json (from example: ${fromExample}) at ${configDest}\n`);
+    } else {
+      // Copy from template/seeded/harness.config.json (preferred), fall back to scaffold
+      const seededConfigSrc = path.join(REPO_ROOT, 'template', 'seeded', 'harness.config.json');
+      if (existsSync(seededConfigSrc)) {
+        copyFileSync(seededConfigSrc, configDest);
+        process.stdout.write(`Created harness.config.json at ${configDest}\n`);
+      } else {
+        // Defensive fallback: write minimal scaffolded config
+        const pkg = readPackageJSON();
+        const scaffold = {
+          $schema: 'https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json',
+          version: pkg.version,
+          project: {
+            name: path.basename(targetDir),
+            agent_suffix: 'mp',
+          },
+          managed: { files: [] },
+          composed: { files: [] },
+          seeded: { files: [] },
+          scaffolds: [],
+          excluded: [],
+        };
+        writeFileSync(configDest, JSON.stringify(scaffold, null, 2) + '\n', 'utf8');
+        process.stdout.write(`Created harness.config.json at ${configDest}\n`);
+      }
+    }
   }
 
   // Copy seeded template files that are missing
