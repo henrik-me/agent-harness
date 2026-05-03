@@ -69,10 +69,10 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 - `package.json` (private:true initially), MIT `LICENSE`, `.gitignore`, `.editorconfig`
 - Hand-authored `INSTRUCTIONS.md`, `CONVENTIONS.md`, `OPERATIONS.md`, `REVIEWS.md`, `TRACKING.md`, `RETROSPECTIVES.md`, `CONTEXT.md`, `WORKBOARD.md`, `LEARNINGS.md`, `ARCHITECTURE.md`, `README.md` (project-owned, never synced), `.github/copilot-instructions.md`, `.github/pull_request_template.md`, `.github/CODEOWNERS`
 - `project/clickstops/{planned,active,done}/.gitkeep`
-- The two pre-CS01 planning artifacts (`harness-extraction-plan.md`, `harness-cs-plan.md`) moved into `project/clickstops/done/done_cs01_bootstrap-repo.md` (or referenced from it)
+- The two pre-CS01 planning artifacts (`harness-extraction-plan.md`, `harness-cs-plan.md`) moved into `project/clickstops/done/done_cs01_bootstrap-repo/` (or referenced from it)
 - Branch protection on `main`: **deferred to CS15b** per [LRN-001](../../../LEARNINGS.md). Requires GitHub Pro on private repos; user chose discipline-only enforcement for CS01–CS14.
 **Exit:** Empty `WORKBOARD.md` initialised with orchestrator table; CS01 itself filed under `project/clickstops/done/` to demonstrate the lifecycle.
-**Parallelisable:** No (foundational; process discipline starts mid-CS01 once branch protection is on).
+**Parallelisable:** No (foundational; discipline-only enforcement applies from commit 2 per LRN-001).
 **Depends on:** prerequisites checklist
 
 ### CS02 · Define schemas (config + lock + learning) + parameterization model + file classes
@@ -552,8 +552,6 @@ CS01, CS11, CS18b, CS19/PR-2 (PILOT-B against migration branch) are deliberately
 
 | Phase | CSs | Enforcement |
 |---|---|---|
-| **Spirit phase** | CS01–CS10 | Manual discipline. I follow the model from human conventions; CI mostly absent until linters land in CS05–CS07. Mistakes recoverable. |
-| **Self-host phase** | CS11–CS14 | Mechanical via `harness self-check` CI gate. Drift impossible without template change. |
 | **Spirit phase / discipline-only** | CS01–CS14 | Manual discipline + GPT-5.5 review on every PR. Branch protection deferred to CS15b per [LRN-001](../../../LEARNINGS.md) (private-repo branch protection requires GitHub Pro). CI gates land progressively: linters from CS05+, self-host gate from CS11. |
 | **Public-readiness phase** | CS15a | Ruleset configured (still private — Ruleset doesn't take effect until CS15b public flip); workboard-auto-approve workflow + GitHub App built; secret-scan + IP review complete; all `open` learnings dispositioned per [LRN-003](../../../LEARNINGS.md). |
 | **Public-enforced phase** | CS15b+ | Repo public → Ruleset live; signed commits required; full PR policy mechanically enforced; `check-public-artifact` mandatory. |
@@ -561,7 +559,7 @@ CS01, CS11, CS18b, CS19/PR-2 (PILOT-B against migration branch) are deliberately
 ### Per-CS loop (every CS, all phases)
 
 1. **Pre-claim:** run `harness harvest` (when CS04 lands) — handle any high-priority stale learnings; before that, manual `LEARNINGS.md` review.
-2. **Claim (per Decision #23 — tiny-PR + auto-approve-bot model from CS15a onward):** rename `planned_csNN_*.md` → `active_csNN_*.md`; update `WORKBOARD.md`; commit on a `workboard/cs<NN>-claim` branch; open PR labeled `workboard-only`. **From CS15a onward:** the `workboard-auto-approve.yml` workflow verifies path-restriction + label + actor; bot submits the approval; PR auto-merges once CI passes. **Phase A–CS14 transitional (post-bootstrap):** the only direct-to-main push in the entire repo is the CS01 bootstrap commit. From commit 2 onward, branch protection is on; WORKBOARD claim/closeout PRs are normal small PRs with user review (not bot-auto-merged) until CS15a configures the bot. Set `agent: yoga-ah` (derived per Decision #20), `status: 🟢 Active`.
+2. **Claim (per Decision #23 — tiny-PR + auto-approve-bot model from CS15a onward):** rename `planned_csNN_*.md` → `active_csNN_*.md`; update `WORKBOARD.md`; commit on a `workboard/cs<NN>-claim` branch; open PR labeled `workboard-only`. **From CS15a onward:** the `workboard-auto-approve.yml` workflow verifies path-restriction + label + actor; bot submits the approval; PR auto-merges once CI passes. **Phase A–CS14 transitional (post-bootstrap, per [LRN-001](../../../LEARNINGS.md)):** the only direct-to-main push in the entire repo is the CS01 bootstrap commit. From commit 2 onward, **all changes go through PRs by discipline** (mechanical branch protection unavailable on private free-tier repos until CS15b). WORKBOARD claim/closeout PRs are normal small PRs with user review (not bot-auto-merged) until CS15a configures the bot, then are bot-merged but still discipline-enforced until CS15b makes the Ruleset live. Set `agent: yoga-ah` (derived per Decision #20), `status: 🟢 Active`.
 3. **Branch:** `cs<NN>/<slug>`.
 4. **Plan-internal:** review CS deliverables; identify parallelisable sub-tasks per the table above; dispatch sub-agents (Haiku for mechanical, Sonnet for non-trivial).
 5. **Implement:** execute sub-tasks; merge sub-agent output; iterate.

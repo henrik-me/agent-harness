@@ -2,7 +2,7 @@
 
 Multi-agent process harness — extracted from [`henrik-me/guesswhatisnext`](https://github.com/henrik-me/guesswhatisnext) for reuse across projects.
 
-> **Status:** pre-v0.1.0 — bootstrapping under CS01. Not yet consumable. See [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
+> **Status:** pre-v0.1.0 — CS01 bootstrap complete; implementation begins in CS02. See [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
 
 ## What this is
 

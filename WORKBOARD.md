@@ -22,7 +22,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
-| CS01 | Bootstrap repo + skeleton + proto process docs | 2026-05-03 | 4 learnings filed (LRN-001 through LRN-005). 1 planned CS filed (CS04a). Branch protection deferred to CS15b per LRN-001. |
+| CS01 | Bootstrap repo + skeleton + proto process docs | 2026-05-03 | 5 learnings filed (LRN-001 through LRN-005). 1 planned CS filed (CS04a). 1 next-CS planned file created (CS02). Branch protection deferred to CS15b per LRN-001. |
 
 > **Note:** Clickstop files live under lifecycle subdirectories: `project/clickstops/planned/` (queued), `project/clickstops/active/` (in flight), `project/clickstops/done/` (completed).
 

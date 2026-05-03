@@ -22,22 +22,32 @@ If a finding fails any of those three tests, it isn't a learning — it might be
 
 ## Entry shape
 
-Each entry in [LEARNINGS.md](LEARNINGS.md) has:
+Each entry in [LEARNINGS.md](LEARNINGS.md) begins with a **YAML frontmatter code fence** containing required fields, followed by markdown body sections:
 
-```markdown
-### LRN-<NNN> · <YYYY-MM-DD> · <category> · <source-cs>
+````markdown
+### LRN-<NNN>
 
-**Tags:** [optional list]
-**Claim-area:** [optional, drives before-claim prompts]
+```yaml
+id: LRN-<NNN>
+date: YYYY-MM-DD
+category: architectural | operational | tooling | process | anti-pattern
+source_cs: CS<NN>
+status: open | applied | obsolete | deferred
+tags: [tag1, tag2]
+claim_area: <optional, drives before-claim prompts>
+deferred_until: YYYY-MM-DD   # only if status=deferred
+```
+
 **Problem:** ...
 **Finding:** ...
 **Evidence:** PR #..., commit <sha>, log link
-**Status:** open | applied | obsolete | deferred
 **Disposition:** (filled by harvest) — applied to CONVENTIONS.md § Migrations / filed CS37 / etc.
-**Deferred-until:** YYYY-MM-DD (only if status=deferred)
-```
 
-CS05's `check-learnings.mjs` will eventually enforce the schema.
+**Implications carried forward:** (optional)
+- ...
+````
+
+CS05's `check-learnings.mjs` will enforce the schema; `schemas/learning.schema.json` (also CS05) is the authoritative spec. The CS01 entries (LRN-001 through LRN-005) become CS05's regression fixtures.
 
 ## Harvest procedure
 
