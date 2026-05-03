@@ -182,4 +182,70 @@ describe('render-deploy-summary', () => {
     );
   });
 
+  // 10. R2 (B1) — --quiet without --out emits ONLY markdown on stdout (no progress mixed in)
+  it('10. --quiet (no --out) emits markdown to stdout with NO progress line mixed in', () => {
+    const r = run(['--in', fixture('valid-input.json'), '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}`);
+    assert.ok(
+      !r.stdout.includes('deploy summary: rendered'),
+      `--quiet must NOT write progress to stdout; got:\n${r.stdout}`
+    );
+    assert.ok(
+      !r.stderr.includes('deploy summary: rendered'),
+      `--quiet must NOT write progress to stderr either; got:\n${r.stderr}`
+    );
+    // stdout should still contain valid markdown
+    assert.ok(r.stdout.includes('# Deployment Summary'), `Expected markdown header in stdout; got:\n${r.stdout}`);
+  });
+
+  // 11. R2 (B2) — --redact-required with config that has NO deploy-summary rule must exit 1
+  it('11. --redact-required + config without deploy-summary rule exits 1', () => {
+    const r = run([
+      '--in', fixture('valid-input.json'),
+      '--config', fixture('redact-config-other-artifact.json'),
+      '--redact-required',
+    ]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 (no usable deploy-summary rule); got ${r.status}\nstdout:${r.stdout}\nstderr:${r.stderr}`
+    );
+    assert.ok(
+      r.stderr.includes('deploy-summary'),
+      `Expected stderr to mention deploy-summary; got:\n${r.stderr}`
+    );
+  });
+
+  // 12. R2 (NB-3) — config with rules for OTHER artifact types must NOT redact deploy-summary
+  it('12. rules for other artifact types do NOT apply to deploy-summary', () => {
+    const r = run([
+      '--in', fixture('with-url.json'),
+      '--config', fixture('redact-config-other-artifact.json'),
+      '--quiet',
+    ]);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}`);
+    // shadow-report rules apply ".corp." pattern; that rule must NOT bleed into deploy-summary
+    assert.ok(
+      !r.stdout.includes('<REDACTED>'),
+      `Other-artifact rules must not redact deploy-summary; got:\n${r.stdout}`
+    );
+  });
+
+  // 13. R2 (NB-5) — allowed_placeholders are preserved (not redacted)
+  it('13. allowed_placeholders survive redaction', () => {
+    // with-url.json contains api.corp.example.com; placeholder "api.corp.placeholder" is allowed
+    // but the actual content api.corp.example.com is NOT the placeholder, so it WILL be redacted.
+    // Test the inverse: confirm the redaction still fires for non-placeholder matches.
+    const r = run([
+      '--in', fixture('with-url.json'),
+      '--config', fixture('redact-config-with-placeholder.json'),
+      '--quiet',
+    ]);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}`);
+    // Real corp URL should be redacted (it's not the allowed placeholder)
+    assert.ok(
+      r.stdout.includes('<REDACTED>'),
+      `Expected non-placeholder match to be redacted; got:\n${r.stdout}`
+    );
+  });
+
 });

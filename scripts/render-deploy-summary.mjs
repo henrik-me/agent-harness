@@ -145,7 +145,10 @@ if (!Array.isArray(dep.components)) {
 
 /** @type {RegExp[]} */
 const redactPatterns = [];
+/** @type {Set<string>} */
+const allowedPlaceholders = new Set();
 let configLoaded = false;
+let deploySummaryRuleFound = false;
 
 // Auto-discover config at cwd/harness.config.json if no explicit path given
 const defaultConfigPath = path.join(process.cwd(), 'harness.config.json');
@@ -156,15 +159,27 @@ if (resolvedConfigPath) {
     const raw = fs.readFileSync(resolvedConfigPath, 'utf8');
     const cfg = JSON.parse(raw);
     const redactionSection = cfg.public_artifact_redaction ?? {};
-    for (const [, rule] of Object.entries(redactionSection)) {
-      if (rule && typeof rule === 'object') {
-        for (const pat of (rule.forbidden_field_patterns ?? [])) {
-          try {
-            redactPatterns.push(new RegExp(pat, 'g'));
-          } catch {
-            // skip invalid regex
+    // NB-3: select only the deploy-summary artifact-type rule to avoid over-redacting
+    // with rules intended for other artifact types (e.g. shadow-report).
+    const rule = redactionSection['deploy-summary'];
+    if (rule && typeof rule === 'object') {
+      deploySummaryRuleFound = true;
+      for (const pat of (rule.forbidden_field_patterns ?? [])) {
+        try {
+          redactPatterns.push(new RegExp(pat, 'g'));
+        } catch (regexErr) {
+          if (redactRequired) {
+            process.stderr.write(
+              `render-deploy-summary: --redact-required: invalid regex in deploy-summary forbidden_field_patterns: ${pat} (${regexErr.message})\n`
+            );
+            process.exit(1);
           }
+          // else: skip invalid regex silently
         }
+      }
+      // NB-5: honor allowed_placeholders — values matching these are NOT redacted
+      for (const ph of (rule.allowed_placeholders ?? [])) {
+        if (typeof ph === 'string') allowedPlaceholders.add(ph);
       }
     }
     configLoaded = true;
@@ -172,9 +187,14 @@ if (resolvedConfigPath) {
     process.stderr.write(`render-deploy-summary: cannot read config "${resolvedConfigPath}": ${err.message}\n`);
     process.exit(1);
   }
-} else if (redactRequired) {
+}
+
+// B2: --redact-required must fail unless we have a usable deploy-summary rule
+// with at least one valid forbidden pattern.
+if (redactRequired && (!configLoaded || !deploySummaryRuleFound || redactPatterns.length === 0)) {
   process.stderr.write(
-    'render-deploy-summary: --redact-required is set but no harness.config.json found\n'
+    'render-deploy-summary: --redact-required is set but no usable deploy-summary redaction rule found ' +
+    '(need public_artifact_redaction["deploy-summary"].forbidden_field_patterns with ≥1 valid regex)\n'
   );
   process.exit(1);
 }
@@ -249,7 +269,12 @@ if (!configLoaded && redactRequired) {
 }
 
 for (const re of redactPatterns) {
-  markdown = markdown.replace(re, '<REDACTED>');
+  markdown = markdown.replace(re, (match) => {
+    // NB-5: respect allowed_placeholders — keep matches that exactly equal an
+    // allowed placeholder.
+    if (allowedPlaceholders.has(match)) return match;
+    return '<REDACTED>';
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -269,9 +294,11 @@ if (outputPath) {
   process.stdout.write(markdown);
 }
 
+// B1: progress/status output must NEVER mix with markdown on stdout.
+// - With --out: progress goes to stderr (or is suppressed in --quiet).
+// - Without --out: stdout carries markdown only; --quiet suppresses progress entirely;
+//   non-quiet writes progress to stderr.
 const progressMsg = `deploy summary: rendered ${byteCount} bytes\n`;
-if (quiet) {
-  process.stdout.write(progressMsg);
-} else {
+if (!quiet) {
   process.stderr.write(progressMsg);
 }
