@@ -1,0 +1,21 @@
+{
+  "version": "v0.1.0",
+  "project": {
+    "name": "Sub Invaders",
+    "agent_suffix": "si",
+    "repo": "henrik-me/sub-invaders"
+  },
+  "managed": {
+    "files": ["INSTRUCTIONS.md"]
+  },
+  "composed": {
+    "files": ["CONVENTIONS.md"],
+    "overrides": {
+      "CONVENTIONS.md": { "local_blocks": ["conventions.project"] }
+    }
+  },
+  "seeded": {
+    "files": ["CONTEXT.md"]
+  },
+  "excluded": []
+}

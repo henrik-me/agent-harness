@@ -1,0 +1,18 @@
+{
+  "version": "v1.0.0",
+  "project": {
+    "name": "Sub Invaders",
+    "agent_suffix": "si",
+    "repo": "henrik-me/sub-invaders"
+  },
+  "managed": {
+    "files": ["INSTRUCTIONS.md"]
+  },
+  "composed": {
+    "files": []
+  },
+  "seeded": {
+    "files": ["CONTEXT.md"]
+  },
+  "excluded": []
+}

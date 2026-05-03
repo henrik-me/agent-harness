@@ -1,0 +1,48 @@
+{
+  "harness_ref": "v0.1.0",
+  "resolved_sha": "a3f4c8d2e1b05a6c9d4e2f1a0b8c3d4e5f6a7b8c",
+  "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
+  "synced_at": "2026-05-03T05:30:00Z",
+  "files": [
+    {
+      "target": "INSTRUCTIONS.md",
+      "source_template": "template/managed/INSTRUCTIONS.md",
+      "class": "managed",
+      "rendered_hash": "1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d",
+      "action": "created"
+    },
+    {
+      "target": ".github/workflows/ci.yml",
+      "source_template": "scaffolds/smoke/.github/workflows/ci.yml",
+      "class": "managed",
+      "rendered_hash": "6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i",
+      "action": "created"
+    },
+    {
+      "target": "CONVENTIONS.md",
+      "source_template": "template/composed/CONVENTIONS.md",
+      "class": "composed",
+      "rendered_hash": "2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e",
+      "action": "created",
+      "blocks": [
+        {
+          "id": "conventions.project",
+          "source_line_range": {
+            "start": 10,
+            "end": 15
+          },
+          "body_hash": "3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f",
+          "template_marker_hash": "4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g",
+          "provenance": "seeded-empty"
+        }
+      ]
+    }
+  ],
+  "scaffolds": [
+    {
+      "name": "smoke",
+      "ref": "v0.1.0"
+    }
+  ],
+  "excluded": ["README.md", "LICENSE"]
+}

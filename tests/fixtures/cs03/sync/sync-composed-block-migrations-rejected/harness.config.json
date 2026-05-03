@@ -1,0 +1,24 @@
+{
+  "version": "v0.1.0",
+  "project": {
+    "name": "Sub Invaders",
+    "agent_suffix": "si",
+    "repo": "henrik-me/sub-invaders"
+  },
+  "managed": {
+    "files": ["INSTRUCTIONS.md"]
+  },
+  "composed": {
+    "files": []
+  },
+  "seeded": {
+    "files": ["CONTEXT.md"]
+  },
+  "composed_block_migrations": {
+    "old-conventions.project": {
+      "new_id": "conventions.project",
+      "reason": "Renamed during harness v0.2.0 upgrade"
+    }
+  },
+  "excluded": []
+}
