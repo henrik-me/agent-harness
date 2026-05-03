@@ -1,0 +1,15 @@
+{
+  "deployment": {
+    "name": "internal-api",
+    "version": "0.9.0",
+    "environment": "production",
+    "status": "succeeded",
+    "started_at": "2026-05-01T10:00:00Z",
+    "ended_at": "2026-05-01T10:03:00Z",
+    "commit_sha": "feedface0001",
+    "commit_message": "deploy to https://api.corp.example.com/v2",
+    "components": [
+      { "name": "frontend", "status": "succeeded", "details": "hosted at https://app.corp.example.com" }
+    ]
+  }
+}

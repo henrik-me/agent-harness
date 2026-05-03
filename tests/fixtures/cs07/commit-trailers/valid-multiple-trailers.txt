@@ -1,0 +1,7 @@
+feat: multi-author commit
+
+Implement feature X with multiple contributors.
+
+Co-authored-by: Alice <alice@example.com>
+Co-authored-by: Bob <bob@example.com>
+Signed-off-by: Charlie <charlie@example.com>

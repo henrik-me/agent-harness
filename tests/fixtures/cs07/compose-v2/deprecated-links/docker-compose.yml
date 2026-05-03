@@ -1,0 +1,7 @@
+services:
+  web:
+    image: nginx:latest
+    links:
+      - db
+  db:
+    image: postgres:15

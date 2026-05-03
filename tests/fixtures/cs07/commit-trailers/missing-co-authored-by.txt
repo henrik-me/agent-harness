@@ -1,0 +1,5 @@
+fix: patch a bug
+
+This commit patches a bug.
+
+Reviewed-by: Bob <bob@example.com>
