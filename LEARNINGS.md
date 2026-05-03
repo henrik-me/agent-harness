@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS07 close-out: LRN-044..048 added)
+> **Last updated:** 2026-05-03 (CS08 close-out: LRN-049..053 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -995,6 +995,106 @@ claim_area: orchestrator-loop
 **Evidence:** CS07 implementation: 4 parallel sub-agents (cs07-prbody, cs07-trailers, cs07-compose, cs07-render) — all Sonnet 4.6, all 0 commits, all succeeded. No file overlap detected.
 
 **Disposition:** Pattern validated and documented. Continue applying LRN-016 + LRN-021 on all future fan-outs. Cumulative dispatch count (18) now the documented baseline for CS08+.
+
+### LRN-049
+
+```yaml
+id: LRN-049
+date: 2026-05-03
+category: architectural
+source_cs: CS08
+status: applied
+tags: [templating, dot-notation, placeholder-resolution, template-authoring, linter-gap]
+claim_area: tooling
+```
+
+**Problem:** CS08 sub-agents authoring template files reached for `{{project.name}}` / `{{project.agent_suffix}}` style placeholders because `config.project.X` is how the values are semantically located in the config object. However, `lib/templating.mjs` resolves placeholders from a flat key map (i.e., it looks up `config.templating[<key>]`, not `config.project.X`). Dot-notation placeholders like `{{project.X}}` ship as literal unresolved text after consumer sync.
+
+**Finding:** Templates that will be resolved by a flat-key substitution engine MUST NOT use dot-notation placeholders (e.g., `{{project.X}}`). The engine only resolves keys present at the top level of `config.templating[...]`. Sub-agents instinctively reach for dot notation when authoring templates that reference `config.project.X` semantically; without a linter rule flagging this, the dot-notation placeholders ship as literal unresolved text on consumer sync. Found in CS08 R1 (B2).
+
+**Evidence:** CS08 R1 blocker B2 (GPT-5.5): multiple template files contained `{{project.name}}`, `{{project.agent_suffix}}` etc. that `lib/templating.mjs` cannot resolve. Fixed in cs08-fixes-r1.
+
+**Disposition:** Applied — templates corrected. Mitigation: file CS08b for a `check-templates.mjs` linter that flags `{{X.Y}}` dot-notation in `template/` files. See [`project/clickstops/planned/planned_cs08b_template-linter.md`](project/clickstops/planned/planned_cs08b_template-linter.md).
+
+### LRN-050
+
+```yaml
+id: LRN-050
+date: 2026-05-03
+category: architectural
+source_cs: CS08
+status: applied
+tags: [template-authoring, relative-paths, consumer-root, link-breakage, sync]
+claim_area: tooling
+```
+
+**Problem:** Several CS08 templates contained relative paths like `../../docs/adr/...` or `../LEARNINGS.md` — paths that were correct relative to the source location inside `template/managed/` but that break after `harness sync` installs the file at the consumer repo root. The installed file contains broken relative links.
+
+**Finding:** Managed templates that ship to the consumer repo root MUST use consumer-root-relative paths (`docs/adr/...`, `LEARNINGS.md`), NOT template-source-relative paths (`../../docs/...`, `../LEARNINGS.md`). When authoring template files, always think of the FINAL install location, not the source location in `template/managed/` or `template/composed/`. Found in CS08 R1 (B3). A future linter (CS06c?) could detect `../` relative paths in `template/managed/` and flag them.
+
+**Evidence:** CS08 R1 blocker B3 (GPT-5.5): multiple template files used source-tree-relative paths. Fixed in cs08-fixes-r1.
+
+**Disposition:** Applied — templates corrected. Pattern documented in CS08 close-out. Future `check-templates.mjs` (CS08b) should also flag `../` relative paths in `template/managed/` and `template/composed/` files.
+
+### LRN-051
+
+```yaml
+id: LRN-051
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS08
+status: applied
+tags: [template-authoring, linter, forbidden-tokens, self-reference, pull-request-template]
+claim_area: tooling
+```
+
+**Problem:** `template/managed/.github/pull_request_template.md` was authored to document `check-pr-body.mjs`'s rejected marker tokens. The sub-agent (cs08-githubtmpl) initially included the literal strings `TODO:` and `FIXME:` in an HTML comment — documenting what the linter rejects. On first linter run, `check-pr-body.mjs` scanned the template file itself and rejected those verbatim tokens, causing a self-referential linter failure.
+
+**Finding:** A PR template (or any consumer artifact template) that documents a linter's forbidden tokens CANNOT quote those tokens verbatim — even inside HTML comments — because the linter scans the file as-is. Use paraphrase ("forbidden marker tokens", "placeholder strings rejected by check-pr-body") instead of quoting the literal forbidden strings. Found by cs08-githubtmpl during authoring; the sub-agent fixed the issue inline before reporting.
+
+**Evidence:** cs08-githubtmpl LEARNINGS CANDIDATES section: "first linter run on PR template failed due to self-reference of forbidden tokens; fixed by replacing literal tokens with paraphrase."
+
+**Disposition:** Applied in `template/managed/.github/pull_request_template.md`. Pattern: template files that describe linter rules must avoid reproducing the exact strings the linter rejects. Applies to any template whose content will itself be linted.
+
+### LRN-052
+
+```yaml
+id: LRN-052
+date: 2026-05-03
+category: process
+source_cs: CS08
+status: applied
+tags: [sub-agents, parallel-dispatch, no-commit, scale-validation, cumulative-count, doc-authoring]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS08 called for an 8-way parallel sub-agent dispatch — the largest fan-out by output volume attempted to date, with 8 substantive doc-authoring tasks (multiple hundreds of lines each) versus CS06's 9 narrowly-scoped linter scripts. The question was whether volume (not just count) of parallel output would create races or discipline breakdowns.
+
+**Finding:** 8-way parallel sub-agent dispatch validated: zero file races, zero rogue commits, all 8 sub-agents reported correctly. Cumulative count: 26 sub-agent dispatches across CS01–CS08 with zero commit-discipline violations after LRN-021 standardization. CS08 was the largest fan-out by output volume (8 substantive doc-authoring tasks with large output) versus CS06's 9 narrow scripts. Conclusion: parallel fan-out scales cleanly with disjoint file ownership; the cost is review burden (7 templates × multiple LRN cross-references = many small audit points).
+
+**Evidence:** CS08 implementation: 8 parallel sub-agents (cs08-instructions, cs08-conventions, cs08-operations, cs08-reviews, cs08-tracking, cs08-retrospectives, cs08-readmeguide, cs08-githubtmpl) — all Sonnet 4.6, all 0 commits, all succeeded. Plus cs08-fixes-r1 for R1 fix round. Zero file overlap detected.
+
+**Disposition:** Pattern validated. Continue applying LRN-016 + LRN-021 on all future fan-outs. Cumulative dispatch count (26) is the new documented baseline for CS09+. High-volume doc-authoring fan-out is now proven safe.
+
+### LRN-053
+
+```yaml
+id: LRN-053
+date: 2026-05-03
+category: operational
+source_cs: CS08
+status: applied
+tags: [sub-agents, edit-tool, truncation, file-integrity, large-edits]
+claim_area: orchestrator-loop
+```
+
+**Problem:** When an `edit` operation replaces a large `old_str` block near the end of a file, the replacement may silently truncate content after the match point. The edit appears successful (no error returned), but lines after the replaced block are dropped. This was reported by cs08-instructions in its LEARNINGS CANDIDATES section.
+
+**Finding:** Sub-agent `edit` tool truncation: large `edit` operations that replace blocks near the end of a file can silently drop content after the match point. The failure mode is silent — no error, just missing lines. Mitigation: after large `edit` operations, verify the file line count delta matches expectation (old line count − removed lines + added lines = expected new count). A linter pass alone is insufficient to catch this — line count delta is the correct check.
+
+**Evidence:** cs08-instructions reported this in its LEARNINGS CANDIDATES section during CS08. Sub-agent noticed the file was shorter than expected after an edit near the end, and confirmed by diffing expected vs actual line count.
+
+**Disposition:** Applied as operational standard. Future orchestrator briefings for large doc-authoring tasks MUST include: "After any large `edit` near end-of-file, verify line count delta before proceeding." Pattern added to canonical OPERATIONS.md conventions block via CS08 templates.
 
 ## Obsolete
 
