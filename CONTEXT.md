@@ -20,7 +20,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None at CS01 close. CS02 (schema definitions) ready to claim.
+- None. CS02 is complete; CS03 is ready to claim.
 
 ## CS plan
 

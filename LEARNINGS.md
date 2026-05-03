@@ -205,7 +205,7 @@ These can drift. The schema doesn't enforce that they agree; the engine has to p
 
 **Evidence:** `cs02-example-gwn` LRN candidate #4. Confirmed by inspecting all 3 example configs — they all have the duplication.
 
-**Disposition:** Defer to CS03 (sync engine) where the engine must choose. Decision recorded here so CS03 implementer doesn't have to re-derive it. **Recommended decision at CS03:** make `composed.overrides[file].local_blocks` authoritative; deprecate top-level `local_blocks`; emit a schema warning (not error) if both are present and disagree; remove top-level `local_blocks` from schema in v0.2.0. Revisit on 2026-06-03 (when CS03 work begins).
+**Disposition:** Defer to CS03 (sync engine) where the engine must choose. Decision recorded here so CS03 implementer doesn't have to re-derive it. **Recommended decision at CS03:** make `composed.overrides[file].local_blocks` authoritative; deprecate top-level `local_blocks`; emit a schema warning (not error) if both are present and disagree; remove top-level `local_blocks` from schema in v0.2.0. **Revisit trigger:** at CS03 claim/start, OR by 2026-06-03, whichever comes first.
 
 ### LRN-010
 
@@ -251,7 +251,7 @@ If any of these three drifts (e.g. CS08 author adds a new template marker withou
 
 **Evidence:** `cs02-example-si` LRN candidate #2.
 
-**Disposition:** Add to CS06 deliverables (in cs-plan): `check-composed-blocks.mjs` must enforce three-way consistency, not just within-file marker validity. Defer until CS06 implementation. Revisit on 2026-06-15 (when CS06 work likely begins).
+**Disposition:** Add to CS06 deliverables (in cs-plan): `check-composed-blocks.mjs` must enforce three-way consistency, not just within-file marker validity. Defer until CS06 implementation. **Revisit trigger:** at CS06 claim/start, OR by 2026-06-15, whichever comes first.
 
 ### LRN-012
 
@@ -312,7 +312,7 @@ claim_area: gwn-migration
 
 **Evidence:** `cs02-example-gwn` LRN candidate #3.
 
-**Disposition:** Add to CS04 deliverables for `check-migration` subcommand: maintain a list of harness-shipped script names; only flag those when found in consumer `scripts/`. Defer to CS04. Revisit on 2026-06-15.
+**Disposition:** Add to CS04 deliverables for `check-migration` subcommand: maintain a list of harness-shipped script names; only flag those when found in consumer `scripts/`. Defer to CS04. **Revisit trigger:** at CS04 claim/start, OR by 2026-06-15, whichever comes first.
 
 ### LRN-015
 

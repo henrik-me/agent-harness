@@ -16,12 +16,12 @@ Build the pure-Node copy-with-templating engine that respects all three file cla
 
 ## Deliverables
 
-See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
+See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
 
 - `lib/sync.mjs` — orchestrates classes; modes `apply` / `check` / `dry-run`
 - `lib/templating.mjs` — `{{project_name}}`-style substitution from `templating` config
 - `lib/lock.mjs` — read/write `.harness-lock.json` per `schemas/harness-lock.schema.json`
-- `lib/composed.mjs` — composed-class merge with **hardened parser** per [ADR 0001](../../done/done_cs02_define-schemas/) (4 recognition conditions; fail-closed on marker-looking text inside code blocks unless escaped; per-block lock-file recording)
+- `lib/composed.mjs` — composed-class merge with **hardened parser** per [ADR 0001](../../../docs/adr/0001-file-classes.md) (4 recognition conditions; fail-closed on marker-looking text inside code blocks unless escaped; per-block lock-file recording)
 - **Sync invariant** (per LRN-001 area + cs-plan re-review): for any composed target, sync REFUSES to overwrite if the target contains non-template/non-block content unless `legacy_composed_mapping.json` explicitly maps or discards each region. Exit non-zero, no partial write.
 - Unit tests via `node --test`. Zero runtime deps.
 - Fixtures covering each class + each composed-parser edge case (marker-inside-fenced-code, marker-inside-indented-code, marker-in-prose-comment, duplicate-marker-in-example, nested local blocks, block-dropped, block-ID-renamed, template-reordered-around-blocks, legacy-unmapped-content)
@@ -36,17 +36,17 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../../done/done_cs01
 
 ## Open questions for CS03 design (from CS02 deferred learnings)
 
-- **[LRN-009](../../../LEARNINGS.md)**: `composed.overrides[file].local_blocks` vs top-level `local_blocks[file]` redundancy. **Recommended decision** (from LRN-009 disposition): make `composed.overrides[file].local_blocks` authoritative; deprecate top-level `local_blocks`; emit warning if both present and disagree; remove top-level in v0.2.0.
-- **[LRN-010](../../../LEARNINGS.md)**: `composed_block_migrations` schema-ahead-of-engine — engine MUST reject at runtime when non-empty (matches schema description).
-- **[LRN-008](../../../LEARNINGS.md)**: AJV strictRequired interaction — if engine does runtime config validation via AJV, use `Ajv2020` with `strict: false` consistent with `validate-schemas.mjs`.
-- **[LRN-015](../../../LEARNINGS.md)**: `excluded[]` is literal paths, NOT globs. Engine must treat each as literal string match (paths ending `/` are directory prefixes).
-- **Escape syntax for composed markers** (per ADR 0001 § Error rules): pin which characters the parser recognises as escape (zero-width-space U+200B after `<`, OR HTML-entity `&lt;`). Document in `lib/composed.mjs` doc-comments + `check-composed-blocks.mjs` test fixtures.
+- **[LRN-009](../../../LEARNINGS.md#lrn-009)**: `composed.overrides[file].local_blocks` vs top-level `local_blocks[file]` redundancy. **Recommended decision** (from LRN-009 disposition): make `composed.overrides[file].local_blocks` authoritative; deprecate top-level `local_blocks`; emit warning if both present and disagree; remove top-level in v0.2.0.
+- **[LRN-010](../../../LEARNINGS.md#lrn-010)**: `composed_block_migrations` schema-ahead-of-engine — engine MUST reject at runtime when non-empty (matches schema description).
+- **[LRN-008](../../../LEARNINGS.md#lrn-008)**: AJV strictRequired interaction — if engine does runtime config validation via AJV, use `Ajv2020` with `strict: false` consistent with `validate-schemas.mjs`.
+- **[LRN-015](../../../LEARNINGS.md#lrn-015)**: `excluded[]` is literal paths, NOT globs. Engine must treat each as literal string match (paths ending `/` are directory prefixes).
+- **Escape syntax for composed markers** (per [ADR 0001 § Error rules](../../../docs/adr/0001-file-classes.md)): pin which characters the parser recognises as escape (zero-width-space U+200B after `<`, OR HTML-entity `&lt;`). Document in `lib/composed.mjs` doc-comments + `check-composed-blocks.mjs` test fixtures.
 
 ## Sub-agent fan-out (per cs-plan parallelisation table)
 
 5 parallel sub-tasks per cs-plan: `sync.mjs` / `templating.mjs` / `lock.mjs` / `composed.mjs` / fixtures. Each gets dispatched per the [OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch-proto-cs01) template.
 
-**Briefing additions per LRN-007:** every CS03 sub-agent briefing must include the relevant schema files in `schemas/` AND ADR 0001 in `docs/adr/` as required reading (not just the cs-plan deliverables list).
+**Briefing additions per [LRN-007](../../../LEARNINGS.md#lrn-007):** every CS03 sub-agent briefing must include the relevant schema files in `schemas/` AND ADR 0001 in `docs/adr/` as required reading (not just the cs-plan deliverables list).
 
 ## Tasks
 
