@@ -5,7 +5,7 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** CS01 close-out (so CS02 can be claimed via the documented planned → active rename flow per [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle))
+**Filed by:** CS01 close-out (so CS02 can be claimed via the documented planned → active rename flow per [TRACKING.md § Clickstop lifecycle](../../TRACKING.md#clickstop-lifecycle))
 **Depends on:** CS01
 
 ## Goal
@@ -14,11 +14,11 @@ Pin down all contracts the engine and linters will depend on, **before any code 
 
 ## Deliverables
 
-See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS02](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
+See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS02](../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
 
 - `schemas/harness.config.schema.json` (Draft-2020-12) with full key set including `project.agent_suffix`, `project.agent_env_var` (default `HARNESS_AGENT_<SUFFIX_UPPER>_MACHINE` per Decision #20c), `managed`, `composed`, `seeded`, `scaffolds`, `linters`, `templating`, `local_blocks`, `composed_block_migrations` (schema-only in v0.1.0), `public_artifact_redaction`
 - `schemas/harness-lock.schema.json` for `.harness-lock.json` with per-file class/hashes/blocks (incl. composed block provenance per Decision #13)
-- `schemas/learning.schema.json` matching the per-entry YAML frontmatter shape used in [LEARNINGS.md](../../../LEARNINGS.md) (CS01 entries LRN-001 through LRN-005 are CS02's regression fixtures per [LRN-004](../../../LEARNINGS.md#lrn-004))
+- `schemas/learning.schema.json` matching the per-entry YAML frontmatter shape used in [LEARNINGS.md](../../LEARNINGS.md) (CS01 entries LRN-001 through LRN-005 are CS02's regression fixtures per [LRN-004](../../LEARNINGS.md#lrn-004))
 - ADR documenting the **three file classes** (`managed`, `composed`, `seeded`)
 - ADR documenting the **README ownership split** (root README is project-owned and excluded from sync)
 - Worked `harness.config.json` examples for: guesswhatisnext, sub-invaders, the harness repo itself

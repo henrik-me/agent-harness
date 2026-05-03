@@ -26,7 +26,7 @@ The two artifacts authored before CS01 — [`harness-extraction-plan.md`](./harn
 - [x] Hand-authored proto docs at root: `INSTRUCTIONS.md`, `CONVENTIONS.md`, `OPERATIONS.md`, `REVIEWS.md`, `TRACKING.md`, `RETROSPECTIVES.md`, `CONTEXT.md`, `WORKBOARD.md`, `LEARNINGS.md`, `ARCHITECTURE.md`, `README.md` (project-owned, never synced)
 - [x] `.github/copilot-instructions.md`, `.github/pull_request_template.md`, `.github/CODEOWNERS`
 - [x] Two pre-CS01 planning artifacts moved into this CS folder
-- [x] **Branch protection on `main`** — *deferred to CS15b* per [LRN-001](../../../LEARNINGS.md). Not applicable in CS01.
+- [x] **Branch protection on `main`** — *deferred to CS15b* per [LRN-001](../../../../LEARNINGS.md). Not applicable in CS01.
 - [x] CS01 close-out PR opened, GPT-5.5 reviewed (multi-iteration loop until clean), self-merged per user authorisation
 - [x] WORKBOARD updated; this file moved to `project/clickstops/done/done_cs01_bootstrap-repo/`
 - [x] LEARNINGS captured (LRN-001 through LRN-005, all `applied`)
@@ -52,7 +52,7 @@ The two artifacts authored before CS01 — [`harness-extraction-plan.md`](./harn
 | Move planning artifacts to CS01 folder | done | yoga-ah | This folder contains both `harness-cs-plan.md` and `harness-extraction-plan.md` |
 | Author the CS01 file | done | yoga-ah | (you're reading the closed version) |
 | One-time bootstrap commit to `main` | done | yoga-ah | Commit `a977933`, pushed; documented exception in OPERATIONS.md — **the only direct-to-main push** |
-| Configure branch protection on `main` | **deferred to CS15b** | — | Discovered branch protection requires GitHub Pro on private repos — see [LRN-001](../../../LEARNINGS.md). User chose discipline-only model for CS01–CS14; mechanical enforcement begins at CS15b (public flip). |
+| Configure branch protection on `main` | **deferred to CS15b** | — | Discovered branch protection requires GitHub Pro on private repos — see [LRN-001](../../../../LEARNINGS.md). User chose discipline-only model for CS01–CS14; mechanical enforcement begins at CS15b (public flip). |
 | Verify discipline-only model documented | done | yoga-ah | OPERATIONS.md § Enforcement model; INSTRUCTIONS.md Quick Reference; LEARNINGS LRN-001 applied |
 | Branch `cs01/close-out` for CS01 close-out | done | yoga-ah | Per discipline-only PR loop |
 | Local review of bootstrap state with GPT-5.5 | done | yoga-ah | Per REVIEWS.md — covered the bootstrap commit |
@@ -69,8 +69,8 @@ The two artifacts authored before CS01 — [`harness-extraction-plan.md`](./harn
 
 ## Notes / Learnings
 
-This CS is partially executed via direct-commit-to-main (the bootstrap commit only) per the documented exception in OPERATIONS.md. **From the second commit onward, branch protection is in force *by discipline* (CS01–CS14) — see [LRN-001](../../../LEARNINGS.md) for why mechanical enforcement is deferred to CS15b.** Close-out PR `cs01/close-out` follows the normal small-PR loop with mandatory GPT-5.5 review pre-merge.
+This CS is partially executed via direct-commit-to-main (the bootstrap commit only) per the documented exception in OPERATIONS.md. **From the second commit onward, branch protection is in force *by discipline* (CS01–CS14) — see [LRN-001](../../../../LEARNINGS.md) for why mechanical enforcement is deferred to CS15b.** Close-out PR `cs01/close-out` follows the normal small-PR loop with mandatory GPT-5.5 review pre-merge.
 
-The two pre-CS01 planning artifacts are kept in this folder rather than promoted to root because they are historical/contextual, not active process docs. They move with this CS file to `done/` at close-out, using the directory form documented in [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle).
+The two pre-CS01 planning artifacts are kept in this folder rather than promoted to root because they are historical/contextual, not active process docs. They move with this CS file to `done/` at close-out, using the directory form documented in [TRACKING.md § Clickstop lifecycle](../../../../TRACKING.md#clickstop-lifecycle).
 
-Four learnings captured during CS01 (LRN-001 through LRN-004); all `applied`. One downstream planned CS filed (CS04a). The CS01 close-out commit lands these in the same PR.
+Five learnings captured during CS01 (LRN-001 through LRN-005); all `applied`. Two downstream planned CSs filed (CS04a from LRN-002; CS02 itself for the next claim). The CS01 close-out commit lands these in the same PR.

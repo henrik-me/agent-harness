@@ -100,7 +100,19 @@ Anything missing this structure is rejected; the orchestrator re-dispatches with
 
 ### Per-CS sub-agent ledger
 
-The active CS file's `## Tasks` table records each dispatched sub-agent: task ID, sub-agent role, status, the agent ID (e.g., `cs02-schema-config`), the report's STATUS line, learnings surfaced. This is the orchestrator's observability ledger and feeds directly into the close-out summary.
+The active CS file's `## Tasks` table records each dispatched sub-agent. The table follows the canonical schema in [TRACKING.md](TRACKING.md#cs-file-structure) (`Task | State | Owner | Notes`); sub-agent dispatch metadata is encoded into the `Notes` column with a fixed format:
+
+```
+agent-id=<sub-agent-id> | role=<short role> | report-status=<complete|partial|blocked> | learnings=<N>
+```
+
+Example row:
+
+```
+| Author harness.config.schema.json | done | sub-agent | agent-id=cs02-schema-config | role=schema-author | report-status=complete | learnings=1 |
+```
+
+This keeps the existing TRACKING.md table schema untouched (no migration of historical CS files needed) while giving the orchestrator a parseable observability ledger. Future linter `check-clickstop.mjs` (CS06) will validate the Notes-format on rows whose Owner is `sub-agent`.
 
 ## Bootstrap exception (CS01 only)
 

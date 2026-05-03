@@ -47,7 +47,7 @@ deferred_until: YYYY-MM-DD   # only if status=deferred
 - ...
 ````
 
-CS05's `check-learnings.mjs` will enforce the schema; `schemas/learning.schema.json` (also CS05) is the authoritative spec. The CS01 entries (LRN-001 through LRN-005) become CS05's regression fixtures.
+CS05's `check-learnings.mjs` will enforce the schema; **CS02's** `schemas/learning.schema.json` is the authoritative spec (per cs-plan CS02 deliverables). The CS01 entries (LRN-001 through LRN-005) become CS05's regression fixtures.
 
 ## Harvest procedure
 

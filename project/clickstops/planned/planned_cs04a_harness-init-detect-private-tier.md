@@ -5,7 +5,7 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** [LRN-002](../../../LEARNINGS.md#lrn-002-2026-05-02-process-cs01) at CS01 close-out
+**Filed by:** [LRN-002](../../LEARNINGS.md#lrn-002) at CS01 close-out
 **Depends on:** CS04 (CLI dispatcher)
 
 ## Goal
