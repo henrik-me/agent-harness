@@ -41,7 +41,7 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
-  lint              Run harness linters (check-learnings.mjs)
+  lint              Run all harness structural linters (10 linters)
   harvest           Run harvest procedure (STUB — full impl in later CS)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
@@ -109,18 +109,32 @@ Options:
   lint: `
 Usage: harness lint [options]
 
-Run harness linters against the repo.
-Invokes check-learnings.mjs to validate all LEARNINGS.md entries.
+Run all harness linters against the repo. Aggregates results from:
+  - check-learnings.mjs   (LEARNINGS.md)
+  - check-context.mjs     (CONTEXT.md)
+  - check-workboard.mjs   (WORKBOARD.md)
+  - check-architecture.mjs (ARCHITECTURE.md)
+  - check-clickstop.mjs   (project/clickstops/)
+  - check-instructions.mjs (INSTRUCTIONS.md)
+  - check-readme.mjs      (README.md)
+  - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
+  - check-workflow-pins.mjs (.github/workflows/)
+  - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
+
+Linters whose target does not exist are skipped (and noted in the summary).
 
 Options:
-  --file <path>   Path to LEARNINGS.md to lint (default: <cwd>/LEARNINGS.md)
-  --quiet         Suppress per-finding output; print only the summary
-  --cwd <path>    Repo path (default: cwd)
-  --help          Print this help
+  --quiet                   Suppress per-linter detail; print only the final aggregate summary
+  --cwd <path>              Repo path (default: cwd)
+  --only <name1,name2>      Run only named linters (e.g. --only learnings,context)
+  --skip <name1,name2>      Skip named linters
+  --public-artifact-dir <p> Override target dir for check-public-artifact
+  --help                    Print this help
 
 Exit codes:
-  0  all entries valid (warnings do not affect exit code)
-  1  at least one validation error
+  0  all linters passed (warnings do not affect exit code)
+  1  at least one linter reported errors
+  2  bad invocation
 `.trimStart(),
 
   harvest: `
@@ -516,7 +530,9 @@ async function cmdCheck(args, global) {
 
 async function cmdLint(args, _global) {
   let quiet = false;
-  let fileArg = null;
+  let only = null;
+  let skip = new Set();
+  let publicArtifactDir = null;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -525,28 +541,151 @@ async function cmdLint(args, _global) {
       process.exit(0);
     } else if (a === '--quiet') {
       quiet = true;
-    } else if (a === '--file' && args[i + 1]) {
-      fileArg = args[++i];
+    } else if (a === '--only' && args[i + 1]) {
+      only = new Set(args[++i].split(',').map((s) => s.trim()).filter(Boolean));
+    } else if (a.startsWith('--only=')) {
+      only = new Set(a.slice('--only='.length).split(',').map((s) => s.trim()).filter(Boolean));
+    } else if (a === '--skip' && args[i + 1]) {
+      skip = new Set(args[++i].split(',').map((s) => s.trim()).filter(Boolean));
+    } else if (a.startsWith('--skip=')) {
+      skip = new Set(a.slice('--skip='.length).split(',').map((s) => s.trim()).filter(Boolean));
+    } else if (a === '--public-artifact-dir' && args[i + 1]) {
+      publicArtifactDir = args[++i];
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
     }
   }
 
-  const linterScript = path.join(REPO_ROOT, 'scripts', 'check-learnings.mjs');
-  const linterArgs = [linterScript];
-  if (quiet) linterArgs.push('--quiet');
+  const cwd = _global.cwd ?? process.cwd();
 
-  // B1: resolve target LEARNINGS.md — prefer user-supplied --file, otherwise
-  // use LEARNINGS.md inside the consumer repo directory (global.cwd).
-  const targetFile = fileArg ?? path.join(_global.cwd, 'LEARNINGS.md');
-  linterArgs.push('--file', targetFile);
+  // Try to resolve composed-files list and public-artifact-dir from harness.config.json
+  let composedFiles = [];
+  let configPublicDir = null;
+  const cfgPath = path.join(cwd, 'harness.config.json');
+  if (existsSync(cfgPath)) {
+    try {
+      const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+      if (Array.isArray(cfg.composed_files)) {
+        composedFiles = cfg.composed_files
+          .map((c) => c?.path)
+          .filter(Boolean)
+          .map((p) => path.join(cwd, p));
+      }
+      if (cfg.public_artifact_redaction?.target_dir) {
+        configPublicDir = path.join(cwd, cfg.public_artifact_redaction.target_dir);
+      }
+    } catch {
+      // ignore — let the per-linter validation surface config issues
+    }
+  }
 
-  const result = spawnSync(process.execPath, linterArgs, {
-    cwd: _global.cwd ?? REPO_ROOT,
-    stdio: 'inherit',
-  });
+  const publicDir = publicArtifactDir ?? configPublicDir;
 
-  process.exit(result.status ?? 1);
+  // Linter table
+  const linters = [
+    {
+      name: 'learnings',
+      script: 'check-learnings.mjs',
+      args: ['--file', path.join(cwd, 'LEARNINGS.md')],
+      target: path.join(cwd, 'LEARNINGS.md'),
+    },
+    {
+      name: 'context',
+      script: 'check-context.mjs',
+      args: ['--file', path.join(cwd, 'CONTEXT.md'), '--cwd', cwd],
+      target: path.join(cwd, 'CONTEXT.md'),
+    },
+    {
+      name: 'workboard',
+      script: 'check-workboard.mjs',
+      args: ['--file', path.join(cwd, 'WORKBOARD.md')],
+      target: path.join(cwd, 'WORKBOARD.md'),
+    },
+    {
+      name: 'architecture',
+      script: 'check-architecture.mjs',
+      args: ['--file', path.join(cwd, 'ARCHITECTURE.md')],
+      target: path.join(cwd, 'ARCHITECTURE.md'),
+    },
+    {
+      name: 'clickstop',
+      script: 'check-clickstop.mjs',
+      args: ['--dir', path.join(cwd, 'project', 'clickstops')],
+      target: path.join(cwd, 'project', 'clickstops'),
+    },
+    {
+      name: 'instructions',
+      script: 'check-instructions.mjs',
+      args: ['--file', path.join(cwd, 'INSTRUCTIONS.md')],
+      target: path.join(cwd, 'INSTRUCTIONS.md'),
+    },
+    {
+      name: 'readme',
+      script: 'check-readme.mjs',
+      args: ['--file', path.join(cwd, 'README.md')],
+      target: path.join(cwd, 'README.md'),
+    },
+    // composed-blocks: one invocation per composed file (skipped if none)
+    ...composedFiles.map((cf) => ({
+      name: `composed-blocks:${path.basename(cf)}`,
+      script: 'check-composed-blocks.mjs',
+      args: ['--file', cf],
+      target: cf,
+    })),
+    {
+      name: 'workflow-pins',
+      script: 'check-workflow-pins.mjs',
+      args: ['--dir', path.join(cwd, '.github', 'workflows')],
+      target: path.join(cwd, '.github', 'workflows'),
+    },
+    {
+      name: 'public-artifact',
+      script: 'check-public-artifact.mjs',
+      args: publicDir ? ['--dir', publicDir] : null,
+      target: publicDir,
+    },
+  ];
+
+  const results = [];
+  let anyError = false;
+
+  for (const linter of linters) {
+    const baseName = linter.name.split(':')[0];
+    if (only && !only.has(baseName)) continue;
+    if (skip.has(baseName)) continue;
+
+    if (!linter.args || !linter.target || !existsSync(linter.target)) {
+      results.push({ name: linter.name, status: 'skipped', reason: 'target not found' });
+      continue;
+    }
+
+    if (!quiet) {
+      process.stdout.write(`\n[${linter.name}]\n`);
+    }
+    const linterScript = path.join(REPO_ROOT, 'scripts', linter.script);
+    const fullArgs = [linterScript, ...linter.args];
+    if (quiet) fullArgs.push('--quiet');
+    const result = spawnSync(process.execPath, fullArgs, {
+      cwd,
+      stdio: quiet ? 'pipe' : 'inherit',
+    });
+    const exitCode = result.status ?? 1;
+    results.push({ name: linter.name, status: exitCode === 0 ? 'pass' : 'fail', exitCode });
+    if (exitCode !== 0) anyError = true;
+  }
+
+  // Aggregate summary
+  process.stdout.write('\n=== harness lint summary ===\n');
+  for (const r of results) {
+    const icon = r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '–';
+    process.stdout.write(`  ${icon} ${r.name}: ${r.status}${r.reason ? ` (${r.reason})` : ''}\n`);
+  }
+  const passCount = results.filter((r) => r.status === 'pass').length;
+  const failCount = results.filter((r) => r.status === 'fail').length;
+  const skipCount = results.filter((r) => r.status === 'skipped').length;
+  process.stdout.write(`\nTotal: ${passCount} passed, ${failCount} failed, ${skipCount} skipped\n`);
+
+  process.exit(anyError ? 1 : 0);
 }
 
 // ---------------------------------------------------------------------------

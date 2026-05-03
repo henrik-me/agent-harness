@@ -1,0 +1,11 @@
+name: valid-sha-fixture
+
+on: [push]
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: henrik-me/agent-harness@aabbccddeeff00112233445566778899aabbccdd
+      - run: echo "done"

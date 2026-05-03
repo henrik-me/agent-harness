@@ -196,10 +196,14 @@ describe('harness whoami', () => {
 // ---------------------------------------------------------------------------
 
 describe('harness lint', () => {
-  it('exits 0 against the real LEARNINGS.md', () => {
-    const r = run(['lint']);
-    assert.equal(r.status, 0, `Expected exit 0 (linter passed); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
-    assert.ok(r.stdout.includes('check-learnings summary') || r.stdout.includes('✅'), `Expected lint summary in stdout; got:\n${r.stdout}`);
+  it('exits 0 against the real repo (all 10 linters)', () => {
+    const r = run(['lint', '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0 (all linters passed); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(r.stdout.includes('harness lint summary'), `Expected aggregate summary in stdout; got:\n${r.stdout}`);
+    // At least learnings + a few core linters must report pass against the real repo
+    assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings: pass; got:\n${r.stdout}`);
+    assert.ok(r.stdout.includes('context: pass'), `Expected context: pass; got:\n${r.stdout}`);
+    assert.ok(r.stdout.includes('workboard: pass'), `Expected workboard: pass; got:\n${r.stdout}`);
   });
 
   it('lint --help exits 0', () => {
@@ -209,7 +213,7 @@ describe('harness lint', () => {
   });
 
   // B1: harness lint --cwd <tmpdir> lints the tmpdir's LEARNINGS.md, not the harness one.
-  it('lint --cwd <tmpdir> lints consumer LEARNINGS.md, exits 0 with 1 entry checked', () => {
+  it('lint --cwd <tmpdir> lints consumer LEARNINGS.md and skips missing targets', () => {
     const dir = makeTmpDir('harness-lint-cwd-');
     try {
       writeText(path.join(dir, 'LEARNINGS.md'), [
@@ -236,15 +240,35 @@ describe('harness lint', () => {
       const r = run(['--cwd', dir, 'lint', '--quiet']);
       assert.equal(
         r.status, 0,
-        `Expected exit 0 linting consumer LEARNINGS.md; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+        `Expected exit 0 (only learnings runs, others skipped); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
       );
       assert.ok(
-        r.stdout.includes('1 entries checked') || r.stdout.includes('Entries checked: 1'),
-        `Expected "1 entries checked" in summary; got:\n${r.stdout}`
+        r.stdout.includes('learnings: pass'),
+        `Expected "learnings: pass" in summary; got:\n${r.stdout}`
+      );
+      // Other linters' targets don't exist in tmpdir → must be reported as skipped
+      assert.ok(
+        r.stdout.includes('context: skipped') && r.stdout.includes('readme: skipped'),
+        `Expected context+readme reported as skipped; got:\n${r.stdout}`
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('lint --only learnings runs only the learnings linter', () => {
+    const r = run(['lint', '--only', 'learnings', '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}`);
+    assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings: pass; got:\n${r.stdout}`);
+    assert.ok(!r.stdout.includes('context:'), `Expected context to be filtered out; got:\n${r.stdout}`);
+  });
+
+  it('lint --skip workflow-pins,readme excludes those linters', () => {
+    const r = run(['lint', '--skip', 'workflow-pins,readme', '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}`);
+    assert.ok(!r.stdout.includes('workflow-pins:'), `Expected workflow-pins skipped; got:\n${r.stdout}`);
+    assert.ok(!r.stdout.includes('readme:'), `Expected readme skipped; got:\n${r.stdout}`);
+    assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings to still run; got:\n${r.stdout}`);
   });
 });
 

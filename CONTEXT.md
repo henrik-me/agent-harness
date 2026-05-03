@@ -17,7 +17,7 @@
 
 - **CS05 complete** (closed 2026-05-03). Delivered: `lib/doc-schema.mjs` (shared doc-parsing library with 4 exported functions), `scripts/check-learnings.mjs` (first reference linter), `tests/check-learnings.test.mjs` (17 tests), `tests/doc-schema.test.mjs` (10 tests), 13 fixtures under `tests/fixtures/cs05/`, `bin/harness.mjs` lint subcommand wired. **253 tests pass total** (224+29 new). 3 GPT-5.5 review rounds (R1=5 blockers+4 non-blockers, R2=1 partial-fix blocker, R3=GO). 6 additional learnings filed (LRN-032 through LRN-037): CLI linter path threading, fail-closed parser design, fence-line regex robustness, specific id-pattern matching, stub-promotion test update, sub-agent over-delivery is good. 1 planned CS filed (CS06: 9 structural linters). Squash-merged PR #12 as `adc2777`.
 
-CS06 (9 structural linters) ready to claim per cs-plan.
+CS06 (9 structural linters) active (claimed); 9-way parallel sub-agent implementation in progress.
 
 ## Architecture pointer
 
@@ -25,7 +25,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS05 is complete; CS06 is ready to claim.
+- None. CS05 is complete; CS06 is active (claimed).
 
 ## CS plan
 
