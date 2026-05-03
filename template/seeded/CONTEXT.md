@@ -6,7 +6,7 @@
 
 _(Add a one-paragraph statement of the project's current state. Update on each
 CS close-out. Include: what has been delivered so far, which CSs are complete,
-what the current active CS is, and any notable metrics — e.g., test counts,
+what the current work item is, and any notable metrics — e.g., test counts,
 file counts.)_
 
 Example entries:
@@ -39,4 +39,4 @@ The full CS plan lives at:
 `project/clickstops/planned/<your-plan-file>.md`
 
 _(Replace the path above with the actual path to your CS plan once it exists.
-Update this section on each CS close-out to reflect the current active CS.)_
+Update this section on each close-out to reflect the current project phase.)_

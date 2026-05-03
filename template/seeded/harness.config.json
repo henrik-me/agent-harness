@@ -1,5 +1,5 @@
 {
-  "$schema": "../schemas/harness.config.schema.json",
+  "$schema": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
   "_comment": "Replace REPLACE_ME placeholders with your project's values before running harness sync",
   "version": "v0.1.0",
   "project": {
