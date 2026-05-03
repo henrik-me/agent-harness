@@ -1,0 +1,10 @@
+{
+  "ranges": [
+    {
+      "start_line": 10,
+      "end_line": 17,
+      "action": "migrate-to-block",
+      "target_block_id": "legacy-section"
+    }
+  ]
+}

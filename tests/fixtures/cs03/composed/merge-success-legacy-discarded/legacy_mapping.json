@@ -1,0 +1,9 @@
+{
+  "ranges": [
+    {
+      "start_line": 9,
+      "end_line": 17,
+      "action": "discard"
+    }
+  ]
+}

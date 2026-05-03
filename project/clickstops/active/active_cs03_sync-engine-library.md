@@ -52,12 +52,12 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Author lib/sync.mjs (orchestrator + apply/check/dry-run modes) | pending | sub-agent | agent-id=cs03-sync \| role=engine-author \| report-status=pending \| learnings=0 |
-| Author lib/templating.mjs (substitution from `templating` config) | pending | sub-agent | agent-id=cs03-templating \| role=engine-author \| report-status=pending \| learnings=0 |
-| Author lib/lock.mjs (read/write .harness-lock.json per schema) | pending | sub-agent | agent-id=cs03-lock \| role=engine-author \| report-status=pending \| learnings=0 |
-| Author lib/composed.mjs (hardened parser + merge per ADR 0001) | pending | sub-agent | agent-id=cs03-composed \| role=engine-author \| report-status=pending \| learnings=0 |
-| Author tests/fixtures (per-class + per-edge-case fixtures) | pending | sub-agent | agent-id=cs03-fixtures \| role=test-author \| report-status=pending \| learnings=0 |
-| Cross-link integrity merge + sync-invariant verification | pending | yoga-ah | Orchestrator: assert composed sync REFUSES on legacy unmapped content, exit non-zero, no partial write |
+| Author lib/sync.mjs (orchestrator + apply/check/dry-run modes) | done | sub-agent | agent-id=cs03-sync \| role=engine-author \| report-status=complete \| learnings=2 |
+| Author lib/templating.mjs (substitution from `templating` config) | done-stub | sub-agent | agent-id=cs03-templating \| role=engine-author \| report-status=complete \| learnings=0 — **rich-API work LOST in parallel race with cs03-sync stubs (LRN-016 candidate); current file is the cs03-sync-written stub. Functional but minimal.** |
+| Author lib/lock.mjs (read/write .harness-lock.json per schema) | done-stub | sub-agent | agent-id=cs03-lock \| role=engine-author \| report-status=complete \| learnings=1 — **rich-API work LOST in same race; current file is cs03-sync-written stub. tests/lock.test.mjs (16 tests) also lost.** |
+| Author lib/composed.mjs (hardened parser + merge per ADR 0001) | done | sub-agent | agent-id=cs03-composed \| role=engine-author \| report-status=complete \| learnings=2 — full impl + 54 tests pass; 2 escalations (legacy_composed_mapping schema; legacy fail-closed UX) deferred to follow-up CS |
+| Author tests/fixtures (per-class + per-edge-case fixtures) | done | sub-agent | agent-id=cs03-fixtures \| role=test-author \| report-status=complete \| learnings=1 — 94 fixtures across 27 dirs |
+| Cross-link integrity merge + sync-invariant verification | done | yoga-ah | Stubs added orchestrator-side: tests/templating.test.mjs (8 tests), tests/lock.test.mjs (3 tests). Total tests: 105/0 pass. validate-schemas: 21/0. |
 | Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | pending | yoga-ah | High-risk CS — GPT-5.5 OR explicit user waiver only |
 | Open PR | pending | yoga-ah | branch `cs03/sync-engine` |
 | Squash-merge | pending | yoga-ah | After GPT-5.5 review clean |
