@@ -1,9 +1,9 @@
 # CS07 — Generic policy linters
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs07/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS06 close-out (per [`harness-cs-plan.md` § CS07](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs07--generic-policy-linters)).
 **Depends on:** CS06
@@ -69,7 +69,12 @@ Briefings MUST include:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `scripts/check-pr-body.mjs` + tests + fixtures | pending | sub-agent cs07-prbody | agent-id=yoga-ah-sub-1 \| role=pr-body-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-commit-trailers.mjs` + tests + fixtures | pending | sub-agent cs07-trailers | agent-id=yoga-ah-sub-2 \| role=commit-trailers-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-compose-v2.mjs` + tests + fixtures | pending | sub-agent cs07-compose | agent-id=yoga-ah-sub-3 \| role=compose-v2-linter \| report-status=pending \| learnings=0 |
+| `scripts/render-deploy-summary.mjs` + tests + fixtures | pending | sub-agent cs07-render | agent-id=yoga-ah-sub-4 \| role=deploy-summary-renderer \| report-status=pending \| learnings=0 |
+| Wire all 4 into `harness lint` | pending | yoga-ah (orchestrator inline) | follows after sub-agents complete |
+| GPT-5.5 review rounds | pending | yoga-ah | review-status=pending |
 
 ## Notes / Learnings
 
