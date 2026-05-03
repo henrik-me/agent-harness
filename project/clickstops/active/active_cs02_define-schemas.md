@@ -32,21 +32,21 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS02](../done/done_cs01_bo
 
 ## Sub-agent fan-out (per cs-plan parallelisation table)
 
-9 parallel sub-tasks: 3 schemas + 2 ADRs + 3 examples + 1 CI wiring. Each gets dispatched per the `OPERATIONS.md § Sub-agent dispatch` template (CS01-introduced per LRN-005). Sub-agents report back with the structured shape from `OPERATIONS.md § Sub-agent report shape`. Per-task ledger encoded into the Tasks table's `Notes` column.
+9 parallel sub-tasks: 3 schemas + 2 ADRs + 3 examples + 1 CI wiring. Each gets dispatched per the [OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch-proto-cs01) template (CS01-introduced per LRN-005). Sub-agents report back with the structured shape from [OPERATIONS.md § Sub-agent report shape](../../../OPERATIONS.md#sub-agent-report-shape-mandatory). Per-task ledger encoded into the Tasks table's `Notes` column per the format documented in [OPERATIONS.md § Per-CS sub-agent ledger](../../../OPERATIONS.md#per-cs-sub-agent-ledger).
 
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Author harness.config.schema.json | pending | sub-agent | agent-id=cs02-schema-config \| role=schema-author \| report-status=- \| learnings=- |
-| Author harness-lock.schema.json | pending | sub-agent | agent-id=cs02-schema-lock \| role=schema-author \| report-status=- \| learnings=- |
-| Author learning.schema.json + validate against LRN-001..005 | pending | sub-agent | agent-id=cs02-schema-learning \| role=schema-author \| report-status=- \| learnings=- |
-| Author ADR 0001-file-classes.md | pending | sub-agent | agent-id=cs02-adr-file-classes \| role=adr-author \| report-status=- \| learnings=- |
-| Author ADR 0002-readme-ownership.md | pending | sub-agent | agent-id=cs02-adr-readme \| role=adr-author \| report-status=- \| learnings=- |
-| Author guesswhatisnext example config | pending | sub-agent | agent-id=cs02-example-gwn \| role=example-author \| report-status=- \| learnings=- |
-| Author sub-invaders example config | pending | sub-agent | agent-id=cs02-example-si \| role=example-author \| report-status=- \| learnings=- |
-| Author agent-harness-self example config | pending | sub-agent | agent-id=cs02-example-ah \| role=example-author \| report-status=- \| learnings=- |
-| Wire validate-schemas CI workflow | pending | sub-agent | agent-id=cs02-ci-validate \| role=ci-author \| report-status=- \| learnings=- |
+| Author harness.config.schema.json | pending | sub-agent | agent-id=cs02-schema-config \| role=schema-author \| report-status=pending \| learnings=0 |
+| Author harness-lock.schema.json | pending | sub-agent | agent-id=cs02-schema-lock \| role=schema-author \| report-status=pending \| learnings=0 |
+| Author learning.schema.json + validate against LRN-001..005 | pending | sub-agent | agent-id=cs02-schema-learning \| role=schema-author \| report-status=pending \| learnings=0 |
+| Author ADR 0001-file-classes.md | pending | sub-agent | agent-id=cs02-adr-file-classes \| role=adr-author \| report-status=pending \| learnings=0 |
+| Author ADR 0002-readme-ownership.md | pending | sub-agent | agent-id=cs02-adr-readme \| role=adr-author \| report-status=pending \| learnings=0 |
+| Author guesswhatisnext example config | pending | sub-agent | agent-id=cs02-example-gwn \| role=example-author \| report-status=pending \| learnings=0 |
+| Author sub-invaders example config | pending | sub-agent | agent-id=cs02-example-si \| role=example-author \| report-status=pending \| learnings=0 |
+| Author agent-harness-self example config | pending | sub-agent | agent-id=cs02-example-ah \| role=example-author \| report-status=pending \| learnings=0 |
+| Wire validate-schemas CI workflow | pending | sub-agent | agent-id=cs02-ci-validate \| role=ci-author \| report-status=pending \| learnings=0 |
 | Cross-link integrity merge | pending | yoga-ah | Orchestrator-only step; consolidate sub-agent outputs |
 | Local review with GPT-5.5 | pending | yoga-ah | Per REVIEWS.md — iterate until clean |
 | Open PR | pending | yoga-ah | branch `cs02/define-schemas` |

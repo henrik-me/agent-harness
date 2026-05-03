@@ -103,7 +103,7 @@ Anything missing this structure is rejected; the orchestrator re-dispatches with
 The active CS file's `## Tasks` table records each dispatched sub-agent. The table follows the canonical schema in [TRACKING.md](TRACKING.md#cs-file-structure) (`Task | State | Owner | Notes`); sub-agent dispatch metadata is encoded into the `Notes` column with a fixed format:
 
 ```
-agent-id=<sub-agent-id> | role=<short role> | report-status=<complete|partial|blocked> | learnings=<N>
+agent-id=<sub-agent-id> | role=<short role> | report-status=<pending|dispatched|complete|partial|blocked> | learnings=<N>
 ```
 
 Example row:
@@ -113,6 +113,15 @@ Example row:
 ```
 
 This keeps the existing TRACKING.md table schema untouched (no migration of historical CS files needed) while giving the orchestrator a parseable observability ledger. Future linter `check-clickstop.mjs` (CS06) will validate the Notes-format on rows whose Owner is `sub-agent`.
+
+**`report-status` values (lifecycle):**
+- `pending` — slot reserved at claim time, not yet dispatched (initial value when a CS is claimed)
+- `dispatched` — sub-agent invoked, awaiting completion notification
+- `complete` — sub-agent reported back successfully (matches the report-shape `STATUS: complete`)
+- `partial` — sub-agent reported partial completion; orchestrator decides next step
+- `blocked` — sub-agent reported it cannot proceed; orchestrator escalates or re-dispatches
+
+`learnings` is the integer count of learning candidates surfaced in the sub-agent's report (`-` is invalid; use `0` for "none surfaced").
 
 ## Bootstrap exception (CS01 only)
 
