@@ -255,7 +255,7 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 **Depends on:** CS13
 
 ### CS15a · Public-readiness preparation (per GPT-5.5 #8 split, re-scoped per re-review #1) **[GUARDRAIL]**
-**Goal:** Stand up everything that **can** be prepared while the repo is still private + free-tier (per [LRN-001](../../../../../LEARNINGS.md)) — public-facing files, CODEOWNERS, bot workflow code, secret/IP review, written Ruleset spec — without actually creating the GitHub Ruleset (impossible until CS15b flips public). Does NOT flip visibility.
+**Goal:** Stand up everything that **can** be prepared while the repo is still private + free-tier (per [LRN-001](../../../../LEARNINGS.md)) — public-facing files, CODEOWNERS, bot workflow code, secret/IP review, written Ruleset spec — without actually creating the GitHub Ruleset (impossible until CS15b flips public). Does NOT flip visibility.
 
 **Pre-conditions checklist:**
 
@@ -263,11 +263,11 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 1. CS11 self-host CI gate has been green for ≥ all of CS12–CS14
 2. `harness sync --check` runs in < 5s; `harness lint` runs in < 10s
 3. `LEARNINGS.md` contains ≥ 3 `applied` learnings from CS12–CS14 demonstrating the harvest loop works
-4. **All `open` learnings dispositioned** (status `applied` / `obsolete` / `deferred` with explicit `deferred-until`) — per [LRN-003](../../../../../LEARNINGS.md). Tightens prior wording. Zero `open` learnings of any age before CS15b proceeds.
+4. **All `open` learnings dispositioned** (status `applied` / `obsolete` / `deferred` with explicit `deferred-until`) — per [LRN-003](../../../../LEARNINGS.md). Tightens prior wording. Zero `open` learnings of any age before CS15b proceeds.
 5. Hot-fix stability counter (per GPT-5.5 #16): ≥ 1 CS landed cleanly with no harness changes during execution
 
 *Ruleset specification (written, not applied — application moves to CS15b per LRN-001):*
-6. `docs/ruleset/main-protection.json` ✅ — committed JSON spec for the Ruleset that will be POSTed at CS15b. Includes: PR-required, ≥1 approving review, dismiss stale, squash-merge only, linear history, conversation resolution required, signed-commits required, status-checks list (`harness-self-check`, `harness-lint`, `secret-scan` (gitleaks), `npm-pack-dry-run`, `commit-trailers`, `pr-body`, `check-workflow-pins`, `check-public-artifact`), no force pushes, no deletions, include administrators (no ad-hoc bypass). **Bot threat model (per re-review #3):** GitHub App with least privilege (PR-review/write only; no admin/workflow/secrets); bot is NOT a CODEOWNER for any non-WORKBOARD path; CODEOWNERS require human review for code/config/workflow paths so bot approval alone only works for verified WORKBOARD-only PRs; `workboard-auto-approve.yml` validates exact changed paths + actor allowlist + label + branch naming + absence of workflow/config changes before invoking bot credentials; App credentials stored only in protected/trusted context, never exposed to untrusted PR code.
+6. **Ruleset spec committed** as `docs/ruleset/main-protection.json` — the JSON spec for the Ruleset that will be POSTed to GitHub at CS15b. Includes: PR-required, ≥1 approving review, dismiss stale, squash-merge only, linear history, conversation resolution required, signed-commits required, status-checks list (`harness-self-check`, `harness-lint`, `secret-scan` (gitleaks), `npm-pack-dry-run`, `commit-trailers`, `pr-body`, `check-workflow-pins`, `check-public-artifact`), no force pushes, no deletions, include administrators (no ad-hoc bypass). **Bot threat model (per re-review #3):** GitHub App with least privilege (PR-review/write only; no admin/workflow/secrets); bot is NOT a CODEOWNER for any non-WORKBOARD path; CODEOWNERS require human review for code/config/workflow paths so bot approval alone only works for verified WORKBOARD-only PRs; `workboard-auto-approve.yml` validates exact changed paths + actor allowlist + label + branch naming + absence of workflow/config changes before invoking bot credentials; App credentials stored only in protected/trusted context, never exposed to untrusted PR code.
 7. CODEOWNERS coverage spec: every path in `template/managed/`, `template/composed/`, `schemas/`, `lib/sync.mjs`, `lib/composed.mjs`, `bin/harness.mjs`, `.github/workflows/` requires owner review (CODEOWNERS file already shipped at CS15a; mechanically enforced from CS15b once Ruleset live).
 8. `workboard-auto-approve.yml` workflow + GitHub App / bot identity built and **dry-run tested** without protected-branch requirements (using a throwaway PR on the cs01-style discipline-only model). Mechanical activation deferred to CS15b.
 
@@ -549,13 +549,13 @@ CS01, CS11, CS18b, CS19/PR-2 (PILOT-B against migration branch) are deliberately
 | Phase | CSs | Enforcement |
 |---|---|---|
 | **Spirit phase / discipline-only** | CS01–CS14 | Manual discipline + GPT-5.5 review on every PR. Branch protection deferred to CS15b per [LRN-001](../../../../LEARNINGS.md) (private-repo branch protection requires GitHub Pro). CI gates land progressively: linters from CS05+, self-host gate from CS11. |
-| **Public-readiness phase** | CS15a | Ruleset configured (still private — Ruleset doesn't take effect until CS15b public flip); workboard-auto-approve workflow + GitHub App built; secret-scan + IP review complete; all `open` learnings dispositioned per [LRN-003](../../../../LEARNINGS.md). |
+| **Public-readiness phase** | CS15a | Ruleset spec authored as `docs/ruleset/main-protection.json` (committed, not applied — Ruleset POST returns 403 on private free-tier per [LRN-001](../../../../LEARNINGS.md)); workboard-auto-approve workflow + GitHub App built and dry-run-tested (not yet the live claim mechanism); secret-scan + IP review complete; all `open` learnings dispositioned per [LRN-003](../../../../LEARNINGS.md). |
 | **Public-enforced phase** | CS15b+ | Repo public → Ruleset live; signed commits required; full PR policy mechanically enforced; `check-public-artifact` mandatory. |
 
 ### Per-CS loop (every CS, all phases)
 
 1. **Pre-claim:** run `harness harvest` (when CS04 lands) — handle any high-priority stale learnings; before that, manual `LEARNINGS.md` review.
-2. **Claim (per Decision #23 — tiny-PR + auto-approve-bot model from CS15a onward):** rename `planned_csNN_*.md` → `active_csNN_*.md`; update `WORKBOARD.md`; commit on a `workboard/cs<NN>-claim` branch; open PR labeled `workboard-only`. **From CS15a onward:** the `workboard-auto-approve.yml` workflow verifies path-restriction + label + actor; bot submits the approval; PR auto-merges once CI passes. **Phase A–CS14 transitional (post-bootstrap, per [LRN-001](../../../../LEARNINGS.md)):** the only direct-to-main push in the entire repo is the CS01 bootstrap commit. From commit 2 onward, **all changes go through PRs by discipline** (mechanical branch protection unavailable on private free-tier repos until CS15b). WORKBOARD claim/closeout PRs are normal small PRs with user review (not bot-auto-merged) until CS15a configures the bot, then are bot-merged but still discipline-enforced until CS15b makes the Ruleset live. Set `agent: yoga-ah` (derived per Decision #20), `status: 🟢 Active`.
+2. **Claim (per Decision #23 — tiny-PR + auto-approve-bot model from CS15b onward):** rename `planned_csNN_*.md` → `active_csNN_*.md`; update `WORKBOARD.md`; commit on a `workboard/cs<NN>-claim` branch; open PR labeled `workboard-only`. **From CS15b onward:** the live `workboard-auto-approve.yml` workflow verifies path-restriction + label + actor; bot submits the approval; PR auto-merges once CI passes. **CS01–CS14 transitional (post-bootstrap, per [LRN-001](../../../../LEARNINGS.md)):** the only direct-to-main push in the entire repo is the CS01 bootstrap commit. From commit 2 onward, **all changes go through PRs by discipline** (mechanical branch protection unavailable on private free-tier repos until CS15b). WORKBOARD claim/closeout PRs are normal small PRs with user review. **CS15a transitional:** the bot workflow + GitHub App are built and dry-run-tested, but the bot is not yet the live claim mechanism — small PRs with user review continue. The bot becomes live at CS15b when the Ruleset is applied. Set `agent: yoga-ah` (derived per Decision #20), `status: 🟢 Active`.
 3. **Branch:** `cs<NN>/<slug>`.
 4. **Plan-internal:** review CS deliverables; identify parallelisable sub-tasks per the table above; dispatch sub-agents (Haiku for mechanical, Sonnet for non-trivial).
 5. **Implement:** execute sub-tasks; merge sub-agent output; iterate.
@@ -566,7 +566,7 @@ CS01, CS11, CS18b, CS19/PR-2 (PILOT-B against migration branch) are deliberately
    - **Private phase (CS01–CS15a):** GPT-5.5 + your review. Copilot review optional.
    - **Public phase (CS15b+):** GPT-5.5 + Copilot review + your review on CODEOWNERS-protected paths.
 10. **Threads resolved**, then **squash-merge**.
-11. **Post-merge (per Decision #23):** rename `active_csNN_*.md` → `done_csNN_*.md`; move to `project/clickstops/done/`; update `WORKBOARD.md` (status removed); update `CONTEXT.md` if the CS changed codebase state. From CS15a onward, all WORKBOARD updates go through the tiny-PR claim mechanism.
+11. **Post-merge (per Decision #23):** rename `active_csNN_*.md` → `done_csNN_*.md`; move to `project/clickstops/done/`; update `WORKBOARD.md` (status removed); update `CONTEXT.md` if the CS changed codebase state. From CS15b onward, all WORKBOARD updates go through the tiny-PR claim mechanism with the bot.
 12. **Capture learnings:** file every learning surfaced during the CS into `LEARNINGS.md` per the schema (after CS05 lands; before that, hand-authored entries that the future linter will validate).
 13. **Harvest reminder:** if CS-close triggers the weekly cadence, run harvest now.
 
@@ -604,7 +604,7 @@ The two pre-CS01 planning artifacts (`harness-extraction-plan.md`, `harness-cs-p
 | Composed file class | Hardened parser (markers outside code fences, strict regex, exact start/end ID match); legacy unmarked content handled fail-closed via `composed-audit` + `legacy_composed_mapping.json`; lock file records per-block provenance |
 | Public-artifact safety | All post-CS15b artifacts sanitized; `check-public-artifact` linter blocks tokens, tenant IDs, internal URLs, full logs |
 | GPT-5.5 review fallback | Opus rubber-duck for non-high-risk CSs; user waiver otherwise; PR records model/timestamp/reason |
-| WORKBOARD claim mechanism | Tiny auto-merged PRs from CS15a onward; replaces direct-push exception |
+| WORKBOARD claim mechanism | Tiny auto-merged PRs from CS15b onward (bot built + dry-run at CS15a, activated when Ruleset is applied at CS15b); replaces direct-push exception |
 | Sub Invaders persistence | Azure Storage Tables v1; follow-ups filed in CS16 |
 | Sub Invaders deployment | Azure Static Web Apps v1; follow-up filed in CS16 |
 | Sub Invaders frontend stack | Pure TS + Canvas + ES modules + PWA, zero runtime deps |

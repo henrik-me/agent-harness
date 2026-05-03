@@ -25,7 +25,7 @@ Both forms are valid; the directory form is appropriate when the CS produces or 
 - Task IDs are uppercase in tables (`CS01`) but lowercase in branches/commits (`cs01`).
 - Slugs are kebab-case.
 - Branch name: `cs<NN>/<slug>` (e.g. `cs01/bootstrap-repo`).
-- WORKBOARD-only PR branches: `workboard/cs<NN>-claim`, `workboard/cs<NN>-close`, etc. Before CS15a these are user-reviewed small PRs; from CS15a onward they are bot-approved/auto-merged when eligible.
+- WORKBOARD-only PR branches: `workboard/cs<NN>-claim`, `workboard/cs<NN>-close`, etc. Until CS15b these are user-reviewed small PRs (CS15a builds + dry-runs the bot workflow but does not activate it); from CS15b onward they are bot-approved/auto-merged when eligible.
 
 ## Agent Identification
 

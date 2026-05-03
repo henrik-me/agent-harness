@@ -19,7 +19,7 @@ WORKBOARD claim/closeout PRs are **normal small PRs labeled `workboard-only` wit
 5. Commit: `Claim CS<NN>` with the `Co-authored-by: Copilot` trailer.
 6. Push branch; open PR labeled `workboard-only`; user reviews; squash-merge.
 
-### From CS15a onward (tiny auto-merged PRs, mechanically enforced from CS15b)
+### From CS15b onward (tiny auto-merged PRs, mechanically enforced via Ruleset)
 
 Same shape as above, but the `workboard-auto-approve.yml` workflow + GitHub App / bot identity verifies path-restriction + label + actor allowlist and auto-approves + auto-merges. Global "Require ≥1 approving review" stays in force; the bot's review satisfies it. (Mechanical enforcement of the Ruleset begins at CS15b when the repo flips public.)
 
@@ -122,4 +122,4 @@ The very first commit to `main` (the layout + proto docs landing this CS) is a d
 
 **CS01–CS14 (private repo, discipline-only):** GitHub branch protection and Rulesets both require GitHub Pro on private repos in the free tier (verified via `gh api` in CS01; recorded as [LRN-001](LEARNINGS.md)). During this phase, mechanical enforcement of "PR-required, no direct push" is **not available**. Operating model: **discipline + GPT-5.5 + user review**. PRs are still opened, reviewed, and squash-merged through the normal loop in [§ Claim](#claim) and [INSTRUCTIONS.md](INSTRUCTIONS.md). The discipline does the work the missing branch protection would have. Bot-driven WORKBOARD auto-merge is not configured (no Ruleset to satisfy).
 
-**CS15b+ (public repo, mechanical enforcement):** flipping the repo public makes Rulesets available for free. CS15a configures the Ruleset (PR-required, ≥1 approving review, dismiss stale, squash-only, linear history, conversation resolution required, signed commits required, status checks). CS15a also stands up the `workboard-auto-approve.yml` workflow + GitHub App for the tiny-PR auto-merge model (Decision #23). CS15b flips the repo to public and signed commits flip on; from this point branch protection is mechanically enforced on every push.
+**CS15b+ (public repo, mechanical enforcement):** flipping the repo public makes Rulesets available for free. **CS15a authors the Ruleset spec** as `docs/ruleset/main-protection.json` (committed, not applied) and **builds + dry-runs** the `workboard-auto-approve.yml` workflow + GitHub App without protected-branch requirements (bot is not yet the live claim mechanism). **CS15b applies the Ruleset** (PR-required, ≥1 approving review, dismiss stale, squash-only, linear history, conversation resolution required, signed commits required, status checks), **activates the bot** as the live tiny-PR auto-merge mechanism (Decision #23), and flips the repo to public. From CS15b onward branch protection is mechanically enforced on every push and the bot handles workboard-only PRs end-to-end.

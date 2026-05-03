@@ -120,7 +120,7 @@ claim_area: orchestrator-loop
 
 **Evidence:** User directive 2026-05-02. Plus the parallelisation table in the cs-plan shows CS02–CS10 with up to 9 parallel sub-tasks each — un-instrumented dispatch at that scale would be chaotic.
 
-**Disposition:** Added § Sub-agent dispatch + § Sub-agent report shape + § Progress observability + § Per-CS sub-agent ledger to OPERATIONS.md. The ledger uses the existing `Task | State | Owner | Notes` columns (per TRACKING.md) with sub-agent metadata encoded into `Notes` as `agent-id=X | role=Y | status=Z | learnings=N`. Used from CS02 onward. CS08's canonical `template/managed/OPERATIONS.md` must carry these forward.
+**Disposition:** Added § Sub-agent dispatch + § Sub-agent report shape + § Progress observability + § Per-CS sub-agent ledger to OPERATIONS.md. The ledger uses the existing `Task | State | Owner | Notes` columns (per TRACKING.md) with sub-agent metadata encoded into `Notes` as `agent-id=X | role=Y | report-status=Z | learnings=N`. Used from CS02 onward. CS08's canonical `template/managed/OPERATIONS.md` must carry these forward.
 
 ## Obsolete
 

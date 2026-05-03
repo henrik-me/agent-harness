@@ -12,7 +12,7 @@ Hand-maintained until CS11. Canonical version authored in CS08 as `template/comp
 
 ## Git
 
-- **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim` (and `workboard/cs<NN>-close`, etc.) for WORKBOARD-only PRs. Before CS15a these are user-reviewed small PRs; from CS15a onward they are bot-approved/auto-merged when eligible.
+- **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim` (and `workboard/cs<NN>-close`, etc.) for WORKBOARD-only PRs. Until CS15b these are user-reviewed small PRs (CS15a builds + dry-runs the bot workflow but does not activate it); from CS15b onward they are bot-approved/auto-merged when eligible.
 - **Commit message format:** `<short imperative subject>` followed by a body explaining *why*. Include `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` as the trailer on every commit.
 - **Squash-merge** only. Linear history.
 - **No force pushes** to `main`.
