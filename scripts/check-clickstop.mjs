@@ -2,6 +2,8 @@
 /**
  * scripts/check-clickstop.mjs — Clickstop document linter.
  *
+ * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
+ *
  * Checks all .md files (direct children) under:
  *   <dir>/active/
  *   <dir>/done/
@@ -53,7 +55,11 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--dir' && argv[i + 1]) {
+  if (a === '--dir') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-clickstop: missing value for --dir\n');
+      process.exit(2);
+    }
     clickstopsDir = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;
@@ -77,6 +83,13 @@ if (!clickstopsDir) {
   process.stderr.write(
     'check-clickstop: --dir <path> is required\n' +
     'Usage: check-clickstop.mjs --dir <path> [--quiet]\n'
+  );
+  process.exit(2);
+}
+
+if (!fs.existsSync(clickstopsDir)) {
+  process.stderr.write(
+    `check-clickstop: directory not found: ${clickstopsDir}\n`
   );
   process.exit(2);
 }

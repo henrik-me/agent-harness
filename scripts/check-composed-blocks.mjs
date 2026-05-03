@@ -41,11 +41,23 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--file' && argv[i + 1]) {
+  if (a === '--file') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-composed-blocks: missing value for --file\n');
+      process.exit(2);
+    }
     filePath = argv[++i];
-  } else if (a === '--allowed-ids' && argv[i + 1]) {
+  } else if (a === '--allowed-ids') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-composed-blocks: missing value for --allowed-ids\n');
+      process.exit(2);
+    }
     allowedIds = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
-  } else if (a === '--lock' && argv[i + 1]) {
+  } else if (a === '--lock') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-composed-blocks: missing value for --lock\n');
+      process.exit(2);
+    }
     lockPath = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;

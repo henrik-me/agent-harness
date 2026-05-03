@@ -78,8 +78,8 @@ describe('check-workflow-pins linter', () => {
     );
   });
 
-  // 2. Valid pin matching harness_pin in config → exit 0
-  it('2. pin matching harness_pin config exits 0', () => {
+  // 2. Valid pin matching version in config → exit 0
+  it('2. pin matching version config exits 0', () => {
     const r = runLinter([
       '--dir', fixtureDir('valid-pin'),
       '--config', path.join(FIXTURES, 'config-v0.1.0.json'),
@@ -119,8 +119,8 @@ describe('check-workflow-pins linter', () => {
     );
   });
 
-  // 4. Ref doesn't match harness_pin → exit 1
-  it('4. pin mismatch with harness_pin exits 1 with error', () => {
+  // 4. Ref doesn't match version → exit 1
+  it('4. pin mismatch with version exits 1 with error', () => {
     const r = runLinter([
       '--dir', fixtureDir('invalid-mismatch'),
       '--config', path.join(FIXTURES, 'config-v0.1.0.json'),
@@ -134,8 +134,8 @@ describe('check-workflow-pins linter', () => {
       `Expected ERROR in output; got:\n${r.stdout}`
     );
     assert.ok(
-      r.stdout.includes('v0.1.0') || r.stdout.includes('harness_pin'),
-      `Expected mention of harness_pin mismatch; got:\n${r.stdout}`
+      r.stdout.includes('v0.1.0') || r.stdout.includes('version'),
+      `Expected mention of version mismatch; got:\n${r.stdout}`
     );
     assert.ok(
       r.stdout.includes('1 errors'),

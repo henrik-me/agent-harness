@@ -2,6 +2,8 @@
 /**
  * scripts/check-instructions.mjs — Linter for INSTRUCTIONS.md.
  *
+ * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
+ *
  * Validates:
  *   1. Required top-level (H2) headings are present.
  *   2. In-doc anchor links ([text](#anchor)) resolve to an existing heading.
@@ -35,7 +37,11 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--file' && argv[i + 1]) {
+  if (a === '--file') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-instructions: missing value for --file\n');
+      process.exit(2);
+    }
     filePath = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;

@@ -270,6 +270,89 @@ describe('harness lint', () => {
     assert.ok(!r.stdout.includes('readme:'), `Expected readme skipped; got:\n${r.stdout}`);
     assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings to still run; got:\n${r.stdout}`);
   });
+
+  // B2: composed-blocks linter runs via aggregator with schema-valid config
+  it('composed-blocks linter runs and passes with schema-valid config + valid composed file', () => {
+    const dir = makeTmpDir('harness-lint-composed-');
+    try {
+      // Write a valid harness.config.json using schema-correct composed.files + local_blocks
+      writeJSON(path.join(dir, 'harness.config.json'), {
+        version: 'v0.1.0',
+        project: { name: 'test-composed', agent_suffix: 'tc' },
+        composed: { files: ['CONVENTIONS.md'] },
+        local_blocks: { 'CONVENTIONS.md': ['conventions.project'] },
+      });
+      // Write a composed file with the expected local block
+      writeText(path.join(dir, 'CONVENTIONS.md'), [
+        '# Conventions',
+        '',
+        '<!-- harness:local-start id=conventions.project -->',
+        'Project-specific conventions go here.',
+        '<!-- harness:local-end id=conventions.project -->',
+        '',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--only', 'composed-blocks', '--quiet']);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(
+        r.stdout.includes('composed-blocks:CONVENTIONS.md: pass'),
+        `Expected composed-blocks:CONVENTIONS.md: pass; got:\n${r.stdout}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // B3: workflow-pins passes via aggregator with --config threading (version field)
+  it('workflow-pins passes via aggregator when config has version matching workflow ref', () => {
+    const dir = makeTmpDir('harness-lint-wfpins-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), {
+        version: 'v0.1.0',
+        project: { name: 'test-pins', agent_suffix: 'tp' },
+      });
+      const workflowsDir = path.join(dir, '.github', 'workflows');
+      mkdirSync(workflowsDir, { recursive: true });
+      writeText(path.join(workflowsDir, 'ci.yml'), [
+        'name: CI',
+        'on: [push]',
+        'jobs:',
+        '  lint:',
+        '    runs-on: ubuntu-latest',
+        '    steps:',
+        '      - uses: henrik-me/agent-harness@v0.1.0',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--only', 'workflow-pins', '--quiet']);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(
+        r.stdout.includes('workflow-pins: pass'),
+        `Expected workflow-pins: pass; got:\n${r.stdout}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // B4: flag-as-value (--file --quiet) for check-learnings → exit 2
+  it('linter exits 2 when flag is passed as value (--file --quiet)', () => {
+    const result = spawnSync(NODE, [
+      path.join(REPO_ROOT, 'scripts', 'check-learnings.mjs'),
+      '--file', '--quiet',
+    ], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.equal(
+      result.status, 2,
+      `Expected exit 2 for flag-as-value; got ${result.status}\nstderr: ${result.stderr}`
+    );
+    assert.ok(
+      (result.stderr ?? '').includes('missing value') || (result.stderr ?? '').includes('--file'),
+      `Expected missing-value error in stderr; got:\n${result.stderr}`
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

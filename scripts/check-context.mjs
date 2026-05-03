@@ -32,9 +32,17 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--file' && argv[i + 1]) {
+  if (a === '--file') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-context: missing value for --file\n');
+      process.exit(2);
+    }
     filePath = argv[++i];
-  } else if (a === '--cwd' && argv[i + 1]) {
+  } else if (a === '--cwd') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-context: missing value for --cwd\n');
+      process.exit(2);
+    }
     cwd = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;

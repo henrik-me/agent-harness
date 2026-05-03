@@ -36,9 +36,17 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--dir' && argv[i + 1]) {
+  if (a === '--dir') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-public-artifact: missing value for --dir\n');
+      process.exit(2);
+    }
     targetDir = argv[++i];
-  } else if (a === '--config' && argv[i + 1]) {
+  } else if (a === '--config') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-public-artifact: missing value for --config\n');
+      process.exit(2);
+    }
     configPath = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;

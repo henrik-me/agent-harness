@@ -541,15 +541,18 @@ async function cmdLint(args, _global) {
       process.exit(0);
     } else if (a === '--quiet') {
       quiet = true;
-    } else if (a === '--only' && args[i + 1]) {
+    } else if (a === '--only') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) die('harness lint: missing value for --only', 2);
       only = new Set(args[++i].split(',').map((s) => s.trim()).filter(Boolean));
     } else if (a.startsWith('--only=')) {
       only = new Set(a.slice('--only='.length).split(',').map((s) => s.trim()).filter(Boolean));
-    } else if (a === '--skip' && args[i + 1]) {
+    } else if (a === '--skip') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) die('harness lint: missing value for --skip', 2);
       skip = new Set(args[++i].split(',').map((s) => s.trim()).filter(Boolean));
     } else if (a.startsWith('--skip=')) {
       skip = new Set(a.slice('--skip='.length).split(',').map((s) => s.trim()).filter(Boolean));
-    } else if (a === '--public-artifact-dir' && args[i + 1]) {
+    } else if (a === '--public-artifact-dir') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) die('harness lint: missing value for --public-artifact-dir', 2);
       publicArtifactDir = args[++i];
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
@@ -558,28 +561,30 @@ async function cmdLint(args, _global) {
 
   const cwd = _global.cwd ?? process.cwd();
 
-  // Try to resolve composed-files list and public-artifact-dir from harness.config.json
-  let composedFiles = [];
-  let configPublicDir = null;
+  // Resolve composed-files list and local_blocks allowlists from harness.config.json.
+  // Schema: composed.files is string[] (file paths relative to cwd).
+  // NOTE: public_artifact_redaction has no target_dir in the schema — it is a
+  // per-artifact-type map. Public-artifact linting is only enabled via --public-artifact-dir.
+  let composedFilePaths = [];
+  let localBlocks = {};
   const cfgPath = path.join(cwd, 'harness.config.json');
+  const effectiveConfigPath = _global.config ?? cfgPath;
   if (existsSync(cfgPath)) {
     try {
       const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
-      if (Array.isArray(cfg.composed_files)) {
-        composedFiles = cfg.composed_files
-          .map((c) => c?.path)
-          .filter(Boolean)
-          .map((p) => path.join(cwd, p));
+      if (Array.isArray(cfg.composed?.files)) {
+        composedFilePaths = cfg.composed.files;
       }
-      if (cfg.public_artifact_redaction?.target_dir) {
-        configPublicDir = path.join(cwd, cfg.public_artifact_redaction.target_dir);
+      if (cfg.local_blocks && typeof cfg.local_blocks === 'object') {
+        localBlocks = cfg.local_blocks;
       }
     } catch {
       // ignore — let the per-linter validation surface config issues
     }
   }
 
-  const publicDir = publicArtifactDir ?? configPublicDir;
+  const publicDir = publicArtifactDir;
+  const lockPath = path.join(cwd, '.harness-lock.json');
 
   // Linter table
   const linters = [
@@ -626,22 +631,34 @@ async function cmdLint(args, _global) {
       target: path.join(cwd, 'README.md'),
     },
     // composed-blocks: one invocation per composed file (skipped if none)
-    ...composedFiles.map((cf) => ({
-      name: `composed-blocks:${path.basename(cf)}`,
-      script: 'check-composed-blocks.mjs',
-      args: ['--file', cf],
-      target: cf,
-    })),
+    ...composedFilePaths.map((filePath) => {
+      const cf = path.join(cwd, filePath);
+      const allowedIds = Array.isArray(localBlocks[filePath]) ? localBlocks[filePath] : [];
+      const composedArgs = ['--file', cf];
+      if (allowedIds.length) composedArgs.push('--allowed-ids', allowedIds.join(','));
+      if (existsSync(lockPath)) composedArgs.push('--lock', lockPath);
+      return {
+        name: `composed-blocks:${path.basename(cf)}`,
+        script: 'check-composed-blocks.mjs',
+        args: composedArgs,
+        target: cf,
+      };
+    }),
     {
       name: 'workflow-pins',
       script: 'check-workflow-pins.mjs',
-      args: ['--dir', path.join(cwd, '.github', 'workflows')],
+      args: [
+        '--dir', path.join(cwd, '.github', 'workflows'),
+        ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+      ],
       target: path.join(cwd, '.github', 'workflows'),
     },
     {
       name: 'public-artifact',
       script: 'check-public-artifact.mjs',
-      args: publicDir ? ['--dir', publicDir] : null,
+      args: publicDir
+        ? ['--dir', publicDir, ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : [])]
+        : null,
       target: publicDir,
     },
   ];

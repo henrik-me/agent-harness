@@ -2,24 +2,25 @@
 /**
  * scripts/check-readme.mjs — Linter for README.md (v0 baseline).
  *
+ * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
+ *
  * Validates README.md structural requirements against the eventual READMEGUIDE
  * (CS08 will canonicalize; this script enforces a v0 baseline).
  *
- * DECISIONS (relaxations from spec after baseline-regression against real README):
- *   - "## Architecture" OR link to ARCHITECTURE.md: RELAXED to WARNING.
- *     The real README.md has neither; downgrading to warning keeps exit 0.
- *   - "## Status" OR link to CONTEXT.md: RELAXED to WARNING.
- *     The real README.md has neither; downgrading to warning keeps exit 0.
- *   These two were specified as ERROR but the real file lacks both elements.
- *   Keeping them as warnings still encourages the pattern without blocking CI.
+ * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
+ *
+ * DECISIONS:
+ *   - "## Architecture" OR link to ARCHITECTURE.md: ERROR per CS06 spec.
+ *   - "## Status" OR link to CONTEXT.md: ERROR per CS06 spec.
+ *   - Status badges: WARNING (aesthetic, not structural).
  *
  * Checks:
  *   1. First non-empty line is an H1 (`# <something>`).              → ERROR
  *   2. At least one paragraph between the H1 and the next H2.        → ERROR
  *   3a. "## Quickstart" OR "## Getting started" (case-insensitive).  → ERROR
  *   3b. "## License" or a "MIT" mention anywhere in the file.        → ERROR
- *   3c. "## Architecture" OR a link to ARCHITECTURE.md.              → WARNING
- *   3d. "## Status" OR a link to CONTEXT.md.                         → WARNING
+ *   3c. "## Architecture" OR a link to ARCHITECTURE.md.              → ERROR
+ *   3d. "## Status" OR a link to CONTEXT.md.                         → ERROR
  *   4. At least one `![…](…)` badge image in the first 30 lines.     → WARNING
  *
  * Usage:
@@ -50,7 +51,11 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--file' && argv[i + 1]) {
+  if (a === '--file') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-readme: missing value for --file\n');
+      process.exit(2);
+    }
     filePath = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;
@@ -182,22 +187,22 @@ if (!hasH2Matching(/license/) && !fullTextLower.includes('mit')) {
 }
 
 // ---------------------------------------------------------------------------
-// Check 3c — Architecture / ARCHITECTURE.md link (WARNING — relaxed)
+// Check 3c — Architecture / ARCHITECTURE.md link (ERROR)
 // ---------------------------------------------------------------------------
 
 if (!hasH2Matching(/architecture/) && !text.includes('ARCHITECTURE.md')) {
-  logWarning(
-    'Missing "## Architecture" section or a link to ARCHITECTURE.md (recommended)'
+  logError(
+    'Missing required "## Architecture" section or a link to ARCHITECTURE.md'
   );
 }
 
 // ---------------------------------------------------------------------------
-// Check 3d — Status / CONTEXT.md link (WARNING — relaxed)
+// Check 3d — Status / CONTEXT.md link (ERROR)
 // ---------------------------------------------------------------------------
 
 if (!hasH2Matching(/status/) && !text.includes('CONTEXT.md')) {
-  logWarning(
-    'Missing "## Status" section or a link to CONTEXT.md (recommended)'
+  logError(
+    'Missing required "## Status" section or a link to CONTEXT.md'
   );
 }
 

@@ -182,4 +182,52 @@ describe('check-readme linter', () => {
       `Expected usage text; got:\n${r.stdout}`
     );
   });
+
+  // 9. Missing Architecture section → exit 1
+  it('9. missing Architecture section exits 1 with error', () => {
+    const r = runLinter(['--file', fixture('missing-architecture.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('ERROR'),
+      `Expected "ERROR" in output; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.toLowerCase().includes('architecture'),
+      `Expected mention of Architecture in error; got:\n${r.stdout}`
+    );
+  });
+
+  // 10. Missing Status section → exit 1
+  it('10. missing Status section exits 1 with error', () => {
+    const r = runLinter(['--file', fixture('missing-status.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('ERROR'),
+      `Expected "ERROR" in output; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.toLowerCase().includes('status') || r.stdout.includes('CONTEXT.md'),
+      `Expected mention of Status/CONTEXT.md in error; got:\n${r.stdout}`
+    );
+  });
+
+  // 11. --file --quiet (flag-as-value) → exit 2
+  it('11. --file with flag-as-value exits 2', () => {
+    const r = runLinter(['--file', '--quiet']);
+    assert.equal(
+      r.status, 2,
+      `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stderr.includes('missing value') || r.stderr.includes('--file'),
+      `Expected missing-value error in stderr; got:\n${r.stderr}`
+    );
+  });
 });
+

@@ -1,3 +1,7 @@
 {
-  "harness_pin": "v0.1.0"
+  "version": "v0.1.0",
+  "project": {
+    "name": "test",
+    "agent_suffix": "test"
+  }
 }

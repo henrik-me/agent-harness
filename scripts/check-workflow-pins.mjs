@@ -8,10 +8,10 @@
  *
  * Each <ref> must either:
  *   - Be a 40-char hex SHA pin (always valid), OR
- *   - Exactly match the `harness_pin` field in harness.config.json (if configured)
+ *   - Exactly match the `version` field in harness.config.json (if configured)
  *
  * Branch refs (e.g. @main, @master, @v1) are always ERRORs unless they are
- * a SHA or explicitly match the configured harness_pin.
+ * a SHA or explicitly match the configured version.
  *
  * Uses js-yaml to parse workflow YAML; falls back to regex extraction if
  * parsing fails (workflow YAML can have unusual formatting).
@@ -46,9 +46,17 @@ let quiet = false;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--dir' && argv[i + 1]) {
+  if (a === '--dir') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-workflow-pins: missing value for --dir\n');
+      process.exit(2);
+    }
     workflowsDir = argv[++i];
-  } else if (a === '--config' && argv[i + 1]) {
+  } else if (a === '--config') {
+    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+      process.stderr.write('check-workflow-pins: missing value for --config\n');
+      process.exit(2);
+    }
     configPath = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;
@@ -56,7 +64,7 @@ for (let i = 0; i < argv.length; i++) {
     process.stdout.write(
       'Usage: check-workflow-pins.mjs --dir <path> [--config <path>] [--quiet]\n\n' +
       'Check that all henrik-me/agent-harness action pins in GitHub Actions\n' +
-      'workflows are either a 40-char hex SHA or match the harness_pin from\n' +
+      'workflows are either a 40-char hex SHA or match the version from\n' +
       'harness.config.json. Branch refs like @main are always ERRORs.\n\n' +
       'Options:\n' +
       '  --dir <path>     Path to the workflows directory to scan (REQUIRED)\n' +
@@ -85,8 +93,8 @@ let harnessPin = null;
 try {
   const configText = fs.readFileSync(configPath, 'utf8');
   const config = JSON.parse(configText);
-  if (typeof config.harness_pin === 'string' && config.harness_pin.trim()) {
-    harnessPin = config.harness_pin.trim();
+  if (typeof config.version === 'string' && config.version.trim()) {
+    harnessPin = config.version.trim();
   }
 } catch {
   // Config missing or unreadable — pin matching is skipped; SHA-only rule applies.
@@ -212,9 +220,9 @@ function validateRef(ref, relPath) {
       // Matches configured harness_pin — valid.
       return;
     }
-    // Has a configured pin but this ref doesn't match.
+    // Has a configured version but this ref doesn't match.
     logError(
-      `${relPath}: pin "@${ref}" does not match harness_pin "${harnessPin}" ` +
+      `${relPath}: pin "@${ref}" does not match version "${harnessPin}" ` +
       `and is not a 40-char hex SHA — update to the expected pin or use a SHA`
     );
   } else {
@@ -222,7 +230,7 @@ function validateRef(ref, relPath) {
     logError(
       `${relPath}: pin "@${ref}" is not a 40-char hex SHA — ` +
       `branch and tag refs are a drift risk; use a SHA pin ` +
-      `or configure harness_pin in harness.config.json`
+      `or configure version in harness.config.json`
     );
   }
 }
