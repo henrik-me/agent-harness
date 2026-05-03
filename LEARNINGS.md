@@ -594,7 +594,7 @@ claim_area: cli-ux
 
 **Evidence:** GPT-5.5 R1 blocker #3: "stub subcommands exit 0 — CI can't distinguish implemented from stubbed." Fixed in `cs04-fixes-r1` (exit 3 for stubs).
 
-**Disposition:** Exit code convention documented in `OPERATIONS.md` (pending CS08 canonicalization): 0=success, 1=runtime error, 2=bad invocation (unknown flag / missing required), 3=planned but not yet implemented. Applied in `bin/harness.mjs`. Future CSs adding stubs must use exit 3 from day one.
+**Disposition:** Exit code convention documented in CS04 close-out notes (`done_cs04_cli-dispatcher.md`) and applied in `bin/harness.mjs`: 0=success, 1=runtime error, 2=bad invocation (unknown flag / missing required), 3=planned but not yet implemented. Must be added to canonical `OPERATIONS.md` in CS08. Future CSs adding stubs must use exit 3 from day one.
 
 ### LRN-029
 
