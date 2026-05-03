@@ -207,6 +207,45 @@ describe('harness lint', () => {
     assert.equal(r.status, 0);
     assert.ok(r.stdout.includes('Usage: harness lint'));
   });
+
+  // B1: harness lint --cwd <tmpdir> lints the tmpdir's LEARNINGS.md, not the harness one.
+  it('lint --cwd <tmpdir> lints consumer LEARNINGS.md, exits 0 with 1 entry checked', () => {
+    const dir = makeTmpDir('harness-lint-cwd-');
+    try {
+      writeText(path.join(dir, 'LEARNINGS.md'), [
+        '# Test Learnings',
+        '',
+        '## Applied',
+        '',
+        '### LRN-001',
+        '',
+        '```yaml',
+        'id: LRN-001',
+        'date: 2022-01-01',
+        'category: tooling',
+        'source_cs: CS01',
+        'status: applied',
+        'tags: [test]',
+        '```',
+        '',
+        '**Problem:** Consumer entry.',
+        '',
+        '**Disposition:** Applied — ok.',
+        '',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--quiet']);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0 linting consumer LEARNINGS.md; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(
+        r.stdout.includes('1 entries checked') || r.stdout.includes('Entries checked: 1'),
+        `Expected "1 entries checked" in summary; got:\n${r.stdout}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

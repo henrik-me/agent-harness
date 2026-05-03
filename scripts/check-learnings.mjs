@@ -81,6 +81,9 @@ try {
 
 const blocks = parseFrontmatterBlocks(markdownText);
 
+// Blocks that parsed cleanly (used for most checks).
+const validBlocks = blocks.filter((b) => !b.parseError);
+
 // ---------------------------------------------------------------------------
 // Finding collectors
 // ---------------------------------------------------------------------------
@@ -109,10 +112,26 @@ function logWarning(msg) {
 }
 
 // ---------------------------------------------------------------------------
-// Check 1 — AJV schema validation for each frontmatter block
+// Check 0 — YAML parse errors (B2)
+//   Blocks that had an LRN-style id line but whose YAML was malformed are
+//   treated as hard errors rather than silently skipped.
 // ---------------------------------------------------------------------------
 
 for (const block of blocks) {
+  if (block.parseError) {
+    const idMatch = block.raw.match(/^\s*id\s*:\s*(\S+)/m);
+    const id = idMatch ? idMatch[1] : `<unknown at line ${block.lineNumber}>`;
+    logError(
+      `${id} (line ${block.lineNumber}): YAML parse error: ${block.parseError.message}`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check 1 — AJV schema validation for each frontmatter block
+// ---------------------------------------------------------------------------
+
+for (const block of validBlocks) {
   const { parsed, lineNumber } = block;
   const valid = validateLearning(parsed);
   if (!valid) {
@@ -129,7 +148,7 @@ for (const block of blocks) {
 //   **Disposition:** paragraph in their body text.
 // ---------------------------------------------------------------------------
 
-for (const block of blocks) {
+for (const block of validBlocks) {
   const { parsed, bodyAfter, lineNumber } = block;
   if (parsed.status === 'applied' || parsed.status === 'obsolete') {
     if (!bodyAfter.includes('**Disposition:**')) {
@@ -149,7 +168,7 @@ for (const block of blocks) {
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-for (const block of blocks) {
+for (const block of validBlocks) {
   const { parsed } = block;
   if (parsed.status === 'open' && parsed.date) {
     const entryDate = new Date(parsed.date + 'T00:00:00Z');
@@ -168,7 +187,7 @@ for (const block of blocks) {
 //   Entries with status "deferred" whose deferred_until date has passed.
 // ---------------------------------------------------------------------------
 
-for (const block of blocks) {
+for (const block of validBlocks) {
   const { parsed } = block;
   if (parsed.status === 'deferred' && parsed.deferred_until) {
     const until = new Date(parsed.deferred_until + 'T00:00:00Z');
@@ -181,13 +200,25 @@ for (const block of blocks) {
 }
 
 // ---------------------------------------------------------------------------
-// Check 5 — ID sequence gap warning
-//   IDs of the form LRN-NNN must be contiguous (no skips).
+// Check 5 — ID sequence and duplicate detection
+//   Duplicate IDs = ERROR.  Non-contiguous LRN-NNN sequence = WARNING.
 // ---------------------------------------------------------------------------
 
-const lrnNums = blocks
+const allLrnIds = validBlocks
   .map((b) => b.parsed.id)
-  .filter((id) => typeof id === 'string' && /^LRN-\d+$/.test(id))
+  .filter((id) => typeof id === 'string' && /^LRN-\d+$/.test(id));
+
+// NB-9: duplicate-ID check.
+const seenIds = new Set();
+for (const id of allLrnIds) {
+  if (seenIds.has(id)) {
+    logError(`Duplicate ID: ${id} appears more than once`);
+  }
+  seenIds.add(id);
+}
+
+// Gap check: derive unique numeric set from deduped IDs.
+const lrnNums = [...seenIds]
   .map((id) => parseInt(id.slice(4), 10))
   .sort((a, b) => a - b);
 
@@ -227,9 +258,9 @@ const statusToHeading = {
 
 // Warn if entries exist in a category but the heading is missing.
 for (const [status, heading] of Object.entries(statusToHeading)) {
-  const hasEntries = blocks.some((b) => b.parsed.status === status);
+  const hasEntries = validBlocks.some((b) => b.parsed.status === status);
   if (hasEntries && !existingH2Headings.has(heading)) {
-    logWarning(
+    logError(
       `Heading "## ${heading}" is missing but entries with status "${status}" exist`
     );
   }

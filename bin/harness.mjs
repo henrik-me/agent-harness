@@ -113,6 +113,7 @@ Run harness linters against the repo.
 Invokes check-learnings.mjs to validate all LEARNINGS.md entries.
 
 Options:
+  --file <path>   Path to LEARNINGS.md to lint (default: <cwd>/LEARNINGS.md)
   --quiet         Suppress per-finding output; print only the summary
   --cwd <path>    Repo path (default: cwd)
   --help          Print this help
@@ -515,13 +516,17 @@ async function cmdCheck(args, global) {
 
 async function cmdLint(args, _global) {
   let quiet = false;
+  let fileArg = null;
 
-  for (const a of args) {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
     if (a === '--help' || a === '-h') {
       process.stdout.write(SUBCOMMAND_HELP['lint']);
       process.exit(0);
     } else if (a === '--quiet') {
       quiet = true;
+    } else if (a === '--file' && args[i + 1]) {
+      fileArg = args[++i];
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
     }
@@ -530,6 +535,11 @@ async function cmdLint(args, _global) {
   const linterScript = path.join(REPO_ROOT, 'scripts', 'check-learnings.mjs');
   const linterArgs = [linterScript];
   if (quiet) linterArgs.push('--quiet');
+
+  // B1: resolve target LEARNINGS.md — prefer user-supplied --file, otherwise
+  // use LEARNINGS.md inside the consumer repo directory (global.cwd).
+  const targetFile = fileArg ?? path.join(_global.cwd, 'LEARNINGS.md');
+  linterArgs.push('--file', targetFile);
 
   const result = spawnSync(process.execPath, linterArgs, {
     cwd: _global.cwd ?? REPO_ROOT,

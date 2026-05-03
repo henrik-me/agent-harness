@@ -85,6 +85,15 @@ describe('check-learnings linter', () => {
       r.stdout.includes('ERROR'),
       `Expected "ERROR" in output; got:\n${r.stdout}`
     );
+    // NB-7: assert specific AJV-style message about the missing field
+    assert.ok(
+      r.stdout.includes('date'),
+      `Expected mention of "date" in error; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes("required") || r.stdout.includes("must have required property"),
+      `Expected "required" or "must have required property" in error; got:\n${r.stdout}`
+    );
   });
 
   // 3. Unknown category value → exit 1
@@ -241,6 +250,83 @@ describe('check-learnings linter', () => {
     assert.ok(
       r.stdout.includes('Entries checked: 1'),
       `Expected "Entries checked: 1" for single-entry fixture; got:\n${r.stdout}`
+    );
+  });
+
+  // 13. B2 — malformed YAML with id: LRN- exits 1 with parse error message
+  it('13. malformed YAML block with LRN id exits 1 with YAML parse error', () => {
+    const r = runLinter(['--file', fixture('malformed-yaml.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('YAML parse error'),
+      `Expected "YAML parse error" in output; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('LRN-002'),
+      `Expected LRN-002 mentioned in parse error; got:\n${r.stdout}`
+    );
+  });
+
+  // 14. B3 — fence lines with trailing whitespace are accepted
+  it('14. fence lines with trailing whitespace exit 0', () => {
+    const r = runLinter(['--file', fixture('fence-trailing-ws.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 for trailing-whitespace fences; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('Entries checked: 1'),
+      `Expected 1 entry; got:\n${r.stdout}`
+    );
+  });
+
+  // 15. B4 — entry body containing a non-entry yaml fence does not confuse disposition check
+  it('15. entry body with embedded yaml fence does not cause false disposition error', () => {
+    const r = runLinter(['--file', fixture('entry-with-yaml-example.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      !r.stdout.includes('Disposition'),
+      `Expected no Disposition error; got:\n${r.stdout}`
+    );
+  });
+
+  // 16. B5 — entry exists for status but heading is absent → exit 1
+  it('16. missing ## heading when entries exist exits 1 with error', () => {
+    const r = runLinter(['--file', fixture('missing-heading-with-entries.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('ERROR'),
+      `Expected "ERROR" in output; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('Applied'),
+      `Expected mention of "Applied" heading; got:\n${r.stdout}`
+    );
+  });
+
+  // 17. NB-9 — duplicate ID exits 1 with error
+  it('17. duplicate LRN ID exits 1 with duplicate error', () => {
+    const r = runLinter(['--file', fixture('duplicate-id.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('Duplicate'),
+      `Expected "Duplicate" in output; got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('LRN-001'),
+      `Expected LRN-001 mentioned; got:\n${r.stdout}`
     );
   });
 });
