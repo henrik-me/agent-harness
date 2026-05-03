@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| _(none — CS01 closed; CS02 ready to claim)_ | | | | | | |
+| CS02 | Define schemas (config + lock + learning) + parameterization model + file classes | claimed | yoga-ah | `cs02/define-schemas` | 2026-05-03T05:30Z | _(none)_ |
 
 ## Recently Completed
 
