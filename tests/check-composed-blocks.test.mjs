@@ -233,4 +233,20 @@ describe('check-composed-blocks linter', () => {
       `Expected no per-finding ERROR lines in quiet mode; got:\n${r.stdout}`
     );
   });
+
+  // 11. R2 — Schema-correct lock format (lock.files[].blocks for class=composed)
+  it('11. schema-correct lock (lock.files[].blocks) detects orphan block ID', () => {
+    const r = runLinter([
+      '--file', fixture('valid.md'),
+      '--lock', fixture('lock-with-orphan-schema.json'),
+    ]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 against schema-shaped lock with orphan; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('orphan-id'),
+      `Expected orphan-id mention in error; got:\n${r.stdout}`
+    );
+  });
 });

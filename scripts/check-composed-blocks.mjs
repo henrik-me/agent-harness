@@ -313,14 +313,32 @@ if (lockPath) {
     process.exit(1);
   }
 
+  // Schema-correct lock format (per schemas/harness-lock.schema.json):
+  //   lock.files[] = { target, class, blocks?: [{id, hash, ...}] }
+  // We collect block IDs from the entry whose `target` matches the linted file.
+  // Match is by basename (relative paths in lock.files[].target may not match the
+  // user-supplied --file absolute path). Falls back to the legacy `composed_blocks`
+  // array shape if present (some test fixtures use that simpler form).
   const lockIds = [];
+  const fileBase = path.basename(filePath);
+  if (Array.isArray(lock.files)) {
+    for (const entry of lock.files) {
+      if (!entry || entry.class !== 'composed') continue;
+      const target = typeof entry.target === 'string' ? entry.target : '';
+      if (path.basename(target) !== fileBase) continue;
+      if (Array.isArray(entry.blocks)) {
+        for (const b of entry.blocks) {
+          if (typeof b === 'string') lockIds.push(b);
+          else if (b && typeof b.id === 'string') lockIds.push(b.id);
+        }
+      }
+    }
+  }
+  // Legacy / simple-fixture shape: { composed_blocks: ["id1", ...] }
   if (Array.isArray(lock.composed_blocks)) {
     for (const entry of lock.composed_blocks) {
-      if (typeof entry === 'string') {
-        lockIds.push(entry);
-      } else if (entry && typeof entry.id === 'string') {
-        lockIds.push(entry.id);
-      }
+      if (typeof entry === 'string') lockIds.push(entry);
+      else if (entry && typeof entry.id === 'string') lockIds.push(entry.id);
     }
   }
 

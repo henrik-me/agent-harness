@@ -569,9 +569,9 @@ async function cmdLint(args, _global) {
   let localBlocks = {};
   const cfgPath = path.join(cwd, 'harness.config.json');
   const effectiveConfigPath = _global.config ?? cfgPath;
-  if (existsSync(cfgPath)) {
+  if (existsSync(effectiveConfigPath)) {
     try {
-      const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+      const cfg = JSON.parse(readFileSync(effectiveConfigPath, 'utf8'));
       if (Array.isArray(cfg.composed?.files)) {
         composedFilePaths = cfg.composed.files;
       }
