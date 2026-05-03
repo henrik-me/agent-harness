@@ -1,9 +1,9 @@
 # CS08 — Managed/composed process docs canonicalization
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs08/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS07 close-out (per [`harness-cs-plan.md` § CS08](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs08--author-managedcomposed-process-docs-the-source-of-truth-set)).
 **Depends on:** CS07
@@ -51,7 +51,16 @@ CS01 hand-authored proto process docs (INSTRUCTIONS, CONVENTIONS, OPERATIONS, RE
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `template/managed/INSTRUCTIONS.md` | pending | sub-agent cs08-instructions | agent-id=yoga-ah-sub-1 \| role=instructions-template \| report-status=pending \| learnings=0 |
+| `template/composed/CONVENTIONS.md` | pending | sub-agent cs08-conventions | agent-id=yoga-ah-sub-2 \| role=conventions-template \| report-status=pending \| learnings=0 |
+| `template/composed/OPERATIONS.md` (absorbs LRN-029/030/032/037/038/040 + SemVer policy) | pending | sub-agent cs08-operations | agent-id=yoga-ah-sub-3 \| role=operations-template \| report-status=pending \| learnings=0 |
+| `template/composed/REVIEWS.md` | pending | sub-agent cs08-reviews | agent-id=yoga-ah-sub-4 \| role=reviews-template \| report-status=pending \| learnings=0 |
+| `template/managed/TRACKING.md` | pending | sub-agent cs08-tracking | agent-id=yoga-ah-sub-5 \| role=tracking-template \| report-status=pending \| learnings=0 |
+| `template/managed/RETROSPECTIVES.md` | pending | sub-agent cs08-retrospectives | agent-id=yoga-ah-sub-6 \| role=retro-template \| report-status=pending \| learnings=0 |
+| `template/managed/READMEGUIDE.md` | pending | sub-agent cs08-readmeguide | agent-id=yoga-ah-sub-7 \| role=readmeguide-template \| report-status=pending \| learnings=0 |
+| `template/managed/.github/{copilot-instructions.md, pull_request_template.md, CODEOWNERS}` | pending | sub-agent cs08-githubtmpl | agent-id=yoga-ah-sub-8 \| role=github-templates \| report-status=pending \| learnings=0 |
+| Cross-link integrity check + harness lint regression | pending | yoga-ah (orchestrator inline) | follows after sub-agents complete |
+| GPT-5.5 review rounds | pending | yoga-ah | review-status=pending |
 
 ## Notes / Learnings
 

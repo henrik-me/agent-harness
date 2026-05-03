@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | no active CS — CS08 ready to claim | — | — | — | 2026-05-03 | _(none)_ |
+| CS08 | Managed/composed process docs canonicalization (8 templates) | claimed | yoga-ah | cs08/content | 2026-05-03 | _(none)_ |
 
 ## Recently Completed
 
