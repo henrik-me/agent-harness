@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/henrik-me/agent-harness/schemas/harness-lock.schema.json",
+  "title": "harness-lock",
+  "description": "Schema for `.harness-lock.json`. This file is written by `harness sync` and read by `harness sync --check` for drift detection. It captures the exact harness ref, resolved SHA, and per-file hashes so the check command can identify out-of-band edits.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "harness_ref",
+    "resolved_sha",
+    "config_schema_version",
+    "synced_at",
+    "files",
+    "scaffolds",
+    "excluded"
+  ],
+  "properties": {
+    "harness_ref": {
+      "type": "string",
+      "description": "The git ref the lock was synced from — a semver tag (e.g. `v0.1.0`), a branch name, or a full 40-character commit SHA. This is the ref passed to `harness sync --ref`. Used for display and audit purposes."
+    },
+    "resolved_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "The 40-character lowercase hexadecimal git commit SHA that `harness_ref` resolved to at sync time. This is the authoritative version identifier used in drift comparisons — if `resolved_sha` in the lock file does not match the harness ref's current HEAD, the consumer is out of date."
+    },
+    "config_schema_version": {
+      "type": "string",
+      "description": "The `$id` URI (or semver subset) of `harness.config.schema.json` that was active when this lock file was written. Allows the sync engine to detect when the consumer's harness.config.json was validated against an older schema version and a re-validation or migration may be needed."
+    },
+    "synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp recording when `harness sync` last ran (UTC recommended, e.g. `2026-05-03T05:30:00Z`). INFORMATIONAL ONLY — this field MUST NOT be used in drift comparisons. Its value changes on every sync regardless of whether any managed content changed; using it for drift detection would produce false positives on every sync invocation."
+    },
+    "files": {
+      "type": "array",
+      "description": "One lock record per file processed during the last `harness sync` run, in the order they were processed. Each record captures the file class, hashes, and per-block state needed for `harness sync --check` drift detection.",
+      "items": {
+        "$ref": "#/$defs/fileEntry"
+      }
+    },
+    "scaffolds": {
+      "type": "array",
+      "description": "Ordered list of scaffolds applied during the last `harness sync` run, each pinned to a specific version. Empty array if no scaffolds were applied.",
+      "items": {
+        "$ref": "#/$defs/scaffoldEntry"
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "description": "Relative paths (from the consumer repo root) of project-owned files that are explicitly excluded from sync. The sync engine skips these paths entirely. Examples: `README.md`, `LICENSE`, `package.json`, `.gitignore`, `.editorconfig`.",
+      "items": {
+        "type": "string",
+        "description": "Relative path from the consumer repo root to a file excluded from `harness sync` (e.g. `README.md`, `docs/ARCHITECTURE.md`)."
+      }
+    }
+  },
+  "$defs": {
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hexadecimal SHA-256 digest (exactly 64 characters)."
+    },
+    "blockEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_line_range",
+        "body_hash",
+        "template_marker_hash",
+        "provenance"
+      ],
+      "description": "Lock record for a single composed block within a `composed`-class file. A composed block is a region in the rendered file delimited by opening and closing template marker lines; the body between the markers is preserved across syncs and may be edited by the consumer developer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]*$",
+          "description": "Block identifier as declared in the template marker (e.g. `custom-ci-steps`, `project.env`). Must begin with a lowercase ASCII letter and contain only lowercase letters, digits, hyphens, and dots. Matches the regex `[a-z][a-z0-9.-]*`."
+        },
+        "source_line_range": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "1-based, inclusive line range in the rendered output file (after templating) that this block occupies, including the opening and closing marker lines. Used to locate the block during re-sync without re-parsing.",
+          "properties": {
+            "start": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Line number of the opening marker line in the rendered output file (1-based, inclusive). Must be less than or equal to `end`."
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Line number of the closing marker line in the rendered output file (1-based, inclusive). Must be greater than or equal to `start`."
+            }
+          }
+        },
+        "body_hash": {
+          "$ref": "#/$defs/sha256Hex",
+          "description": "SHA-256 hash of the block body — the bytes between the opening and closing template marker lines, exclusive of the marker lines themselves. This hash is the primary signal for per-block drift detection: if it changes between syncs, `harness sync --check` reports that the user has edited (or a tool has overwritten) the block body."
+        },
+        "template_marker_hash": {
+          "$ref": "#/$defs/sha256Hex",
+          "description": "SHA-256 hash of the concatenated opening and closing template marker lines (in rendered form, after variable substitution). Detects changes to the marker syntax or identifiers without requiring a full re-render — for example, if the block ID is renamed in the template."
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "user-authored",
+            "seeded-empty",
+            "migrated-from-legacy"
+          ],
+          "description": "How the block body came to be: `user-authored` — the body was written or last substantively edited by the consumer developer (body_hash does not match the seeded placeholder); `seeded-empty` — the block body was seeded as an empty or placeholder stub and has not yet been edited by the developer; `migrated-from-legacy` — the body was migrated from a pre-marker-format file during a `harness sync --migrate` run and has not yet been confirmed by the developer."
+        }
+      }
+    },
+    "fileEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "source_template",
+        "class",
+        "rendered_hash",
+        "action"
+      ],
+      "description": "Lock record for a single file processed by `harness sync`. The `class` field determines which drift-detection strategy applies and whether `blocks` is present.",
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Relative path from the consumer repo root to the file written (or skipped) by `harness sync` (e.g. `.github/workflows/ci.yml`, `CONVENTIONS.md`)."
+        },
+        "source_template": {
+          "type": "string",
+          "description": "Relative path from the harness repo root to the template file that was rendered to produce `target` (e.g. `template/managed/.github/workflows/ci.yml`, `template/composed/CONVENTIONS.md`)."
+        },
+        "class": {
+          "type": "string",
+          "enum": [
+            "managed",
+            "composed",
+            "seeded"
+          ],
+          "description": "File class as declared in the consumer's `harness.config.json`: `managed` — the file is fully overwritten on every sync; any out-of-band edits are considered drift; `composed` — the file has a managed template core with marker-preserved local extension blocks; the blocks are carried forward across syncs; `seeded` — the file is written once (if missing) and never overwritten; the consumer owns it after creation."
+        },
+        "rendered_hash": {
+          "$ref": "#/$defs/sha256Hex",
+          "description": "SHA-256 hash of the post-templating bytes actually written to disk for `target`. For `managed` files, `harness sync --check` compares the current on-disk hash against this value to detect out-of-band edits. For `composed` files, this covers the full rendered file including all block contents. For `seeded` files, this is the hash at creation time (not re-checked on subsequent syncs)."
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "created",
+            "updated",
+            "skipped",
+            "preserved",
+            "excluded"
+          ],
+          "description": "Action taken on this file during the last `harness sync` run: `created` — file did not exist and was written for the first time; `updated` — file existed and was overwritten with newly rendered content; `skipped` — rendered content was identical to what was already on disk (hash match); no write performed; `preserved` — file is `seeded`-class and already existed; left untouched; `excluded` — file path appears in the `excluded` list and was skipped entirely."
+        },
+        "blocks": {
+          "type": "array",
+          "description": "Per-block lock records for `composed`-class files. REQUIRED when `class` is `composed`; MUST be absent when `class` is `managed` or `seeded`. Each entry records the block ID, line range, and hashes needed to detect drift in individual blocks without re-rendering the whole file.",
+          "items": {
+            "$ref": "#/$defs/blockEntry"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "class": {
+            "const": "composed"
+          }
+        },
+        "required": [
+          "class"
+        ]
+      },
+      "then": {
+        "required": [
+          "blocks"
+        ],
+        "properties": {
+          "blocks": true
+        }
+      },
+      "else": {
+        "properties": {
+          "blocks": false
+        }
+      }
+    },
+    "scaffoldEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "description": "A scaffold applied during the last `harness sync` run, identified by name and pinned to a specific version.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable scaffold identifier as declared in `harness.config.json` (e.g. `node-esm-cli`, `github-actions-ci`). Must be unique within the `scaffolds` array."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the scaffold at sync time — a semver string (e.g. `1.2.0`) or a git ref (e.g. `v0.1.0`, full SHA). Recorded so `harness sync --check` can detect when the pinned scaffold version has changed."
+        }
+      }
+    }
+  }
+}

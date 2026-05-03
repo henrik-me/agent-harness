@@ -1,0 +1,84 @@
+{
+  "version": "v0.1.0",
+  "project": {
+    "name": "Sub Invaders",
+    "cs_prefix": "SI-CS",
+    "repo": "henrik-me/sub-invaders",
+    "agent_suffix": "si"
+  },
+  "managed": {
+    "files": [
+      "INSTRUCTIONS.md",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md",
+      ".github/copilot-instructions.md",
+      ".github/pull_request_template.md"
+    ]
+  },
+  "composed": {
+    "files": [
+      "CONVENTIONS.md",
+      "OPERATIONS.md",
+      "REVIEWS.md"
+    ],
+    "overrides": {
+      "CONVENTIONS.md": {
+        "local_blocks": ["conventions.project"]
+      },
+      "OPERATIONS.md": {
+        "local_blocks": ["operations.project-deploy"]
+      },
+      "REVIEWS.md": {
+        "local_blocks": ["reviews.project-gates"]
+      }
+    }
+  },
+  "seeded": {
+    "files": [
+      "CONTEXT.md",
+      "ARCHITECTURE.md",
+      "LEARNINGS.md",
+      "WORKBOARD.md"
+    ]
+  },
+  "scaffolds": [
+    "smoke",
+    "verify-deploy",
+    "feature-flags",
+    "cs-probes"
+  ],
+  "linters": {
+    "check-learnings": true,
+    "check-workboard": true,
+    "check-feature-flag-policy": true
+  },
+  "templating": {
+    "project_name": "Sub Invaders"
+  },
+  "local_blocks": {
+    "CONVENTIONS.md": [
+      "conventions.project"
+    ],
+    "OPERATIONS.md": [
+      "operations.project-deploy"
+    ],
+    "REVIEWS.md": [
+      "reviews.project-gates"
+    ]
+  },
+  "excluded": [
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    ".editorconfig",
+    "tsconfig.json",
+    "swa-cli.config.json",
+    "staticwebapp.config.json",
+    "src/",
+    "public/",
+    "api/"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/henrik-me/agent-harness/schemas/learning.schema.json",
+  "title": "Learning Entry Schema",
+  "description": "Validates a single learning entry's YAML frontmatter block from LEARNINGS.md. Each entry documents a durable, project-applicable insight surfaced by completing a CS/task/plan.",
+  "type": "object",
+  "required": [
+    "id",
+    "date",
+    "category",
+    "source_cs",
+    "status",
+    "tags"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^LRN-[0-9]{3,}$",
+      "description": "Unique identifier for the learning entry. Format: LRN- followed by 3 or more digits (e.g., LRN-001, LRN-042, LRN-1234)."
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date when the learning was surfaced (YYYY-MM-DD format)."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "architectural",
+        "operational",
+        "tooling",
+        "process",
+        "anti-pattern"
+      ],
+      "description": "Category classifying the type of insight. 'architectural': constraint, invariant, or trade-off discovered. 'operational': procedural pitfall or recipe. 'tooling': tool/library quirk that caused issues. 'process': workflow gap that caused waste. 'anti-pattern': approach tried and shouldn't repeat."
+    },
+    "source_cs": {
+      "type": "string",
+      "pattern": "^(SI-)?CS[0-9]+[a-z]?$",
+      "description": "CS (Change Set) identifier that surfaced this learning. Format: optional SI- prefix, CS followed by digits, optional lowercase letter suffix (e.g., CS01, CS17a, SI-CS02). The prefix SI- is used for Sub Invaders project identifiers."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "applied",
+        "obsolete",
+        "deferred"
+      ],
+      "description": "Status of the learning. 'open': pending disposition. 'applied': surfaced insight has been incorporated upstream (docs, new CS, etc.). 'obsolete': learning is no longer relevant. 'deferred': intentionally postponed with explicit deferred_until date."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of categorical tags for cross-referencing and harvest filtering. May be empty. Examples: 'github', 'branch-protection', 'harness-init', 'process', 'architectural'."
+    },
+    "claim_area": {
+      "type": "string",
+      "description": "Optional metadata field identifying the area of the codebase or process this learning is relevant to. Drives before-claim prompts during harvest cycles. Examples: 'repo-policy', 'consumer-onboarding', 'docs-schema', 'orchestrator-loop'."
+    },
+    "deferred_until": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date when a deferred learning should be revisited (YYYY-MM-DD format). REQUIRED if and only if status is 'deferred'."
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "deferred"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "deferred_until"
+        ]
+      }
+    }
+  ]
+}
