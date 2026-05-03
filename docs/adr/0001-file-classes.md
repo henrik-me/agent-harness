@@ -120,12 +120,12 @@ Globs are **NOT** interpreted in `files` arrays — list paths explicitly. The h
 
 ### Marker format
 
-Local blocks are delimited by a pair of HTML comment markers:
+Local blocks are delimited by a pair of HTML comment markers (the markers below are escaped with a leading zero-width-space `​` to prevent this ADR file itself from being parsed as containing live markers — see § Error rules):
 
 ```md
-<!-- harness:local-start id=conventions.project -->
+<​!-- harness:local-start id=conventions.project -->
 ...consumer-authored content...
-<!-- harness:local-end id=conventions.project -->
+<​!-- harness:local-end id=conventions.project -->
 ```
 
 The `id` attribute identifies the block. IDs are stable across harness versions; they
@@ -133,28 +133,23 @@ appear in the lock file and in `harness.config.json` → `local_blocks` (per-fil
 
 ### Parser rules (normative — identical to `lib/composed.mjs` per CS03)
 
-A marker line is recognised **only** when ALL of the following hold:
+A line is **recognised as a valid local-block marker** only when ALL of the following hold:
 
 1. **Whole-line:** the marker occupies the full line except for optional leading/trailing
-   ASCII whitespace. A marker appearing mid-line inside prose is treated as plain text and
-   ignored (not an error unless it appears to be a malformed marker — see error rules
-   below).
+   ASCII whitespace.
+2. **Outside any code block:** the parser tracks open/close fences (a fence opens on a line
+   that begins, after optional indentation ≤ 3 spaces, with ` ``` ` or `~~~` and closes on
+   the next line matching the same sequence) AND tracks indented code blocks (a line with 4
+   or more leading spaces).
+3. **Valid `id`:** the `id` attribute matches the regex `[a-z][a-z0-9.-]*` (lowercase
+   ASCII letter first; then lowercase letters, digits, `.`, or `-`).
+4. **Matching start/end IDs:** every `<​!-- harness:local-start id=X -->` is paired with
+   `<​!-- harness:local-end id=X -->` for the same `X`.
 
-2. **Outside fenced code blocks:** the parser tracks open/close fences. A fence opens on a
-   line that begins (after optional indentation ≤ 3 spaces) with ` ``` ` or `~~~` and
-   closes on the next line that matches the same fence sequence. Marker lines inside a
-   fenced block are ignored.
-
-3. **Outside indented code blocks:** a line with 4 or more leading spaces is in an
-   indented code block. Marker lines with 4+ leading spaces are ignored.
-
-4. **Valid `id`:** the `id` attribute matches the regex `[a-z][a-z0-9.-]*` (lowercase
-   ASCII letter first; then lowercase letters, digits, `.`, or `-`). An `id` that fails
-   this regex causes a hard parse error.
-
-5. **Matching start/end IDs:** every `<!-- harness:local-start id=X -->` must be paired
-   with `<!-- harness:local-end id=X -->` with the same `X`. ID mismatch is a hard parse
-   error.
+A line **inside a fenced or indented code block** that *looks like* a marker (matches the
+marker shape but appears in a code-block context) is **NOT recognised as a valid marker
+and is NOT silently ignored**. Per cs-plan CS03 fail-closed semantics, the parser **rejects
+the file** in this case unless the marker syntax is escaped. See § Error rules.
 
 ### Error rules (fail-closed)
 
@@ -166,10 +161,17 @@ The parser exits non-zero (and refuses to write any output) on:
 | Duplicate block ID | Two `local-start` markers with `id=conventions.project` |
 | Dropped block | Lock file records `id=X`; template still contains the marker; current file has no block `X` |
 | Nested local blocks | `local-start id=A` followed by `local-start id=B` before `local-end id=A` |
-| Malformed marker (ID regex fail) | `<!-- harness:local-start id=My Block -->` |
+| Malformed marker (ID regex fail) | `<​!-- harness:local-start id=My Block -->` |
 | Orphan end marker | `local-end id=X` with no preceding `local-start id=X` |
+| **Marker-looking text inside a fenced or indented code block, not escaped** | An unescaped marker appearing inside a code fence in template or consumer content |
+| Mid-line marker | A marker syntax embedded inside a line of prose (not whole-line) |
 
-Marker-looking text inside fenced or indented code blocks is **rejected as a parser error unless escaped** (per cs-plan CS03 spec). This is intentional: to demonstrate marker syntax in documentation or examples, escape the leading angle bracket (e.g. `<​!-- harness:local-start id=foo -->` with a zero-width space, or use HTML-entity escaping `&lt;!-- harness:local-start id=foo -->`). The fail-closed default prevents accidental capture of example content as live blocks. CS03 will document the exact escape syntax in `lib/composed.mjs` doc-comments and `check-composed-blocks.mjs` test fixtures.
+**Escape syntax** for documenting marker syntax inside code fences (e.g. in this ADR, in
+how-to docs, in test fixtures): insert a zero-width space (U+200B) immediately after the
+leading `<` (e.g. `<​!-- harness:local-start id=foo -->`), OR use HTML entity escaping
+(`&lt;!-- harness:local-start id=foo -->`). CS03 will pin the exact escape characters
+recognised by `lib/composed.mjs` and document them in the linter test fixtures
+(`check-composed-blocks.mjs`).
 
 ### Legacy-content fail-closed invariant
 
