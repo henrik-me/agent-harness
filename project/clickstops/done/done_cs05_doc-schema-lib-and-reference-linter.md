@@ -86,7 +86,7 @@ Validates every entry in `LEARNINGS.md`. Per the cs-plan canonical deliverables:
 
 ### Sub-agent ledger summary
 
-**Total work passes: 4 = 1 initial sub-agent job + 1 fix-round sub-agent job + 1 inline orchestrator fix + 3 GPT-5.5 review rounds.**
+**Total implementation passes: 3** = 1 initial sub-agent job (cs05-content) + 1 fix-round sub-agent job (cs05-fixes-r1) + 1 inline orchestrator fix (R2 entry-classifier tightening). **Review rounds: 3** (GPT-5.5: R1, R2, R3-clear).
 
 **Initial (cs05-content):**
 

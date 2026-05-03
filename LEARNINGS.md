@@ -772,7 +772,7 @@ claim_area: orchestrator-loop
 
 **Finding:** Sub-agent self-deviation toward MORE tests is a GOOD signal, not a problem. `cs05-content` created 12 tests instead of the 10-test minimum; `cs05-fixes-r1` created 10 doc-schema tests instead of 7. These over-achievements caught real bugs (e.g. `resolveLinks` contract drift). Sub-agent briefings should specify **minimums**, not exact counts. Exact-count specifications create artificial pressure to stop at the minimum and may suppress coverage of discovered edge cases.
 
-**Evidence:** CS05 test delta: 224 → 253 (+29 tests). `cs05-content` 12 check-learnings tests + 12 CLI lint tests; `cs05-fixes-r1` 10 doc-schema tests + 1 R2 regression. Over-delivery caught real contract drift.
+**Evidence:** CS05 test delta: 224 → 253 (+29 tests). Breakdown: 12 check-learnings (cs05-content r0) + 10 doc-schema unit tests (cs05-fixes-r1) + 1 cli.test.mjs lint test update + 1 R2 regression test (orchestrator inline) + 5 additional regression tests across r1 fixtures = 29. Over-delivery (12>10 minimum, 10>7 minimum) caught real contract drift in `resolveLinks` (NB-6).
 
 **Disposition:** Update sub-agent briefing template (when canonicalized in CS08 OPERATIONS.md) to specify test minimums only, never exact counts. Note: orchestrator should celebrate rather than flag over-delivery on tests.
 
