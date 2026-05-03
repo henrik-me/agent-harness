@@ -1,0 +1,88 @@
+{
+  "$schema": "../schemas/harness.config.schema.json",
+  "version": "self",
+  "project": {
+    "name": "agent-harness",
+    "cs_prefix": "CS",
+    "repo": "henrik-me/agent-harness",
+    "agent_suffix": "ah"
+  },
+  "managed": {
+    "files": [
+      "INSTRUCTIONS.md",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      ".github/copilot-instructions.md",
+      ".github/pull_request_template.md"
+    ]
+  },
+  "composed": {
+    "files": [
+      "CONVENTIONS.md",
+      "OPERATIONS.md",
+      "REVIEWS.md"
+    ],
+    "overrides": {
+      "CONVENTIONS.md": {
+        "local_blocks": ["conventions.project"]
+      },
+      "OPERATIONS.md": {
+        "local_blocks": ["operations.project-deploy"]
+      },
+      "REVIEWS.md": {
+        "local_blocks": ["reviews.project-gates"]
+      }
+    }
+  },
+  "seeded": {
+    "files": [
+      "CONTEXT.md",
+      "ARCHITECTURE.md",
+      "LEARNINGS.md",
+      "WORKBOARD.md"
+    ]
+  },
+  "scaffolds": [],
+  "linters": {
+    "check-instructions": true,
+    "check-context": true,
+    "check-workboard": true,
+    "check-architecture": true,
+    "check-clickstop": true,
+    "check-learnings": true,
+    "check-readme": true,
+    "check-composed-blocks": true,
+    "check-workflow-pins": true,
+    "check-pr-body": true,
+    "check-commit-trailers": true,
+    "check-public-artifact": true
+  },
+  "templating": {
+    "project_name": "agent-harness"
+  },
+  "local_blocks": {
+    "CONVENTIONS.md": ["conventions.project"],
+    "OPERATIONS.md": ["operations.project-deploy"],
+    "REVIEWS.md": ["reviews.project-gates"]
+  },
+  "excluded": [
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    ".editorconfig",
+    "bin/",
+    "lib/",
+    "scripts/",
+    "scaffolds/",
+    "schemas/",
+    "template/",
+    "docs/",
+    "examples/",
+    ".github/workflows/",
+    ".github/CODEOWNERS",
+    ".github/ISSUE_TEMPLATE/",
+    "project/clickstops/"
+  ]
+}

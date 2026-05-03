@@ -38,16 +38,16 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS02](../done/done_cs01_bo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Author harness.config.schema.json | pending | sub-agent | agent-id=cs02-schema-config \| role=schema-author \| report-status=pending \| learnings=0 |
-| Author harness-lock.schema.json | pending | sub-agent | agent-id=cs02-schema-lock \| role=schema-author \| report-status=pending \| learnings=0 |
-| Author learning.schema.json + validate against LRN-001..005 | pending | sub-agent | agent-id=cs02-schema-learning \| role=schema-author \| report-status=pending \| learnings=0 |
-| Author ADR 0001-file-classes.md | pending | sub-agent | agent-id=cs02-adr-file-classes \| role=adr-author \| report-status=pending \| learnings=0 |
-| Author ADR 0002-readme-ownership.md | pending | sub-agent | agent-id=cs02-adr-readme \| role=adr-author \| report-status=pending \| learnings=0 |
-| Author guesswhatisnext example config | pending | sub-agent | agent-id=cs02-example-gwn \| role=example-author \| report-status=pending \| learnings=0 |
-| Author sub-invaders example config | pending | sub-agent | agent-id=cs02-example-si \| role=example-author \| report-status=pending \| learnings=0 |
-| Author agent-harness-self example config | pending | sub-agent | agent-id=cs02-example-ah \| role=example-author \| report-status=pending \| learnings=0 |
-| Wire validate-schemas CI workflow | pending | sub-agent | agent-id=cs02-ci-validate \| role=ci-author \| report-status=pending \| learnings=0 |
-| Cross-link integrity merge | pending | yoga-ah | Orchestrator-only step; consolidate sub-agent outputs |
+| Author harness.config.schema.json | done | sub-agent | agent-id=cs02-schema-config \| role=schema-author \| report-status=complete \| learnings=4 |
+| Author harness-lock.schema.json | done | sub-agent | agent-id=cs02-schema-lock \| role=schema-author \| report-status=complete \| learnings=2 |
+| Author learning.schema.json + validate against LRN-001..005 | done | sub-agent | agent-id=cs02-schema-learning \| role=schema-author \| report-status=complete \| learnings=0 |
+| Author ADR 0001-file-classes.md | done | sub-agent | agent-id=cs02-adr-file-classes \| role=adr-author \| report-status=complete \| learnings=1 |
+| Author ADR 0002-readme-ownership.md | done | sub-agent | agent-id=cs02-adr-readme \| role=adr-author \| report-status=complete \| learnings=2 |
+| Author guesswhatisnext example config | done | sub-agent | agent-id=cs02-example-gwn \| role=example-author \| report-status=complete \| learnings=4 |
+| Author sub-invaders example config | done | sub-agent | agent-id=cs02-example-si \| role=example-author \| report-status=complete \| learnings=4 |
+| Author agent-harness-self example config | done | sub-agent | agent-id=cs02-example-ah \| role=example-author \| report-status=complete \| learnings=3 |
+| Wire validate-schemas CI workflow | done | sub-agent | agent-id=cs02-ci-validate \| role=ci-author \| report-status=complete \| learnings=4 |
+| Cross-link integrity merge | done | yoga-ah | Schema gap (`excluded` + `$schema` properties) added by orchestrator post-Wave-2 reports; all 3 examples + schemas + 5 LRNs validate; `node scripts/validate-schemas.mjs` exit 0 |
 | Local review with GPT-5.5 | pending | yoga-ah | Per REVIEWS.md — iterate until clean |
 | Open PR | pending | yoga-ah | branch `cs02/define-schemas` |
 | Squash-merge | pending | yoga-ah | Self-merge after GPT-5.5 review clean |

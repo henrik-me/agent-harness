@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
+  "title": "Agent Harness configuration",
+  "description": "Root configuration schema for a harness.config.json file. Declares the pinned harness version, project identity, file-class memberships, scaffold opt-ins, linter settings, templating variables, composed-block allowlists, optional block migration specs, and public-artifact redaction rules.",
+  "type": "object",
+  "required": ["version", "project"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional self-reference to this schema's $id for IDE autocomplete. Tools like VS Code use this to validate the config against the schema. Set to 'https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json' or to a relative path during local development."
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Free-form note (single string). JSON has no native comment syntax, so this key carries human-readable context (e.g. 'this config models the post-CS19 state'). Ignored by the sync engine."
+    },
+    "version": {
+      "type": "string",
+      "description": "Pinned harness version reference — a SemVer tag (e.g. 'v0.1.0') or a full Git SHA. Used by 'harness sync' to verify the consumer is running against the correct harness snapshot, and by 'check-workflow-pins.mjs' to assert CI workflow refs match.",
+      "examples": ["v0.1.0", "v1.2.3", "a3f4c8d2e1b0"]
+    },
+    "project": {
+      "type": "object",
+      "description": "Identity block for the consumer project. Drives agent-ID derivation, repo references, and cross-project disambiguation.",
+      "required": ["name", "agent_suffix"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable project name. Used in generated docs, log output, and templating substitutions.",
+          "minLength": 1,
+          "examples": ["guesswhatisnext", "sub-invaders", "agent-harness"]
+        },
+        "cs_prefix": {
+          "type": "string",
+          "description": "Prefix used in clickstop IDs for this project (e.g. 'CS' produces 'CS01', 'CS02'; 'SI-CS' produces 'SI-CS01'). Defaults to 'CS' if omitted.",
+          "examples": ["CS", "SI-CS", "GWN-CS"]
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository slug in 'owner/repo' format. Used when generating cross-repo links and in the $id of lock files.",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "examples": ["henrik-me/agent-harness", "henrik-me/guesswhatisnext", "henrik-me/sub-invaders"]
+        },
+        "agent_suffix": {
+          "type": "string",
+          "description": "Short lowercase identifier for this project, used as the 'repo-short' segment of the agent ID (format: '<machine-short>-<agent_suffix>[-c<N>]'). Per Decision #20, this is read from harness.config.json → project.agent_suffix. Examples: 'ah' yields 'yoga-ah'; 'si' yields 'yoga-si'. Must match [a-z][a-z0-9-]* to keep agent IDs clean.",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "examples": ["ah", "si", "gwn"]
+        },
+        "agent_env_var": {
+          "type": "string",
+          "description": "Name of the environment variable that overrides the machine-short segment of the agent ID. Defaults to 'HARNESS_AGENT_<SUFFIX_UPPER>_MACHINE' (e.g. for agent_suffix 'ah' the default is 'HARNESS_AGENT_AH_MACHINE'). Override this only when the default naming collides with an existing env var. Per Decision #20c.",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "examples": ["HARNESS_AGENT_AH_MACHINE", "HARNESS_AGENT_SI_MACHINE", "HARNESS_AGENT_GWN_MACHINE"]
+        }
+      }
+    },
+    "managed": {
+      "$ref": "#/$defs/fileClass",
+      "description": "Managed file class: the harness owns these files entirely and overwrites them on every 'harness sync'. No local edits survive a sync. Use 'composed' instead if a file needs local extension blocks."
+    },
+    "composed": {
+      "$ref": "#/$defs/fileClass",
+      "description": "Composed file class: the harness owns the skeleton and template blocks, but local-block markers (<!-- harness:local-start id=<blockId> --> ... <!-- harness:local-end id=<blockId> -->) preserve project-specific content across syncs. Only blocks listed in 'local_blocks' for the file are preserved; all other content is overwritten."
+    },
+    "seeded": {
+      "$ref": "#/$defs/fileClass",
+      "description": "Seeded file class: the harness creates these files from templates only when they do not yet exist. Once present, the harness never overwrites them — they are fully project-owned after creation."
+    },
+    "scaffolds": {
+      "type": "array",
+      "description": "Opt-in scaffold names to activate for this project. Scaffolds are named bundles of additional managed/composed/seeded files. Only listed scaffold names are applied; unlisted scaffolds are ignored even if present in the harness.",
+      "items": {
+        "type": "string",
+        "description": "A scaffold name matching a directory under 'scaffolds/' in the harness.",
+        "examples": ["smoke", "migrations", "feature-flags"]
+      },
+      "uniqueItems": true,
+      "examples": [["smoke"], ["smoke", "migrations", "feature-flags"]]
+    },
+    "linters": {
+      "type": "object",
+      "description": "Per-linter enable/disable flags and optional configuration objects. Keys are linter names matching scripts under 'scripts/' in the harness (e.g. 'check-learnings', 'check-workboard'). A boolean value enables (true) or disables (false) the linter with default settings. An object value enables the linter with the given configuration (which is merged on top of the linter's defaults).",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "boolean",
+            "description": "Enable (true) or disable (false) this linter with its default configuration."
+          },
+          {
+            "type": "object",
+            "description": "Enable this linter with the given configuration overrides merged on top of defaults. The object shape is linter-specific; the harness validates it using the linter's own sub-schema if one is registered.",
+            "additionalProperties": true
+          }
+        ]
+      },
+      "examples": [
+        {
+          "check-learnings": true,
+          "check-workboard": true,
+          "check-public-artifact": false
+        },
+        {
+          "check-learnings": {
+            "max_stale_open_days": 30
+          }
+        }
+      ]
+    },
+    "templating": {
+      "type": "object",
+      "description": "Substitution variable map consumed by the harness templating engine (lib/templating.mjs). Keys become '{{key}}' placeholders in managed and composed template files. All values must be strings; no nested objects or arrays — compose complex values before storing them here.",
+      "additionalProperties": {
+        "type": "string",
+        "description": "String value substituted for the corresponding '{{key}}' placeholder in all template files at sync time."
+      },
+      "examples": [
+        {
+          "project_name": "guesswhatisnext",
+          "repo_slug": "henrik-me/guesswhatisnext",
+          "node_version": "20"
+        }
+      ]
+    },
+    "local_blocks": {
+      "type": "object",
+      "description": "Per-file allowlist of composed-block IDs. Keys are file paths (relative to the consumer repo root, matching paths listed under 'composed.files'). Values are arrays of block IDs that are permitted to exist in that file. Any local block found in the file but not listed here is treated as an error by the composed-class merge engine. Block IDs must match [a-z][a-z0-9.-]* per the composed-parser strict rules.",
+      "additionalProperties": {
+        "type": "array",
+        "description": "Array of permitted local-block IDs for this file.",
+        "items": {
+          "type": "string",
+          "description": "A local-block ID matching [a-z][a-z0-9.-]* as required by the composed-class marker parser.",
+          "pattern": "^[a-z][a-z0-9.-]*$"
+        },
+        "uniqueItems": true
+      },
+      "examples": [
+        {
+          "CONVENTIONS.md": ["conventions.project"],
+          "ARCHITECTURE.md": ["architecture.consumers", "architecture.deployment"]
+        }
+      ]
+    },
+    "composed_block_migrations": {
+      "type": "object",
+      "description": "Optional. Per-file map of old block IDs to their replacement block ID(s), used when a template renames or splits a composed block across harness versions. In v0.1.0 the sync engine does NOT perform migrations — it rejects any config that contains this field with a clear 'block ID renamed/split needs migration spec' error. This field exists in the schema so IDEs auto-complete it and so future engine versions can implement the migration logic. Per Decision #12.",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Mapping of old-block-id → new-block-id(s) for a single file.",
+        "additionalProperties": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Single new block ID that replaces the old one (1-to-1 rename).",
+              "pattern": "^[a-z][a-z0-9.-]*$"
+            },
+            {
+              "type": "array",
+              "description": "Array of new block IDs that the old block is split into (1-to-N split).",
+              "items": {
+                "type": "string",
+                "description": "A new block ID resulting from splitting the old block.",
+                "pattern": "^[a-z][a-z0-9.-]*$"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
+        }
+      },
+      "examples": [
+        {
+          "CONVENTIONS.md": {
+            "conventions.project": "conventions.project-specific"
+          },
+          "ARCHITECTURE.md": {
+            "architecture.all": ["architecture.consumers", "architecture.deployment"]
+          }
+        }
+      ]
+    },
+    "public_artifact_redaction": {
+      "type": "object",
+      "description": "Per-artifact-type redaction rules enforced by 'check-public-artifact.mjs' (CS06+) before any artifact is committed to a public branch. Per Decision #24. Keys are artifact-type names (e.g. 'shadow-report', 'pilot-manifest', 'migration-report'). Each value declares what is safe to commit and what must never appear.",
+      "additionalProperties": {
+        "$ref": "#/$defs/artifactRedactionRule"
+      },
+      "examples": [
+        {
+          "shadow-report": {
+            "allowed_placeholders": ["https://example.com", "00000000-0000-0000-0000-000000000000"],
+            "forbidden_field_patterns": ["token", "secret", "tenantId", "subscriptionId"],
+            "max_log_bytes_per_artifact": 8192,
+            "required_normalized_fields": ["status", "gate_result", "cs_id"],
+            "raw_artifact_paths_forbidden": ["\\.log$", "raw/.*\\.json$"]
+          }
+        }
+      ]
+    },
+    "excluded": {
+      "type": "array",
+      "description": "Project-owned file paths or directory paths excluded from 'harness sync' entirely. Per ADR 0002. The harness will never create, overwrite, or skip-with-warning these paths — they are treated as if invisible to the sync engine. Use trailing '/' to mark a directory exclusion. Globs are NOT interpreted; list paths explicitly. Required for the harness repo's own self-host config (CS11) to protect README.md, LICENSE, package.json, .gitignore, .editorconfig and harness implementation paths from self-overwrite.",
+      "items": {
+        "type": "string",
+        "description": "Repo-root-relative file path or directory path. Directories must end with '/'.",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "examples": [
+        ["README.md", "LICENSE", "package.json", ".gitignore", ".editorconfig"],
+        ["bin/", "lib/", "scripts/", "docs/", "examples/"]
+      ]
+    }
+  },
+  "$defs": {
+    "fileClass": {
+      "type": "object",
+      "description": "File-class membership declaration. 'files' lists all paths belonging to this class; 'overrides' provides per-file configuration that overrides defaults for that file only.",
+      "required": ["files"],
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "type": "array",
+          "description": "List of file paths (relative to the consumer repo root) belonging to this file class. Paths must be unique within this array; a path may appear in only one file class.",
+          "items": {
+            "type": "string",
+            "description": "Repo-root-relative file path.",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "examples": [
+            ["INSTRUCTIONS.md", "CONVENTIONS.md", "OPERATIONS.md"],
+            [".github/workflows/validate-schemas.yml"]
+          ]
+        },
+        "overrides": {
+          "type": "object",
+          "description": "Per-file configuration overrides. Keys are file paths matching entries in 'files'; values are objects whose shape is file-class-specific and interpreted by the sync engine. Unknown keys within an override object are rejected by the engine (not the schema, which stays permissive here to allow future override keys without a schema bump).",
+          "additionalProperties": {
+            "type": "object",
+            "description": "Override bag for a single file. The sync engine validates the contents; the schema accepts any object here.",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "CONVENTIONS.md": {
+                "template_source": "template/composed/CONVENTIONS.md"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "artifactRedactionRule": {
+      "type": "object",
+      "description": "Redaction rule for a single artifact type. Consumed by 'check-public-artifact.mjs' to verify that artifacts of this type are safe for public commit.",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "allowed_placeholders": {
+          "type": "array",
+          "description": "Explicit safe placeholder values that are allowed to appear in place of real secrets or identifiers (e.g. fake UUIDs, example URLs, synthetic tokens). The linter does NOT flag occurrences of these values even if their field names match a forbidden pattern.",
+          "items": {
+            "type": "string",
+            "description": "A single safe placeholder string."
+          },
+          "uniqueItems": true,
+          "examples": [
+            ["https://example.com", "00000000-0000-0000-0000-000000000000", "ghp_FAKE_TOKEN_FOR_TESTING"]
+          ]
+        },
+        "forbidden_field_patterns": {
+          "type": "array",
+          "description": "Array of regex patterns (as strings) matched against field names and string values in the artifact. Any match causes the linter to reject the artifact unless the matched value is listed in 'allowed_placeholders'. Use anchored patterns to avoid false positives (e.g. '^token$' rather than 'token').",
+          "items": {
+            "type": "string",
+            "description": "A regex pattern string matched against JSON field names and string values."
+          },
+          "examples": [
+            ["token", "secret", "tenantId", "subscriptionId", "connectionString", "apiKey"]
+          ]
+        },
+        "max_log_bytes_per_artifact": {
+          "type": "integer",
+          "description": "Maximum number of bytes of log content allowed per artifact when log snippets are embedded. Bounded inclusion prevents accidental full-log dumps. Default 8192 (8 KB) per Decision #24.",
+          "minimum": 0,
+          "default": 8192,
+          "examples": [4096, 8192, 16384]
+        },
+        "required_normalized_fields": {
+          "type": "array",
+          "description": "Fields that MUST be present in the artifact JSON after normalization. The linter rejects artifacts that omit any of these fields, ensuring gate results are always machine-readable.",
+          "items": {
+            "type": "string",
+            "description": "A required top-level field name in the normalized artifact object."
+          },
+          "uniqueItems": true,
+          "examples": [
+            ["status", "gate_result", "cs_id"],
+            ["schema_version", "outcome", "run_id"]
+          ]
+        },
+        "raw_artifact_paths_forbidden": {
+          "type": "array",
+          "description": "Array of regex patterns matched against file paths. Any artifact whose path matches a pattern in this list must never be committed to a public branch. The linter rejects the commit if a matching path is staged.",
+          "items": {
+            "type": "string",
+            "description": "A regex pattern string matched against the artifact file path."
+          },
+          "examples": [
+            ["\\.log$", "raw/.*\\.json$", "pilot/raw/.*"]
+          ]
+        }
+      }
+    }
+  }
+}

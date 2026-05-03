@@ -1,0 +1,109 @@
+{
+  "$schema": "../schemas/harness.config.schema.json",
+  "_comment": "Worked example for henrik-me/guesswhatisnext post-CS19 migration. RETROSPECTIVES.md and READMEGUIDE.md are not present in gwn today (2026-05-03); they will be created by CS19 sync from template/managed/ (authored in CS08).",
+  "version": "v0.1.0",
+  "project": {
+    "name": "Guess What's Next",
+    "cs_prefix": "CS",
+    "repo": "henrik-me/guesswhatisnext",
+    "agent_suffix": "gwn"
+  },
+  "managed": {
+    "files": [
+      "INSTRUCTIONS.md",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md",
+      ".github/copilot-instructions.md",
+      ".github/pull_request_template.md"
+    ]
+  },
+  "composed": {
+    "files": [
+      "CONVENTIONS.md",
+      "OPERATIONS.md",
+      "REVIEWS.md"
+    ],
+    "overrides": {
+      "CONVENTIONS.md": {
+        "local_blocks": ["conventions.project"]
+      },
+      "OPERATIONS.md": {
+        "local_blocks": ["operations.project-deploy"]
+      },
+      "REVIEWS.md": {
+        "local_blocks": ["reviews.project-gates"]
+      }
+    }
+  },
+  "seeded": {
+    "files": [
+      "CONTEXT.md",
+      "ARCHITECTURE.md",
+      "LEARNINGS.md",
+      "WORKBOARD.md"
+    ]
+  },
+  "scaffolds": [
+    "smoke",
+    "migrations",
+    "container-validate",
+    "health-check",
+    "seed",
+    "verify-deploy",
+    "feature-flags",
+    "cs-probes"
+  ],
+  "linters": {
+    "check-instructions": true,
+    "check-context": true,
+    "check-workboard": true,
+    "check-architecture": true,
+    "check-clickstop": true,
+    "check-learnings": true,
+    "check-readme": true,
+    "check-composed-blocks": true,
+    "check-workflow-pins": true,
+    "check-pr-body": true,
+    "check-commit-trailers": true,
+    "check-compose-v2": true,
+    "check-public-artifact": true,
+    "check-migration-policy": true,
+    "check-feature-flag-policy": true
+  },
+  "templating": {
+    "project_name": "Guess What's Next",
+    "repo_slug": "henrik-me/guesswhatisnext",
+    "cs_prefix": "CS",
+    "agent_suffix": "gwn",
+    "node_version": "20"
+  },
+  "local_blocks": {
+    "CONVENTIONS.md": ["conventions.project"],
+    "OPERATIONS.md": ["operations.project-deploy"],
+    "REVIEWS.md": ["reviews.project-gates"]
+  },
+  "excluded": [
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    ".editorconfig",
+    "vitest.config.mjs",
+    "playwright.config.mjs",
+    "eslint.config.mjs",
+    "Dockerfile",
+    "docker-compose.yml",
+    "docker-compose.mssql.yml",
+    "docker-compose.mssql.delay.yml",
+    "infra/",
+    "server/",
+    "public/",
+    "tests/",
+    "scripts/",
+    ".github/CODEOWNERS",
+    ".github/workflows/"
+  ]
+}
