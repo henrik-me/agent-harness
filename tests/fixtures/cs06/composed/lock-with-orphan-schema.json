@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "harness_version": "v0.1.0",
+  "files": [
+    {
+      "target": "valid.md",
+      "class": "composed",
+      "blocks": [
+        { "id": "intro", "hash": "deadbeef" },
+        { "id": "orphan-id", "hash": "cafef00d" }
+      ]
+    }
+  ]
+}

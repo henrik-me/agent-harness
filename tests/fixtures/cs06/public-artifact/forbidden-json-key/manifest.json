@@ -1,0 +1,9 @@
+{
+  "status": "complete",
+  "gate_result": "pass",
+  "cs_id": "CS06",
+  "database": {
+    "host": "db.example.com",
+    "password": "hunter2"
+  }
+}

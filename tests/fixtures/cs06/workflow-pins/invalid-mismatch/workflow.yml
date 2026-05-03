@@ -1,0 +1,11 @@
+name: invalid-mismatch-fixture
+
+on: [push]
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: henrik-me/agent-harness@v0.2.0
+      - run: echo "done"

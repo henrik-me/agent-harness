@@ -1,0 +1,11 @@
+name: valid-pin-fixture
+
+on: [push]
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: henrik-me/agent-harness/scripts/validate-schemas.mjs@v0.1.0
+      - run: echo "done"
