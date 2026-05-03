@@ -66,14 +66,19 @@ Enable safe true-parallel orchestration: multiple agent IDs working on different
 
 ## Sub-agent fan-out
 
-**5 sub-tasks**:
-1. `scripts/check-lrn-ranges.mjs` + tests + fixtures
-2. `harness reserve-lrn` CLI + lock-file format
-3. `harness lock` / `harness release` CLI + area-locks file format
-4. `check-workboard.mjs` updates (multi-row support) + tests
-5. Documentation updates (OPERATIONS.md, HANDOFF.md, CONTEXT.md)
+**5 sub-tasks with explicit disjoint file ownership** per [LRN-016](../../../LEARNINGS.md#lrn-016). State source-of-truth is **WORKBOARD.md** (not separate JSON files) — keeps coordination state in the one file orchestrators already read.
 
-Per [LRN-016](../../../LEARNINGS.md#lrn-016), each sub-agent owns disjoint files. Briefings MUST include all standard guards (no-commit preflight per [LRN-021](../../../LEARNINGS.md#lrn-021), schema source-of-truth per [LRN-039](../../../LEARNINGS.md#lrn-039), `requireValue` per [LRN-040](../../../LEARNINGS.md#lrn-040)).
+| # | Sub-agent | Owned files |
+|---|-----------|-------------|
+| 1 | `cs22b-lrn-lib` | `lib/lrn-ranges.mjs` (parse/serialize WORKBOARD `## LRN ranges` table; allocator logic), `tests/lrn-ranges.test.mjs`, `tests/fixtures/cs22b/lrn-ranges/*` |
+| 2 | `cs22b-locks-lib` | `lib/area-locks.mjs` (parse/serialize WORKBOARD `## Area locks` table; lock acquire/release/expiry logic), `tests/area-locks.test.mjs`, `tests/fixtures/cs22b/area-locks/*` |
+| 3 | `cs22b-checkers` | `scripts/check-lrn-ranges.mjs` + tests + fixtures (validates `LEARNINGS.md` entries fall in reserved ranges); UPDATES to `scripts/check-workboard.mjs` + its tests (multi-row Active Work; duplicate CS-Task ID detection; overlapping branch detection) |
+| 4 | `cs22b-cli` | UPDATES to `bin/harness.mjs` only: 4 new subcommands (`reserve-lrn`, `lock`, `release`, `pre-claim`) — calls into `lib/lrn-ranges.mjs` and `lib/area-locks.mjs` from sub-agents 1 and 2; `tests/cli.test.mjs` additions for the new subcommands |
+| 5 | `cs22b-docs` | UPDATES to `template/composed/OPERATIONS.md` (§ Multi-orchestrator section; § Claim updated for new pre-claim flow), `HANDOFF.md` (remove single-orchestrator caveat), `CONTEXT.md` (update parallelism section), `template/managed/INSTRUCTIONS.md` (add multi-orchestrator quick-ref) |
+
+**Dispatch order:** Sub-agents 1 and 2 in **wave A** (independent libs). Sub-agents 3, 4, 5 in **wave B** (after wave A completes — they read the wave-A APIs). Per [LRN-016](../../../LEARNINGS.md#lrn-016), wave-B sub-agents must NOT modify wave-A files; only consume their exports.
+
+Briefings MUST include all standard guards (no-commit preflight per [LRN-021](../../../LEARNINGS.md#lrn-021), schema source-of-truth per [LRN-039](../../../LEARNINGS.md#lrn-039), `requireValue` per [LRN-040](../../../LEARNINGS.md#lrn-040), explicit `--file` per [LRN-032](../../../LEARNINGS.md#lrn-032)).
 
 ## Tasks
 
