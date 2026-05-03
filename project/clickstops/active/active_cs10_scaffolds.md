@@ -1,9 +1,9 @@
 # CS10 — Author scaffolds
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs10/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS09 close-out (per [`harness-cs-plan.md` § CS10](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs10--author-scaffolds)).
 **Depends on:** CS09
@@ -55,7 +55,15 @@ The key behavioral constraint: `harness init --with-scaffold <name>` drops scaff
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `scaffolds/smoke/` | pending | sub-agent cs10-smoke | agent-id=yoga-ah-sub-1 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/migrations/` (+ `check-migration-policy.mjs`) | pending | sub-agent cs10-migrations | agent-id=yoga-ah-sub-2 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/container-validate/` | pending | sub-agent cs10-container-validate | agent-id=yoga-ah-sub-3 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/health-check/` | pending | sub-agent cs10-health-check | agent-id=yoga-ah-sub-4 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/seed/` | pending | sub-agent cs10-seed | agent-id=yoga-ah-sub-5 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/verify-deploy/` | pending | sub-agent cs10-verify-deploy | agent-id=yoga-ah-sub-6 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/feature-flags/` (+ `check-feature-flag-policy.mjs`) | pending | sub-agent cs10-feature-flags | agent-id=yoga-ah-sub-7 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `scaffolds/cs-probes/` | pending | sub-agent cs10-cs-probes | agent-id=yoga-ah-sub-8 \| role=scaffold-author \| report-status=pending \| learnings=0 |
+| `bin/harness.mjs` `--with-scaffold` wiring + `tests/cs10-scaffolds.test.mjs` | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 

@@ -27,7 +27,7 @@
 
 - **CS09 complete** (closed 2026-05-03). Delivered: 5 seeded skeleton files (`template/seeded/CONTEXT.md`, `ARCHITECTURE.md`, `LEARNINGS.md`, `WORKBOARD.md`, `README.md`), `template/seeded/harness.config.json`, 3 `.gitkeep` scaffold dirs, fixture test `tests/cs09-init.test.mjs` (9 new tests). **384 tests pass total** (375+9 new). 3 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers; R2=1 blocker [inline marker in OPERATIONS.md prose]; R3=clean). 5 additional learnings filed (LRN-054 through LRN-058): early-return gate anti-pattern, `$schema` canonical URL rule, inline marker in prose, init/sync integration test gap, 6-way dispatch validated (cumulative 32 dispatches). 2 planned CSs filed (CS09b: sync fixture extension; CS10: scaffolds). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #24 as `ceab301`. **`harness init` now produces a fully linter-passing consumer repo from a single command.**
 
-**CS09 is complete. CS10 (scaffolds) is ready to claim.**
+**CS09 is complete. CS10 (scaffolds) is in flight on `cs10/content` (yoga-ah).**
 
 ## Architecture pointer
 
@@ -35,7 +35,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS09 is complete; CS10 is ready to claim.
+- None. CS10 (scaffolds) is in flight on `cs10/content`.
 
 ## Parallelism (single-orchestrator default)
 
