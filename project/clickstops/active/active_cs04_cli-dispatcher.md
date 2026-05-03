@@ -10,11 +10,11 @@
 
 ## Goal
 
-Build the single entry point `bin/harness.mjs` with subcommands that wrap the CS03 sync engine library + future linters. Per cs-plan CS04 deliverables, support: `init | sync | check | lint | harvest | check-migration | composed-audit | pack | version | whoami`.
+Build the single entry point `bin/harness.mjs` with subcommands that wrap the CS03 sync engine library + future linters. Per cs-plan CS04 deliverables, support **10 subcommands**: `init | sync | check | lint | harvest | check-migration | composed-audit | pack | version | whoami`.
 
 ## Deliverables
 
-See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS04](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
+See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS04](../done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the canonical deliverables list. Summary:
 
 - `bin/harness.mjs` — CLI dispatcher with 9 subcommands per cs-plan + flags `--cwd`, `--config`, `--dry-run`, `--report`, `--ref`, `--accept-major`, `--explain`
 - Each subcommand wraps the appropriate `lib/*.mjs` function (sync, lint, etc.)
@@ -41,14 +41,15 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS04](../../done/done_cs01
 
 ## Sub-agent fan-out
 
-8 parallel sub-tasks per cs-plan parallelisation table — one per subcommand. Each gets dispatched per the [OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch-proto-cs01) template **with hard preflight per [LRN-021](../../../LEARNINGS.md#lrn-021)** AND **explicit file ownership per [LRN-016](../../../LEARNINGS.md#lrn-016)**.
+**Decision: ONE sub-agent (cs04-cli) owns the entire CLI** — not 8 parallel sub-agents. Per [LRN-016](../../../LEARNINGS.md#lrn-016) (parallel sub-agent file race during CS03), all 10 subcommands write to the SAME file (`bin/harness.mjs`); parallel dispatch would race the same way templating + lock did in CS03. The cs-plan parallelisation table for CS04 listed 8 parallel sub-tasks (one per subcommand) — that was authored before LRN-016 was filed and should be considered REJECTED for CS04 in favor of the single-sub-agent model.
 
-Critical: all sub-agents will write to `bin/harness.mjs` (single file). To avoid the race that hit CS03, dispatch in a different pattern:
-- ONE sub-agent (cs04-dispatcher) builds the dispatcher skeleton + 9 subcommand stubs
-- Then 8 parallel sub-agents fill in their specific subcommand body, each working in a SEPARATE branch + their own clone of the repo, and the orchestrator merges them
-- OR simpler: dispatch ONE sub-agent for the whole CLI in ONE pass (lower parallelism, but no race risk)
+Trade-off: lower parallelism (single Sonnet 4.6 sub-agent dispatch) for ZERO race risk on a one-file deliverable. CS04 is not high-risk per Decision #22 and the CLI is mostly thin wrappers around `lib/sync.mjs`, `lib/composed.mjs`, `lib/lock.mjs`, etc. — so a single sub-agent should handle it cleanly in one pass.
 
-**Recommended (per LRN-016):** ONE sub-agent for the whole CLI to avoid the file race. This trades parallelism for safety. CS04 isn't high-risk and the CLI is mostly thin wrappers around `lib/`, so a single Sonnet 4.6 sub-agent should handle it cleanly.
+**Briefing requirements** (per LRN-021 + LRN-017):
+- Hard "no commit" preflight in the briefing's first paragraph
+- Final-checklist requirement: `git status --short` + `git --no-pager log --oneline -1` + literal "No commit was created."
+- Explicit file ownership: `bin/harness.mjs`, `tests/cli.test.mjs`, plus optional package.json `bin` field verification (no overlap with other sub-agents since none are running in parallel)
+- Post-completion verification: orchestrator runs disk size check on `bin/harness.mjs` to catch under-delivery
 
 ## Tasks
 
