@@ -16,12 +16,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS02 | Define schemas (config + lock + learning) + parameterization model + file classes | claimed | yoga-ah | `cs02/define-schemas` | 2026-05-03T05:30Z | _(none)_ |
+| _(none — CS02 closed; CS03 next per cs-plan)_ | | | | | | |
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS02 | Define schemas (config + lock + learning) + parameterization model + file classes | 2026-05-03 | 9-way sub-agent fan-out (Wave 1: 5, Wave 2: 4); 3 GPT-5.5 review iterations; 10 new LRN (LRN-006..015) filed; 21/0 validations pass. PRs #2 (claim) + #3 (content). |
 | CS01 | Bootstrap repo + skeleton + proto process docs | 2026-05-03 | 5 learnings filed (LRN-001 through LRN-005). 1 planned CS filed (CS04a). 1 next-CS planned file created (CS02). Branch protection deferred to CS15b per LRN-001. |
 
 > **Note:** Clickstop files live under lifecycle subdirectories: `project/clickstops/planned/` (queued), `project/clickstops/active/` (in flight), `project/clickstops/done/` (completed).
