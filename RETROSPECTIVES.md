@@ -60,14 +60,14 @@ Run `harness harvest` (CS04+). For each `open` learning:
 1. **Apply upstream:** edit INSTRUCTIONS / CONVENTIONS / OPERATIONS / RETROSPECTIVES / ARCHITECTURE / TRACKING / REVIEWS as appropriate. Mark `applied` with the commit SHA.
 2. **File a CS:** for tooling / automation gaps. Link the CS; leave `open` until CS closes.
 3. **Obsolete:** no longer relevant. Mark with reason.
-4. **Defer:** leave `open` with explicit reason + `deferred-until` date. The CLI prevents repeated indefinite defers — after the second defer, the learning is auto-escalated to weekly-harvest only and dropped from before-claim prompts.
+4. **Defer:** leave `open` with explicit reason + `deferred_until` date. The CLI prevents repeated indefinite defers — after the second defer, the learning is auto-escalated to weekly-harvest only and dropped from before-claim prompts.
 
 ### Before-claim (bounded; runs as part of `harness harvest`)
 
 Triggered by `claim` flow. Only prompts the user when at least one of:
 
 - a stale `open` learning is tagged `process` or `architectural`;
-- a stale `open` learning has `claim-area` matching the area being claimed.
+- a stale `open` learning has `claim_area` matching the area being claimed.
 
 Output is batched: "3 stale learnings; choose apply / defer / obsolete / skip-for-this-CS each."
 

@@ -8,7 +8,7 @@ Day-to-day procedures. Hand-maintained until CS11. Canonical version authored in
 
 From commit 2 onward, **everything** — including WORKBOARD claim/closeout — goes through PRs.
 
-### Until CS15a (small-PR claim model, discipline-enforced)
+### Until CS15b (small-PR claim model, discipline-enforced; CS15a builds + dry-runs the bot but it is not yet the live mechanism)
 
 WORKBOARD claim/closeout PRs are **normal small PRs labeled `workboard-only` with user review** — same review loop as any other PR. No automation; just small scope. Discipline-only because the auto-approve bot doesn't exist yet (CS15a builds it) and Rulesets aren't available on private free-tier repos.
 
@@ -38,7 +38,7 @@ If you need to leave a CS in the middle: update WORKBOARD with `state=blocked` (
 ## Harvest
 
 - **Weekly cadence:** Monday morning, run `harness harvest` (CS04+) and review LEARNINGS.md.
-- **Before-claim cadence (CS04+):** `harness harvest` runs automatically as part of `claim`; prompts user only if stale `open` learnings tagged `process` or `architectural` exist (or learnings tagged with the claim-area metadata).
+- **Before-claim cadence (CS04+):** `harness harvest` runs automatically as part of `claim`; prompts user only if stale `open` learnings tagged `process` or `architectural` exist (or learnings tagged with the `claim_area` metadata).
 - See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the full procedure and disposition states.
 
 ## Models used

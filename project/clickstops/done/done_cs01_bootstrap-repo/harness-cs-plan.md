@@ -25,7 +25,7 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 | 7 | Sub Invaders deployment v1 | Azure Static Web Apps (followed by re-eval CS for Cloudflare Pages + Workers full stack) |
 | 8 | Sub Invaders frontend | Pure TypeScript via `tsc` only, HTML5 Canvas, ES modules, zero runtime deps, PWA service worker for offline |
 | 9 | Sub Invaders backend | Single Azure Function (Node 20) inside the SWA project: `POST /score`, `GET /leaderboard?period=daily\|all`, with rate-limit + replay protection (no sign-in v1) |
-| 10 | Harvest cadence | Weekly orchestrator-triggered + bounded before-claim user prompt (only stale `process`/`architectural` learnings or claim-area-relevant learnings; supports `deferred_until`; auto-escalates repeatedly-deferred items to weekly only) |
+| 10 | Harvest cadence | Weekly orchestrator-triggered + bounded before-claim user prompt (only stale `process`/`architectural` learnings or `claim_area`-relevant learnings; supports `deferred_until`; auto-escalates repeatedly-deferred items to weekly only) |
 | 11 | Migration safety net | PILOT-A baseline (CS18b) executed under existing in-repo harness; PILOT-B parity (CS19/PR-2) executed under migrated harness; gates compared via machine-readable parity manifest |
 | 12 | PILOT-A candidate | Picked during CS18a |
 | 13 | File classes | **Three classes**: `managed` (overwrite on sync), `composed` (managed core + marker-preserved local blocks), `seeded` (create-if-missing, never overwrite) |
@@ -119,7 +119,7 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 - `init` scaffolds `harness.config.json` + seeded files into a target
 - `sync --dry-run --report` emits a structured migration report classifying every file (overwrite / preserve / skip / conflict / project-owned)
 - `check-migration --from-existing-harness` audits an existing repo against the harness templates and emits a duplicate-script + workflow-ref + config-override report (used in CS19 PR-1)
-- `harvest` runs the full harvest procedure AND a **bounded before-claim check**: only stale `open` learnings tagged `process`/`architectural` *or* tagged with the claim-area metadata trigger a prompt; `--snooze=<reason>:<deferred_until>` accepted; repeated defers auto-escalate the learning to weekly-harvest-only
+- `harvest` runs the full harvest procedure AND a **bounded before-claim check**: only stale `open` learnings tagged `process`/`architectural` *or* tagged with the `claim_area` metadata trigger a prompt; `--snooze=<reason>:<deferred_until>` accepted; repeated defers auto-escalate the learning to weekly-harvest-only
 - `--accept-major` required to sync across a major version bump; CLI warns if syncing while a CS is `active` in WORKBOARD
 - `pack` runs `npm pack --dry-run` and verifies the file whitelist
 - Helpful `--help` per subcommand. Exit codes documented in OPERATIONS.md.
@@ -263,7 +263,7 @@ Spinning the agent harness out of `henrik-me/guesswhatisnext` into its own repo,
 1. CS11 self-host CI gate has been green for ≥ all of CS12–CS14
 2. `harness sync --check` runs in < 5s; `harness lint` runs in < 10s
 3. `LEARNINGS.md` contains ≥ 3 `applied` learnings from CS12–CS14 demonstrating the harvest loop works
-4. **All `open` learnings dispositioned** (status `applied` / `obsolete` / `deferred` with explicit `deferred-until`) — per [LRN-003](../../../../LEARNINGS.md). Tightens prior wording. Zero `open` learnings of any age before CS15b proceeds.
+4. **All `open` learnings dispositioned** (status `applied` / `obsolete` / `deferred` with explicit `deferred_until`) — per [LRN-003](../../../../LEARNINGS.md). Tightens prior wording. Zero `open` learnings of any age before CS15b proceeds.
 5. Hot-fix stability counter (per GPT-5.5 #16): ≥ 1 CS landed cleanly with no harness changes during execution
 
 *Ruleset specification (written, not applied — application moves to CS15b per LRN-001):*
