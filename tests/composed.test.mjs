@@ -428,7 +428,7 @@ describe('mergeComposed — error: ECOMPOSED_DROPPED', () => {
     const current  = fixture('merge-error-dropped/current.md');
     const lockRecords = [{ id: 'custom-block' }];
     assertMergeError(
-      () => mergeComposed(template, current, { allowedBlockIds: [], lockRecords }),
+      () => mergeComposed(template, current, { allowedBlockIds: ['custom-block'], lockRecords }),
       'ECOMPOSED_DROPPED',
       'dropped block should throw',
     );
@@ -515,8 +515,159 @@ describe('mergeComposed — legacy with mapping', () => {
 });
 
 // ===========================================================================
-// 9. computeBlockRecords — schema validation (self-check 5)
+// 10. mergeComposed — Fix #2: legacyMapping bijective validation
 // ===========================================================================
+
+describe('mergeComposed — Fix #2: legacyMapping bijective validation', () => {
+  // Inline helpers: a template with two blocks and a current with two legacy regions.
+  const twoBlockTemplate = [
+    'Preamble',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Middle',
+    '<!-- harness:local-start id=b2 -->',
+    '<!-- harness:local-end id=b2 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  const twoLegacyCurrent = [
+    'Preamble',
+    'LEGACY A',
+    '<!-- harness:local-start id=b1 -->',
+    'body1',
+    '<!-- harness:local-end id=b1 -->',
+    'Middle',
+    'LEGACY B',
+    '<!-- harness:local-start id=b2 -->',
+    'body2',
+    '<!-- harness:local-end id=b2 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  const oneBlockTemplate = [
+    'Preamble',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  const oneLegacyCurrent = [
+    'Preamble',
+    'LEGACY CONTENT',
+    '<!-- harness:local-start id=b1 -->',
+    'body1',
+    '<!-- harness:local-end id=b1 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  it('throws EMERGE_LEGACY_UNMAPPED when mapping content is unrelated to actual region', () => {
+    const mapping = { regions: [{ action: 'discard', content: 'UNRELATED CONTENT' }] };
+    assert.throws(
+      () => mergeComposed(oneBlockTemplate, oneLegacyCurrent, {
+        allowedBlockIds: ['b1'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_UNMAPPED when one of two legacy regions is not covered', () => {
+    const mapping = {
+      regions: [{ action: 'map_to_block', block_id: 'b1', content: 'LEGACY A' }],
+    };
+    assert.throws(
+      () => mergeComposed(twoBlockTemplate, twoLegacyCurrent, {
+        allowedBlockIds: ['b1', 'b2'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when mapping content has trailing whitespace', () => {
+    const mapping = {
+      regions: [{ action: 'discard', content: 'LEGACY CONTENT   ' }],
+    };
+    assert.throws(
+      () => mergeComposed(oneBlockTemplate, oneLegacyCurrent, {
+        allowedBlockIds: ['b1'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when map_to_block targets a nonexistent block_id', () => {
+    const mapping = {
+      regions: [{ action: 'map_to_block', block_id: 'nonexistent', content: 'LEGACY CONTENT' }],
+    };
+    assert.throws(
+      () => mergeComposed(oneBlockTemplate, oneLegacyCurrent, {
+        allowedBlockIds: ['b1'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when mapping has duplicate content entries', () => {
+    const mapping = {
+      regions: [
+        { action: 'map_to_block', block_id: 'b1', content: 'LEGACY A' },
+        { action: 'discard', content: 'LEGACY A' },
+      ],
+    };
+    assert.throws(
+      () => mergeComposed(twoBlockTemplate, twoLegacyCurrent, {
+        allowedBlockIds: ['b1', 'b2'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+});
+
+// ===========================================================================
+// 11. mergeComposed — Fix #3: allowedBlockIds enforcement
+// ===========================================================================
+
+describe('mergeComposed — Fix #3: allowedBlockIds enforcement', () => {
+  it('throws ECOMPOSED_UNALLOWED_TEMPLATE_BLOCK when template block not in allowedBlockIds', () => {
+    const template = '<!-- harness:local-start id=secret -->\n<!-- harness:local-end id=secret -->\n';
+    assert.throws(
+      () => mergeComposed(template, '', { allowedBlockIds: [] }),
+      (err) => err instanceof ComposedMergeError && err.code === 'ECOMPOSED_UNALLOWED_TEMPLATE_BLOCK',
+    );
+  });
+
+  it('throws ECOMPOSED_UNALLOWED_CURRENT_BLOCK when current block not in allowedBlockIds', () => {
+    const template = '<!-- harness:local-start id=b1 -->\n<!-- harness:local-end id=b1 -->\n';
+    const current = [
+      '<!-- harness:local-start id=b1 -->',
+      'body1',
+      '<!-- harness:local-end id=b1 -->',
+      '<!-- harness:local-start id=b2 -->',
+      'body2',
+      '<!-- harness:local-end id=b2 -->',
+      '',
+    ].join('\n');
+    assert.throws(
+      () => mergeComposed(template, current, { allowedBlockIds: ['b1'] }),
+      (err) => err instanceof ComposedMergeError && err.code === 'ECOMPOSED_UNALLOWED_CURRENT_BLOCK',
+    );
+  });
+
+  it('succeeds when all blocks are in allowedBlockIds', () => {
+    const template = '<!-- harness:local-start id=b1 -->\n<!-- harness:local-end id=b1 -->\n';
+    const current  = '<!-- harness:local-start id=b1 -->\nmy body\n<!-- harness:local-end id=b1 -->\n';
+    const result = mergeComposed(template, current, { allowedBlockIds: ['b1'] });
+    assert.ok(result.content.includes('my body'));
+  });
+});
 
 describe('computeBlockRecords — blockEntry schema validation', () => {
   it('returns valid blockEntry records for user-authored blocks', () => {

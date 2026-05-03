@@ -1013,6 +1013,127 @@ describe('sync() — SyncResult shape', () => {
   });
 });
 
+
+// ===========================================================================
+// Fix #1: plan/commit atomicity — error in second file must not write first
+// ===========================================================================
+
+describe('sync() — Fix #1: plan/commit atomicity', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('does not write any file when a later template is missing (atomicity)', async () => {
+    // README.md has a template, MISSING.md does not.
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+      // MISSING.md template deliberately absent.
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md', 'MISSING.md'] },
+    });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'ESYNC_MISSING_TEMPLATE',
+    );
+
+    // README.md must not have been written — plan failed before commit phase.
+    assert(
+      !existsSync(path.join(consumerDir, 'README.md')),
+      'README.md must not be written when plan phase fails',
+    );
+  });
+});
+
+// ===========================================================================
+// Fix #5: skip identical writes — already-synced consumer produces no writes
+// ===========================================================================
+
+describe('sync() — Fix #5: skip identical writes', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('reports action=skipped for managed file with identical content on second apply', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md'] },
+    });
+
+    // First apply — creates the file.
+    await sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' });
+
+    // Second apply — content is already up to date.
+    const mtime1 = (await import('node:fs')).statSync(path.join(consumerDir, 'README.md')).mtimeMs;
+
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+
+    const change = result.changes.find(c => c.target === 'README.md');
+    assert.equal(change?.action, 'skipped', 'Second apply of identical content should be skipped');
+
+    // File's mtime should not change (no write occurred).
+    const mtime2 = (await import('node:fs')).statSync(path.join(consumerDir, 'README.md')).mtimeMs;
+    assert.equal(mtime1, mtime2, 'File must not be rewritten when content is identical');
+  });
+});
+
+// ===========================================================================
+// Fix #6: extended config validation — duplicate target path across classes
+// ===========================================================================
+
+describe('sync() — Fix #6: duplicate path validation', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('throws EBADCONFIG_DUP_PATH when same path appears in both managed and composed', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+      composed: { 'README.md': COMPOSED_TEMPLATE },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md'] },
+      composed: {
+        files: ['README.md'],
+        overrides: { 'README.md': { local_blocks: ['my-section'] } },
+      },
+    });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+});
+
 // ---------------------------------------------------------------------------
 describe('sync() — missing template error', () => {
   let harnessDir, consumerDir;
