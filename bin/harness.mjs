@@ -19,7 +19,7 @@
  */
 
 import { parseArgs } from 'node:util';
-import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -223,13 +223,19 @@ function machineShortFromHostname(hostname) {
 }
 
 /**
- * Derive the -c<N> clone index from the repo directory name, if present.
- * E.g. a folder named `agent-harness-c2` yields `c2`; `agent-harness` yields null.
+ * Derive the -c<N> clone index from the consumer repo directory name, per Decision #20.
+ * Patterns (checked in order):
+ *   `<repo>_copilot<N>`  → `c<N>`  (e.g. `agent-harness_copilot2` → `c2`)
+ *   `<repo><N>`          → `c<N>`  (trailing digits, e.g. `agent-harness3` → `c3`)
+ *   otherwise            → null
  */
 function cloneSuffixFromDir(dirPath) {
   const base = path.basename(dirPath);
-  const m = base.match(/-c(\d+)$/i);
-  return m ? `c${m[1]}` : null;
+  let m = base.match(/_copilot(\d+)$/i);
+  if (m) return `c${m[1]}`;
+  m = base.match(/(\d+)$/);
+  if (m) return `c${m[1]}`;
+  return null;
 }
 
 /**
@@ -256,6 +262,7 @@ function parseGlobalArgs() {
   const argv = process.argv.slice(2);
 
   let cwd = process.cwd();
+  let cwdProvided = false;
   let config = null;
   let ref = null;
   let debug = false;
@@ -267,8 +274,10 @@ function parseGlobalArgs() {
     const arg = argv[i];
     if (arg === '--cwd') {
       cwd = argv[++i] ?? die('--cwd requires a value', 2);
+      cwdProvided = true;
     } else if (arg.startsWith('--cwd=')) {
       cwd = arg.slice('--cwd='.length);
+      cwdProvided = true;
     } else if (arg === '--config') {
       config = argv[++i] ?? die('--config requires a value', 2);
     } else if (arg.startsWith('--config=')) {
@@ -286,6 +295,21 @@ function parseGlobalArgs() {
     } else {
       rest.push(arg);
     }
+  }
+
+  // Canonicalize paths to absolute, relative to the shell's cwd.
+  cwd = path.resolve(process.cwd(), cwd);
+  if (cwdProvided) {
+    if (!existsSync(cwd)) {
+      die(`--cwd path does not exist: ${cwd}`, 2);
+    }
+    const s = statSync(cwd);
+    if (!s.isDirectory()) {
+      die(`--cwd must be a directory: ${cwd}`, 2);
+    }
+  }
+  if (config !== null) {
+    config = path.resolve(process.cwd(), config);
   }
 
   return { cwd, config, ref, debug, help, subcommand, rest };
@@ -469,6 +493,11 @@ async function cmdCheck(args, global) {
     process.stdout.write(SUBCOMMAND_HELP['check']);
     process.exit(0);
   }
+  // Blocker 1: --mode is not allowed on check (it is always read-only)
+  const hasMode = args.some(a => a === '--mode' || a.startsWith('--mode='));
+  if (hasMode) {
+    die('harness check: --mode is not allowed (check is read-only)', 2);
+  }
   return cmdSync(args, global, 'check');
 }
 
@@ -477,11 +506,15 @@ async function cmdCheck(args, global) {
 // ---------------------------------------------------------------------------
 
 async function cmdLint(args, _global) {
-  if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(SUBCOMMAND_HELP['lint']);
-    process.exit(0);
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['lint']);
+      process.exit(0);
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
+    }
   }
-  process.stdout.write('TODO: lint is not yet implemented (full impl in CS06).\n');
+  die('harness lint: not yet implemented (planned: CS06)', 3);
 }
 
 // ---------------------------------------------------------------------------
@@ -489,11 +522,17 @@ async function cmdLint(args, _global) {
 // ---------------------------------------------------------------------------
 
 async function cmdHarvest(args, _global) {
-  if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(SUBCOMMAND_HELP['harvest']);
-    process.exit(0);
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['harvest']);
+      process.exit(0);
+    } else if (a.startsWith('--snooze=')) {
+      // recognized flag — parsed but ignored until implemented
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
+    }
   }
-  process.stdout.write('harvest not yet implemented (full impl in a later CS).\n');
+  die('harness harvest: not yet implemented (planned: CS-TBD)', 3);
 }
 
 // ---------------------------------------------------------------------------
@@ -508,11 +547,21 @@ async function cmdHarvest(args, _global) {
  * @param {object} _global
  */
 async function cmdCheckMigration(args, _global) {
-  if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(SUBCOMMAND_HELP['check-migration']);
-    process.exit(0);
+  let fromExistingHarness = false;
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['check-migration']);
+      process.exit(0);
+    } else if (a === '--from-existing-harness') {
+      fromExistingHarness = true;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['check-migration']}`, 2);
+    }
   }
-  process.stdout.write('TODO: check-migration is not yet implemented (full impl in CS19).\n');
+  if (!fromExistingHarness) {
+    die(`harness check-migration: --from-existing-harness is required\n\n${SUBCOMMAND_HELP['check-migration']}`, 2);
+  }
+  die('harness check-migration: not yet implemented (planned: CS19)', 3);
 }
 
 // ---------------------------------------------------------------------------
@@ -527,11 +576,21 @@ async function cmdCheckMigration(args, _global) {
  * @param {object} _global
  */
 async function cmdComposedAudit(args, _global) {
-  if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(SUBCOMMAND_HELP['composed-audit']);
-    process.exit(0);
+  let fromExistingHarness = false;
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['composed-audit']);
+      process.exit(0);
+    } else if (a === '--from-existing-harness') {
+      fromExistingHarness = true;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['composed-audit']}`, 2);
+    }
   }
-  process.stdout.write('TODO: composed-audit is not yet implemented (full impl in CS06/CS19).\n');
+  if (!fromExistingHarness) {
+    die(`harness composed-audit: --from-existing-harness is required\n\n${SUBCOMMAND_HELP['composed-audit']}`, 2);
+  }
+  die('harness composed-audit: not yet implemented (planned: CS-TBD)', 3);
 }
 
 // ---------------------------------------------------------------------------
@@ -589,7 +648,7 @@ async function cmdVersion(args, _global) {
 // ---------------------------------------------------------------------------
 
 async function cmdWhoami(args, global) {
-  const { cwd, config: configOverride, debug } = global;
+  const { cwd, config: configOverride } = global;
 
   let explain = false;
 
@@ -604,34 +663,49 @@ async function cmdWhoami(args, global) {
     }
   }
 
+  // Validate --config path if explicitly provided
+  if (configOverride !== null) {
+    if (!existsSync(configOverride)) {
+      die(`--config path does not exist: ${configOverride}`, 2);
+    }
+    const s = statSync(configOverride);
+    if (!s.isFile()) {
+      die(`--config must be a file: ${configOverride}`, 2);
+    }
+  }
+
   // Load config for agent_suffix
   const cfg = loadConfig(cwd, configOverride);
   const agentSuffix = cfg?.project?.agent_suffix ?? null;
+
+  if (!agentSuffix) {
+    die('harness whoami: cannot resolve agent ID — missing harness.config.json or project.agent_suffix', 2);
+  }
+
   const agentEnvVarName = cfg?.project?.agent_env_var
-    ?? (agentSuffix ? `HARNESS_AGENT_${agentSuffix.toUpperCase()}_MACHINE` : null);
+    ?? `HARNESS_AGENT_${agentSuffix.toUpperCase()}_MACHINE`;
 
   // Derive machine-short
   const hostname = os.hostname();
   const machineShortDerived = machineShortFromHostname(hostname);
-  const envVarValue = agentEnvVarName ? process.env[agentEnvVarName] ?? null : null;
+  const envVarValue = process.env[agentEnvVarName] ?? null;
   const machineShort = envVarValue ?? machineShortDerived;
 
-  // Derive clone index from repo dir
-  const cloneSuffix = cloneSuffixFromDir(REPO_ROOT);
+  // Derive clone index from consumer cwd (Decision #20)
+  const cloneSuffix = cloneSuffixFromDir(cwd);
 
   // Build agent ID
-  let agentId = machineShort;
-  if (agentSuffix) agentId += `-${agentSuffix}`;
+  let agentId = `${machineShort}-${agentSuffix}`;
   if (cloneSuffix) agentId += `-${cloneSuffix}`;
 
   if (explain) {
     process.stdout.write(`hostname:       ${hostname}\n`);
     process.stdout.write(`machine-short:  ${machineShortDerived} (derived from hostname)\n`);
-    process.stdout.write(`env-var-name:   ${agentEnvVarName ?? '(none — no config found)'}\n`);
+    process.stdout.write(`env-var-name:   ${agentEnvVarName}\n`);
     process.stdout.write(`env-var-value:  ${envVarValue ?? '(not set)'}\n`);
     process.stdout.write(`effective-machine-short: ${machineShort}\n`);
-    process.stdout.write(`config-suffix:  ${agentSuffix ?? '(none — no config found)'}\n`);
-    process.stdout.write(`repo-dir:       ${REPO_ROOT}\n`);
+    process.stdout.write(`config-suffix:  ${agentSuffix}\n`);
+    process.stdout.write(`consumer-cwd:   ${cwd}\n`);
     process.stdout.write(`clone-suffix:   ${cloneSuffix ?? '(none)'}\n`);
     process.stdout.write(`agent-id:       ${agentId}\n`);
   } else {
@@ -674,6 +748,11 @@ async function main() {
   if (!handler) {
     process.stderr.write(`Unknown subcommand: "${subcommand}"\n\n${TOP_HELP}`);
     process.exit(2);
+  }
+
+  // Blocker 2: --config is not yet supported for sync/check (sync engine always reads <cwd>/harness.config.json)
+  if (global.config !== null && (subcommand === 'sync' || subcommand === 'check')) {
+    die('--config is not yet supported for sync/check; planned for a future CS. Use --cwd to point at the consumer repo.', 2);
   }
 
   // If --help was a global flag but a subcommand is present, forward it to the subcommand.

@@ -196,10 +196,10 @@ describe('harness whoami', () => {
 // ---------------------------------------------------------------------------
 
 describe('harness lint', () => {
-  it('exits 0 with TODO message', () => {
+  it('exits 3 with not-yet-implemented message', () => {
     const r = run(['lint']);
-    assert.equal(r.status, 0);
-    assert.ok(r.stdout.toLowerCase().includes('todo'), `Expected TODO message; got: ${r.stdout}`);
+    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
+    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
   });
 
   it('lint --help exits 0', () => {
@@ -214,13 +214,10 @@ describe('harness lint', () => {
 // ---------------------------------------------------------------------------
 
 describe('harness harvest', () => {
-  it('exits 0 with "not yet implemented" message', () => {
+  it('exits 3 with not-yet-implemented message', () => {
     const r = run(['harvest']);
-    assert.equal(r.status, 0);
-    assert.ok(
-      r.stdout.includes('not yet implemented') || r.stdout.includes('harvest'),
-      `Expected "not yet implemented"; got: ${r.stdout}`,
-    );
+    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
+    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
   });
 });
 
@@ -229,10 +226,10 @@ describe('harness harvest', () => {
 // ---------------------------------------------------------------------------
 
 describe('harness check-migration', () => {
-  it('exits 0 with TODO message', () => {
+  it('exits 3 with --from-existing-harness', () => {
     const r = run(['check-migration', '--from-existing-harness']);
-    assert.equal(r.status, 0);
-    assert.ok(r.stdout.toLowerCase().includes('todo'), `Expected TODO; got: ${r.stdout}`);
+    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
+    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
   });
 });
 
@@ -241,10 +238,10 @@ describe('harness check-migration', () => {
 // ---------------------------------------------------------------------------
 
 describe('harness composed-audit', () => {
-  it('exits 0 with TODO message', () => {
+  it('exits 3 with --from-existing-harness', () => {
     const r = run(['composed-audit', '--from-existing-harness']);
-    assert.equal(r.status, 0);
-    assert.ok(r.stdout.toLowerCase().includes('todo'), `Expected TODO; got: ${r.stdout}`);
+    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
+    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
   });
 });
 
@@ -426,4 +423,240 @@ describe('subcommand --help flags', () => {
       assert.ok(r.stdout.includes('Usage:'), `Missing "Usage:" in help for ${args.join(' ')}`);
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 1 — check must forbid --mode
+// ---------------------------------------------------------------------------
+
+describe('harness check --mode rejection (Blocker 1)', () => {
+  it('check --mode=apply exits 2 with no lock file created', () => {
+    const dir = makeTmpDir('harness-check-mode-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
+      const r = run(['check', '--mode=apply'], { cwd: dir });
+      assert.equal(r.status, 2, `Expected exit 2, got ${r.status}`);
+      assert.ok(r.stderr.includes('--mode is not allowed'), `stderr missing message; got: ${r.stderr}`);
+      assert.ok(!existsSync(path.join(dir, '.harness-lock.json')), '.harness-lock.json must NOT be created');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('check --mode=check exits 2 (read-only, no --mode allowed)', () => {
+    const dir = makeTmpDir('harness-check-mode2-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
+      const r = run(['check', '--mode=check'], { cwd: dir });
+      assert.equal(r.status, 2, `Expected exit 2, got ${r.status}`);
+      assert.ok(r.stderr.includes('--mode is not allowed'), `stderr: ${r.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 2 — --config rejected for sync/check
+// ---------------------------------------------------------------------------
+
+describe('--config rejected for sync/check (Blocker 2)', () => {
+  const cfgFile = path.join(REPO_ROOT, 'examples', 'agent-harness-self.harness.config.json');
+
+  it('sync --config=<path> exits 2', () => {
+    const r = run([`--config=${cfgFile}`, 'sync']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+    assert.ok(r.stderr.includes('--config is not yet supported for sync/check'), `stderr: ${r.stderr}`);
+  });
+
+  it('check --config=<path> exits 2', () => {
+    const r = run([`--config=${cfgFile}`, 'check']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+    assert.ok(r.stderr.includes('--config is not yet supported for sync/check'), `stderr: ${r.stderr}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 3 — --cwd path canonicalization
+// ---------------------------------------------------------------------------
+
+describe('--cwd path canonicalization (Blocker 3)', () => {
+  it('--cwd=./relative-dir resolves correctly for sync', () => {
+    const parentDir = makeTmpDir('harness-cwd-rel-');
+    const childName = 'child-repo';
+    const childDir = path.join(parentDir, childName);
+    mkdirSync(childDir);
+    writeJSON(path.join(childDir, 'harness.config.json'), minimalConfig('ah'));
+    try {
+      const r = run([`--cwd=./${childName}`, 'sync', '--mode=check'], { cwd: parentDir });
+      assert.equal(r.status, 0, `Expected 0; stderr: ${r.stderr}`);
+    } finally {
+      rmSync(parentDir, { recursive: true, force: true });
+    }
+  });
+
+  it('--cwd <space> ./relative-dir resolves correctly for sync', () => {
+    const parentDir = makeTmpDir('harness-cwd-rel2-');
+    const childName = 'child-repo2';
+    const childDir = path.join(parentDir, childName);
+    mkdirSync(childDir);
+    writeJSON(path.join(childDir, 'harness.config.json'), minimalConfig('ah'));
+    try {
+      const r = run(['--cwd', `./${childName}`, 'sync', '--mode=check'], { cwd: parentDir });
+      assert.equal(r.status, 0, `Expected 0; stderr: ${r.stderr}`);
+    } finally {
+      rmSync(parentDir, { recursive: true, force: true });
+    }
+  });
+
+  it('--cwd <nonexistent-path> exits 2', () => {
+    const r = run(['--cwd=/this-path-does-not-exist-harness-test-xyz', 'sync', '--mode=check']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+    assert.ok(r.stderr.includes('does not exist'), `stderr: ${r.stderr}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 4 — cloneSuffixFromDir derivation (via whoami --cwd)
+// ---------------------------------------------------------------------------
+
+describe('cloneSuffixFromDir derivation per Decision #20 (Blocker 4)', () => {
+  function makeNamedDir(name, suffix = 'ah') {
+    const parent = makeTmpDir('harness-clone-parent-');
+    const dir = path.join(parent, name);
+    mkdirSync(dir);
+    writeJSON(path.join(dir, 'harness.config.json'), minimalConfig(suffix));
+    return { parent, dir };
+  }
+
+  it('agent-harness_copilot2 → -c2 in agent ID', () => {
+    const { parent, dir } = makeNamedDir('agent-harness_copilot2');
+    try {
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 0, `exit: ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stdout.includes('-c2'), `Expected -c2 in output; got: ${r.stdout.trim()}`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('agent-harness3 → -c3 in agent ID (bare trailing digit)', () => {
+    const { parent, dir } = makeNamedDir('agent-harness3');
+    try {
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 0, `exit: ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stdout.includes('-c3'), `Expected -c3 in output; got: ${r.stdout.trim()}`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('agent-harness → no clone suffix', () => {
+    const { parent, dir } = makeNamedDir('agent-harness');
+    try {
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 0, `exit: ${r.status}; stderr: ${r.stderr}`);
+      const id = r.stdout.trim();
+      assert.ok(!id.includes('-c'), `Expected no -c suffix; got: ${id}`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('agent-harness_copilot (no number) → no clone suffix', () => {
+    const { parent, dir } = makeNamedDir('agent-harness_copilot');
+    try {
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 0, `exit: ${r.status}; stderr: ${r.stderr}`);
+      const id = r.stdout.trim();
+      assert.ok(!id.includes('-c'), `Expected no -c suffix; got: ${id}`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 6 — whoami must fail when no agent_suffix resolvable
+// ---------------------------------------------------------------------------
+
+describe('harness whoami fail-closed (Blocker 6)', () => {
+  it('exits 2 with clear message when harness.config.json is missing', () => {
+    const dir = makeTmpDir('harness-whoami-noconfig-');
+    try {
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+      assert.ok(
+        r.stderr.includes('cannot resolve agent ID'),
+        `stderr missing message; got: ${r.stderr}`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('exits 2 when config exists but project.agent_suffix is missing', () => {
+    const dir = makeTmpDir('harness-whoami-nosuffix-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), {
+        version: 'self',
+        project: { name: 'test-project' },
+        managed: { files: [] },
+        composed: { files: [] },
+        seeded: { files: [] },
+        scaffolds: [],
+        excluded: [],
+      });
+      const r = run(['whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+      assert.ok(r.stderr.includes('cannot resolve agent ID'), `stderr: ${r.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Blocker 7 — stub subcommands fail-closed (unknown flags + missing required)
+// ---------------------------------------------------------------------------
+
+describe('stub subcommand fail-closed (Blocker 7)', () => {
+  it('lint --unknown-flag exits 2', () => {
+    const r = run(['lint', '--unknown-flag']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+    assert.ok(r.stderr.includes('Unknown flag') || r.stderr.includes('--unknown-flag'), `stderr: ${r.stderr}`);
+  });
+
+  it('harvest --unknown-flag exits 2', () => {
+    const r = run(['harvest', '--unknown-flag']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+    assert.ok(r.stderr.includes('Unknown flag') || r.stderr.includes('--unknown-flag'), `stderr: ${r.stderr}`);
+  });
+
+  it('check-migration without --from-existing-harness exits 2', () => {
+    const r = run(['check-migration']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+    assert.ok(r.stderr.includes('--from-existing-harness is required'), `stderr: ${r.stderr}`);
+  });
+
+  it('check-migration --unknown-flag exits 2 (before not-implemented check)', () => {
+    const r = run(['check-migration', '--from-existing-harness', '--unknown-flag']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+  });
+
+  it('composed-audit without --from-existing-harness exits 2', () => {
+    const r = run(['composed-audit']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+    assert.ok(r.stderr.includes('--from-existing-harness is required'), `stderr: ${r.stderr}`);
+  });
+
+  it('composed-audit --unknown-flag exits 2 (before not-implemented check)', () => {
+    const r = run(['composed-audit', '--from-existing-harness', '--unknown-flag']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
+  });
+
+  it('harvest --snooze=reason:2099-01-01 exits 3 (recognized flag, still not implemented)', () => {
+    const r = run(['harvest', '--snooze=reason:2099-01-01']);
+    assert.equal(r.status, 3, `Expected exit 3; got ${r.status}`);
+  });
 });
