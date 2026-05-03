@@ -23,7 +23,7 @@
 
 - **CS08 complete** (closed 2026-05-03). Delivered: 10 template files (7 process doc templates: `template/managed/INSTRUCTIONS.md`, `template/composed/CONVENTIONS.md`, `template/composed/OPERATIONS.md`, `template/composed/REVIEWS.md`, `template/managed/TRACKING.md`, `template/managed/RETROSPECTIVES.md`, `template/managed/READMEGUIDE.md`; 3 `.github` bundle files: `copilot-instructions.md`, `pull_request_template.md`, `CODEOWNERS`). **375 tests pass total** (docs-only CS, no new tests). 2 GPT-5.5 review rounds (R1=3 blockers+4 non-blockers; R2=1 small NB inline-fixed, GO). 5 additional learnings filed (LRN-049 through LRN-053): dot-notation placeholder trap, consumer-root-relative path rule, template self-reference trap, 8-way parallel dispatch validated, edit-tool truncation near end-of-file. 2 planned CSs filed (CS08b: template linter; CS09: seeded skeletons). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #21 as `676c494`.
 
-**CS09 (seeded skeletons) is next and ready to claim.**
+**CS09 (seeded skeletons) is now active (claimed by yoga-ah on branch cs09/content).**
 
 ## Architecture pointer
 
@@ -31,7 +31,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS08 is complete; CS09 is ready to claim.
+- None. CS08 is complete; CS09 is now active.
 
 ## CS plan
 

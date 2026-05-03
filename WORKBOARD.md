@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | no active CS — CS09 ready to claim | — | — | — | 2026-05-03 | _(none)_ |
+| CS09 | Seeded skeletons (create-if-missing set) | claimed | yoga-ah | cs09/content | 2026-05-03 | _(none)_ |
 
 ## Recently Completed
 

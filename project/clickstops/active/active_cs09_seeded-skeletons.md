@@ -1,9 +1,9 @@
 # CS09 — Seeded skeletons (create-if-missing set)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs09/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS08 close-out (per [`harness-cs-plan.md` § CS09](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs09--author-seeded-skeletons-the-create-if-missing-set)).
 **Depends on:** CS08
@@ -58,7 +58,14 @@ The key behavioral constraint: seeded files are **created if missing, never over
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `template/seeded/CONTEXT.md` | pending | sub-agent cs09-context | agent-id=yoga-ah-sub-1 \| role=context-skeleton \| report-status=pending \| learnings=0 |
+| `template/seeded/ARCHITECTURE.md` | pending | sub-agent cs09-architecture | agent-id=yoga-ah-sub-2 \| role=arch-skeleton \| report-status=pending \| learnings=0 |
+| `template/seeded/LEARNINGS.md` | pending | sub-agent cs09-learnings | agent-id=yoga-ah-sub-3 \| role=learnings-skeleton \| report-status=pending \| learnings=0 |
+| `template/seeded/WORKBOARD.md` | pending | sub-agent cs09-workboard | agent-id=yoga-ah-sub-4 \| role=workboard-skeleton \| report-status=pending \| learnings=0 |
+| `template/seeded/README.md` | pending | sub-agent cs09-readme | agent-id=yoga-ah-sub-5 \| role=readme-skeleton \| report-status=pending \| learnings=0 |
+| `template/seeded/harness.config.json` + clickstops/.gitkeep | pending | sub-agent cs09-config | agent-id=yoga-ah-sub-6 \| role=config-skeleton \| report-status=pending \| learnings=0 |
+| Wire `harness init` + fixture test (`tests/cs09-init.test.mjs`) | pending | yoga-ah (orchestrator inline) | follows after sub-agents complete |
+| GPT-5.5 review rounds | pending | yoga-ah | review-status=pending |
 
 ## Notes / Learnings
 
