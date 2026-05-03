@@ -10,7 +10,7 @@
 
 ## Goal
 
-Port the truly-generic policy checks from `guesswhatisnext` — refactored to ESM, config-driven (no hard-coded project assumptions), and tested against fixtures. Wire all 4 linters into `harness lint`. These linters address process-level constraints (PR body shape, commit trailers, compose file version, deploy summary rendering) that apply to any consumer repo, making them the harness's first fully consumer-facing policy linters.
+Port the truly-generic policy checks from `guesswhatisnext` — refactored to ESM, config-driven (no hard-coded project assumptions), and tested against fixtures. Wire the 3 checker scripts into `harness lint` (the 4th, `render-deploy-summary.mjs`, is a renderer, not a checker). These address process-level constraints (PR body shape, commit trailers, compose file version, deploy summary rendering) that apply to any consumer repo.
 
 ## Deliverables
 
@@ -35,7 +35,7 @@ Each script lives under `scripts/`, uses `lib/doc-schema.mjs` where applicable, 
 
 ### Wired into `harness lint`
 
-All 4 linter scripts wired into `bin/harness.mjs` `cmdLint` alongside the 9 existing linters. `cmdLint` extended to 13 linters total (10 from CS05/CS06 + 4 new — per [LRN-032](../../../LEARNINGS.md#lrn-032) explicit consumer-cwd-relative file paths).
+3 checker scripts (pr-body, commit-trailers, compose-v2) wired into `bin/harness.mjs` `cmdLint` alongside the 10 existing CS05+CS06 linters. `cmdLint` now runs **13 linters total** (check-learnings + 9 CS06 + 3 CS07 policy checkers — per [LRN-032](../../../LEARNINGS.md#lrn-032) explicit consumer-cwd-relative file paths). `render-deploy-summary.mjs` is a renderer (not a checker) and is intentionally NOT invoked by `harness lint`.
 
 ## Exit criteria (achieved)
 
@@ -43,7 +43,7 @@ All 4 linter scripts wired into `bin/harness.mjs` `cmdLint` alongside the 9 exis
 - All 4 linter scripts exit non-zero on appropriate fixture errors.
 - `node scripts/validate-schemas.mjs` passes (54/0 — 49 prior + 5 new LRNs).
 - 375 tests pass (333 baseline + 42 new: 38 from sub-agents + 4 from R2 inline fix).
-- `harness lint` runs all 13 linters (check-learnings + 9 CS06 + 4 new) in sequence.
+- `harness lint` runs all 13 linters (check-learnings + 9 CS06 + 3 CS07 policy checkers; render-deploy-summary excluded as a renderer) in sequence.
 - No hard-coded project assumptions in any linter script.
 - `harness lint --quiet`: 9 pass, 0 fail, 3 skipped (pr-body, compose-v2, public-artifact — skipped without targets).
 
@@ -83,7 +83,7 @@ All 4 linter scripts wired into `bin/harness.mjs` `cmdLint` alongside the 9 exis
 | `scripts/check-commit-trailers.mjs` + tests + fixtures | done | sub-agent cs07-trailers | agent-id=yoga-ah-sub-2 \| role=commit-trailers-linter \| report-status=complete \| learnings=0 |
 | `scripts/check-compose-v2.mjs` + tests + fixtures | done | sub-agent cs07-compose | agent-id=yoga-ah-sub-3 \| role=compose-v2-linter \| report-status=complete \| learnings=0 |
 | `scripts/render-deploy-summary.mjs` + tests + fixtures | done | sub-agent cs07-render | agent-id=yoga-ah-sub-4 \| role=deploy-summary-renderer \| report-status=complete \| learnings=0 |
-| Wire all 4 into `harness lint`; extend `cmdLint` to 13 linters | done | yoga-ah (orchestrator inline) | 13-linter aggregator shipped |
+| Wire 3 CS07 checkers into `harness lint`; extend `cmdLint` to 13 linters | done | yoga-ah (orchestrator inline) | 13-linter aggregator shipped (render-deploy-summary excluded — renderer) |
 | GPT-5.5 review rounds | done | yoga-ah | review-status=complete (R2=GO) |
 | Open PR + squash-merge | done | yoga-ah | Content PR #18 (commits `eb61c6d` initial + `c54a8fb` fixes-r2), squash-merged as `4c3c913`. Claim PR #17 (`25eed7b`). |
 | Close-out: file 5 new learnings (LRN-044..048) | done | yoga-ah | All 54 LRN entries validate (`node scripts/validate-schemas.mjs` → 54/0 pass) |
