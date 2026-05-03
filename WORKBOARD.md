@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| _(none — CS03 closed; CS04 next per cs-plan)_ | | | | | | |
+| CS04 | CLI dispatcher (`bin/harness.mjs`) | claimed | yoga-ah | `cs04/cli-dispatcher` | 2026-05-03T11:30Z | _(none)_ |
 
 ## Recently Completed
 
