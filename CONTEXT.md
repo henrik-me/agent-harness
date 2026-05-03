@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS07 close-out)
+> **Last updated:** 2026-05-03 (CS08 close-out)
 
 ## Codebase state
 
@@ -21,7 +21,9 @@
 
 - **CS07 complete** (closed 2026-05-03). Delivered: 4 generic policy linter scripts (`check-pr-body`, `check-commit-trailers`, `check-compose-v2`, `render-deploy-summary`), 4 test files, 23 fixtures under `tests/fixtures/cs07/`, `bin/harness.mjs` `cmdLint` extended to 13-linter aggregator. **375 tests pass total** (333+42 new: 38 from sub-agents + 4 from inline R2 fix). 2 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers all in render-deploy-summary, R2=GO). 5 additional learnings filed (LRN-044 through LRN-048): stdout/stderr discipline in renderers, safety-flag substance validation, per-type-map key selection, inline-vs-sub-agent fix heuristic, 4-way parallel dispatch validated. 1 planned CS filed (CS08: managed/composed process docs canonicalization). `harness lint` aggregator now **13 linters** (10 of 13 runnable; pr-body/compose-v2/public-artifact skipped without targets). Squash-merged PR #18 as `4c3c913`.
 
-**CS08 (managed/composed process docs canonicalization) is now active (claimed by yoga-ah on branch cs08/content).**
+- **CS08 complete** (closed 2026-05-03). Delivered: 10 template files (7 process doc templates: `template/managed/INSTRUCTIONS.md`, `template/composed/CONVENTIONS.md`, `template/composed/OPERATIONS.md`, `template/composed/REVIEWS.md`, `template/managed/TRACKING.md`, `template/managed/RETROSPECTIVES.md`, `template/managed/READMEGUIDE.md`; 3 `.github` bundle files: `copilot-instructions.md`, `pull_request_template.md`, `CODEOWNERS`). **375 tests pass total** (docs-only CS, no new tests). 2 GPT-5.5 review rounds (R1=3 blockers+4 non-blockers; R2=1 small NB inline-fixed, GO). 5 additional learnings filed (LRN-049 through LRN-053): dot-notation placeholder trap, consumer-root-relative path rule, template self-reference trap, 8-way parallel dispatch validated, edit-tool truncation near end-of-file. 2 planned CSs filed (CS08b: template linter; CS09: seeded skeletons). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #21 as `676c494`.
+
+**CS09 (seeded skeletons) is next and ready to claim.**
 
 ## Architecture pointer
 
@@ -29,7 +31,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS07 is complete; CS08 is now active.
+- None. CS08 is complete; CS09 is ready to claim.
 
 ## CS plan
 
