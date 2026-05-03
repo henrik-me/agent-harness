@@ -1569,4 +1569,160 @@ user content preserved
       'control character in target path must throw EBADCONFIG_INVALID_PATH',
     );
   });
+
+  it('throws EBADCONFIG_INVALID_PATH for "." target (canonicalizes to empty per GPT-5.5 review #5 #2)', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['.'] } });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for "./" target', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['./'] } });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for excluded "." entry', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['README.md'] }, excluded: ['.'] });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_DUP_PATH for canonical-collision in composed.overrides keys', async () => {
+    buildHarnessRepo(harnessDir, {
+      composed: { 'dir/NOTES.md': '# composed\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      composed: {
+        files: ['dir/NOTES.md'],
+        overrides: {
+          './dir/NOTES.md': { local_blocks: ['a'] },
+          'dir/NOTES.md':   { local_blocks: ['b'] },
+        },
+      },
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_DUP_PATH for canonical-collision in top-level local_blocks keys', async () => {
+    buildHarnessRepo(harnessDir, {
+      composed: { 'dir/NOTES.md': '# composed\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      composed: { files: ['dir/NOTES.md'] },
+      local_blocks: {
+        './dir/NOTES.md': ['a'],
+        'dir/NOTES.md':   ['b'],
+      },
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+});
+
+
+// ===========================================================================
+// Review #5 Bug #1: Prior lock target canonicalization
+// (ECOMPOSED_DROPPED protection must apply even when the prior lock used
+// non-canonical target paths — e.g. consumer was synced before
+// canonicalization landed.)
+// ===========================================================================
+
+describe('sync() — Review #5 #1: prior lock target canonicalization', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('detects ECOMPOSED_DROPPED when prior lock target is non-canonical and current canonical target is missing a previously-recorded block', async () => {
+    const TEMPLATE = `# Composed File
+
+<!-- harness:local-start id=my-section -->
+<!-- harness:local-end id=my-section -->
+
+End.
+`;
+    buildHarnessRepo(harnessDir, {
+      composed: { 'dir/NOTES.md': TEMPLATE },
+    });
+    buildConsumerRepo(consumerDir, {
+      composed: {
+        files: ['dir/NOTES.md'],
+        overrides: { 'dir/NOTES.md': { local_blocks: ['my-section'] } },
+      },
+    });
+
+    // Prior lock uses NON-CANONICAL target ('./dir/NOTES.md').
+    const previousLock = {
+      harness_ref: 'v0.0.9',
+      resolved_sha: 'a'.repeat(40),
+      config_schema_version: 'v0.1.0',
+      synced_at: '2024-01-01T00:00:00.000Z',
+      files: [
+        {
+          target: './dir/NOTES.md',
+          source_template: 'template/composed/dir/NOTES.md',
+          class: 'composed',
+          rendered_hash: 'b'.repeat(64),
+          action: 'created',
+          blocks: [
+            {
+              id: 'my-section',
+              source_line_range: { start: 3, end: 4 },
+              body_hash: 'c'.repeat(64),
+              template_marker_hash: 'd'.repeat(64),
+              provenance: 'user-authored',
+            },
+          ],
+        },
+      ],
+      scaffolds: [],
+      excluded: [],
+    };
+    writeJSON(path.join(consumerDir, '.harness-lock.json'), previousLock);
+
+    // Current consumer file MISSING the 'my-section' block.
+    mkdirSync(path.join(consumerDir, 'dir'), { recursive: true });
+    writeText(path.join(consumerDir, 'dir', 'NOTES.md'), `# Composed File
+
+(no my-section block here)
+
+End.
+`);
+
+    // Without the fix: prev-lock target '/dir/NOTES.md' wouldn't match canonical
+    // 'dir/NOTES.md', mergeComposed sees no prior records, silently seeds empty.
+    // With the fix: prev-lock target canonicalized on read, matches, ECOMPOSED_DROPPED fires.
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => {
+        assert.ok(err instanceof SyncError, `Expected SyncError, got ${err.constructor.name}`);
+        assert.ok(
+          err.code === 'ECOMPOSED_DROPPED' || err.message.includes('ECOMPOSED_DROPPED'),
+          `Expected ECOMPOSED_DROPPED, got code "${err.code}": ${err.message}`,
+        );
+        return true;
+      },
+    );
+  });
 });
