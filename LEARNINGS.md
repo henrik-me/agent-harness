@@ -512,7 +512,7 @@ claim_area: planning
 
 **Finding:** High-risk CSs (especially engine code with safety invariants) realistically need 5–8 review iterations to converge. Each iteration surfaces issues the prior iteration's fix introduced or didn't address. This is normal for code with multiple interacting invariants (fail-closed semantics, cross-platform behaviour, prototype-pollution edge cases, etc.) — not a sign of poor work, but a calibration data point.
 
-**Evidence:** CS03 review history: 7 iterations (No-Go × 6 + GO × 1), 23 distinct blocking findings + ~20 non-blocking findings, all addressed. Final test count 162 (up from 105 initial). **11 total work passes:** 5 initial sub-agent jobs (cs03-templating, cs03-lock, cs03-composed, cs03-sync, cs03-fixtures) + 3 fix-round sub-agent jobs (cs03-fixes-v1, cs03-fixes-v2, cs03-fixes-v3) + 3 inline orchestrator fix iterations (review iterations 3, 5, 6).
+**Evidence:** CS03 review history: **7 iterations (6 No-Go + 1 GO), 12 distinct blocking findings + 11 non-blocking findings + 1 suggestion**, all addressed (1 non-blocking #8 from iter-1 deferred per GPT-5.5 recommendation; remainder fixed). Final test count 162 (up from 105 initial). **11 total work passes:** 5 initial sub-agent jobs (cs03-templating, cs03-lock, cs03-composed, cs03-sync, cs03-fixtures) + 3 fix-round sub-agent jobs (cs03-fixes-v1, cs03-fixes-v2, cs03-fixes-v3) + 3 inline orchestrator fix iterations (review iterations 3, 5, 6).
 
 **Disposition:** Update cs-plan parallelisation table notes for high-risk CSs (CS03, CS11, CS15a/b, CS18b, CS19) to budget for 5–8 review iterations. Inform future planning. No code change needed; this is a planning-cost calibration data point.
 

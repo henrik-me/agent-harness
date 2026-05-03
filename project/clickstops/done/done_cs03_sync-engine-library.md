@@ -58,7 +58,7 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 | Author lib/composed.mjs (hardened parser + merge per ADR 0001) | done | sub-agent | agent-id=cs03-composed \| role=engine-author \| report-status=complete \| learnings=2 — full impl + 54 tests pass; 2 escalations (legacy_composed_mapping schema; legacy fail-closed UX) deferred to follow-up CS |
 | Author tests/fixtures (per-class + per-edge-case fixtures) | done | sub-agent | agent-id=cs03-fixtures \| role=test-author \| report-status=complete \| learnings=1 — 94 fixtures across 27 dirs |
 | Cross-link integrity merge + sync-invariant verification | done | yoga-ah | Stubs added orchestrator-side: tests/templating.test.mjs (8 tests), tests/lock.test.mjs (3 tests). Total tests: 105/0 pass. validate-schemas: 21/0. |
-| Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | done | yoga-ah | **7 review iterations.** Iter 1: 4 blocking + 4 non-blocking → cs03-fixes-v1 (Sonnet). Iter 2: 3 blocking + 3 non-blocking → cs03-fixes-v2 (Sonnet, hard no-commit preflight per LRN-021). Iter 3: 1 blocking + 2 non-blocking → inline. Iter 4: 1 blocking → cs03-fixes-v3 (Sonnet). Iter 5: 2 blocking + 1 non-blocking → inline. Iter 6: 1 blocking → inline. Iter 7: GO. |
+| Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | done | yoga-ah | **7 review iterations (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion total.** Iter 1: 4 blocking + 4 non-blocking → cs03-fixes-v1 (Sonnet) fixes 4B + 3NB; #8 deferred per GPT-5.5 recommendation. Iter 2: 3 blocking + 3 non-blocking → cs03-fixes-v2 (Sonnet, hard no-commit preflight per LRN-021). Iter 3: 1 blocking + 2 non-blocking + 1 suggestion → inline. Iter 4: 1 blocking + 1 non-blocking → cs03-fixes-v3 (Sonnet). Iter 5: 2 blocking + 1 non-blocking → inline. Iter 6: 1 blocking → inline. Iter 7: GO. |
 | Open PR | done | yoga-ah | PR #6 |
 | Squash-merge | done | yoga-ah | Commit `4e50789` on main; branch deleted |
 | Close-out: file 10 new learnings (LRN-016..025) | done | yoga-ah | All 25 LRN entries validate (`node scripts/validate-schemas.mjs` → 31/0 pass with 25 learnings) |
@@ -96,7 +96,7 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 
 ### Process observations
 
-- **HIGH-RISK CS calibration (LRN-024):** 7 review iterations to converge. Each iteration found 1–4 blocking + 1–4 non-blocking. Future cs-plan should budget similarly for CS11, CS15a/b, CS18b, CS19.
+- **HIGH-RISK CS calibration (LRN-024):** 7 review iterations to converge (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion findings total. Each iteration found 1–4 blocking + 1–4 non-blocking. Future cs-plan should budget similarly for CS11, CS15a/b, CS18b, CS19.
 - **Parallel sub-agent file race (LRN-016/017):** the most expensive lesson — significant work lost. OPERATIONS.md § Sub-agent dispatch needs hard file-ownership declarations + post-completion disk verification. Will be canonicalized in CS08; addressed in cs-plan adjustments.
 - **Hard preflight effectiveness (LRN-021):** explicit "DO NOT COMMIT" + final-checklist preflight worked perfectly in cs03-fixes-v2 + v3. Pattern to canonicalize.
 - **Sub-agent vs inline tradeoff:** inline edits won for small fixes (≤30 min); sub-agent dispatch overhead dominated. Heuristic: if the fix touches >2 files OR involves new test scenarios that require fixture authoring, dispatch sub-agent; else inline.
