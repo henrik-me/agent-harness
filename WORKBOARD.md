@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| _(none — CS02 closed; CS03 next per cs-plan)_ | | | | | | |
+| CS03 | Sync engine library (`lib/sync.mjs`) | claimed | yoga-ah | `cs03/sync-engine` | 2026-05-03T07:30Z | _(none)_ |
 
 ## Recently Completed
 
