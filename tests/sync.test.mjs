@@ -1099,8 +1099,185 @@ describe('sync() — Fix #5: skip identical writes', () => {
 });
 
 // ===========================================================================
-// Fix #6: extended config validation — duplicate target path across classes
+// Review #2 Bug #4: validateLockObject pre-flight — EBADLOCK_PLAN
 // ===========================================================================
+
+describe('sync() — Bug #4: validateLockObject pre-flight (EBADLOCK_PLAN)', () => {
+  // Note: The sync engine always produces structurally valid lock objects
+  // during normal operation. EBADLOCK_PLAN is a defense-in-depth guard that
+  // would fire if a future code change inadvertently produces an invalid lock
+  // before writing any target files.
+  //
+  // The validateLockObject helper is tested directly in lock.test.mjs.
+  // Here we verify the integration: a valid sync run does NOT trigger EBADLOCK_PLAN.
+
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('does not throw EBADLOCK_PLAN for a normal valid sync run', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md'] },
+    });
+
+    // Should complete without throwing EBADLOCK_PLAN.
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+    assert.ok(result.lockAfter, 'lockAfter should be present');
+    assert.ok(existsSync(path.join(consumerDir, '.harness-lock.json')));
+  });
+});
+
+// ===========================================================================
+// Review #2 Bug #5: Path normalization — EBADCONFIG_INVALID_PATH
+// ===========================================================================
+
+describe('sync() — Bug #5: path normalization and EBADCONFIG_INVALID_PATH', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('throws EBADCONFIG_DUP_PATH when dir/file.md and dir\\file.md appear in different classes', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed:  { 'dir/file.md': '# file\n' },
+      composed: { 'dir/file.md': COMPOSED_TEMPLATE },
+    });
+    // Config with forward-slash in managed, backslash in composed.
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['dir/file.md'] },
+      composed: {
+        files: ['dir\\file.md'],
+        overrides: { 'dir/file.md': { local_blocks: ['my-section'] } },
+      },
+    });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+      'backslash and forward-slash form of same path must be treated as duplicate',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for paths containing ".." segments', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['../escape.md'] },
+    });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+      'path with ".." segment must throw EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for absolute Unix-style paths', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['/absolute/path.md'] },
+    });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+      'absolute Unix path must throw EBADCONFIG_INVALID_PATH',
+    );
+  });
+});
+
+// ===========================================================================
+// Review #2 Bug #6: Atomicity — composed failure must not write managed file
+// ===========================================================================
+
+describe('sync() — Bug #6: atomicity when composed merge fails', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('does not write managed file when composed file fails with EMERGE_LEGACY_UNMAPPED', async () => {
+    // Harness has managed README.md and composed NOTES.md.
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# README\n' },
+      composed: { 'NOTES.md': COMPOSED_TEMPLATE },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md'] },
+      composed: {
+        files: ['NOTES.md'],
+        overrides: { 'NOTES.md': { local_blocks: ['my-section'] } },
+      },
+    });
+
+    // Consumer NOTES.md has extra content outside any block — triggers EMERGE_LEGACY_UNMAPPED.
+    writeText(path.join(consumerDir, 'NOTES.md'), `# Composed File
+
+LEGACY CONTENT NOT IN TEMPLATE
+
+<!-- harness:local-start id=my-section -->
+user content here
+<!-- harness:local-end id=my-section -->
+
+## End
+`);
+
+    // Sync apply should fail with SyncError propagated from EMERGE_LEGACY_UNMAPPED.
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => {
+        assert.ok(err instanceof SyncError, `Expected SyncError, got ${err.constructor.name}`);
+        assert.ok(
+          err.code === 'EMERGE_LEGACY_UNMAPPED' || err.message.includes('EMERGE_LEGACY_UNMAPPED'),
+          `Expected EMERGE_LEGACY_UNMAPPED in error, got code "${err.code}": ${err.message}`,
+        );
+        return true;
+      },
+      'composed merge failure should propagate as SyncError',
+    );
+
+    // README.md must NOT have been written (plan phase failed before commit phase).
+    assert.ok(
+      !existsSync(path.join(consumerDir, 'README.md')),
+      'README.md must not be created when plan phase fails mid-way',
+    );
+
+    // Lock must NOT have been written.
+    assert.ok(
+      !existsSync(path.join(consumerDir, '.harness-lock.json')),
+      'lock file must not be written when plan phase fails',
+    );
+  });
+});
 
 describe('sync() — Fix #6: duplicate path validation', () => {
   let harnessDir, consumerDir;

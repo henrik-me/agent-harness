@@ -1,9 +1,9 @@
-import { test } from 'node:test';
+import { test, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { readLock, writeLock, LockError } from '../lib/lock.mjs';
+import { readLock, writeLock, validateLockObject, LockError } from '../lib/lock.mjs';
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'agent-harness-test-'));
@@ -139,5 +139,71 @@ test('writeLock + readLock round-trip preserves all fields', async () => {
     await writeLock(dir, lock);
     const result = await readLock(dir);
     assert.deepEqual(result, lock);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests for validateLockObject (Fix #4 — pre-flight validation helper)
+// ---------------------------------------------------------------------------
+
+const VALID_LOCK = {
+  harness_ref: 'v0.1.0',
+  resolved_sha: 'a'.repeat(40),
+  config_schema_version: 'v0.1.0',
+  synced_at: '2026-05-03T00:00:00.000Z',
+  files: [],
+  scaffolds: [],
+  excluded: [],
+};
+
+describe('validateLockObject', () => {
+  it('returns {valid: true} for a well-formed lock object', () => {
+    const result = validateLockObject(VALID_LOCK);
+    assert.equal(result.valid, true);
+    assert.equal(result.errors, undefined);
+  });
+
+  it('returns {valid: false, errors} when resolved_sha is not 40 hex chars', () => {
+    const bad = { ...VALID_LOCK, resolved_sha: 'not-a-sha' };
+    const result = validateLockObject(bad);
+    assert.equal(result.valid, false);
+    assert.ok(Array.isArray(result.errors), 'errors should be an array');
+    assert.ok(result.errors.length > 0, 'errors array should not be empty');
+  });
+
+  it('returns {valid: false, errors} when required field synced_at is missing', () => {
+    const { synced_at: _, ...rest } = VALID_LOCK;
+    const result = validateLockObject(rest);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.length > 0);
+  });
+
+  it('returns {valid: false, errors} when synced_at is not a valid date-time string', () => {
+    const bad = { ...VALID_LOCK, synced_at: 'not-a-date' };
+    const result = validateLockObject(bad);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.length > 0);
+  });
+
+  it('returns {valid: false, errors} when files contains entry with invalid rendered_hash', () => {
+    const bad = {
+      ...VALID_LOCK,
+      files: [{
+        target: 'README.md',
+        source_template: 'template/managed/README.md',
+        class: 'managed',
+        rendered_hash: 'tooshort',  // not 64 hex chars
+        action: 'created',
+      }],
+    };
+    const result = validateLockObject(bad);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.length > 0);
+  });
+
+  it('does not throw — always returns a result object', () => {
+    assert.doesNotThrow(() => validateLockObject(null));
+    assert.doesNotThrow(() => validateLockObject({}));
+    assert.doesNotThrow(() => validateLockObject('string'));
   });
 });

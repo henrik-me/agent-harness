@@ -751,6 +751,284 @@ describe('LF line-ending invariant', () => {
 });
 
 // ===========================================================================
+// Review #2 Bug #1: Multiset accounting for identical-content legacy regions
+// ===========================================================================
+
+describe('mergeComposed — Bug #1: multiset accounting for identical legacy regions', () => {
+  // Template with one block, two distinct "separator" template lines so
+  // two identical legacy regions are separated by a matching template line.
+  const singleBlockTemplate = [
+    'Prefix',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  // Template with anchoring lines to create separate legacy regions:
+  //   Prefix / Middle / <block> / Suffix
+  // Current inserts SAME before "Middle" and after "Middle" (before block).
+  const twoSeparatorTemplate = [
+    'Prefix',
+    'Middle',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Suffix',
+    '',
+  ].join('\n');
+
+  // Two identical legacy regions ("SAME" appears between Prefix–Middle and Middle–block).
+  const twoIdenticalLegacyCurrent = [
+    'Prefix',
+    'SAME',
+    'Middle',
+    'SAME',
+    '<!-- harness:local-start id=b1 -->',
+    'body',
+    '<!-- harness:local-end id=b1 -->',
+    'Suffix',
+    '',
+  ].join('\n');
+
+  // Three identical legacy regions (Prefix / SAME / Mid1 / SAME / Mid2 / SAME / block / Suffix).
+  const threeSeparatorTemplate = [
+    'Prefix',
+    'Mid1',
+    'Mid2',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Suffix',
+    '',
+  ].join('\n');
+
+  const threeIdenticalLegacyCurrent = [
+    'Prefix',
+    'SAME',
+    'Mid1',
+    'SAME',
+    'Mid2',
+    'SAME',
+    '<!-- harness:local-start id=b1 -->',
+    'body',
+    '<!-- harness:local-end id=b1 -->',
+    'Suffix',
+    '',
+  ].join('\n');
+
+  it('throws EMERGE_LEGACY_UNMAPPED when two identical actual regions have only one mapping entry', () => {
+    const mapping = { regions: [{ action: 'discard', content: 'SAME' }] };
+    assert.throws(
+      () => mergeComposed(twoSeparatorTemplate, twoIdenticalLegacyCurrent, {
+        allowedBlockIds: ['b1'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+      'one mapping for two identical regions must throw EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('succeeds when two identical actual regions have exactly two matching mapping entries', () => {
+    const mapping = {
+      regions: [
+        { action: 'discard', content: 'SAME' },
+        { action: 'discard', content: 'SAME' },
+      ],
+    };
+    // Should not throw
+    const result = mergeComposed(twoSeparatorTemplate, twoIdenticalLegacyCurrent, {
+      allowedBlockIds: ['b1'],
+      legacyMapping: mapping,
+    });
+    assert.ok(result.content.includes('body'));
+  });
+
+  it('throws EMERGE_LEGACY_UNMAPPED when three identical regions have only two mapping entries', () => {
+    const mapping = {
+      regions: [
+        { action: 'discard', content: 'SAME' },
+        { action: 'discard', content: 'SAME' },
+      ],
+    };
+    assert.throws(
+      () => mergeComposed(threeSeparatorTemplate, threeIdenticalLegacyCurrent, {
+        allowedBlockIds: ['b1'],
+        legacyMapping: mapping,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+      'two mappings for three identical regions must throw EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when one actual region has two identical mapping entries', () => {
+    const mapping = {
+      regions: [
+        { action: 'discard', content: 'LEGACY CONTENT' },
+        { action: 'discard', content: 'LEGACY CONTENT' },
+      ],
+    };
+    // oneBlockTemplate / oneLegacyCurrent from the outer describe scope don't exist here,
+    // so build inline equivalents.
+    const tmpl = [
+      'Preamble',
+      '<!-- harness:local-start id=b1 -->',
+      '<!-- harness:local-end id=b1 -->',
+      'Footer',
+      '',
+    ].join('\n');
+    const curr = [
+      'Preamble',
+      'LEGACY CONTENT',
+      '<!-- harness:local-start id=b1 -->',
+      'body1',
+      '<!-- harness:local-end id=b1 -->',
+      'Footer',
+      '',
+    ].join('\n');
+    assert.throws(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_BAD_MAPPING',
+      'two mappings for one identical region must throw EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+});
+
+// ===========================================================================
+// Review #2 Bug #2: Action enum validation in legacyMapping
+// ===========================================================================
+
+describe('mergeComposed — Bug #2: action enum validation', () => {
+  const tmpl = [
+    'Preamble',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Footer',
+    '',
+  ].join('\n');
+  const curr = [
+    'Preamble',
+    'LEGACY CONTENT',
+    '<!-- harness:local-start id=b1 -->',
+    'body1',
+    '<!-- harness:local-end id=b1 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING for action typo "map-to-block"', () => {
+    const mapping = { regions: [{ action: 'map-to-block', block_id: 'b1', content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING for empty string action', () => {
+    const mapping = { regions: [{ action: '', content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING for unknown action "keep"', () => {
+    const mapping = { regions: [{ action: 'keep', content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when action is "discard" but block_id is present', () => {
+    const mapping = { regions: [{ action: 'discard', block_id: 'b1', content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when action is "map_to_block" without block_id', () => {
+    const mapping = { regions: [{ action: 'map_to_block', content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when action field is missing entirely', () => {
+    const mapping = { regions: [{ content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+});
+
+// ===========================================================================
+// Review #2 Bug #3: Duplicate map_to_block targets silently overwrite
+// ===========================================================================
+
+describe('mergeComposed — Bug #3: duplicate map_to_block block_id targets', () => {
+  // Template with two blocks and a current file with two distinct legacy regions.
+  const twoBlockTmpl = [
+    'Prefix',
+    '<!-- harness:local-start id=b1 -->',
+    '<!-- harness:local-end id=b1 -->',
+    'Middle',
+    '<!-- harness:local-start id=b2 -->',
+    '<!-- harness:local-end id=b2 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  const twoLegacyCurr = [
+    'Prefix',
+    'LEGACY A',
+    '<!-- harness:local-start id=b1 -->',
+    'body1',
+    '<!-- harness:local-end id=b1 -->',
+    'Middle',
+    'LEGACY B',
+    '<!-- harness:local-start id=b2 -->',
+    'body2',
+    '<!-- harness:local-end id=b2 -->',
+    'Footer',
+    '',
+  ].join('\n');
+
+  it('throws EMERGE_LEGACY_BAD_MAPPING when two entries target the same block_id', () => {
+    const mapping = {
+      regions: [
+        { action: 'map_to_block', block_id: 'b1', content: 'LEGACY A' },
+        { action: 'map_to_block', block_id: 'b1', content: 'LEGACY B' },
+      ],
+    };
+    assertMergeError(
+      () => mergeComposed(twoBlockTmpl, twoLegacyCurr, {
+        allowedBlockIds: ['b1', 'b2'],
+        legacyMapping: mapping,
+      }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+      'two map_to_block entries to same block_id must throw EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
+  it('succeeds when two entries target different block_ids', () => {
+    const mapping = {
+      regions: [
+        { action: 'map_to_block', block_id: 'b1', content: 'LEGACY A' },
+        { action: 'map_to_block', block_id: 'b2', content: 'LEGACY B' },
+      ],
+    };
+    const result = mergeComposed(twoBlockTmpl, twoLegacyCurr, {
+      allowedBlockIds: ['b1', 'b2'],
+      legacyMapping: mapping,
+    });
+    assert.ok(result.content.includes('LEGACY A'));
+    assert.ok(result.content.includes('LEGACY B'));
+  });
+});
+
+// ===========================================================================
 // 11. Fence edge-cases
 // ===========================================================================
 
