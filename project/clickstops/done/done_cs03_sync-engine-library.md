@@ -96,7 +96,7 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 
 ### Process observations
 
-- **HIGH-RISK CS calibration (LRN-024):** 7 review iterations to converge (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion findings total. Each iteration found 1–4 blocking + 1–4 non-blocking. Future cs-plan should budget similarly for CS11, CS15a/b, CS18b, CS19.
+- **HIGH-RISK CS calibration (LRN-024):** 7 review iterations to converge (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion findings total. Across the 6 No-Go iterations, blocking findings ranged 1–4 per iteration (median 1.5); non-blocking ranged 0–4. Future cs-plan should budget similarly for CS11, CS15a/b, CS18b, CS19.
 - **Parallel sub-agent file race (LRN-016/017):** the most expensive lesson — significant work lost. OPERATIONS.md § Sub-agent dispatch needs hard file-ownership declarations + post-completion disk verification. Will be canonicalized in CS08; addressed in cs-plan adjustments.
 - **Hard preflight effectiveness (LRN-021):** explicit "DO NOT COMMIT" + final-checklist preflight worked perfectly in cs03-fixes-v2 + v3. Pattern to canonicalize.
 - **Sub-agent vs inline tradeoff:** inline edits won for small fixes (≤30 min); sub-agent dispatch overhead dominated. Heuristic: if the fix touches >2 files OR involves new test scenarios that require fixture authoring, dispatch sub-agent; else inline.

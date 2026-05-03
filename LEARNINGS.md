@@ -508,7 +508,7 @@ tags: [review-iteration-cost, high-risk-cs, planning, calibration]
 claim_area: planning
 ```
 
-**Problem:** CS03 (HIGH-RISK per Decision #22) required **7 GPT-5.5 review iterations** to converge on GO. Each iteration found 1–4 blocking + 1–4 non-blocking issues. The cs-plan didn't anticipate this iteration cost and didn't budget for it.
+**Problem:** CS03 (HIGH-RISK per Decision #22) required **7 GPT-5.5 review iterations** to converge on GO. Across the 6 No-Go iterations, blocking findings ranged 1–4 per iteration; non-blocking ranged 0–4. The cs-plan didn't anticipate this iteration cost and didn't budget for it.
 
 **Finding:** High-risk CSs (especially engine code with safety invariants) realistically need 5–8 review iterations to converge. Each iteration surfaces issues the prior iteration's fix introduced or didn't address. This is normal for code with multiple interacting invariants (fail-closed semantics, cross-platform behaviour, prototype-pollution edge cases, etc.) — not a sign of poor work, but a calibration data point.
 
