@@ -1,9 +1,9 @@
 # CS05 — Doc-schema lib + first reference linter (`check-learnings.mjs`)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs05/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS04 close-out (pre-filed per cs-plan CS05 scope; see [`harness-cs-plan.md` § CS05](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs05--doc-schema-lib--first-reference-linter)).
 **Depends on:** CS04
@@ -78,7 +78,11 @@ Briefings MUST include:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Implement `lib/doc-schema.mjs` | pending | yoga-ah (sub-agent: cs05-docschema) | agent-id=yoga-ah-sub-1 \| role=doc-schema-lib \| report-status=pending \| learnings=0 |
+| Implement `scripts/check-learnings.mjs` | pending | yoga-ah (sub-agent: cs05-linter) | agent-id=yoga-ah-sub-2 \| role=reference-linter \| report-status=pending \| learnings=0 |
+| Implement `tests/check-learnings.test.mjs` + fixtures | pending | yoga-ah (sub-agent: cs05-tests) | agent-id=yoga-ah-sub-3 \| role=linter-tests \| report-status=pending \| learnings=0 |
+| Wire `harness lint` to invoke `check-learnings.mjs` | pending | yoga-ah (orchestrator inline) | small change to bin/harness.mjs |
+| GPT-5.5 review rounds | pending | yoga-ah | review-status=pending |
 
 ## Notes / Learnings
 
