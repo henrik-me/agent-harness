@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS08 close-out: LRN-049..053 added)
+> **Last updated:** 2026-05-03 (CS09 close-out: LRN-054..058 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -1095,6 +1095,106 @@ claim_area: orchestrator-loop
 **Evidence:** cs08-instructions reported this in its LEARNINGS CANDIDATES section during CS08. Sub-agent noticed the file was shorter than expected after an edit near the end, and confirmed by diffing expected vs actual line count.
 
 **Disposition:** Applied as operational standard. Future orchestrator briefings for large doc-authoring tasks MUST include: "After any large `edit` near end-of-file, verify line count delta before proceeding." Pattern added to canonical OPERATIONS.md conventions block via CS08 templates.
+
+### LRN-054
+
+```yaml
+id: LRN-054
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS09
+status: applied
+tags: [init, setup, early-return, side-effects, create-if-missing, harness-init]
+claim_area: tooling
+```
+
+**Problem:** `cmdInit` originally early-returned when `harness.config.json` already existed, treating "config file present" as "init already done". This gated the entire command on a single prerequisite and silently skipped all subsequent independent side-effects — seeded-file copies, `.gitkeep` scaffolding, and fixture directory creation — breaking the create-if-missing semantics that consumers depend on.
+
+**Finding:** Early-return guards in init/setup commands silently skip downstream side-effects. When an init-style command has multiple independent side-effects (write config, copy seeded files, scaffold dirs), guard each step independently — do NOT gate the whole command on one step's prerequisite. Pattern: use a flag (`const configExists = existsSync(configPath); if (!configExists) writeConfig()`) rather than `if (configExists) return` at the top of the function. Found in CS09 R1 (B2).
+
+**Evidence:** CS09 R1 blocker B2 (GPT-5.5): `cmdInit` early-return caused `harness init` to be a no-op when re-run against a repo that already had a config, skipping all seeded-file copies. Fixed in cs09-fixes-r1.
+
+**Disposition:** Applied — `cmdInit` restructured to guard each step independently. Pattern documented for all future init/setup-style commands.
+
+### LRN-055
+
+```yaml
+id: LRN-055
+date: 2026-05-03
+category: architectural
+source_cs: CS09
+status: applied
+tags: [template-authoring, schema-paths, json-schema, consumer-root, link-breakage, sync]
+claim_area: tooling
+```
+
+**Problem:** `template/seeded/harness.config.json` originally used a source-relative `$schema` path (`"../schemas/harness.config.schema.json"`). After `harness init` drops this file at the consumer repo root, there is no `../schemas/` directory above it — the `$schema` reference is broken, and editors cannot resolve the schema for autocomplete/validation.
+
+**Finding:** `$schema` paths in templates that ship to consumer repos MUST be canonical URLs (not source-relative paths like `../schemas/X.schema.json`). Source-relative paths break in the consumer context where the file ends up at the repo root with no `../schemas/` directory above it. Companion to [LRN-050](#lrn-050) (consumer-root-relative path rule) — extends specifically to JSON `$schema` references. Found in CS09 R1 (NB-3). Fix: use the canonical public URL (e.g., `https://raw.githubusercontent.com/henrik-me/agent-harness/main/schemas/X.schema.json`) or a root-relative path in the consumer.
+
+**Evidence:** CS09 R1 non-blocker NB-3 (GPT-5.5): seeded `harness.config.json` used `../schemas/` path. Fixed in cs09-fixes-r1.
+
+**Disposition:** Applied — `template/seeded/harness.config.json` corrected to use canonical URL. Future `check-templates.mjs` (CS08b) should include Rule 4: flag source-relative `$schema` paths in seeded/managed/composed templates.
+
+### LRN-056
+
+```yaml
+id: LRN-056
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS09
+status: applied
+tags: [composed-files, markers, inline-marker, prose, escape, operations, harness-sync]
+claim_area: tooling
+```
+
+**Problem:** After cs09-fixes-r1 enabled `OPERATIONS.md` as a composed file via the new seeded config, `harness sync --mode=check` immediately failed. OPERATIONS.md had a literal harness marker reference in prose at line 5 — a backtick-wrapped `<!-- harness:local-start id=X -->` example — that the composed parser scanned and attempted to process as a real block marker.
+
+**Finding:** Composed file templates cannot contain literal harness markers `<!-- harness:local-start id=X -->` in prose, even inside backticks. The composed parser scans the full file and rejects any inline marker that is not a whole-line marker — backtick escaping is NOT recognised. Recognised escapes: U+200B (zero-width space) before `<`, or HTML-entity escape `&lt;!-- harness:local-`. When referencing marker syntax in prose (e.g., in documentation), rephrase to descriptive text ("the `operations.project-deploy` local block") instead of reproducing the literal marker string. Found in CS09 R2.
+
+**Evidence:** CS09 R2 blocker (GPT-5.5): `harness sync --mode=check` rejected OPERATIONS.md at line 5 due to inline marker in prose. Fixed inline by orchestrator — rephrased to descriptive text.
+
+**Disposition:** Applied — OPERATIONS.md prose rephrased. Recognised escapes documented here for future template authors. The `check-templates.mjs` linter (CS08b) should add a rule flagging literal `<!-- harness:local-` strings in `template/composed/` prose (outside whole-line markers).
+
+### LRN-057
+
+```yaml
+id: LRN-057
+date: 2026-05-03
+category: process
+source_cs: CS09
+status: applied
+tags: [testing, integration-test, fixture-test, harness-sync, check-mode, init, end-to-end]
+claim_area: orchestrator-loop
+```
+
+**Problem:** All unit tests for individual linters passed for CS09, yet the marker-in-prose bug (LRN-056) only manifested end-to-end when (a) the seeded config enabled OPERATIONS.md as a composed file AND (b) `harness sync --mode=check` was actually invoked against the init-produced repo. No unit test covered this combined interaction.
+
+**Finding:** Init/sync integration testing only surfaces config-shape bugs end-to-end. Unit tests for individual linters are insufficient to catch bugs that depend on the interaction between a seeded config file and the composed parser. Mitigation: the end-to-end fixture test (`tests/cs09-init.test.mjs`) should include a step that runs `harness sync --mode=check` against the init-produced repo, not just `harness lint`. This validates that the seeded config does not produce a composed-parser rejection on first sync.
+
+**Evidence:** CS09 R2 blocker (GPT-5.5): `harness sync --mode=check` on the init-produced repo found the inline marker that unit linters had passed. The bug required both the seeded config + sync invocation to surface.
+
+**Disposition:** Applied as process standard. Planned follow-up: CS09b (sync fixture extension) to add `harness sync --mode=check` to the init fixture test suite.
+
+### LRN-058
+
+```yaml
+id: LRN-058
+date: 2026-05-03
+category: process
+source_cs: CS09
+status: applied
+tags: [sub-agents, parallel-dispatch, no-commit, scale-validation, cumulative-count]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS09 called for a 6-way parallel sub-agent dispatch across clearly disjoint skeleton files and config. Question: does the zero-commit, zero-race discipline hold at this cumulative scale (32 dispatches across CS01–CS09)?
+
+**Finding:** 6-way parallel fan-out validated: zero file races, zero rogue commits. Cumulative count: 32 sub-agent dispatches across CS01–CS09 with zero commit-discipline violations after [LRN-021](../../../LEARNINGS.md#lrn-021) standardization. Pattern: parallel fan-out scales reliably when sub-agents have clearly disjoint file ownership. The consistent zero-violation record through 32 dispatches provides high confidence that the no-commit briefing pattern is durable.
+
+**Evidence:** CS09 implementation: 6 parallel sub-agents (cs09-context, cs09-architecture, cs09-learnings, cs09-workboard, cs09-readme, cs09-config) — all Sonnet 4.6, all 0 commits, all succeeded. Plus cs09-fixes-r1 and 1 inline orchestrator R2 fix. Zero file overlap detected.
+
+**Disposition:** Pattern validated. Cumulative dispatch count (32) is the new documented baseline for CS10+. Continue applying LRN-016 + LRN-021 on all future fan-outs.
 
 ## Obsolete
 

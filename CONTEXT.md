@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS08 close-out)
+> **Last updated:** 2026-05-03 (CS09 close-out)
 
 ## Codebase state
 
@@ -23,7 +23,9 @@
 
 - **CS08 complete** (closed 2026-05-03). Delivered: 10 template files (7 process doc templates: `template/managed/INSTRUCTIONS.md`, `template/composed/CONVENTIONS.md`, `template/composed/OPERATIONS.md`, `template/composed/REVIEWS.md`, `template/managed/TRACKING.md`, `template/managed/RETROSPECTIVES.md`, `template/managed/READMEGUIDE.md`; 3 `.github` bundle files: `copilot-instructions.md`, `pull_request_template.md`, `CODEOWNERS`). **375 tests pass total** (docs-only CS, no new tests). 2 GPT-5.5 review rounds (R1=3 blockers+4 non-blockers; R2=1 small NB inline-fixed, GO). 5 additional learnings filed (LRN-049 through LRN-053): dot-notation placeholder trap, consumer-root-relative path rule, template self-reference trap, 8-way parallel dispatch validated, edit-tool truncation near end-of-file. 2 planned CSs filed (CS08b: template linter; CS09: seeded skeletons). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #21 as `676c494`.
 
-**CS09 (seeded skeletons) is now active (claimed by yoga-ah on branch cs09/content).**
+- **CS09 complete** (closed 2026-05-03). Delivered: 5 seeded skeleton files (`template/seeded/CONTEXT.md`, `ARCHITECTURE.md`, `LEARNINGS.md`, `WORKBOARD.md`, `README.md`), `template/seeded/harness.config.json`, 3 `.gitkeep` scaffold dirs, fixture test `tests/cs09-init.test.mjs` (9 new tests). **384 tests pass total** (375+9 new). 3 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers; R2=1 blocker [inline marker in OPERATIONS.md prose]; R3=clean). 5 additional learnings filed (LRN-054 through LRN-058): early-return gate anti-pattern, `$schema` canonical URL rule, inline marker in prose, init/sync integration test gap, 6-way dispatch validated (cumulative 32 dispatches). 2 planned CSs filed (CS09b: sync fixture extension; CS10: scaffolds). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #24 as `ceab301`. **`harness init` now produces a fully linter-passing consumer repo from a single command.**
+
+**CS09 is complete. CS10 (scaffolds) is ready to claim.**
 
 ## Architecture pointer
 
@@ -31,7 +33,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS08 is complete; CS09 is now active.
+- None. CS09 is complete; CS10 is ready to claim.
 
 ## CS plan
 
