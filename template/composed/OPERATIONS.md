@@ -157,7 +157,7 @@ requiring the sub-agent to:
 **No commit / push / rebase / reset / gh pr** is permitted by any sub-agent.
 The orchestrator commits at the end of each CS. This invariant has been
 validated across 18+ sub-agent dispatches with zero violations after
-standardization in LRN-021.
+standardization in [LRN-021](LEARNINGS.md#lrn-021).
 
 #### 3. Required reading
 
@@ -167,7 +167,7 @@ List paths explicitly — do not say "read whatever you need":
 - All ADRs in `docs/adr/` that touch the deliverables area. When briefing
   a schema-author sub-agent, cross-check every ADR: ADR constraints
   frequently exceed what the cs-plan deliverables list restates (validated
-  in LRN-007 — omitting ADR 0002 cost three sub-agents a re-dispatch cycle).
+  in [LRN-007](LEARNINGS.md#lrn-007) — omitting ADR 0002 cost three sub-agents a re-dispatch cycle).
 - Relevant done CS files for prior art and conventions.
 
 #### 4. Explicit file ownership ([LRN-016](LEARNINGS.md#lrn-016))

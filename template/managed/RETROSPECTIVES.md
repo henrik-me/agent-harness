@@ -6,7 +6,7 @@
 
 This file defines what a *learning* is, how to author one, how the harvest
 cadences work, and the rules that govern bounded before-claim prompts. It is
-the companion reference for [LEARNINGS.md](../LEARNINGS.md).
+the companion reference for [LEARNINGS.md](LEARNINGS.md).
 
 ---
 

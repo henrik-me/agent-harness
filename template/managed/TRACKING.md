@@ -166,7 +166,7 @@ clickstop Owner fields, and commit trailers. The format is:
 <machine-short>-<repo-short>[-c<N>]
 ```
 
-This project's `repo-short` is **`{{project.agent_suffix}}`** (defined in
+This project's `repo-short` is **`{{agent_suffix}}`** (defined in
 [`harness.config.json`](harness.config.json) under `project.agent_suffix`).
 
 ### Component breakdown
@@ -193,7 +193,7 @@ A short project-defined token configured in `harness.config.json`:
 ```jsonc
 {
   "project": {
-    "agent_suffix": "{{project.agent_suffix}}"
+    "agent_suffix": "{{agent_suffix}}"
   }
 }
 ```
@@ -207,9 +207,9 @@ patterns are recognised (checked in order):
 
 | Directory basename | Derived suffix | Example agent ID |
 |--------------------|---------------|------------------|
-| `<repo>_copilot<N>` | `-c<N>` | `yoga-{{project.agent_suffix}}-c2` |
-| `<repo><N>` (trailing digits) | `-c<N>` | `yoga-{{project.agent_suffix}}-c3` |
-| anything else | _(omitted)_ | `yoga-{{project.agent_suffix}}` |
+| `<repo>_copilot<N>` | `-c<N>` | `yoga-{{agent_suffix}}-c2` |
+| `<repo><N>` (trailing digits) | `-c<N>` | `yoga-{{agent_suffix}}-c3` |
+| anything else | _(omitted)_ | `yoga-{{agent_suffix}}` |
 
 This allows multiple clones on the same machine (e.g. one clone per Copilot
 agent window) to produce distinct IDs without manual configuration.
@@ -232,7 +232,7 @@ To pin `machine-short` without changing the hostname (useful in CI or when
 working across machines with different names), set the environment variable:
 
 ```
-HARNESS_AGENT_{{project.agent_suffix_upper}}_MACHINE=<override>
+HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE=<override>
 ```
 
 The env var name pattern is **`HARNESS_AGENT_<SUFFIX_UPPER>_MACHINE`** where
@@ -247,23 +247,23 @@ default env var name entirely if needed.
 ```
 hostname:       HENRIKM-YOGA
 machine-short:  yoga (derived from hostname)
-env-var-name:   HARNESS_AGENT_{{project.agent_suffix_upper}}_MACHINE
+env-var-name:   HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE
 env-var-value:  (not set)
 effective-machine-short: yoga
-config-suffix:  {{project.agent_suffix}}
-consumer-cwd:   C:\src\{{project.repo_short}}
+config-suffix:  {{agent_suffix}}
+consumer-cwd:   C:\src\{{repo_short}}
 clone-suffix:   (none)
-agent-id:       yoga-{{project.agent_suffix}}
+agent-id:       yoga-{{agent_suffix}}
 ```
 
 ### Worked examples
 
 | Clone path | Hostname | Env var | Agent ID |
 |------------|----------|---------|----------|
-| `C:\src\{{project.repo_short}}` | `HENRIKM-YOGA` | _(not set)_ | `yoga-{{project.agent_suffix}}` |
-| `C:\src\{{project.repo_short}}_copilot2` | `HENRIKM-OMNI` | _(not set)_ | `omni-{{project.agent_suffix}}-c2` |
-| `C:\src\{{project.repo_short}}3` | `HENRIKM-YOGA` | _(not set)_ | `yoga-{{project.agent_suffix}}-c3` |
-| `C:\src\{{project.repo_short}}` | `HENRIKM-YOGA` | `HARNESS_AGENT_{{project.agent_suffix_upper}}_MACHINE=ci` | `ci-{{project.agent_suffix}}` |
+| `C:\src\{{repo_short}}` | `HENRIKM-YOGA` | _(not set)_ | `yoga-{{agent_suffix}}` |
+| `C:\src\{{repo_short}}_copilot2` | `HENRIKM-OMNI` | _(not set)_ | `omni-{{agent_suffix}}-c2` |
+| `C:\src\{{repo_short}}3` | `HENRIKM-YOGA` | _(not set)_ | `yoga-{{agent_suffix}}-c3` |
+| `C:\src\{{repo_short}}` | `HENRIKM-YOGA` | `HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE=ci` | `ci-{{agent_suffix}}` |
 
 ### WORKBOARD Orchestrators table
 
@@ -272,7 +272,7 @@ required columns are:
 
 | Column | Description |
 |--------|-------------|
-| `Agent ID` | Derived agent ID (e.g. `yoga-{{project.agent_suffix}}`) |
+| `Agent ID` | Derived agent ID (e.g. `yoga-{{agent_suffix}}`) |
 | `Machine` | Raw hostname (e.g. `HENRIKM-YOGA`) |
 | `Repo Folder` | Absolute path to the working directory |
 | `Status` | `🟢 Active` (seen within 24 h), `🟡 Idle` (24 h–7 d), `⚪ Offline` (>7 d) |

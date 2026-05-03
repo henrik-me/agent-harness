@@ -6,7 +6,7 @@ every ERROR-level rule listed here; WARNING-level rules are advisory.
 
 > **File class: managed.** This guide is overwritten on every `harness sync`.
 > Your `README.md` is _not_ — it is consumer-owned and never touched by sync
-> (see [ADR 0002 — Root README is project-owned, not synced](../../docs/adr/0002-readme-ownership.md)).
+> (see [ADR 0002 — Root README is project-owned, not synced](docs/adr/0002-readme-ownership.md)).
 
 ---
 
@@ -335,7 +335,7 @@ linter checks out of the box.
 
 On every subsequent `harness sync` the consumer's `README.md` is **never
 overwritten** — it is consumer-owned (seeded file class per
-[ADR 0001](../../docs/adr/0001-file-classes.md)). Changes the consumer makes are
+[ADR 0001](docs/adr/0001-file-classes.md)). Changes the consumer makes are
 preserved indefinitely. Changes the harness makes to `template/seeded/README.md`
 do not propagate to existing consumers.
 
