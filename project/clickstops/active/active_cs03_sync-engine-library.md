@@ -1,9 +1,9 @@
 # CS03 — Sync engine library (`lib/sync.mjs`)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** `cs03/sync-engine`
+**Started:** 2026-05-03T07:30Z
 **Closed:** —
 **Filed by:** CS02 close-out (so CS03 can be claimed via the documented planned → active rename flow per [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle))
 **Depends on:** CS02
@@ -52,7 +52,15 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Author lib/sync.mjs (orchestrator + apply/check/dry-run modes) | pending | sub-agent | agent-id=cs03-sync \| role=engine-author \| report-status=pending \| learnings=0 |
+| Author lib/templating.mjs (substitution from `templating` config) | pending | sub-agent | agent-id=cs03-templating \| role=engine-author \| report-status=pending \| learnings=0 |
+| Author lib/lock.mjs (read/write .harness-lock.json per schema) | pending | sub-agent | agent-id=cs03-lock \| role=engine-author \| report-status=pending \| learnings=0 |
+| Author lib/composed.mjs (hardened parser + merge per ADR 0001) | pending | sub-agent | agent-id=cs03-composed \| role=engine-author \| report-status=pending \| learnings=0 |
+| Author tests/fixtures (per-class + per-edge-case fixtures) | pending | sub-agent | agent-id=cs03-fixtures \| role=test-author \| report-status=pending \| learnings=0 |
+| Cross-link integrity merge + sync-invariant verification | pending | yoga-ah | Orchestrator: assert composed sync REFUSES on legacy unmapped content, exit non-zero, no partial write |
+| Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | pending | yoga-ah | High-risk CS — GPT-5.5 OR explicit user waiver only |
+| Open PR | pending | yoga-ah | branch `cs03/sync-engine` |
+| Squash-merge | pending | yoga-ah | After GPT-5.5 review clean |
 
 ## Notes / Learnings
 
