@@ -35,7 +35,7 @@ Subcommands: `init | sync | check | lint | harvest | check-migration | composed-
 
 ### Sync engine (`lib/sync.mjs`, `lib/composed.mjs`, `lib/templating.mjs`, `lib/lock.mjs`, CS03)
 
-Three file classes: `managed` (overwrite), `composed` (managed core + marker-preserved local blocks), `seeded` (create-if-missing). Composed parser is fail-closed and strict per [CS03 of the cs-plan](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md).
+Three file classes: `managed` (overwrite), `composed` (managed core + marker-preserved local blocks), `seeded` (create-if-missing). Composed parser is fail-closed and strict per [CS03 of the cs-plan](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md).
 
 ### Doc-schema lib + linters (`lib/doc-schema.mjs`, `scripts/check-*.mjs`, CS05–CS07)
 

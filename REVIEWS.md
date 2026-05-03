@@ -6,7 +6,7 @@ The review loop. Hand-maintained until CS11. Canonical version authored in CS08 
 
 **Primary:** GPT-5.5 rubber-duck (via the rubber-duck agent).
 
-**Fallback (per [Decision #22](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md)):** if GPT-5.5 is unavailable >30 minutes or after 2 failed attempts, fall back to Claude Sonnet 4.6 rubber-duck — **but only if** Sonnet 4.6 was not used to materially implement the CS being reviewed (independence invariant). If Sonnet 4.6 contributed non-trivial implementation work, escalate to: GPT-5.5 (retry) or explicit user waiver.
+**Fallback (per [Decision #22](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)):** if GPT-5.5 is unavailable >30 minutes or after 2 failed attempts, fall back to Claude Sonnet 4.6 rubber-duck — **but only if** Sonnet 4.6 was not used to materially implement the CS being reviewed (independence invariant). If Sonnet 4.6 contributed non-trivial implementation work, escalate to: GPT-5.5 (retry) or explicit user waiver.
 
 **High-risk CSs** (CS03 sync engine, CS11 self-host, CS15a/b public-flip, CS18b PILOT-A, CS19 migration): GPT-5.5 OR explicit user waiver only — no Sonnet fallback regardless of independence.
 

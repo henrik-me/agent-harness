@@ -25,11 +25,11 @@ Both forms are valid; the directory form is appropriate when the CS produces or 
 - Task IDs are uppercase in tables (`CS01`) but lowercase in branches/commits (`cs01`).
 - Slugs are kebab-case.
 - Branch name: `cs<NN>/<slug>` (e.g. `cs01/bootstrap-repo`).
-- WORKBOARD-only PR branches: `workboard/cs<NN>-claim`, `workboard/cs<NN>-close`, etc. Before CS15a these are user-reviewed small PRs; from CS15a onward they are bot-approved/auto-merged when eligible.
+- WORKBOARD-only PR branches: `workboard/cs<NN>-claim`, `workboard/cs<NN>-close`, etc. Until CS15b these are user-reviewed small PRs (CS15a builds + dry-runs the bot workflow but does not activate it); from CS15b onward they are bot-approved/auto-merged when eligible.
 
 ## Agent Identification
 
-The harness's project-suffix is **`ah`** (per [Decision #20a in cs-plan](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md)).
+The harness's project-suffix is **`ah`** (per [Decision #20a in cs-plan](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)).
 
 Format: `<machine-short>-<repo-short>[-c<N>]`
 
@@ -39,7 +39,7 @@ Format: `<machine-short>-<repo-short>[-c<N>]`
   - `<repo>_copilot<N>` → `-c<N>` (e.g. `agent-harness_copilot2` → `-c2`)
   - `<repo><N>` (bare numeric distinguisher) → `-c<N>` (e.g. `agent-harness2` → `-c2`)
   - otherwise omitted
-- **Override env var:** `HARNESS_AGENT_AH_MACHINE` (per [Decision #20c](project/clickstops/active/active_cs01_bootstrap-repo/harness-cs-plan.md)).
+- **Override env var:** `HARNESS_AGENT_AH_MACHINE` (per [Decision #20c](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)).
 
 Examples:
 - `C:\src\agent-harness` on `HENRIKM-YOGA` → `yoga-ah`
