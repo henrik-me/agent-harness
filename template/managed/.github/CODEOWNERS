@@ -1,0 +1,23 @@
+# CODEOWNERS — managed by the harness.
+# Regenerate via `harness sync` when a new harness version is pinned.
+#
+# Syntax reference:
+#   <pattern>  <@owner> [<@owner> ...]
+#
+#   Patterns follow .gitignore rules. Lines starting with # are comments.
+#   The last matching rule takes precedence.
+#   Owner tokens must be @username, @org/team, or user@example.com.
+#
+# Template placeholders:
+#   {{project.repo_owner}}       — GitHub username or org that owns the repo
+#   {{project.default_codeowner}} — default reviewer for all files
+#   {{project.lib_codeowner}}    — designated reviewer for lib/ changes
+#
+# Replace placeholder tokens with real GitHub usernames or team slugs
+# (e.g. @acme-corp/platform-team) after running `harness sync`.
+
+# Default: all files require review from the default codeowner.
+* @{{project.default_codeowner}}
+
+# lib/ changes require a dedicated reviewer.
+/lib/ @{{project.lib_codeowner}}
