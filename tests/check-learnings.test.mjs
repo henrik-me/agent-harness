@@ -296,6 +296,23 @@ describe('check-learnings linter', () => {
     );
   });
 
+  it('15b. entry body with embedded yaml that has id: (non-LRN) is not classified as entry', () => {
+    const r = runLinter(['--file', fixture('entry-with-yaml-example-id.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 (embedded yaml with id: example must NOT truncate bodyAfter); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      !r.stdout.includes('Disposition'),
+      `Expected no Disposition error; got:\n${r.stdout}`
+    );
+    // 2 LRN entries → linter must report 2 entries checked, NOT 3 (the embedded `id: example` block must be filtered out)
+    assert.ok(
+      r.stdout.includes('Entries checked: 2') || r.stdout.includes('2 entries'),
+      `Expected exactly 2 entries reported; got:\n${r.stdout}`
+    );
+  });
+
   // 16. B5 — entry exists for status but heading is absent → exit 1
   it('16. missing ## heading when entries exist exits 1 with error', () => {
     const r = runLinter(['--file', fixture('missing-heading-with-entries.md')]);
