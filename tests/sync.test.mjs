@@ -19,7 +19,7 @@
 
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -1207,6 +1207,54 @@ describe('sync() — Bug #5: path normalization and EBADCONFIG_INVALID_PATH', ()
       'absolute Unix path must throw EBADCONFIG_INVALID_PATH',
     );
   });
+
+  it('throws EBADCONFIG_INVALID_PATH for rooted backslash paths (per GPT-5.5 review #3 #1)', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['\\absolute\\file.md'] } });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for UNC-style \\\\server\\share paths', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['\\\\server\\share\\file.md'] } });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('detects dir/file.md and dir/./file.md as duplicates after canonicalization', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'dir/file.md': '# managed\n' },
+      composed: { 'dir/file.md': '# composed\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['dir/file.md'] },
+      composed: { files: ['dir/./file.md'], overrides: { 'dir/./file.md': { local_blocks: [] } } },
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+
+  it('detects ./dir/file.md and dir/file.md as duplicates after canonicalization', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'dir/file.md': '# managed\n' },
+      composed: { 'dir/file.md': '# composed\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['./dir/file.md'] },
+      composed: { files: ['dir/file.md'], overrides: { 'dir/file.md': { local_blocks: [] } } },
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
 });
 
 // ===========================================================================
@@ -1270,6 +1318,55 @@ user content here
       !existsSync(path.join(consumerDir, 'README.md')),
       'README.md must not be created when plan phase fails mid-way',
     );
+
+    // Lock must NOT have been written.
+    assert.ok(
+      !existsSync(path.join(consumerDir, '.harness-lock.json')),
+      'lock file must not be written when plan phase fails',
+    );
+  });
+
+  it('preserves existing managed file content + mtime when composed file fails (per GPT-5.5 review #3 #6)', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'README.md': '# NEW HARNESS README\n' },
+      composed: { 'NOTES.md': COMPOSED_TEMPLATE },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['README.md'] },
+      composed: {
+        files: ['NOTES.md'],
+        overrides: { 'NOTES.md': { local_blocks: ['my-section'] } },
+      },
+    });
+
+    // Seed an existing README.md in the consumer with OLD content.
+    const readmePath = path.join(consumerDir, 'README.md');
+    const oldContent = '# OLD CONSUMER README — must not be overwritten when composed fails\n';
+    writeText(readmePath, oldContent);
+    // Capture mtime baseline (sleep 50ms to ensure any future write would change mtime).
+    const beforeStats = statSync(readmePath);
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Composed NOTES.md has legacy unmapped content → triggers failure.
+    writeText(path.join(consumerDir, 'NOTES.md'), `# Composed File
+
+LEGACY CONTENT NOT IN TEMPLATE
+
+<!-- harness:local-start id=my-section -->
+user content
+<!-- harness:local-end id=my-section -->
+`);
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError,
+    );
+
+    // Existing README.md must be unchanged: same content, same mtime.
+    const afterStats = statSync(readmePath);
+    const afterContent = readFileSync(readmePath, 'utf8');
+    assert.equal(afterContent, oldContent, 'existing managed file content must be preserved');
+    assert.equal(afterStats.mtimeMs, beforeStats.mtimeMs, 'existing managed file mtime must be unchanged');
 
     // Lock must NOT have been written.
     assert.ok(

@@ -946,6 +946,14 @@ describe('mergeComposed — Bug #2: action enum validation', () => {
     );
   });
 
+  it('throws EMERGE_LEGACY_BAD_MAPPING when action is "discard" but block_id is null (per GPT-5.5 review #3 #1 — presence check, not nullness)', () => {
+    const mapping = { regions: [{ action: 'discard', block_id: null, content: 'LEGACY CONTENT' }] };
+    assertMergeError(
+      () => mergeComposed(tmpl, curr, { allowedBlockIds: ['b1'], legacyMapping: mapping }),
+      'EMERGE_LEGACY_BAD_MAPPING',
+    );
+  });
+
   it('throws EMERGE_LEGACY_BAD_MAPPING when action is "map_to_block" without block_id', () => {
     const mapping = { regions: [{ action: 'map_to_block', content: 'LEGACY CONTENT' }] };
     assertMergeError(
