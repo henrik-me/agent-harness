@@ -2,7 +2,7 @@
 
 > **File class:** composed — managed core + one project-local block.
 > Do **not** edit the managed-core sections directly. Edit only the content
-> inside the `<!-- harness:local-start id=operations.project-deploy -->` block.
+> inside the `operations.project-deploy` local block (see § Local block at the end of this file).
 > All managed-core sections are overwritten on every `harness sync`.
 
 Day-to-day procedures for claiming, dispatching, syncing, and harvesting
