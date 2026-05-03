@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS06 close-out: LRN-038..043 added)
+> **Last updated:** 2026-05-03 (CS07 close-out: LRN-044..048 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -895,6 +895,106 @@ claim_area: orchestrator-loop
 **Evidence:** cs06-context updated CONTEXT.md (removed stale "ready to claim" language, per its regression fix); cs06-readme added `## Architecture` and `## Status` sections to README.md. Both were real deliverables, not incidental edits.
 
 **Disposition:** Pattern codified. Future linter sub-agent briefings MUST include: "If your linter fails against the live target file, fix the live file as part of this task — that IS the deliverable." This prevents the misclassification of doc fixes as out-of-scope.
+
+### LRN-044
+
+```yaml
+id: LRN-044
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS07
+status: applied
+tags: [stdout, stderr, linter, renderer, quiet-mode, artifact-corruption]
+claim_area: tooling
+```
+
+**Problem:** `scripts/render-deploy-summary.mjs` initially wrote progress/status lines to stdout even in `--quiet` mode. Callers that piped stdout to capture the deployment summary artifact received a corrupted artifact interleaved with progress text.
+
+**Finding:** Renderers and scripts that emit a primary artifact to stdout MUST never mix progress/status output on stdout, regardless of `--quiet` mode. Progress goes to stderr (non-quiet) or is fully suppressed (quiet); stdout is reserved for the artifact. Any tool with `--out`/`--in` semantics must treat stdout as a clean data channel. Found in CS07 R1 (B1).
+
+**Evidence:** CS07 R1 blocker B1 (GPT-5.5): cs07-render wrote progress messages to stdout in `--quiet` mode, corrupting the deployment summary artifact for piped callers. Fixed inline by orchestrator R2 fix pass.
+
+**Disposition:** Applied in `scripts/render-deploy-summary.mjs`. Pattern for all future renderer/emitter scripts: establish a hard stdout/stderr discipline at design time; add a test asserting stdout is clean (contains only artifact content) when `--quiet` is passed.
+
+### LRN-045
+
+```yaml
+id: LRN-045
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS07
+status: applied
+tags: [safety-flags, validation-depth, redact-required, surface-presence, invariant-check]
+claim_area: tooling
+```
+
+**Problem:** `--redact-required` in `scripts/render-deploy-summary.mjs` originally only checked "is a redaction config loaded?" — it did not verify that the loaded config actually contained the relevant `public_artifact_redaction` rule for the artifact type being rendered. A config file lacking the rule still passed the flag, giving a false safety guarantee.
+
+**Finding:** Safety-required flags (e.g. `--redact-required`, `--strict`, `--no-warnings-as-errors-bypass`) must validate the SUBSTANCE of the requirement, not just its surface presence. A flag named `--redact-required` must verify the deeper invariant it implies — that the applicable redaction rule exists and is non-empty — not merely that some config object was loaded. Found in CS07 R1 (B2).
+
+**Evidence:** CS07 R1 blocker B2 (GPT-5.5): `--redact-required` passed even when `public_artifact_redaction` lacked an entry for the target artifact type. Fixed inline by orchestrator R2 fix pass.
+
+**Disposition:** Applied in `scripts/render-deploy-summary.mjs`. Pattern: any "required" safety flag must check the deepest invariant it implies. Document in CS08 canonical OPERATIONS.md conventions block.
+
+### LRN-046
+
+```yaml
+id: LRN-046
+date: 2026-05-03
+category: architectural
+source_cs: CS07
+status: applied
+tags: [config, per-type-map, public-artifact-redaction, field-selection, over-application]
+claim_area: schema-design
+```
+
+**Problem:** When `public_artifact_redaction` is a per-type map (keys = artifact types), an early implementation of `render-deploy-summary.mjs` iterated over the entire map rather than selecting the entry for the specific artifact type being rendered. This collapsed unrelated redaction rules from other artifact types and produced over-application — fields forbidden only for other artifact types were incorrectly rejected on the current artifact.
+
+**Finding:** When a config field is a per-type map (e.g. `public_artifact_redaction[<artifact-type>]`), consumers MUST select their specific type's rule, not iterate over the whole map. Iterating collapses unrelated rules from other types and produces incorrect over-application or false failures. Found in CS07 R1 (NB-3). Companion to [LRN-039](#lrn-039) (schema is source of truth) and [LRN-042](#lrn-042) (lock orphan detection schema-shape).
+
+**Evidence:** CS07 R1 non-blocker NB-3 (GPT-5.5): map-iteration over `public_artifact_redaction` applied all types' rules to a single artifact. Fixed inline by orchestrator R2 fix pass.
+
+**Disposition:** Applied in `scripts/render-deploy-summary.mjs`. Pattern: any code reading a per-type-keyed config map must look up by the specific type key, never iterate the whole map.
+
+### LRN-047
+
+```yaml
+id: LRN-047
+date: 2026-05-03
+category: process
+source_cs: CS07
+status: applied
+tags: [review, fix-round, inline-vs-sub-agent, heuristic, findings-concentration]
+claim_area: orchestrator-loop
+```
+
+**Problem:** There is no documented heuristic for when a review fix-round should be handled inline by the orchestrator vs. dispatched to a dedicated fix-round sub-agent. Without a heuristic, the decision is made ad hoc each time.
+
+**Finding:** Single-blocker R2 follow-ups can be handled inline by the orchestrator; large multi-finding R1 sets warrant a fix-round sub-agent. CS07's R1 was 5 findings concentrated in ONE file (render-deploy-summary.mjs), so inline fix was efficient and complete in one pass. CS06's R1 was 4 blockers spread across 6 files, warranting a sub-agent. Heuristic: (# of findings) × (# of affected files) → if > ~6, dispatch sub-agent; otherwise handle inline.
+
+**Evidence:** CS07: R1=2 blockers+3 non-blockers all in one file → inline fix (efficient). CS06: R1=4 blockers across 6 files → sub-agent (cs06-fixes-r1). Pattern emerges from two consecutive CSs.
+
+**Disposition:** Applied as process standard. Future close-out docs should record the fix-round decision and reference this heuristic. Document in CS08 canonical OPERATIONS.md § Review loop.
+
+### LRN-048
+
+```yaml
+id: LRN-048
+date: 2026-05-03
+category: process
+source_cs: CS07
+status: applied
+tags: [sub-agents, parallel-dispatch, no-commit, scale-validation, cumulative-count]
+claim_area: orchestrator-loop
+```
+
+**Problem:** The CS07 plan called for a 4-way parallel sub-agent dispatch. The key question was whether the no-commit preflight (LRN-021) and file-ownership invariant (LRN-016) would hold at this scale as well.
+
+**Finding:** 4-way parallel sub-agent dispatch in CS07 worked identically to CS06's 9-way: 0 file races, 0 rogue commits, all 4 sub-agents reported correctly. Cumulative count: 18 sub-agent dispatches across CS01–CS07 with zero commit-discipline violations after LRN-021 standardization. The invariant continues to hold at all tested fan-out sizes (1–9).
+
+**Evidence:** CS07 implementation: 4 parallel sub-agents (cs07-prbody, cs07-trailers, cs07-compose, cs07-render) — all Sonnet 4.6, all 0 commits, all succeeded. No file overlap detected.
+
+**Disposition:** Pattern validated and documented. Continue applying LRN-016 + LRN-021 on all future fan-outs. Cumulative dispatch count (18) now the documented baseline for CS08+.
 
 ## Obsolete
 

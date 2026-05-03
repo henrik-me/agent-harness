@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-03T22:00Z (CS06 close-out)
+> **Last updated:** 2026-05-03T22:30Z (CS07 close-out)
 
 ## Orchestrators
 
@@ -16,12 +16,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS07 | Generic policy linters (4 linters) | claimed | yoga-ah | cs07/content | 2026-05-03 | _(none)_ |
+| — | no active CS — CS08 ready to claim | — | — | — | 2026-05-03 | _(none)_ |
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS07 | Generic policy linters (4 linters) | 2026-05-03 | **Done.** Squash-merged as `4c3c913`. 2 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers all in render-deploy-summary, R2=GO). 375 tests pass (333+42 new). 5 LRN filed (LRN-044..048). 1 planned CS filed (CS08). Claim PR #17. Content PR #18. **Inline R2 fix (all 5 findings in 1 file) more efficient than sub-agent fan-out (LRN-047). `harness lint` now 13 linters.** |
 | CS06 | Remaining structural linters (9 linters) | 2026-05-03 | **Done.** Squash-merged as `161b9f3`. 3 GPT-5.5 review rounds (R1=4 blockers+4 non-blockers, R2=1 blocker+1 non-blocker, R3=GO). 333 tests pass (253+80 new). 6 LRN filed (LRN-038..043). 2 planned CSs filed (CS06b, CS07). Claim PR #14. Content PR #15. **First true 9-way parallel sub-agent dispatch; zero file races, zero rogue commits.** |
 | CS05 | Doc-schema lib + first reference linter (`check-learnings.mjs`) | 2026-05-03 | **Done.** Squash-merged as `adc2777`. 3 GPT-5.5 review rounds (R1=5 blockers+4 non-blockers, R2=1 partial-fix blocker, R3=GO). 253 tests pass (224+29 new). 6 LRN filed (LRN-032..037). 1 planned CS filed (CS06). Claim PR #11. Content PR #12. |
 | CS04 | CLI dispatcher (`bin/harness.mjs`) | 2026-05-03 | **Done.** Squash-merged as `13c1411`. 3 GPT-5.5 review rounds (R1=7 blockers, R2=1 blocker, R3=GO). 224 tests pass (162+62 new CLI tests). 6 LRN filed (LRN-026..031). 4 planned CSs filed (CS04b, CS04c, CS04d, CS05). Claim PR #8. Content PR #9. |
