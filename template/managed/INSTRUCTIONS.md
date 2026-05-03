@@ -128,7 +128,7 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 5. **Implement.** All code, template, and doc changes land on the CS branch. Sub-agents
    may run in parallel as long as they own disjoint file sets. After each parallel
    wave, verify disk state: `git status --short` plus per-file size check (per
-   LRN-017). If a sub-agent's disk state contradicts its report, re-dispatch with the
+   [LRN-017](LEARNINGS.md#lrn-017)). If a sub-agent's disk state contradicts its report, re-dispatch with the
    lost-work briefing. Do not declare a parallel wave complete until the disk state
    matches every sub-agent's reported deliverables.
 
