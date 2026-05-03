@@ -1,10 +1,10 @@
 # CS03 — Sync engine library (`lib/sync.mjs`)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** `cs03/sync-engine`
+**Branch:** `cs03/sync-engine` (merged) + `cs03/close-out` (close-out)
 **Started:** 2026-05-03T07:30Z
-**Closed:** —
+**Closed:** 2026-05-03T11:00Z
 **Filed by:** CS02 close-out (so CS03 can be claimed via the documented planned → active rename flow per [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle))
 **Depends on:** CS02
 
@@ -58,10 +58,55 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 | Author lib/composed.mjs (hardened parser + merge per ADR 0001) | done | sub-agent | agent-id=cs03-composed \| role=engine-author \| report-status=complete \| learnings=2 — full impl + 54 tests pass; 2 escalations (legacy_composed_mapping schema; legacy fail-closed UX) deferred to follow-up CS |
 | Author tests/fixtures (per-class + per-edge-case fixtures) | done | sub-agent | agent-id=cs03-fixtures \| role=test-author \| report-status=complete \| learnings=1 — 94 fixtures across 27 dirs |
 | Cross-link integrity merge + sync-invariant verification | done | yoga-ah | Stubs added orchestrator-side: tests/templating.test.mjs (8 tests), tests/lock.test.mjs (3 tests). Total tests: 105/0 pass. validate-schemas: 21/0. |
-| Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | pending | yoga-ah | High-risk CS — GPT-5.5 OR explicit user waiver only |
-| Open PR | pending | yoga-ah | branch `cs03/sync-engine` |
-| Squash-merge | pending | yoga-ah | After GPT-5.5 review clean |
+| Local review with GPT-5.5 (mandatory, no fallback per Decision #22) | done | yoga-ah | **7 review iterations (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion total.** Iter 1: 4 blocking + 4 non-blocking → cs03-fixes-v1 (Sonnet) fixes 4B + 3NB; #8 deferred per GPT-5.5 recommendation. Iter 2: 3 blocking + 3 non-blocking → cs03-fixes-v2 (Sonnet, hard no-commit preflight per LRN-021). Iter 3: 1 blocking + 2 non-blocking + 1 suggestion → inline. Iter 4: 1 blocking + 1 non-blocking → cs03-fixes-v3 (Sonnet). Iter 5: 2 blocking + 1 non-blocking → inline. Iter 6: 1 blocking → inline. Iter 7: GO. |
+| Open PR | done | yoga-ah | PR #6 |
+| Squash-merge | done | yoga-ah | Commit `4e50789` on main; branch deleted |
+| Close-out: file 10 new learnings (LRN-016..025) | done | yoga-ah | All 25 LRN entries validate (`node scripts/validate-schemas.mjs` → 31/0 pass with 25 learnings) |
+| Close-out: file planned CS03b (upgrade templating + lock stubs) | done | yoga-ah | `project/clickstops/planned/planned_cs03b_upgrade-templating-lock-stubs.md` — recover rich APIs lost in LRN-016 race |
+| Close-out: rename file active → done; update WORKBOARD + CONTEXT | done | yoga-ah | This PR (cs03/close-out) |
 
 ## Notes / Learnings
 
 (filled during execution; harvested at close-out)
+
+
+### Sub-agent ledger summary
+
+**Total work passes: 11 = 5 initial sub-agent jobs + 3 fix-round sub-agent jobs + 3 inline orchestrator fix iterations.**
+
+**Initial 5 (Wave 1 + Wave 2 of CS03 sync engine library):**
+
+- **cs03-templating** (Haiku): rich-API report; **work LOST in race per LRN-016**; stub remains. tests/templating.test.mjs added by orchestrator post-merge (8 tests). Filed planned_cs03b for recovery.
+- **cs03-lock** (Sonnet): rich-API report including 16 lost tests; **partially LOST in race per LRN-016** but rich-API features later restored across cs03-fixes-v1/v2/v3 (atomic write, schema validation, LockError class, validateLockObject). tests/lock.test.mjs added by orchestrator post-merge (3 tests; later expanded by fixes-v1/v2 to 16+).
+- **cs03-composed** (Sonnet): full impl, 54 tests; 2 escalations (LRN-019/020 deferred); 1 LRN candidate (LRN-018 BOM applied).
+- **cs03-sync** (Sonnet): full impl, 40 tests; wrote stubs of templating + lock that won the race (LRN-016 source).
+- **cs03-fixtures** (Haiku): 94 fixture files across 27 dirs (templating: 26, lock: 7, composed: 47, sync: 11). 1 LRN candidate (LRN-006 reaffirmed).
+
+**Fix-round 3 (post-content-PR-#6, GPT-5.5 review iterations):**
+
+- **cs03-fixes-v1** (Sonnet): 7 fixes from GPT-5.5 review #1 (4 blocking + 3 non-blocking). Committed without permission per LRN-021.
+- **cs03-fixes-v2** (Sonnet, hard no-commit preflight): 6 fixes from review #2 (3 blocking + 3 non-blocking). Honored preflight.
+- **cs03-fixes-v3** (Sonnet, hard preflight): 2 fixes from review #4 (1 blocking + 1 non-blocking). Honored preflight.
+
+**Inline orchestrator fix iterations 3:**
+
+- **Review #3:** 3 small fixes inline (1 blocking + 2 non-blocking) — path canonicalization extension; `discard`+`block_id:null` presence check; mtime-test seeding.
+- **Review #5:** 3 small fixes inline (2 blocking + 1 non-blocking) — prior-lock canonicalization; empty-canonical rejection; canonical-key collision in overrides/local_blocks.
+- **Review #6:** 1 small fix inline (1 blocking) — Map-based accumulator for `__proto__` prototype-pollution safety.
+
+### Process observations
+
+- **HIGH-RISK CS calibration (LRN-024):** 7 review iterations to converge (6 No-Go + 1 GO); 12 blocking + 11 non-blocking + 1 suggestion findings total. Across the 6 No-Go iterations, blocking findings ranged 1–4 per iteration (median 1.5); non-blocking ranged 0–4. Future cs-plan should budget similarly for CS11, CS15a/b, CS18b, CS19.
+- **Parallel sub-agent file race (LRN-016/017):** the most expensive lesson — significant work lost. OPERATIONS.md § Sub-agent dispatch needs hard file-ownership declarations + post-completion disk verification. Will be canonicalized in CS08; addressed in cs-plan adjustments.
+- **Hard preflight effectiveness (LRN-021):** explicit "DO NOT COMMIT" + final-checklist preflight worked perfectly in cs03-fixes-v2 + v3. Pattern to canonicalize.
+- **Sub-agent vs inline tradeoff:** inline edits won for small fixes (≤30 min); sub-agent dispatch overhead dominated. Heuristic: if the fix touches >2 files OR involves new test scenarios that require fixture authoring, dispatch sub-agent; else inline.
+
+### Final state
+
+- 162 tests pass; 21 schema validations pass; 31 total `validate-schemas.mjs` checks pass (3 schemas + 3 examples + 25 learnings).
+- `lib/composed.mjs`: 26KB full impl with all 8 ADR 0001 error codes + bijective legacy mapping + allowedBlockIds enforcement + escape syntax + per-block lock records.
+- `lib/sync.mjs`: 30KB full orchestrator with plan-then-commit phases + canonical config + Map-based collision detection + atomic lock semantics.
+- `lib/lock.mjs`: 4.4KB with atomic write + schema validation + LockError class + validateLockObject helper.
+- `lib/templating.mjs`: 1.3KB stub (lenient {{key}} substitution); rich API recovery in CS03b.
+- 94 fixture files + 8 test files (including added orchestrator tests).
+- 10 new LRN entries (LRN-016 through LRN-025); 1 planned CS filed (CS03b).

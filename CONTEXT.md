@@ -10,9 +10,10 @@
   - **Seeded project-state docs** (CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD) — hand-authored at CS01. **Preserved unless explicitly edited**.
   - **Project-owned files** (root `README.md`, `LICENSE`, `package.json`, `.gitignore`, `.editorconfig`) — **excluded from `harness sync` entirely**.
 - **CS01 complete** (closed 2026-05-03). 5 learnings filed (LRN-001 through LRN-005).
-- **CS02 complete** (closed 2026-05-03). Delivered: 3 JSON Schemas (`schemas/{harness.config,harness-lock,learning}.schema.json`), 2 ADRs (`docs/adr/{0001-file-classes,0002-readme-ownership}.md`), 3 example configs (`examples/{guesswhatisnext,sub-invaders,agent-harness-self}.harness.config.json`), 1 CI workflow (`.github/workflows/validate-schemas.yml` + `scripts/validate-schemas.mjs`). 10 additional learnings filed (LRN-006 through LRN-015). 24 total learning candidates surfaced; 10 elevated to LEARNINGS.md, 14 dropped per RETROSPECTIVES criteria. devDeps: `ajv`, `ajv-formats`, `js-yaml`.
+- **CS02 complete** (closed 2026-05-03). Delivered: 3 JSON Schemas, 2 ADRs, 3 example configs, 1 CI workflow + script. 10 additional learnings filed (LRN-006 through LRN-015). devDeps: `ajv`, `ajv-formats`, `js-yaml`.
+- **CS03 complete** (closed 2026-05-03). HIGH-RISK CS — 7 GPT-5.5 review iterations to converge. Delivered: `lib/{sync,composed,templating,lock}.mjs` (sync engine library), 162 tests pass, 94 fixtures. **Templating + lock APIs are STUBS** (rich APIs lost in parallel-sub-agent file race per LRN-016; recovery filed as planned CS03b). 10 additional learnings filed (LRN-016 through LRN-025): parallel race, sub-agent reports drift, BOM stripping, legacy_composed_mapping schema deferred, composed evolution UX deferred, sub-agent commit-without-permission, multiset accounting, prototype pollution, review iteration cost, path canonicalization single-source.
 
-CS03 (sync engine library) ready to claim per cs-plan. The schemas, ADRs, and learnings together form the contract CS03 must implement.
+CS04 (CLI dispatcher) ready to claim per cs-plan.
 
 ## Architecture pointer
 
@@ -20,7 +21,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS02 is complete; CS03 is ready to claim.
+- None. CS03 is complete; CS04 is ready to claim.
 
 ## CS plan
 

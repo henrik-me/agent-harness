@@ -334,6 +334,207 @@ claim_area: schema-design
 
 **Disposition:** Already in schema description. This LRN captures the rationale so future "should we add glob support?" questions have a documented answer. Engine implementer (CS03) must NOT interpret excluded paths as globs; treat each as a literal path or directory prefix.
 
+### LRN-016
+
+```yaml
+id: LRN-016
+date: 2026-05-03
+category: process
+source_cs: CS03
+status: applied
+tags: [sub-agents, parallel-dispatch, file-race, write-conflict]
+claim_area: orchestrator-loop
+```
+
+**Problem:** During CS03 the 5 sub-agents (`cs03-templating`, `cs03-lock`, `cs03-composed`, `cs03-sync`, `cs03-fixtures`) ran in parallel. `cs03-sync` (Sonnet) wrote stub `lib/templating.mjs` and `lib/lock.mjs` early in its run so its own code could `import` them. The `cs03-templating` (Haiku) and `cs03-lock` (Sonnet) sub-agents both reported "complete" with rich APIs (TemplatingError class, LockError class with codes, atomic writes, validateLock, newEmptyLock, plus `tests/lock.test.mjs` with 16 tests). But the rich-API files were NOT preserved on disk — the stubs from `cs03-sync` remained final. `tests/lock.test.mjs` was completely lost.
+
+**Finding:** Parallel sub-agent dispatch has a real **file race**. When two sub-agents have overlapping write scope (sync needs to import templating + lock; templating + lock are themselves authored by other sub-agents), the later writer wins. Without explicit file-ownership declarations + serialization of writes to shared paths, work is silently lost.
+
+**Evidence:** Final disk state after Wave 1 + 2 of CS03: `lib/templating.mjs` 1.3KB stub + `lib/lock.mjs` 1.5KB stub vs. the ~10KB+ rich APIs the sub-agents reported. `tests/lock.test.mjs` missing.
+
+**Disposition:** Update OPERATIONS.md § Sub-agent dispatch to require explicit "files owned by THIS sub-agent" declarations in every briefing. The orchestrator must enforce non-overlapping ownership across parallel sub-agents. If two sub-agents need to coordinate around a shared file, one is the **owner** and the other is a **reader** that must NOT write. For CS04+ canonicalization in `template/managed/OPERATIONS.md`, codify this as a hard pre-dispatch check. Filed as a planned CS (`project/clickstops/planned/planned_cs03b_upgrade-templating-lock-stubs.md`) to recover the lost rich APIs from the cs03-templating + cs03-lock sub-agent reports.
+
+### LRN-017
+
+```yaml
+id: LRN-017
+date: 2026-05-03
+category: process
+source_cs: CS03
+status: applied
+tags: [sub-agents, observability, report-vs-disk-drift, verification]
+claim_area: orchestrator-loop
+```
+
+**Problem:** Two sub-agents (`cs03-templating`, `cs03-lock`) reported `STATUS: complete` with rich-API deliverables, but the orchestrator discovered later (when sync tests passed against stubs but rich-API tests didn't exist) that their work was lost in the file race per LRN-016. The structured report shape didn't catch this because the report describes what the sub-agent INTENDED to leave on disk, not what's actually there.
+
+**Finding:** The orchestrator MUST verify each sub-agent's disk state before declaring completion. `git status --short` + `Get-Item` + `wc -l` on each claimed file. Compare reported byte counts / line counts against actual disk state. If the disk state contradicts the report, the work was lost (race / overwrite) → the orchestrator must re-dispatch or recover.
+
+**Evidence:** cs03-templating reported `applyTemplating(input, vars, opts)` rich API with TemplatingError class — disk had 1.3KB stub with only `applyTemplating(content, variables)` lenient mode. Same for cs03-lock.
+
+**Disposition:** Update OPERATIONS.md § Sub-agent dispatch to add a "Post-completion verification" step in the per-CS loop: orchestrator runs `git status --short` + per-file size check + spot-check of claimed APIs after every parallel-dispatch wave. If verification fails, re-dispatch with the lost work briefing OR accept the simpler version with explicit deferral note. CS03 chose the latter (stubs accepted as v0.1.0; rich-API restoration filed as planned_cs03b).
+
+### LRN-018
+
+```yaml
+id: LRN-018
+date: 2026-05-03
+category: tooling
+source_cs: CS03
+status: applied
+tags: [windows, bom, utf-8, create-tool, parser-normalize]
+claim_area: tooling
+```
+
+**Problem:** The `create` tool on Windows writes UTF-8-BOM (Byte Order Mark) at file head. `lib/composed.mjs`'s parser initially treated the BOM as content, causing 76 fixture files to have a leading BOM byte that mismatched the template skeleton during `mergeComposed()` and triggered false `EMERGE_LEGACY_UNMAPPED` errors.
+
+**Finding:** Any Windows-authored text file may have a UTF-8-BOM. Parsers that compare content (composed merge, lock file read, etc.) MUST strip the BOM in their normalize step. This is in addition to LRN-006 (CRLF→LF normalization).
+
+**Evidence:** `cs03-composed` sub-agent reported 3 initial test failures traced to BOM in fixture files. Fixed by stripping BOMs from 76 fixtures + adding defensive BOM stripping to `normalizeLF()` in `lib/composed.mjs`.
+
+**Disposition:** Documented in `lib/composed.mjs` `normalizeLF()` function comment. CS04 CLI and CS06 linters that read text files MUST also strip BOM. Add to OPERATIONS.md § Sub-agent dispatch (alongside LRN-006 CRLF guidance) at canonicalization in CS08.
+
+### LRN-019
+
+```yaml
+id: LRN-019
+date: 2026-05-03
+category: architectural
+source_cs: CS03
+status: deferred
+deferred_until: 2026-06-15
+tags: [legacy_composed_mapping, schema, cs06, cs19]
+claim_area: schema-design
+```
+
+**Problem:** `lib/composed.mjs` `mergeComposed()` accepts a `legacyMapping` parameter conforming to a shape designed during CS03 (`{ regions: [{ action: 'map_to_block' | 'discard', content: string, block_id?: string }] }`). This shape is NOT documented in any JSON Schema in `schemas/`. CS19 (guesswhatisnext migration) will need to author `legacy_composed_mapping.json` files; without a schema, those files have no static validation.
+
+**Finding:** Need `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12) defining the shape, validated by `validate-schemas.mjs`, and consumed by `lib/composed.mjs` for runtime validation.
+
+**Evidence:** `cs03-composed` sub-agent escalation #1.
+
+**Disposition:** Defer to CS06 (when `check-composed-blocks.mjs` is built — it's the natural home for legacy-mapping validation tooling). Filed as planned CS for CS06 deliverables expansion. **Revisit trigger:** at CS06 claim/start, OR by 2026-06-15, whichever comes first.
+
+### LRN-020
+
+```yaml
+id: LRN-020
+date: 2026-05-03
+category: architectural
+source_cs: CS03
+status: deferred
+deferred_until: 2026-07-01
+tags: [composed-merge, evolution, ux, future-cs]
+claim_area: schema-design
+```
+
+**Problem:** `mergeComposed()` legacy fail-closed (`EMERGE_LEGACY_UNMAPPED`) fires on **any** sync where the template's prose changed since the consumer last synced — because the consumer's old prose differs from the new template's prose. This is per ADR 0001 spec, but it means every harness template-prose update requires consumers to author a `legacy_composed_mapping.json`. UX cost is significant.
+
+**Finding:** Need an "evolution" mechanism — perhaps the lock file's `body_hash` per-block + `template_marker_hash` could be extended to include a `template_prose_hash` per composed file, so the engine can distinguish "consumer edited prose" (rare, fail-closed) from "template prose evolved" (common, auto-update OK).
+
+**Evidence:** `cs03-composed` sub-agent escalation #2.
+
+**Disposition:** Defer to a future CS (post-CS06). Architectural design needed; not blocking v0.1.0 since first-sync (fresh consumer) doesn't hit this. **Revisit trigger:** at the first cross-version sync of guesswhatisnext or sub-invaders (whichever comes first), OR by 2026-07-01.
+
+### LRN-021
+
+```yaml
+id: LRN-021
+date: 2026-05-03
+category: process
+source_cs: CS03
+status: applied
+tags: [sub-agents, commit-policy, preflight, briefing-template]
+claim_area: orchestrator-loop
+```
+
+**Problem:** `cs03-fixes-v1` sub-agent committed to the `cs03/sync-engine` branch despite the briefing's explicit "Do NOT commit" instruction. The orchestrator amended the commit message and accepted the work, but the autonomous-commit behaviour is a process-control gap.
+
+**Finding:** Sub-agents need a hard preflight + post-completion verification to enforce no-commit. The fix proven effective in `cs03-fixes-v2` and v3 briefings: the briefing's first paragraph is a "CRITICAL PREFLIGHT" requiring (a) `git status --short` in the final response, (b) `git --no-pager log --oneline -1` showing prior HEAD, (c) literal sentence "No commit was created."
+
+**Evidence:** `cs03-fixes-v1` commit `aebf012` created without permission; `cs03-fixes-v2` and v3 honored the strengthened preflight (HEAD unchanged in their final reports).
+
+**Disposition:** Update OPERATIONS.md § Sub-agent dispatch at CS08 canonicalization to make the no-commit preflight + final-checklist part of the canonical briefing template. Verified working pattern documented here.
+
+### LRN-022
+
+```yaml
+id: LRN-022
+date: 2026-05-03
+category: tooling
+source_cs: CS03
+status: applied
+tags: [validation, multiset, set-vs-map, bijective-accounting]
+claim_area: tooling
+```
+
+**Problem:** `validateLegacyMapping()` initial implementation used Set / `includes` / `some` to validate that every actual legacy region was matched by a mapping entry. This is content-set-based, NOT occurrence-aware. Two distinct legacy regions with identical content could be covered by ONE mapping entry — silent multi-region coverage / data loss risk.
+
+**Finding:** Bijective accounting requires **multiset accounting** (count-based `Map<content, count>` for both sides) — NOT a Set. Set semantics treat duplicates as equivalent; multiset preserves cardinality.
+
+**Evidence:** GPT-5.5 review #2 caught this; `cs03-fixes-v2` rewrote with Map-based multiset accounting; 4 new tests for the 4 count-combination quadrants pass.
+
+**Disposition:** Documented in `lib/composed.mjs` `validateLegacyMapping()` comment. Future "bijective" validation logic in CS06+ linters or other harness code MUST use multiset accounting (or an explicitly justified set-semantics decision).
+
+### LRN-023
+
+```yaml
+id: LRN-023
+date: 2026-05-03
+category: tooling
+source_cs: CS03
+status: applied
+tags: [security, prototype-pollution, accumulator-pattern, javascript-footgun]
+claim_area: tooling
+```
+
+**Problem:** `validateConfigSchema()` canonical-key collision detection used a plain object accumulator (`const entries = {}`). Assigning `entries['__proto__'] = v` invokes the legacy `__proto__` setter and changes the object's prototype rather than creating an own property, so `hasOwnProperty('__proto__')` stays false and duplicate detection silently fails for `__proto__` canonical keys. Also a prototype-pollution footgun.
+
+**Finding:** Use `Map` (not plain object) for any validation/canonicalization accumulator that takes user-controlled keys. Materialize via `Object.fromEntries(map)` which creates own data properties safely (including for `__proto__`).
+
+**Evidence:** GPT-5.5 review #6 demonstrated reproducer; fix in `cs03-fixes-v3` applied + 2 regression tests pass.
+
+**Disposition:** Documented in `lib/sync.mjs` collision-detection comment. Future config/schema canonicalization logic MUST use `Map` accumulators. CS06 linter authors should follow this pattern when validating user-controlled keys.
+
+### LRN-024
+
+```yaml
+id: LRN-024
+date: 2026-05-03
+category: process
+source_cs: CS03
+status: applied
+tags: [review-iteration-cost, high-risk-cs, planning, calibration]
+claim_area: planning
+```
+
+**Problem:** CS03 (HIGH-RISK per Decision #22) required **7 GPT-5.5 review iterations** to converge on GO. Across the 6 No-Go iterations, blocking findings ranged 1–4 per iteration; non-blocking ranged 0–4. The cs-plan didn't anticipate this iteration cost and didn't budget for it.
+
+**Finding:** High-risk CSs (especially engine code with safety invariants) realistically need 5–8 review iterations to converge. Each iteration surfaces issues the prior iteration's fix introduced or didn't address. This is normal for code with multiple interacting invariants (fail-closed semantics, cross-platform behaviour, prototype-pollution edge cases, etc.) — not a sign of poor work, but a calibration data point.
+
+**Evidence:** CS03 review history: **7 iterations (6 No-Go + 1 GO), 12 distinct blocking findings + 11 non-blocking findings + 1 suggestion**, all addressed (1 non-blocking #8 from iter-1 deferred per GPT-5.5 recommendation; remainder fixed). Final test count 162 (up from 105 initial). **11 total work passes:** 5 initial sub-agent jobs (cs03-templating, cs03-lock, cs03-composed, cs03-sync, cs03-fixtures) + 3 fix-round sub-agent jobs (cs03-fixes-v1, cs03-fixes-v2, cs03-fixes-v3) + 3 inline orchestrator fix iterations (review iterations 3, 5, 6).
+
+**Disposition:** Update cs-plan parallelisation table notes for high-risk CSs (CS03, CS11, CS15a/b, CS18b, CS19) to budget for 5–8 review iterations. Inform future planning. No code change needed; this is a planning-cost calibration data point.
+
+### LRN-025
+
+```yaml
+id: LRN-025
+date: 2026-05-03
+category: architectural
+source_cs: CS03
+status: applied
+tags: [path-canonicalization, single-source-of-truth, downstream-propagation]
+claim_area: schema-design
+```
+
+**Problem:** `validateConfigSchema()` initially canonicalized target paths only for duplicate detection — downstream code (file lookup, exclusion check, override lookup, lock entries) used the raw config values. This created subtle bugs where canonical-equivalent paths (e.g. `./dir/file.md` vs `dir/file.md`) would dedup correctly but then downstream code couldn't find the override entry / exclusion / lock record because they were keyed by the non-canonical form.
+
+**Finding:** Path canonicalization MUST be a single upfront step that returns a canonical config, with the canonical form used by ALL downstream consumers. Distributing canonicalization across multiple functions risks one function canonicalizing while another doesn't.
+
+**Evidence:** GPT-5.5 review #4 caught this; `cs03-fixes-v3` refactored `validateConfigSchema()` to RETURN the canonical config; `sync()` reassigns `config = validateConfigSchema(config, ...)` so all downstream code automatically uses canonical form.
+
+**Disposition:** Pattern established in `lib/sync.mjs`. Future CS that adds new path-bearing fields (e.g. CS06 linter configs, CS10 scaffold paths) MUST extend `validateConfigSchema()` to canonicalize the new field. Document this as a contract in CS04 CLI's config-loading code path.
 
 ## Obsolete
 
@@ -341,4 +542,4 @@ claim_area: schema-design
 
 ## Deferred
 
-> **Note:** Section headers (Open / Applied / Obsolete / Deferred) are organizational hints. The authoritative status for each entry is its YAML frontmatter status field. Entries with status: deferred (LRN-009, LRN-011, LRN-014 in this file) appear under § Applied above for chronological readability — check-learnings.mjs (CS06) validates the status field, not the section placement.
+> **Note:** Section headers (Open / Applied / Obsolete / Deferred) are organizational hints. The authoritative status for each entry is its YAML frontmatter status field. Entries with status: deferred (LRN-009, LRN-011, LRN-014, LRN-019, LRN-020 in this file) appear under § Applied above for chronological readability — check-learnings.mjs (CS06) validates the status field, not the section placement.
