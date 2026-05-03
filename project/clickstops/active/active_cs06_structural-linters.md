@@ -1,9 +1,9 @@
 # CS06 — Remaining structural linters
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs06/content
+**Started:** 2026-05-03
 **Closed:** —
 **Filed by:** CS05 close-out (pre-filed per cs-plan CS06 scope; see [`harness-cs-plan.md` § CS06](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs06--remaining-structural-linters)).
 **Depends on:** CS05
@@ -84,7 +84,17 @@ Briefings MUST include:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `scripts/check-context.mjs` + tests + fixtures | pending | sub-agent cs06-context | agent-id=yoga-ah-sub-1 \| role=context-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-workboard.mjs` + tests + fixtures | pending | sub-agent cs06-workboard | agent-id=yoga-ah-sub-2 \| role=workboard-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-architecture.mjs` + tests + fixtures | pending | sub-agent cs06-architecture | agent-id=yoga-ah-sub-3 \| role=arch-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-clickstop.mjs` + tests + fixtures | pending | sub-agent cs06-clickstop | agent-id=yoga-ah-sub-4 \| role=clickstop-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-instructions.mjs` + tests + fixtures | pending | sub-agent cs06-instructions | agent-id=yoga-ah-sub-5 \| role=instructions-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-readme.mjs` + tests + fixtures | pending | sub-agent cs06-readme | agent-id=yoga-ah-sub-6 \| role=readme-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-composed-blocks.mjs` + tests + fixtures | pending | sub-agent cs06-composed | agent-id=yoga-ah-sub-7 \| role=composed-blocks-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-workflow-pins.mjs` + tests + fixtures | pending | sub-agent cs06-workflowpins | agent-id=yoga-ah-sub-8 \| role=workflow-pins-linter \| report-status=pending \| learnings=0 |
+| `scripts/check-public-artifact.mjs` + tests + fixtures | pending | sub-agent cs06-public | agent-id=yoga-ah-sub-9 \| role=public-artifact-linter \| report-status=pending \| learnings=0 |
+| Wire all 9 linters into `harness lint` | pending | yoga-ah (orchestrator inline) | follows after sub-agents complete |
+| GPT-5.5 review rounds | pending | yoga-ah | review-status=pending |
 
 ## Notes / Learnings
 
