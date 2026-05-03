@@ -1,6 +1,8 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS09 close-out)
+> **Last updated:** 2026-05-03 (CS09 close-out + HANDOFF.md added)
+
+> **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
 ## Codebase state
 
@@ -34,6 +36,26 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Blockers / open questions
 
 - None. CS09 is complete; CS10 is ready to claim.
+
+## Parallelism (single-orchestrator default)
+
+**What runs in parallel today:**
+- **Sub-agents within ONE orchestrator session.** Proven up to 9-way ([CS06](project/clickstops/done/done_cs06_structural-linters.md)) and 8-way ([CS08](project/clickstops/done/done_cs08_managed-composed-process-docs.md)) with zero file races. Safety mechanism: file ownership per [LRN-016](LEARNINGS.md#lrn-016).
+
+**What is serialized (by design, today):**
+- **CSs themselves.** WORKBOARD's `## Active Work` table is single-row by orchestrator discipline. Only one CS is in-flight at a time on the mainline plan.
+- **LEARNINGS.md ID numbering.** LRN-NNN entries are appended sequentially — concurrent close-outs from different orchestrators would race on the next ID.
+
+**Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). Today this works with care via:
+1. **Lane split.** One orchestrator on mainline (CS10 → CS11 → ...), another on the deferred backlog (CS03b, CS04a/b/c/d, CS06b, CS08b, CS09b). Backlog CSs target narrow disjoint areas — low race risk.
+2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
+
+**Missing infrastructure for true safe parallel orchestration** (would itself be a future CS — `CS22b: multi-orchestrator coordination`):
+- WORKBOARD multi-row Active Work with cross-orchestrator visibility
+- LRN-range allocation as a first-class WORKBOARD construct
+- File-ownership locks (`harness lock <area>` / `harness release <area>` CLI)
+
+Until that CS lands, **single orchestrator at a time on the mainline** is the safe default. See [`HANDOFF.md`](HANDOFF.md) § Parallelism for the full discussion.
 
 ## CS plan
 

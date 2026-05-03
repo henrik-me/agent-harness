@@ -22,15 +22,15 @@ existing CS has `state = Active`.
 
 Every CS produces exactly three PRs in sequence:
 
-1. **Workboard-claim PR** — branch `workboard/cs<NN>-claim`; touches only
+1. **Workboard-claim PR** — branch `cs<NN>/claim`; touches only
    `WORKBOARD.md` and the clickstop file rename (`planned → active`).
    Label: `workboard-only`. *(CS01–CS14: user-reviewed small PR.
    CS15b+: bot auto-approved via Decision #23.)*
 
-2. **Content PR** — branch `cs<NN>/<slug>`; all implementation work lives
+2. **Content PR** — branch `cs<NN>/content`; all implementation work lives
    here. Standard review loop (GPT-5.5 + user). Squash-merge only.
 
-3. **Close-out PR** — branch `workboard/cs<NN>-close`; touches only
+3. **Close-out PR** — branch `cs<NN>/close-out`; touches only
    `WORKBOARD.md` (row state set to done or removed), the clickstop rename
    (`active → done`), and any close-out updates to `CONTEXT.md` /
    `LEARNINGS.md`. Label: `workboard-only`. Same auto-merge rules as the
@@ -39,7 +39,7 @@ Every CS produces exactly three PRs in sequence:
 ### Claim steps
 
 1. `git pull origin main --rebase` — sync with upstream.
-2. `git checkout -b workboard/cs<NN>-claim` — create claim branch.
+2. `git checkout -b cs<NN>/claim` — create claim branch.
 3. Edit `WORKBOARD.md`: add a row to Active Work with CS-Task ID, branch,
    agent ID, state (`🟢 Active`), and last-updated timestamp.
 4. Rename the CS file:
@@ -82,7 +82,7 @@ the bot's review satisfies it.
 Branch from main immediately after the claim PR merges:
 
 ```
-git checkout -b cs<NN>/<slug>
+git checkout -b cs<NN>/content
 ```
 
 All implementation work happens on this branch. Sub-agents may be dispatched
