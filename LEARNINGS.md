@@ -352,7 +352,7 @@ claim_area: orchestrator-loop
 
 **Evidence:** Final disk state after Wave 1 + 2 of CS03: `lib/templating.mjs` 1.3KB stub + `lib/lock.mjs` 1.5KB stub vs. the ~10KB+ rich APIs the sub-agents reported. `tests/lock.test.mjs` missing.
 
-**Disposition:** Update OPERATIONS.md § Sub-agent dispatch to require explicit "files owned by THIS sub-agent" declarations in every briefing. The orchestrator must enforce non-overlapping ownership across parallel sub-agents. If two sub-agents need to coordinate around a shared file, one is the **owner** and the other is a **reader** that must NOT write. For CS04+ canonicalization in `template/managed/OPERATIONS.md`, codify this as a hard pre-dispatch check. Filed as a planned CS (`planned_cs03b_upgrade_templating_lock_stubs.md`) to recover the lost rich APIs from the cs03-templating + cs03-lock sub-agent reports.
+**Disposition:** Update OPERATIONS.md § Sub-agent dispatch to require explicit "files owned by THIS sub-agent" declarations in every briefing. The orchestrator must enforce non-overlapping ownership across parallel sub-agents. If two sub-agents need to coordinate around a shared file, one is the **owner** and the other is a **reader** that must NOT write. For CS04+ canonicalization in `template/managed/OPERATIONS.md`, codify this as a hard pre-dispatch check. Filed as a planned CS (`project/clickstops/planned/planned_cs03b_upgrade-templating-lock-stubs.md`) to recover the lost rich APIs from the cs03-templating + cs03-lock sub-agent reports.
 
 ### LRN-017
 
@@ -512,7 +512,7 @@ claim_area: planning
 
 **Finding:** High-risk CSs (especially engine code with safety invariants) realistically need 5–8 review iterations to converge. Each iteration surfaces issues the prior iteration's fix introduced or didn't address. This is normal for code with multiple interacting invariants (fail-closed semantics, cross-platform behaviour, prototype-pollution edge cases, etc.) — not a sign of poor work, but a calibration data point.
 
-**Evidence:** CS03 review history: 7 iterations (No-Go × 6 + GO × 1), 23 distinct blocking findings + ~20 non-blocking findings, all addressed. Final test count 162 (up from 105 initial). 5 sub-agent dispatches (3 fix-rounds + initial wave-1 + wave-2).
+**Evidence:** CS03 review history: 7 iterations (No-Go × 6 + GO × 1), 23 distinct blocking findings + ~20 non-blocking findings, all addressed. Final test count 162 (up from 105 initial). **11 total work passes:** 5 initial sub-agent jobs (cs03-templating, cs03-lock, cs03-composed, cs03-sync, cs03-fixtures) + 3 fix-round sub-agent jobs (cs03-fixes-v1, cs03-fixes-v2, cs03-fixes-v3) + 3 inline orchestrator fix iterations (review iterations 3, 5, 6).
 
 **Disposition:** Update cs-plan parallelisation table notes for high-risk CSs (CS03, CS11, CS15a/b, CS18b, CS19) to budget for 5–8 review iterations. Inform future planning. No code change needed; this is a planning-cost calibration data point.
 

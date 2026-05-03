@@ -21,7 +21,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS02 is complete; CS03 is ready to claim.
+- None. CS03 is complete; CS04 is ready to claim.
 
 ## CS plan
 

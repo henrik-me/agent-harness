@@ -72,14 +72,27 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 
 ### Sub-agent ledger summary
 
+**Total work passes: 11 = 5 initial sub-agent jobs + 3 fix-round sub-agent jobs + 3 inline orchestrator fix iterations.**
+
+**Initial 5 (Wave 1 + Wave 2 of CS03 sync engine library):**
+
 - **cs03-templating** (Haiku): rich-API report; **work LOST in race per LRN-016**; stub remains. tests/templating.test.mjs added by orchestrator post-merge (8 tests). Filed planned_cs03b for recovery.
 - **cs03-lock** (Sonnet): rich-API report including 16 lost tests; **partially LOST in race per LRN-016** but rich-API features later restored across cs03-fixes-v1/v2/v3 (atomic write, schema validation, LockError class, validateLockObject). tests/lock.test.mjs added by orchestrator post-merge (3 tests; later expanded by fixes-v1/v2 to 16+).
 - **cs03-composed** (Sonnet): full impl, 54 tests; 2 escalations (LRN-019/020 deferred); 1 LRN candidate (LRN-018 BOM applied).
 - **cs03-sync** (Sonnet): full impl, 40 tests; wrote stubs of templating + lock that won the race (LRN-016 source).
+- **cs03-fixtures** (Haiku): 94 fixture files across 27 dirs (templating: 26, lock: 7, composed: 47, sync: 11). 1 LRN candidate (LRN-006 reaffirmed).
+
+**Fix-round 3 (post-content-PR-#6, GPT-5.5 review iterations):**
+
 - **cs03-fixes-v1** (Sonnet): 7 fixes from GPT-5.5 review #1 (4 blocking + 3 non-blocking). Committed without permission per LRN-021.
 - **cs03-fixes-v2** (Sonnet, hard no-commit preflight): 6 fixes from review #2 (3 blocking + 3 non-blocking). Honored preflight.
 - **cs03-fixes-v3** (Sonnet, hard preflight): 2 fixes from review #4 (1 blocking + 1 non-blocking). Honored preflight.
-- **Inline orchestrator fixes:** 3 review iterations (#3, #5, #6) handled inline for small focused fixes.
+
+**Inline orchestrator fix iterations 3:**
+
+- **Review #3:** 3 small fixes inline (1 blocking + 2 non-blocking) — path canonicalization extension; `discard`+`block_id:null` presence check; mtime-test seeding.
+- **Review #5:** 3 small fixes inline (2 blocking + 1 non-blocking) — prior-lock canonicalization; empty-canonical rejection; canonical-key collision in overrides/local_blocks.
+- **Review #6:** 1 small fix inline (1 blocking) — Map-based accumulator for `__proto__` prototype-pollution safety.
 
 ### Process observations
 
