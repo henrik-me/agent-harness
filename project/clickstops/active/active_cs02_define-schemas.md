@@ -1,9 +1,9 @@
 # CS02 — Define schemas (config + lock + learning) + parameterization model + file classes
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** `cs02/define-schemas`
+**Started:** 2026-05-03T05:30Z
 **Closed:** —
 **Filed by:** CS01 close-out (so CS02 can be claimed via the documented planned → active rename flow per [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle))
 **Depends on:** CS01
@@ -38,7 +38,19 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS02](../done/done_cs01_bo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Author harness.config.schema.json | pending | sub-agent | agent-id=cs02-schema-config \| role=schema-author \| report-status=- \| learnings=- |
+| Author harness-lock.schema.json | pending | sub-agent | agent-id=cs02-schema-lock \| role=schema-author \| report-status=- \| learnings=- |
+| Author learning.schema.json + validate against LRN-001..005 | pending | sub-agent | agent-id=cs02-schema-learning \| role=schema-author \| report-status=- \| learnings=- |
+| Author ADR 0001-file-classes.md | pending | sub-agent | agent-id=cs02-adr-file-classes \| role=adr-author \| report-status=- \| learnings=- |
+| Author ADR 0002-readme-ownership.md | pending | sub-agent | agent-id=cs02-adr-readme \| role=adr-author \| report-status=- \| learnings=- |
+| Author guesswhatisnext example config | pending | sub-agent | agent-id=cs02-example-gwn \| role=example-author \| report-status=- \| learnings=- |
+| Author sub-invaders example config | pending | sub-agent | agent-id=cs02-example-si \| role=example-author \| report-status=- \| learnings=- |
+| Author agent-harness-self example config | pending | sub-agent | agent-id=cs02-example-ah \| role=example-author \| report-status=- \| learnings=- |
+| Wire validate-schemas CI workflow | pending | sub-agent | agent-id=cs02-ci-validate \| role=ci-author \| report-status=- \| learnings=- |
+| Cross-link integrity merge | pending | yoga-ah | Orchestrator-only step; consolidate sub-agent outputs |
+| Local review with GPT-5.5 | pending | yoga-ah | Per REVIEWS.md — iterate until clean |
+| Open PR | pending | yoga-ah | branch `cs02/define-schemas` |
+| Squash-merge | pending | yoga-ah | Self-merge after GPT-5.5 review clean |
 
 ## Notes / Learnings
 
