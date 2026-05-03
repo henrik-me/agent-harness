@@ -2,6 +2,21 @@
 
 > This file exists so any fresh agent or human picking up the project can self-bootstrap with a deterministic reading order. **If you're a new orchestrator, read this first.**
 
+## Starter prompt for a new orchestrator session
+
+Copy-paste this into a fresh Copilot CLI session (or equivalent) at the start:
+
+```
+cd C:\src\agent-harness, then read HANDOFF.md carefully and follow its
+bootstrap reading order. After that, continue from where the prior session
+left off (check CONTEXT.md and WORKBOARD.md for the current state).
+Operate autonomously per the directive — only check in with me at CS15a
+(public-flip) or for substantive design decisions not derivable from the
+cs-plan + LRNs.
+```
+
+That's all you need to type. HANDOFF.md (this file) pulls in everything else in the right order.
+
 ## TL;DR
 
 1. **Where are we?** Read [`CONTEXT.md`](CONTEXT.md) for current state and the commit ref of the last completed CS.
