@@ -19,7 +19,7 @@
 
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync, statSync, utimesSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -1343,9 +1343,10 @@ user content here
     const readmePath = path.join(consumerDir, 'README.md');
     const oldContent = '# OLD CONSUMER README — must not be overwritten when composed fails\n';
     writeText(readmePath, oldContent);
-    // Capture mtime baseline (sleep 50ms to ensure any future write would change mtime).
+    // Pin the mtime to a fixed past date so any write would change it detectably.
+    const oldDate = new Date('2020-01-01T00:00:00Z');
+    utimesSync(readmePath, oldDate, oldDate);
     const beforeStats = statSync(readmePath);
-    await new Promise((r) => setTimeout(r, 50));
 
     // Composed NOTES.md has legacy unmapped content → triggers failure.
     writeText(path.join(consumerDir, 'NOTES.md'), `# Composed File
@@ -1366,7 +1367,7 @@ user content
     const afterStats = statSync(readmePath);
     const afterContent = readFileSync(readmePath, 'utf8');
     assert.equal(afterContent, oldContent, 'existing managed file content must be preserved');
-    assert.equal(afterStats.mtimeMs, beforeStats.mtimeMs, 'existing managed file mtime must be unchanged');
+    assert.equal(afterStats.mtimeMs, oldDate.getTime(), 'existing managed file mtime must be unchanged');
 
     // Lock must NOT have been written.
     assert.ok(
@@ -1438,6 +1439,134 @@ describe('sync() — missing template error', () => {
         assert.equal(err.code, 'ESYNC_MISSING_TEMPLATE');
         return true;
       }
+    );
+  });
+});
+
+// ===========================================================================
+// Review #4 Blocking: canonical path downstream routing
+// ===========================================================================
+
+const COMPOSED_TEMPLATE_FOO = `# Composed File
+
+<!-- harness:local-start id=my-section -->
+<!-- harness:local-end id=my-section -->
+
+## End
+`;
+
+describe('sync() — Review #4: canonical path downstream routing', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('./dir/file.md target matches composed.overrides key "dir/file.md" (canonical routing)', async () => {
+    // Consumer lists target as "./dir/NOTES.md" with override key "dir/NOTES.md".
+    // Before the fix, resolveAllowedBlockIds would look up "./dir/NOTES.md" in
+    // overrides and find nothing → allowedBlockIds = [] → user block content
+    // would not be preserved on re-sync. After the fix, both are canonicalized
+    // to "dir/NOTES.md" so the override is found and content is preserved.
+    buildHarnessRepo(harnessDir, {
+      composed: { 'dir/NOTES.md': COMPOSED_TEMPLATE_FOO },
+    });
+    buildConsumerRepo(consumerDir, {
+      composed: {
+        files: ['./dir/NOTES.md'],
+        overrides: { 'dir/NOTES.md': { local_blocks: ['my-section'] } },
+      },
+    });
+    // Pre-populate the consumer file with user content in the my-section block.
+    writeText(path.join(consumerDir, 'dir', 'NOTES.md'), `# Composed File
+
+<!-- harness:local-start id=my-section -->
+user content preserved
+<!-- harness:local-end id=my-section -->
+
+## End
+`);
+
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+
+    // Override was matched → my-section block is in allowedBlockIds → content preserved.
+    const content = readFileSync(path.join(consumerDir, 'dir', 'NOTES.md'), 'utf8');
+    assert(content.includes('user content preserved'), 'block content must be preserved when override is matched');
+    // Change record should reference the canonical target "dir/NOTES.md".
+    const change = result.changes.find(c => c.target === 'dir/NOTES.md');
+    assert(change, 'Expected change record for canonical target dir/NOTES.md');
+  });
+
+  it('excluded: ["dir/file.md"] matches a target listed as "./dir/file.md"', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'dir/file.md': '# file\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['./dir/file.md'] },
+      excluded: ['dir/file.md'],
+    });
+
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+
+    const change = result.changes.find(c => c.target === 'dir/file.md');
+    assert(change, 'Expected change record for canonical target dir/file.md');
+    assert.equal(change.action, 'excluded', 'file must be excluded when excluded entry matches canonical target');
+    assert(!existsSync(path.join(consumerDir, 'dir', 'file.md')), 'excluded file must not be written');
+  });
+
+  it('excluded: ["build/"] directory prefix matches target "build/anything.md"', async () => {
+    buildHarnessRepo(harnessDir, {
+      managed: { 'build/anything.md': '# anything\n' },
+    });
+    buildConsumerRepo(consumerDir, {
+      managed: { files: ['build/anything.md'] },
+      excluded: ['build/'],
+    });
+
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+
+    const change = result.changes.find(c => c.target === 'build/anything.md');
+    assert(change, 'Expected change record for build/anything.md');
+    assert.equal(change.action, 'excluded', 'file under build/ must be excluded by directory prefix');
+    assert(!existsSync(path.join(consumerDir, 'build', 'anything.md')), 'excluded file must not be written');
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for trailing slash on a managed file target', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['dir/'] } });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+      'trailing slash on file target must throw EBADCONFIG_INVALID_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_INVALID_PATH for a target path with a control character', async () => {
+    buildHarnessRepo(harnessDir, { managed: { 'README.md': '# README\n' } });
+    buildConsumerRepo(consumerDir, { managed: { files: ['dir/\x01file.md'] } });
+
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_INVALID_PATH',
+      'control character in target path must throw EBADCONFIG_INVALID_PATH',
     );
   });
 });
