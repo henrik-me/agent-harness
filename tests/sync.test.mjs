@@ -1726,3 +1726,74 @@ End.
     );
   });
 });
+
+
+// ===========================================================================
+// Review #6 Bug #1: Prototype-pollution-safe canonical-key collision detection
+// (composed.overrides + local_blocks accumulators must use Map, not plain
+// object, so __proto__ collisions are correctly detected.)
+// ===========================================================================
+
+describe('sync() — Review #6 #1: __proto__ canonical-key collision detection', () => {
+  let harnessDir, consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('harness-');
+    consumerDir = makeTmpDir('consumer-');
+  });
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  // Helper: write a harness.config.json that has '__proto__' as an OWN property
+  // (object literals treat '__proto__' as the prototype-set syntax, so we hand-author the JSON).
+  function writeProtoConfig(consumerDir, overridesOrLocalBlocks) {
+    const json = `{
+      "version": "v0.1.0",
+      "project": { "name": "test-project", "agent_suffix": "test" },
+      "managed": { "files": [] },
+      "composed": ${overridesOrLocalBlocks.composed},
+      "seeded": { "files": [] },
+      "excluded": [],
+      "templating": {}
+      ${overridesOrLocalBlocks.local_blocks ? ', "local_blocks": ' + overridesOrLocalBlocks.local_blocks : ''}
+    }`;
+    writeText(path.join(consumerDir, 'harness.config.json'), json);
+  }
+
+  it('throws EBADCONFIG_DUP_PATH for __proto__ canonical-collision in composed.overrides', async () => {
+    // Write the template file with literal name '__proto__' (filesystem accepts it).
+    mkdirSync(path.join(harnessDir, 'template', 'composed'), { recursive: true });
+    writeText(path.join(harnessDir, 'template', 'composed', '__proto__'), '# composed\n');
+    writeText(
+      path.join(harnessDir, 'schemas', 'harness.config.schema.json'),
+      readFileSync(path.join(repoRoot, 'schemas', 'harness.config.schema.json'), 'utf8'),
+    );
+    // Build config with __proto__ as own property by writing JSON directly.
+    writeProtoConfig(consumerDir, {
+      composed: '{ "files": ["__proto__"], "overrides": { "./__proto__": { "local_blocks": ["a"] }, "__proto__": { "local_blocks": ["b"] } } }',
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+
+  it('throws EBADCONFIG_DUP_PATH for __proto__ canonical-collision in top-level local_blocks', async () => {
+    mkdirSync(path.join(harnessDir, 'template', 'composed'), { recursive: true });
+    writeText(path.join(harnessDir, 'template', 'composed', '__proto__'), '# composed\n');
+    writeText(
+      path.join(harnessDir, 'schemas', 'harness.config.schema.json'),
+      readFileSync(path.join(repoRoot, 'schemas', 'harness.config.schema.json'), 'utf8'),
+    );
+    writeProtoConfig(consumerDir, {
+      composed: '{ "files": ["__proto__"] }',
+      local_blocks: '{ "./__proto__": ["a"], "__proto__": ["b"] }',
+    });
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
+      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
+    );
+  });
+});
