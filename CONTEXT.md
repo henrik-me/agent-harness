@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS05 close-out)
+> **Last updated:** 2026-05-03 (CS06 close-out)
 
 ## Codebase state
 
@@ -17,7 +17,9 @@
 
 - **CS05 complete** (closed 2026-05-03). Delivered: `lib/doc-schema.mjs` (shared doc-parsing library with 4 exported functions), `scripts/check-learnings.mjs` (first reference linter), `tests/check-learnings.test.mjs` (17 tests), `tests/doc-schema.test.mjs` (10 tests), 13 fixtures under `tests/fixtures/cs05/`, `bin/harness.mjs` lint subcommand wired. **253 tests pass total** (224+29 new). 3 GPT-5.5 review rounds (R1=5 blockers+4 non-blockers, R2=1 partial-fix blocker, R3=GO). 6 additional learnings filed (LRN-032 through LRN-037): CLI linter path threading, fail-closed parser design, fence-line regex robustness, specific id-pattern matching, stub-promotion test update, sub-agent over-delivery is good. 1 planned CS filed (CS06: 9 structural linters). Squash-merged PR #12 as `adc2777`.
 
-CS06 (9 structural linters) active (claimed); 9-way parallel sub-agent implementation in progress.
+- **CS06 complete** (closed 2026-05-03). Delivered: 9 linter scripts (`check-context`, `check-workboard`, `check-architecture`, `check-clickstop`, `check-instructions`, `check-readme`, `check-composed-blocks`, `check-workflow-pins`, `check-public-artifact`), 9 test files, 50+ fixtures under `tests/fixtures/cs06/`, `bin/harness.mjs` `cmdLint` rewritten as a 10-linter aggregator with `--only`/`--skip`. **333 tests pass total** (253+80 new). 3 GPT-5.5 review rounds (R1=4 blockers+4 non-blockers, R2=1 blocker+1 non-blocker, R3=GO). 6 additional learnings filed (LRN-038 through LRN-043). 2 planned CSs filed (CS06b: shared-parser refactor + cross-link validation; CS07: generic policy linters). `harness lint` aggregator now functional: 8 of 10 linters runnable against this repo (public-artifact skipped — mandatory from CS15a). First true 9-way parallel sub-agent dispatch; zero file races, zero rogue commits. Squash-merged PR #15 as `161b9f3`.
+
+**CS07 (generic policy linters) ready to claim.**
 
 ## Architecture pointer
 
@@ -25,7 +27,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS05 is complete; CS06 is active (claimed).
+- None. CS06 is complete; CS07 is ready to claim.
 
 ## CS plan
 

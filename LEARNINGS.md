@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS05 close-out: LRN-032..037 added)
+> **Last updated:** 2026-05-03 (CS06 close-out: LRN-038..043 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -775,6 +775,126 @@ claim_area: orchestrator-loop
 **Evidence:** CS05 test delta: 224 → 253 (+29 tests). Breakdown: 12 check-learnings (cs05-content r0) + 10 doc-schema unit tests (cs05-fixes-r1) + 1 cli.test.mjs lint test update + 1 R2 regression test (orchestrator inline) + 5 additional regression tests across r1 fixtures = 29. Over-delivery (12>10 minimum, 10>7 minimum) caught real contract drift in `resolveLinks` (NB-6).
 
 **Disposition:** Update sub-agent briefing template (when canonicalized in CS08 OPERATIONS.md) to specify test minimums only, never exact counts. Note: orchestrator should celebrate rather than flag over-delivery on tests.
+
+### LRN-038
+
+```yaml
+id: LRN-038
+date: 2026-05-03
+category: architectural
+source_cs: CS06
+status: applied
+tags: [aggregator, config-path, single-source-of-truth, cmdLint, silent-drift]
+claim_area: orchestrator-loop
+```
+
+**Problem:** `cmdLint` resolved `effectiveConfigPath` for threading `--config` to delegated subcommands, but still read composed/local_blocks logic from a separate `cfgPath` variable that took a different default resolution path. The two paths agreed for the happy-case default but diverged whenever a non-default `--config` was passed or a different cwd was set.
+
+**Finding:** Aggregator commands MUST read from the same canonical config path as their delegated subcommands; inconsistent config-path resolution causes silent behavior drift between direct and aggregated invocations. Fix: resolve config exactly once (into `effectiveConfigPath`), then use that single variable for ALL config reads in the aggregator — both for threading to subcommands and for any local logic that reads config fields.
+
+**Evidence:** CS06 R2 (GPT-5.5): blocker finding — `cmdLint` double-resolved config. Fixed inline by orchestrator (R2 fix).
+
+**Disposition:** Applied in `bin/harness.mjs` `cmdLint`. Pattern: any aggregator command that reads config AND threads it to children MUST resolve config once into a single variable and use it everywhere. Document this as a contract in future aggregator-authoring briefs.
+
+### LRN-039
+
+```yaml
+id: LRN-039
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS06
+status: applied
+tags: [schema, sub-agents, field-name-guessing, config-reading, silent-integration-failure]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS06 sub-agents implementing config-reading code guessed schema field names from intuition rather than reading the actual JSON schema files. `cs06-workflowpins` used `harness_pin` (intuitive) but `schemas/harness.config.schema.json` defines `version`; `cs06-composed` used `composed_files` (intuitive) but the schema defines `composed.files`. Both passed unit tests (fixtures were also authored against the guessed name) and only failed integration.
+
+**Finding:** Implementing against a guessed schema field name (rather than reading the actual JSON schema) silently breaks integration. Sub-agent briefings for any code that reads config, lock, or learning files MUST require `schemas/*.schema.json` as the primary source of truth, with a mandatory cross-reference step before authoring any field access. Fixture authors are not immune — fixtures must also be derived from the schema, not from memory.
+
+**Evidence:** CS06 R1 (GPT-5.5): blocking findings B-1 and B-2. Fixed by cs06-fixes-r1.
+
+**Disposition:** Applied in `scripts/check-workflow-pins.mjs` and `scripts/check-composed-blocks.mjs`. Future sub-agent briefings for config-reading code MUST include: "Read `schemas/*.schema.json` first. Do not guess field names. Cross-reference every field access against the schema before writing code."
+
+### LRN-040
+
+```yaml
+id: LRN-040
+date: 2026-05-03
+category: operational
+source_cs: CS06
+status: applied
+tags: [argument-parsing, flag-value-guard, silent-misparse, requireValue, linter-pattern]
+claim_area: tooling
+```
+
+**Problem:** All 9 CS06 linters initially parsed `--file <path>` and similar flags using bare `args[i+1]` access without checking whether the next token was itself a flag. `--file --quiet` would silently consume `--quiet` as the file path, producing a confusing "file not found: --quiet" error rather than a usage error.
+
+**Finding:** Argument parsers that consume the next token as a value via `args[i+1]` silently accept other flags as values. The correct pattern: add a `requireValue(args, i, flagName)` guard that (a) checks `args[i+1]` exists, (b) rejects tokens starting with `-`, and (c) exits 2 with a usage message if either condition fails. Never use bare `if (args[i+1])`; always validate the value shape before consuming it.
+
+**Evidence:** CS06 R1 (GPT-5.5): blocking finding B-3. Fixed by cs06-fixes-r1 across all 9 linters and `cmdLint`.
+
+**Disposition:** Applied in all 9 linter scripts and `bin/harness.mjs` `cmdLint`. The `requireValue` pattern is the canonical arg-parsing guard for all future linter scripts.
+
+### LRN-041
+
+```yaml
+id: LRN-041
+date: 2026-05-03
+category: process
+source_cs: CS06
+status: applied
+tags: [sub-agents, parallel-dispatch, file-ownership, no-commit, scale-validation]
+claim_area: orchestrator-loop
+```
+
+**Problem:** The CS06 plan called for a true 9-way parallel sub-agent dispatch — the largest fan-out attempted in this project to date. The question was whether LRN-016's "one file = one sub-agent" file-ownership invariant would hold at that scale, and whether the no-commit preflight (LRN-021) would remain reliable across 9 concurrent agents.
+
+**Finding:** 9-way parallel sub-agent dispatch with strict file-ownership boundaries WORKS: zero file races, zero rogue commits, all 9 sub-agents reported correctly. Validates LRN-016's rule when scaled. Cumulative across CS01–CS06: ~30 sub-agent dispatches with 0 commit violations after no-commit preflight standardized in LRN-021.
+
+**Evidence:** CS06 implementation: 9 parallel sub-agents (cs06-context, cs06-workboard, cs06-architecture, cs06-clickstop, cs06-instructions, cs06-readme, cs06-composed, cs06-workflowpins, cs06-public) — all Sonnet 4.6, all 0 commits, all succeeded. No file overlap detected.
+
+**Disposition:** Pattern validated and documented. Future CS fan-outs of ≥9 should continue to follow the LRN-016 file-ownership model. Brief every sub-agent with the no-commit preflight per LRN-021. The 9-way scale is now the proven upper bound; larger fan-outs remain untested but are expected to work given the invariant.
+
+### LRN-042
+
+```yaml
+id: LRN-042
+date: 2026-05-03
+category: architectural
+source_cs: CS06
+status: applied
+tags: [lock-file, schema, orphan-detection, composed-blocks, field-name-guessing, CS06b]
+claim_area: schema-design
+```
+
+**Problem:** The initial `check-composed-blocks.mjs` implementation for orphan-block detection read a guessed `lock.composed_blocks` array from the lock file. The lock schema (`schemas/lock.schema.json`) defines the canonical shape as `lock.files[].blocks[]` with entries where `class === 'composed'`. Reading the wrong shape silently no-ops: no orphans are ever detected because the array is always absent.
+
+**Finding:** Lock file orphan-block detection MUST read the schema-canonical shape (`lock.files[].blocks[]` for entries with `class === 'composed'`), not a guessed `lock.composed_blocks` array. As with LRN-039, schema is the authoritative source of truth; reading the wrong shape silently no-ops. Filed CS06b for the broader 'shared parser primitives' refactor to reduce future guessing.
+
+**Evidence:** CS06 R2 (GPT-5.5): blocker finding B-1 (lock format). Fixed inline by orchestrator (R2 fix).
+
+**Disposition:** Applied in `scripts/check-composed-blocks.mjs`. CS06b filed to refactor config/lock reading into `lib/` primitives, reducing the surface area for future field-name guessing across all linters.
+
+### LRN-043
+
+```yaml
+id: LRN-043
+date: 2026-05-03
+category: process
+source_cs: CS06
+status: applied
+tags: [dogfooding, linter-regression, docs-as-deliverable, context-linter, readme-linter]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS06 linters were built to validate the project's own docs (CONTEXT.md, README.md, etc.). When run as regression fixtures against the real files, some linters failed: cs06-context detected stale "ready to claim" language in CONTEXT.md; cs06-readme found README.md missing `## Architecture` and `## Status` sections.
+
+**Finding:** When a new linter's regression target is the project's own docs, the project's docs ARE part of the deliverable — fixing them to pass the linter is the correct behavior, not a scope deviation. Pattern: each sub-agent whose linter targets a live project file MUST update that file as part of its implementation work, so the linter passes its own real-file regression from the moment it ships. Eating our own dogfood mid-CS is intentional and expected.
+
+**Evidence:** cs06-context updated CONTEXT.md (removed stale "ready to claim" language, per its regression fix); cs06-readme added `## Architecture` and `## Status` sections to README.md. Both were real deliverables, not incidental edits.
+
+**Disposition:** Pattern codified. Future linter sub-agent briefings MUST include: "If your linter fails against the live target file, fix the live file as part of this task — that IS the deliverable." This prevents the misclassification of doc fixes as out-of-scope.
 
 ## Obsolete
 
