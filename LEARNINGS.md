@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03
+> **Last updated:** 2026-05-03 (CS04 close-out: LRN-026..031 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -535,6 +535,126 @@ claim_area: schema-design
 **Evidence:** GPT-5.5 review #4 caught this; `cs03-fixes-v3` refactored `validateConfigSchema()` to RETURN the canonical config; `sync()` reassigns `config = validateConfigSchema(config, ...)` so all downstream code automatically uses canonical form.
 
 **Disposition:** Pattern established in `lib/sync.mjs`. Future CS that adds new path-bearing fields (e.g. CS06 linter configs, CS10 scaffold paths) MUST extend `validateConfigSchema()` to canonicalize the new field. Document this as a contract in CS04 CLI's config-loading code path.
+
+### LRN-026
+
+```yaml
+id: LRN-026
+date: 2026-05-03
+category: process
+source_cs: CS04
+status: applied
+tags: [sub-agents, derivation-logic, spec-cross-reference, briefing-discipline]
+claim_area: orchestrator-loop
+```
+
+**Problem:** The first CS04 sub-agent (`cs04-cli`) implemented `cloneSuffixFromDir()` using the regex `-c(\d+)$` instead of the two-pattern sequence from Decision #20 (`_copilot(\d+)$` first, then `(\d+)$` fallback). The sub-agent briefing described the derivation goal but did not include the EXACT regex patterns or per-pattern fixture examples inline. GPT-5.5 R1 caught the mismatch as a blocking finding.
+
+**Finding:** When a derivation algorithm is specified by an existing project decision (Decision #20 in this case), the sub-agent briefing MUST include: (a) the exact spec patterns verbatim, (b) at least one test-fixture example per pattern branch, and (c) a pointer to the specific decision document. Describing the goal at a high level is not sufficient — the sub-agent will fill gaps with plausible-looking-but-wrong implementations.
+
+**Evidence:** GPT-5.5 R1 blocker #1: "`cloneSuffixFromDir()` uses `-c(\d+)$` but Decision #20 specifies `_copilot(\d+)$` then `(\d+)$`." Fixed in `cs04-fixes-r1`.
+
+**Disposition:** Updated CS04 close-out notes. Sub-agent briefing template (when canonicalized in CS08 `template/managed/OPERATIONS.md`) must add a required section: "Derivation spec: include exact patterns and per-branch fixture." Applied to all future CSs where derivation logic is specified by an existing decision.
+
+### LRN-027
+
+```yaml
+id: LRN-027
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS04
+status: applied
+tags: [cli, flags, silent-ignore, exit-codes, config-threading]
+claim_area: cli-ux
+```
+
+**Problem:** `--config` was wired into the global argument parser in `bin/harness.mjs` but never threaded through to `lib/sync.mjs::sync()`. Callers invoking `harness sync --config alternate.json` received no error and no indication that the flag was silently ignored — the default `harness.config.json` was used instead. Automation that relied on checking an alternate config would silently test the wrong file.
+
+**Finding:** Silently ignoring a parsed CLI flag is worse than rejecting it. The caller has no feedback that their intent was not honoured. The correct behaviour for an unimplemented flag is explicit rejection: exit 2 with a clear message pointing at the workaround (`--cwd` in this case). Deferred full threading of `--config` into `sync()` to CS04b.
+
+**Evidence:** GPT-5.5 R1 blocker #2: "`--config` parsed but never passed to `sync()` — automation silently tests the wrong config." Fixed in `cs04-fixes-r1` (reject with exit 2 + message). Filed `planned_cs04b_thread-config-flag-through-sync.md` for the full threading.
+
+**Disposition:** Applied in `bin/harness.mjs`. Future flag additions that are parsed-but-not-yet-wired must either be threaded fully OR reject with exit 2 + pointer to the right flag. "Parse and ignore" is explicitly prohibited.
+
+### LRN-028
+
+```yaml
+id: LRN-028
+date: 2026-05-03
+category: anti-pattern
+source_cs: CS04
+status: applied
+tags: [cli, exit-codes, stub-subcommands, ci-false-positive]
+claim_area: cli-ux
+```
+
+**Problem:** Initial CS04 stubs for planned-but-unimplemented subcommands (`harvest`, `check-migration`, `composed-audit`) printed "not implemented" and exited 0. Any CI script that ran `harness harvest` would see exit 0 and treat it as success — the harvest never ran, but CI reported green.
+
+**Finding:** Stub subcommands that exit 0 create false-positive CI signals. "Planned but absent" needs a dedicated non-zero exit code that distinguishes from both success (0) and unknown-flag errors (2). CS04 assigns exit 3 for "planned but not yet implemented". Exit 2 is reserved for unknown flags or missing required arguments. Callers can test for exit 3 to detect stub-land vs. broken-invocation.
+
+**Evidence:** GPT-5.5 R1 blocker #3: "stub subcommands exit 0 — CI can't distinguish implemented from stubbed." Fixed in `cs04-fixes-r1` (exit 3 for stubs).
+
+**Disposition:** Exit code convention documented in `OPERATIONS.md` (pending CS08 canonicalization): 0=success, 1=runtime error, 2=bad invocation (unknown flag / missing required), 3=planned but not yet implemented. Applied in `bin/harness.mjs`. Future CSs adding stubs must use exit 3 from day one.
+
+### LRN-029
+
+```yaml
+id: LRN-029
+date: 2026-05-03
+category: tooling
+source_cs: CS04
+status: applied
+tags: [windows, node, spawnSync, npm, shell-true]
+claim_area: tooling
+```
+
+**Problem:** `harness pack` initially called `spawnSync('npm', ['pack', '--dry-run'])` without `shell: true`. On Windows, `npm` is a `.cmd` batch wrapper, not an executable. `spawnSync` without `shell: true` attempts to spawn `npm` as a binary, returns EINVAL, and the command silently fails regardless of whether `'npm'` or `'npm.cmd'` is used as the command name.
+
+**Finding:** On Windows, `spawnSync` (and `spawn`, `execFileSync`) for npm scripts and other Node-ecosystem wrappers MUST pass `{ shell: true }`. Using `'npm.cmd'` as the command is not a reliable workaround — it still returns EINVAL in certain stdio configurations. The only safe cross-platform pattern for npm invocations is `spawnSync('npm', args, { shell: true })`.
+
+**Evidence:** `harness pack` integration test failure on Windows during CS04 implementation; `cs04-fixes-r1` applied `shell: true` + added a test asserting non-EINVAL exit on Windows.
+
+**Disposition:** Applied in `bin/harness.mjs` `pack` subcommand. Any future CS that invokes npm scripts, npx, or other `.cmd` wrappers via `spawnSync`/`execFileSync` must include `shell: true`. Document in CS08 canonical OPERATIONS.md conventions block.
+
+### LRN-030
+
+```yaml
+id: LRN-030
+date: 2026-05-03
+category: operational
+source_cs: CS04
+status: applied
+tags: [cli, help-flag, argument-parsing, subcommand-dispatch]
+claim_area: cli-ux
+```
+
+**Problem:** The global CLI parser in `bin/harness.mjs` consumed `--help` before dispatching to the subcommand. When a user ran `harness sync --help`, the global parser saw `--help` first, printed global help, and exited — the `sync`-specific flag documentation was never shown.
+
+**Finding:** A global parser that intercepts `--help` must check whether a subcommand is also present in the argv slice. If both are present, `--help` belongs to the subcommand, not the global invocation. Fix: when the global parser detects `--help` AND `argv[0]` is a known subcommand name, forward `--help` to the subcommand's argv slice instead of handling it globally.
+
+**Evidence:** CS04 CLI test failures for `harness sync --help`, `harness check --help`, etc. during initial implementation. Fixed in `cs04-fixes-r1`; 3 new tests confirm correct routing.
+
+**Disposition:** Applied in `bin/harness.mjs`. Pattern to carry forward: any harness CLI command that adds a global flag must check whether subcommand-context narrows the flag's scope. Document in CS08 canonical OPERATIONS.md CLI conventions block.
+
+### LRN-031
+
+```yaml
+id: LRN-031
+date: 2026-05-03
+category: process
+source_cs: CS04
+status: applied
+tags: [review-iteration-cost, user-facing-surface, calibration, gpt-5.5]
+claim_area: planning
+```
+
+**Problem:** CS04 was classified as a "not high-risk CS" per Decision #22 (thin wrappers, no safety invariants), so the cs-plan did not budget for multiple GPT-5.5 review rounds. In practice, GPT-5.5 required **3 rounds** (R1: 7 blockers; R2: 1 new blocker introduced by R1 fixes; R3: clean GO) before the content PR was merge-ready.
+
+**Finding:** User-facing CLIs are a distinct risk class from engine code: they have rich behavioural contracts (exit codes, flag semantics, help text, platform portability) that interact in subtle ways. Even thin-wrapper CLIs generate 5–10 review findings per round. Plan for ~3 rounds on any user-facing CS surface, even when the implementation looks straightforward. Complements [LRN-024](#lrn-024) (high-risk engine calibration: 5–8 rounds).
+
+**Evidence:** CS04 review history: R1=7 blockers (wrong regex, silent --config, exit-0 stubs, --dry-run alias missing, Windows spawnSync, --help forwarding, pack whitelist); R2=1 blocker (--dry-run alias regression from R1 fix); R3=GO. Sub-agents: `cs04-cli` (initial, 0 commits), `cs04-fixes-r1` (fixed all 7 R1 blockers, 0 commits), orchestrator inline (R2 --dry-run alias fix, 0 commits by sub-agent).
+
+**Disposition:** Update cs-plan planning notes for user-facing CSs (CS04, CS07, CS08+ template-rendered outputs) to budget 3 review rounds minimum. No code change needed; calibration data point complementing LRN-024.
 
 ## Obsolete
 
