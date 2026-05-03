@@ -41,7 +41,7 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
-  lint              Run harness linters (STUB — full impl in CS06)
+  lint              Run harness linters (check-learnings.mjs)
   harvest           Run harvest procedure (STUB — full impl in later CS)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
@@ -109,12 +109,18 @@ Options:
   lint: `
 Usage: harness lint [options]
 
-Run harness linters against the consumer repo.
-STUB in CS04 — full implementation lands in CS06.
+Run harness linters against the repo.
+Invokes check-learnings.mjs to validate all LEARNINGS.md entries.
 
 Options:
-  --cwd <path>    Consumer repo path (default: cwd)
+  --file <path>   Path to LEARNINGS.md to lint (default: <cwd>/LEARNINGS.md)
+  --quiet         Suppress per-finding output; print only the summary
+  --cwd <path>    Repo path (default: cwd)
   --help          Print this help
+
+Exit codes:
+  0  all entries valid (warnings do not affect exit code)
+  1  at least one validation error
 `.trimStart(),
 
   harvest: `
@@ -505,19 +511,42 @@ async function cmdCheck(args, global) {
 }
 
 // ---------------------------------------------------------------------------
-// Subcommand: lint (STUB)
+// Subcommand: lint
 // ---------------------------------------------------------------------------
 
 async function cmdLint(args, _global) {
-  for (const a of args) {
+  let quiet = false;
+  let fileArg = null;
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
     if (a === '--help' || a === '-h') {
       process.stdout.write(SUBCOMMAND_HELP['lint']);
       process.exit(0);
+    } else if (a === '--quiet') {
+      quiet = true;
+    } else if (a === '--file' && args[i + 1]) {
+      fileArg = args[++i];
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
     }
   }
-  die('harness lint: not yet implemented (planned: CS06)', 3);
+
+  const linterScript = path.join(REPO_ROOT, 'scripts', 'check-learnings.mjs');
+  const linterArgs = [linterScript];
+  if (quiet) linterArgs.push('--quiet');
+
+  // B1: resolve target LEARNINGS.md — prefer user-supplied --file, otherwise
+  // use LEARNINGS.md inside the consumer repo directory (global.cwd).
+  const targetFile = fileArg ?? path.join(_global.cwd, 'LEARNINGS.md');
+  linterArgs.push('--file', targetFile);
+
+  const result = spawnSync(process.execPath, linterArgs, {
+    cwd: _global.cwd ?? REPO_ROOT,
+    stdio: 'inherit',
+  });
+
+  process.exit(result.status ?? 1);
 }
 
 // ---------------------------------------------------------------------------
