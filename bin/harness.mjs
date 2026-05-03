@@ -83,6 +83,7 @@ Wraps lib/sync.mjs sync(). Default mode is check.
 
 Options:
   --mode=<apply|check|dry-run>  Sync mode (default: check)
+  --dry-run                     Alias for --mode=dry-run
   --accept-major                Allow major version bumps
   --report                      Print planned changes per file
   --cwd <path>                  Consumer repo path (default: cwd)
@@ -425,6 +426,8 @@ async function cmdSync(args, global, defaultMode = 'check') {
       process.exit(0);
     } else if (a.startsWith('--mode=')) {
       mode = a.slice('--mode='.length);
+    } else if (a === '--dry-run') {
+      mode = 'dry-run';
     } else if (a === '--accept-major') {
       acceptMajor = true;
     } else if (a === '--report') {
@@ -494,9 +497,9 @@ async function cmdCheck(args, global) {
     process.exit(0);
   }
   // Blocker 1: --mode is not allowed on check (it is always read-only)
-  const hasMode = args.some(a => a === '--mode' || a.startsWith('--mode='));
+  const hasMode = args.some(a => a === '--mode' || a.startsWith('--mode=') || a === '--dry-run');
   if (hasMode) {
-    die('harness check: --mode is not allowed (check is read-only)', 2);
+    die('harness check: --mode and --dry-run are not allowed (check is read-only)', 2);
   }
   return cmdSync(args, global, 'check');
 }

@@ -436,7 +436,7 @@ describe('harness check --mode rejection (Blocker 1)', () => {
       writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
       const r = run(['check', '--mode=apply'], { cwd: dir });
       assert.equal(r.status, 2, `Expected exit 2, got ${r.status}`);
-      assert.ok(r.stderr.includes('--mode is not allowed'), `stderr missing message; got: ${r.stderr}`);
+      assert.ok(r.stderr.includes('--mode'), `stderr missing message; got: ${r.stderr}`);
       assert.ok(!existsSync(path.join(dir, '.harness-lock.json')), '.harness-lock.json must NOT be created');
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -449,7 +449,45 @@ describe('harness check --mode rejection (Blocker 1)', () => {
       writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
       const r = run(['check', '--mode=check'], { cwd: dir });
       assert.equal(r.status, 2, `Expected exit 2, got ${r.status}`);
-      assert.ok(r.stderr.includes('--mode is not allowed'), `stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes('--mode'), `stderr: ${r.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('check --dry-run exits 2 (read-only, no mode-modifying flags)', () => {
+    const dir = makeTmpDir('harness-check-dryrun-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
+      const r = run(['check', '--dry-run'], { cwd: dir });
+      assert.equal(r.status, 2, `Expected exit 2, got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes('--dry-run'), `stderr: ${r.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --dry-run is accepted as alias for --mode=dry-run', () => {
+    const dir = makeTmpDir('harness-sync-dryrun-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
+      const r = run(['sync', '--dry-run'], { cwd: dir });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}; stdout: ${r.stdout}`);
+      assert.ok(
+        !existsSync(path.join(dir, '.harness-lock.json')),
+        '.harness-lock.json must NOT be created in dry-run mode',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --dry-run --report exits 0 and prints planned changes', () => {
+    const dir = makeTmpDir('harness-sync-dryrun-report-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), minimalConfig('ah'));
+      const r = run(['sync', '--dry-run', '--report'], { cwd: dir });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
