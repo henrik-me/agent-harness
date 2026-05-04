@@ -1,28 +1,35 @@
-<!-- Proto template — superseded by template/managed/.github/pull_request_template.md in CS08. -->
+<!--
+  Pull request template — managed by the harness.
+  Regenerate via `harness sync` when a new harness version is pinned.
+
+  Remove all placeholder text (lines wrapped in _( )_) before requesting
+  review. The PR-body linter (scripts/check-pr-body.mjs) will flag forbidden
+  marker words, so use only the italic placeholder style shown below and
+  delete those lines when you fill in the section.
+-->
 
 ## Summary
 
-<!-- One-line description of the change. -->
+_(Write a concise description of what this PR does and why. One to three
+sentences is usually enough. Remove this line before requesting review.)_
 
-## CS
+## Changes
 
-<!-- Link to the active clickstop file under project/clickstops/active/ or project/clickstops/done/ if just closed. -->
+_(Replace with a bullet list of the files and areas changed. Example:)_
 
-CS:
+- `path/to/file.ts` — _(what changed and why)_
+- `path/to/other.ts` — _(what changed and why)_
 
-## Local review
+## Testing
 
-<!-- Per REVIEWS.md: GPT-5.5 rubber-duck mandatory pre-PR. -->
+_(Describe how this was tested. Include at minimum:)_
 
-- Reviewer model:
-- Timestamp:
-- Fallback (if any) and reason:
+- _(unit/integration tests added or updated, with file paths)_
+- _(manual verification steps, if any)_
+- _(CI checks expected to pass)_
 
-## Checklist
+## Notes
 
-- [ ] Branch named `cs<NN>/<slug>` (or `workboard/...` for WORKBOARD-only PRs)
-- [ ] Commit trailers include `Co-authored-by: Copilot`
-- [ ] WORKBOARD.md updated (claim → status → close)
-- [ ] LEARNINGS.md updated if any learnings surfaced
-- [ ] CONTEXT.md updated if codebase state changed
-- [ ] CS file moved between planned/active/done as appropriate
+_(Optional. Use this section for caveats, follow-up items, or anything a
+reviewer should know that doesn't fit above. Delete this section entirely
+if there is nothing to add.)_

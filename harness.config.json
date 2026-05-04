@@ -1,0 +1,60 @@
+{
+  "$schema": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
+  "version": "0.0.0-pre",
+  "project": {
+    "name": "agent-harness",
+    "agent_suffix": "ah",
+    "repo": "henrik-me/agent-harness"
+  },
+  "managed": {
+    "files": [
+      "INSTRUCTIONS.md",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md",
+      ".github/CODEOWNERS",
+      ".github/copilot-instructions.md",
+      ".github/pull_request_template.md"
+    ]
+  },
+  "composed": {
+    "files": [
+      "CONVENTIONS.md",
+      "OPERATIONS.md",
+      "REVIEWS.md"
+    ]
+  },
+  "seeded": {
+    "files": [
+      "CONTEXT.md",
+      "ARCHITECTURE.md",
+      "LEARNINGS.md",
+      "WORKBOARD.md"
+    ]
+  },
+  "excluded": [
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    ".editorconfig",
+    "HANDOFF.md"
+  ],
+  "templating": {
+    "project_name": "agent-harness",
+    "agent_suffix": "ah",
+    "agent_suffix_upper": "AH",
+    "repo_owner": "henrik-me",
+    "repo_slug": "henrik-me/agent-harness",
+    "repo_short": "agent-harness",
+    "default_codeowner": "henrik-me",
+    "lib_codeowner": "henrik-me"
+  },
+  "local_blocks": {
+    "CONVENTIONS.md": ["conventions.project"],
+    "OPERATIONS.md": ["operations.project-deploy"],
+    "REVIEWS.md": ["reviews.project-gates"]
+  },
+  "scaffolds": []
+}
