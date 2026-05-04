@@ -810,6 +810,28 @@ async function cmdLint(args, _global) {
       args: ['--dir', cwd],
       target: cwd,
     },
+    // CS13: pack linter. Self-host-guarded: only runs when the consumer's
+    // package.json `name` matches `@henrik-me/agent-harness` (i.e. when the
+    // harness repo is linting itself or a vendored copy). Other consumers
+    // have their own packaging conventions and would get false failures.
+    // Build the entry conditionally so target=null skips cleanly when not
+    // applicable (per the standard target-not-found logic).
+    (() => {
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft: skip pack linter on parse error */ }
+      return {
+        name: 'pack',
+        script: 'check-pack.mjs',
+        args: isSelfHost ? ['--cwd', cwd] : null,
+        target: isSelfHost ? path.join(cwd, 'package.json') : null,
+      };
+    })(),
     {
       name: 'public-artifact',
       script: 'check-public-artifact.mjs',
