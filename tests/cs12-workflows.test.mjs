@@ -188,13 +188,13 @@ describe('CS12 — drift template harness-drift.yml', () => {
 
   it('drift template ref-derivation falls back to github.sha ONLY for self-host (CS12 R1+R2 gate fix)', () => {
     const text = loadText(DRIFT);
-    // The fallback must be guarded by repo check.
+    // The fallback must be guarded by repo check (now via env GH_REPO).
     assert.match(text, /0\.0\.0-pre/, 'must reference 0.0.0-pre version sentinel');
-    assert.match(text, /\$\{\{\s*github\.sha\s*\}\}/, 'must have github.sha fallback');
+    assert.match(text, /\$\{\{\s*github\.sha\s*\}\}/, 'must have github.sha fallback (passed via env GH_SHA)');
     assert.match(
       text,
-      /github\.repository\s*\}\}["']?\s*=\s*["']henrik-me\/agent-harness/,
-      'fallback must be guarded by github.repository == henrik-me/agent-harness check'
+      /\$GH_REPO["']?\s*=\s*["']henrik-me\/agent-harness/,
+      'fallback must be guarded by $GH_REPO == henrik-me/agent-harness check'
     );
     // Fail-loud branch for unguarded consumer cases.
     assert.match(
@@ -207,10 +207,29 @@ describe('CS12 — drift template harness-drift.yml', () => {
 });
 
 describe('CS12 — drift template harness-drift.yml extra (R1 gate fix)', () => {
-  it('rendered root .github/workflows/harness-drift.yml inherits the github.sha fallback', () => {
-    const root = path.join(REPO_ROOT, '.github', 'workflows', 'harness-drift.yml');
-    const text = loadText(root);
-    assert.match(text, /0\.0\.0-pre/);
-    assert.match(text, /\$\{\{\s*github\.sha\s*\}\}/);
+  it('reusable workflow declares least-privilege permissions: contents: read (R1 PR fix)', () => {
+    const text = loadText(REUSABLE);
+    assert.match(text, /permissions:/, 'must declare permissions block');
+    assert.match(text, /contents:\s*read/, 'must declare contents: read');
   });
+
+  it('reusable workflow validates cli-ref against allowlist regex before shell interpolation (R1 PR fix)', () => {
+    const text = loadText(REUSABLE);
+    // Allowlist regex must be present.
+    assert.match(text, /\[a-zA-Z0-9\._\/-\]\+/, 'must validate ref via allowlist regex');
+    // Ref must be passed via env, not direct ${{ ... }} interpolation in run.
+    assert.match(text, /CLI_REF:\s*\$\{\{\s*steps\.derive-ref\.outputs\.ref\s*\}\}/, 'must pass CLI_REF via env');
+    assert.match(text, /\$\{CLI_REF\}|"\$CLI_REF"/, 'must reference CLI_REF env var, not the GitHub expression directly');
+  });
+
+  it('drift template validates derived ref against allowlist regex before shell interpolation (R1 PR fix)', () => {
+    const text = loadText(DRIFT);
+    assert.match(text, /\[a-zA-Z0-9\._\/-\]\+/, 'must validate ref via allowlist regex');
+    assert.match(text, /CLI_REF:\s*\$\{\{\s*steps\.derive-ref\.outputs\.ref\s*\}\}/, 'must pass CLI_REF via env in subsequent steps');
+    assert.match(text, /\$\{CLI_REF\}/, 'must reference CLI_REF env var in npx invocation, not the GitHub expression directly');
+    // GH_REPO + GH_SHA must also be passed via env (not direct ${{ ... }}).
+    assert.match(text, /GH_REPO:\s*\$\{\{\s*github\.repository\s*\}\}/);
+    assert.match(text, /GH_SHA:\s*\$\{\{\s*github\.sha\s*\}\}/);
+  });
+
 });

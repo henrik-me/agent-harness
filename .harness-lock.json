@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs12/content",
-  "resolved_sha": "ef29cb93c8d36531154dbc76aa0a7e16711ab5a3",
+  "resolved_sha": "0665c5baec4b957b6e4af2d1863447162a78765d",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T14:31:53.037Z",
+  "synced_at": "2026-05-04T14:36:50.091Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -57,7 +57,7 @@
       "target": ".github/workflows/harness-drift.yml",
       "source_template": "template/managed/.github/workflows/harness-drift.yml",
       "class": "managed",
-      "rendered_hash": "e3344fba8ebc52736cf21e96497132ca46ad145b68c6364c4ca74f31248e497d",
+      "rendered_hash": "3227d99c38c732381aa42b90d796c6c8cb2d7af0de9aade316fc6f30fd6c6489",
       "action": "skipped"
     },
     {
