@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T09:00Z (CS03c close-out)
+> **Last updated:** 2026-05-04T09:30Z (CS11b claim)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — CS11b (small) -> CS12 -> CS13 -> CS14 next | — | — | — | 2026-05-04 | _(none)_ |
+| CS11b | `harness sync --mode=apply --resolved-sha <sha>` override flag | claimed | yoga-ah | cs11b/content | 2026-05-04 | _(none)_ |
 
 ## Recently Completed
 

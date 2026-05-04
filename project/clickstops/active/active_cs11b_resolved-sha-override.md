@@ -1,9 +1,9 @@
 # CS11b — `harness sync --mode=apply --resolved-sha <sha>` override flag
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs11b/content
+**Started:** 2026-05-04
 **Closed:** —
 **Filed by:** CS11 close-out per [LRN-070](../../../LEARNINGS.md#lrn-070).
 **Depends on:** CS11
@@ -43,7 +43,7 @@ Single sub-agent for the engine + tests + docs (small CS). Orchestrator owns the
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `bin/harness.mjs` `--resolved-sha` flag + `lib/sync.mjs` plumbing + `tests/sync.test.mjs` extension + OPERATIONS.md doc | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Plan-vs-implementation review
 
