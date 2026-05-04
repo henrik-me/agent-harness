@@ -154,6 +154,7 @@ try {
 /** @type {Array<{ relPath: string, kinds: string[] }>} */
 const violations = [];
 let filesChecked = 0;
+let readErrors = 0;
 
 for (const entry of entries) {
   if (!entry.isFile()) continue;
@@ -181,6 +182,7 @@ for (const entry of entries) {
     bytes = fs.readFileSync(fullPath);
   } catch (err) {
     process.stderr.write(`check-text-encoding: cannot read "${relPath}": ${err.message}\n`);
+    readErrors++;
     continue;
   }
 
@@ -208,9 +210,13 @@ for (const entry of entries) {
 
 const count = violations.length;
 const summary =
-  `text-encoding: ${filesChecked} files checked, ${count} violation${count === 1 ? '' : 's'}.`;
+  `text-encoding: ${filesChecked} files checked, ${count} violation${count === 1 ? '' : 's'}` +
+  (readErrors > 0 ? `, ${readErrors} read error${readErrors === 1 ? '' : 's'}` : '') + '.';
 
-if (count === 0) {
+// CS03c R1 (PR #40 review NB): exit 1 on read errors as well as violations.
+// Otherwise unreadable files would silently fail open and a clean scan of the
+// remaining files could falsely certify the directory.
+if (count === 0 && readErrors === 0) {
   if (!quiet) process.stdout.write(`${summary}\n`);
   process.exit(0);
 } else {
