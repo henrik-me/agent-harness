@@ -43,8 +43,33 @@ Single sub-agent for the engine + tests + docs (small CS). Orchestrator owns the
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| `bin/harness.mjs` `--resolved-sha` flag + `lib/sync.mjs` plumbing + `tests/sync.test.mjs` extension + OPERATIONS.md doc | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| `bin/harness.mjs` `--resolved-sha` flag + `lib/sync.mjs` plumbing + `tests/sync.test.mjs` extension + OPERATIONS.md doc | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-04
+**Outcome:** GO (R2 verdict; R1 found 2 blockers + 1 NB, all addressed inline)
+
+### Plan vs implementation
+
+| Deliverable | Status | Notes |
+|---|---|---|
+| `lib/sync.mjs` `resolvedShaOverride` arg with format validation (`/^[0-9a-f]{40}$/`) | match | Throws `SyncError` `ESYNC_INVALID_RESOLVED_SHA` on non-string / non-hex / uppercase / wrong length. |
+| `bin/harness.mjs cmdSync` `--resolved-sha <40hex>` flag (with `=` form) | match | `requireValue` guard (LRN-040); apply-only restriction (errors with exit 2 in check/dry-run); SUBCOMMAND_HELP['sync'] documents the flag. |
+| `tests/sync.test.mjs` lib-level coverage (5 tests) | match | Valid override recorded, non-hex / uppercase / non-string rejected, absent override preserves behavior. |
+| `tests/cli.test.mjs` CLI-level coverage (8 tests) | match (R1 add) | Parse forms, requireValue, format validation, apply-only restriction, equals form. |
+| `template/composed/OPERATIONS.md` § Sync § Flags doc paragraph | match (R1 add) | Cross-refs LRN-070 + CS11b. Root mirror manually re-rendered. |
+
+### Test coverage
+
+Sufficient. 463 tests pass total (was 450 baseline; +13 new: 5 lib + 8 CLI). Lint 13/0/3. Sync --mode=check no drift. Workflow pins 0 errors.
+
+### Findings
+
+R1 (NEEDS-FIX, 2 blockers + 1 NB):
+1. OPERATIONS.md docs missing — added paragraph + manually re-rendered root (composed-merge would have rejected per legacy-content fail-closed; D7-style steady-state edge case).
+2. CLI tests missing — added 8 tests covering parse forms, validation, apply-only restriction.
+3. (NB) check-workflow-pins not run — ran, 0 errors.
+
+R2: GO. No remaining blockers.

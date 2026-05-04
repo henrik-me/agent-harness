@@ -572,8 +572,64 @@ describe('subcommand --help flags', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Blocker 1 — check must forbid --mode
+// CS11b — `--resolved-sha` CLI flag tests
 // ---------------------------------------------------------------------------
+
+describe('harness sync --resolved-sha (CS11b)', () => {
+  it('rejects non-hex value with exit 2', () => {
+    const r = run(['sync', '--mode=apply', '--resolved-sha', 'not-a-sha']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.match(r.stderr, /40-character lowercase hex/);
+  });
+
+  it('rejects uppercase hex with exit 2', () => {
+    const r = run(['sync', '--mode=apply', '--resolved-sha', 'ABCDEF0123456789ABCDEF0123456789ABCDEF01']);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /40-character lowercase hex/);
+  });
+
+  it('rejects short hex with exit 2', () => {
+    const r = run(['sync', '--mode=apply', '--resolved-sha', '0123456789abcdef']);
+    assert.equal(r.status, 2);
+  });
+
+  it('--resolved-sha without value exits 2', () => {
+    const r = run(['sync', '--mode=apply', '--resolved-sha']);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /requires a value/);
+  });
+
+  it('--resolved-sha consuming next flag rejected (LRN-040 guard)', () => {
+    const r = run(['sync', '--mode=apply', '--resolved-sha', '--accept-major']);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /requires a value/);
+  });
+
+  it('--resolved-sha=<value> equals form supported', () => {
+    // Use against a tmp dir with no harness.config.json — should fail later than parse,
+    // but parser should accept the well-formed value.
+    const dir = makeTmpDir();
+    try {
+      const r = run(['sync', '--mode=apply', '--resolved-sha=0123456789abcdef0123456789abcdef01234567'], { cwd: dir });
+      // Will fail with a non-2 error (no harness.config.json), but must not be 2 (parse OK)
+      assert.notEqual(r.status, 2, `Expected non-2 (parser accepted value); got ${r.status}\nstderr: ${r.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('--resolved-sha is rejected in --mode=check (apply-only restriction)', () => {
+    const r = run(['sync', '--mode=check', '--resolved-sha', '0123456789abcdef0123456789abcdef01234567']);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /only valid with --mode=apply/);
+  });
+
+  it('--resolved-sha is rejected in --mode=dry-run (apply-only restriction)', () => {
+    const r = run(['sync', '--mode=dry-run', '--resolved-sha', '0123456789abcdef0123456789abcdef01234567']);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /only valid with --mode=apply/);
+  });
+});
 
 describe('harness check --mode rejection (Blocker 1)', () => {
   it('check --mode=apply exits 2 with no lock file created', () => {

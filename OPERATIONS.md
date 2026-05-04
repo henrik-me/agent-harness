@@ -583,6 +583,16 @@ pinned harness version recorded in `.harness-lock.json`.
   Default: `process.cwd()`.
 - **`--accept-major`** — required when the resolved template version is a
   major bump from the pinned version (see § SemVer policy).
+- **`--resolved-sha <40hex>`** (apply-mode only) — pin the recorded
+  `resolved_sha` field in `.harness-lock.json` to a specific 40-character
+  lowercase hex commit SHA, instead of letting the engine derive it from
+  `git rev-parse HEAD`. Removes the post-commit-regenerate ordering trap
+  ([LRN-070](LEARNINGS.md#lrn-070)) for CSs that touch templates AND root
+  files in the same commit: commit content first, then `harness sync
+  --mode=apply --resolved-sha <commit-sha>` records a lock that points at
+  the actual content commit. The override is rejected (exit 2) in
+  `--mode=check` / `--mode=dry-run` (only apply writes the lock) and
+  rejected if the value is not 40-char lowercase hex.
 
 ### File-class behaviour
 
