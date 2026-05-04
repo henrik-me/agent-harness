@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T11:00Z (CS12 claim)
+> **Last updated:** 2026-05-04T12:00Z (CS12 close-out)
 
 ## Orchestrators
 
@@ -16,7 +16,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS12 | Reusable GitHub workflow + drift-detection template | claimed | yoga-ah | cs12/content | 2026-05-04 | _(none)_ |
+| — | No active CS — CS13 (npm packaging) is next | — | — | — | 2026-05-04 | _(none)_ |
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS12 | Reusable workflow + drift-detection template | 2026-05-04 | **Done.** Squash-merged as `09365a8`. `harness-checks.yml` (workflow_call reusable) + `harness-drift.yml` (weekly drift PR template) + self-host integration via `${{ github.sha }}`. Drift template has 3-branch ref derivation. Both workflows pass GitHub expressions through `env:` and validate via allowlist regex `^[a-zA-Z0-9._/-]+$` to prevent shell injection (R1 PR fix). 3-way parallel dispatch (cumulative ~50). 480 tests pass (was 463; +17 new). Lint 13/0/3. Sync no drift. Plan-vs-impl gate R1→R2→R3 GO; content PR R1→R2 GO. 1 LRN filed (LRN-075). Plan PR #45. Claim PR #46. Claim-fixup PR #47. Content PR #48. |
 
 ## Recently Completed
 

