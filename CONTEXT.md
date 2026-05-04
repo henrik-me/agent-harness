@@ -41,7 +41,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS11 (self-host) is complete; harness now governs itself. CS12 (reusable GitHub workflow + drift-detection template) is the next mainline CS to claim.
+- None. CS03c (text-encoding linter) in flight on `cs03c/content`. Then CS11b → CS12 → CS13 → CS14 (per autopilot directive: stop before CS15).
 
 ## Parallelism (single-orchestrator default)
 
