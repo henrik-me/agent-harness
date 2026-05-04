@@ -146,3 +146,6 @@ All 9 linter scripts wired into `bin/harness.mjs` `cmdLint` alongside `check-lea
 - Claim PR: #14 (`7a228b8`). Content PR: #15 (squash-merged as `161b9f3`).
 - **Highlight:** first true 9-way parallel sub-agent dispatch in this project; succeeded with zero file races and zero rogue commits.
 
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

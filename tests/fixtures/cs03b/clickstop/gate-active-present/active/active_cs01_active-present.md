@@ -1,4 +1,4 @@
-# CS01 — Valid active clickstop (fixture)
+# CS01 — Active with gate present (fixture)
 
 **Status:** active
 **Owner:** fixture-owner
@@ -9,7 +9,7 @@
 
 ## Goal
 
-Fixture file for check-clickstop.mjs tests — valid active clickstop.
+Fixture: active clickstop with the gate H2 placeholder. Linter should pass.
 
 ## Plan-vs-implementation review
 

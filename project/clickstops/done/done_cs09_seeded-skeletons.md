@@ -125,3 +125,7 @@ R2 found 1 blocker: literal harness marker `<!-- harness:local-start id=X -->` i
 - `harness lint --quiet`: 9 pass, 0 fail, 3 skipped (pr-body, compose-v2, public-artifact).
 - 5 LRN entries filed (LRN-054..058).
 - 2 planned CSs filed (CS10: scaffolds; CS09b: sync fixture extension).
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

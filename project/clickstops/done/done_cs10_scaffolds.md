@@ -75,3 +75,7 @@ The key behavioral constraint: `harness init --with-scaffold <name>` drops scaff
 - **`--with-scaffold` consuming `--help` quirk**: the global parser intercepts `--help` before init's local args loop, so `--with-scaffold --help` exits 0 (showing init help) rather than failing the requireValue guard. Test was adjusted to use `--from-example=gwn` (init-local flag) to validate the guard. Worth filing as a candidate LRN: global-flag interception interacts unexpectedly with subcommand-local requireValue guards.
 - **Sub-agent learning candidate** (cs10-smoke): briefing said scaffold READMEs do NOT need Quickstart/License/Architecture/Status sections, but agent added them defensively to satisfy `check-readme.mjs` "in case." Harmless but indicates briefing tension between "pattern doc" framing and the Exit criterion that referenced check-readme. The Exit criterion has now been corrected.
 - **Sub-agent learning candidate** (cs10-container-validate): `node -c <file>` on Windows via PowerShell may not show "syntax OK" in combined output even though it exits 0; run isolated when verifying success text.
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

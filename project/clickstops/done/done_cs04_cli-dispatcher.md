@@ -101,3 +101,6 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS04](../done/done_cs01_bo
 - 4 planned CSs filed (CS04b, CS04c, CS04d, CS05).
 - Claim PR: #8 (`9931220`). Content PR: #9 (squash-merged as `13c1411`).
 
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

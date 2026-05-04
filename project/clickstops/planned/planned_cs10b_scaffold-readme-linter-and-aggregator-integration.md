@@ -66,3 +66,7 @@ CS10 explicitly deferred both items per the cs-plan and the active-CS scope adju
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

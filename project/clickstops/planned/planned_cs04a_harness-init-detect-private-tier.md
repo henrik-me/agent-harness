@@ -29,3 +29,7 @@ When a consumer runs `harness init` against a repo, detect upfront whether the c
 ## Notes
 
 This is an opt-in pre-emptive UX improvement, not a hard blocker. Sub Invaders (CS16) would still work without it — just less smoothly.
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

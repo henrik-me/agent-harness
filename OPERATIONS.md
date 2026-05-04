@@ -41,6 +41,45 @@ If you need to leave a CS in the middle: update WORKBOARD with `state=blocked` (
 - **Before-claim cadence (CS04+):** `harness harvest` runs automatically as part of `claim`; prompts user only if stale `open` learnings tagged `process` or `architectural` exist (or learnings tagged with the `claim_area` metadata).
 - See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the full procedure and disposition states.
 
+## Plan-vs-implementation review (close-out gate)
+
+This gate is **mandatory** before opening the close-out PR and before the `active → done` rename.
+
+**Reviewer:** GPT-5.5 (rubber-duck). Fallback: Claude Sonnet 4.6, subject to the independence invariant in [REVIEWS.md](REVIEWS.md) (non-high-risk only; user waiver always allowed).
+
+**Inputs the reviewer must consume:**
+
+- The active CS file (all deliverables, tasks table, sub-agent reports).
+- The actual diff against the base branch: `git diff main..cs<NN>/content`.
+- The test count delta (tests before vs. after).
+- Any sub-agent final reports recorded in the CS file.
+
+**Required outputs the reviewer must produce:**
+
+- **Per-deliverable outcome table** — for each deliverable listed in the CS plan, one of: `match` | `diverged` | `added` | `dropped`, with a rationale sentence for every non-`match` entry.
+- **Test-coverage assessment** — `sufficient` OR `gaps` with a specific list of untested scenarios.
+- **Overall outcome** — `GO` | `NEEDS-FIX`.
+
+**Recording the review:**
+
+The orchestrator records the review verbatim in the active CS file's `## Plan-vs-implementation review` section **before** the `active → done` rename. The section must contain:
+
+```
+**Reviewer:** <model name + rubber-duck | fallback reason>
+**Date:** <ISO 8601 timestamp>
+**Outcome:** GO | NEEDS-FIX
+
+<prose summary — per-deliverable table + coverage assessment>
+```
+
+**Blocking behaviour:**
+
+A `NEEDS-FIX` outcome blocks close-out. Fix the gap on the `cs<NN>/content` branch and re-run the gate before proceeding.
+
+**Mechanical enforcement:**
+
+`check-clickstop.mjs` enforces the presence of the `## Plan-vs-implementation review` section and its required content for all `done/` files. The linter is wired into `harness lint` and runs on every PR.
+
 ## Models used
 
 | Role | Model |
