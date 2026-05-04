@@ -1,10 +1,10 @@
 # CS11b — `harness sync --mode=apply --resolved-sha <sha>` override flag
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs11b/content
+**Branch:** cs11b/content (squash-merged as `0a707d7`)
 **Started:** 2026-05-04
-**Closed:** —
+**Closed:** 2026-05-04
 **Filed by:** CS11 close-out per [LRN-070](../../../LEARNINGS.md#lrn-070).
 **Depends on:** CS11
 
