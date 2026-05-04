@@ -1,9 +1,9 @@
 # CS03b — Upgrade `lib/templating.mjs` and `lib/lock.mjs` from stubs to rich APIs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs03b/content
+**Started:** 2026-05-04
 **Closed:** —
 **Filed by:** CS03 close-out per [LRN-016](../../../LEARNINGS.md#lrn-016) (parallel sub-agent file race lost the rich APIs that `cs03-templating` and `cs03-lock` had authored).
 **Depends on:** CS03
@@ -60,7 +60,9 @@ Note: `lib/lock.mjs` already grew significantly during the CS03 review iteration
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `lib/templating.mjs` upgrade (rich API: opts.strict, TemplatingError, escape syntax, whitespace tolerance) + `tests/templating.test.mjs` | pending | sub-agent cs03b-templating | agent-id=yoga-ah-sub-1 \| role=lib-author \| report-status=pending \| learnings=0 |
+| `lib/lock.mjs` upgrade (`newEmptyLock` helper) + extend `tests/lock.test.mjs` | pending | sub-agent cs03b-lock | agent-id=yoga-ah-sub-2 \| role=lib-author \| report-status=pending \| learnings=0 |
+| `lib/sync.mjs` integration (use `newEmptyLock`; decide strict-templating mode) + integration tests | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 

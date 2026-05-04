@@ -29,7 +29,7 @@
 
 - **CS10 complete** (closed 2026-05-03). Delivered: 8 scaffold bundles (`scaffolds/{smoke,migrations,container-validate,health-check,seed,verify-deploy,feature-flags,cs-probes}/`), each with a harness-side `README.md` pattern doc + `files/` subtree copied verbatim into the consumer; 2 shipped consumer-side linters (`check-migration-policy.mjs`, `check-feature-flag-policy.mjs`); `bin/harness.mjs cmdInit` extended with `--with-scaffold <name>` (repeatable) including pre-validation, malformed-config gate, idempotent skip-if-exists, and `harness.config.json` `scaffolds[]` opt-in recording; `tests/cs10-scaffolds.test.mjs` (27 new tests). **411 tests pass total** (384+27 new). 2 GPT-5.5 review rounds (R1=4 blockers + 2 non-blockers; R2=GO). 5 additional learnings filed (LRN-059 through LRN-063): 8-way parallel dispatch validated (cumulative 40), pre-validation before any writes, shipped-linter --cwd-relative paths, pair-on-full-stem (not numeric prefix), exit-criteria scope drift. 1 planned CS filed (CS10b: scaffold-readme linter + aggregator integration of optional linters). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #29 as `bac6217`. **First true 8-way parallel sub-agent dispatch on user-facing surface; zero file races, zero rogue commits, zero consumer-path collisions across 36 scaffold-shipped files.**
 
-**CS10 is complete. CS11 (dogfood: harness governs itself) is ready to claim.**
+**CS10 is complete. CS03b (templating + lock rich APIs) is in flight on `cs03b/content` (yoga-ah) — the long-overdue recovery of the CS03 file-race-lost APIs, scheduled before CS11 self-host so the engine surface is stable.**
 
 ## Architecture pointer
 
@@ -37,7 +37,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS10 is complete; CS11 (dogfood) is ready to claim.
+- None. CS03b (templating + lock rich APIs) is in flight on `cs03b/content`; CS11 (self-host) blocked on CS03b.
 
 ## Parallelism (single-orchestrator default)
 
