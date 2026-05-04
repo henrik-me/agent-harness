@@ -45,7 +45,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS11b complete; CS12 → CS13 → CS14 next on the mainline.
+- None. CS12 (reusable workflow + drift template) in flight on `cs12/content`. Then CS13 → CS14.
 
 ## Parallelism (single-orchestrator default)
 
