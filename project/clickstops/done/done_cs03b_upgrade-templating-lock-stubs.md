@@ -87,7 +87,7 @@ Note: `lib/lock.mjs` already grew significantly during the CS03 review iteration
 | `lib/lock.mjs` `newEmptyLock` + extend `tests/lock.test.mjs` | done | sub-agent cs03b-lock | agent-id=yoga-ah-sub-2 \| role=lib-author \| report-status=complete \| learnings=0 |
 | `lib/sync.mjs` integration (use `newEmptyLock`; keep templating lenient for v0.1.x backcompat) | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Process-gate doc updates + linter extension + retrofits (10 done + 9 planned) | done | sub-agent cs03b-gate | agent-id=yoga-ah-sub-3 \| role=process-gate \| report-status=complete \| learnings=1 |
-| Self-application: run new gate against CS03b + populate this CS's review section | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Self-application: run new gate against CS03b + populate this CS's review section | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
@@ -108,7 +108,7 @@ Note: `lib/lock.mjs` already grew significantly during the CS03 review iteration
 ### Test coverage
 
 Sufficient. Verified:
-- `node --test tests/*.test.mjs` → **431 pass / 0 fail** (was 411 baseline; +20 new: 10 templating + 4 lock + 6 gate).
+- `node --test tests/*.test.mjs` → **432 pass / 0 fail** (was 411 baseline; +21 new: 11 templating + 4 lock + 6 gate).
 - `node scripts/check-clickstop.mjs --dir project/clickstops` → 0 errors.
 - `node bin/harness.mjs lint --quiet` → 9 pass / 0 fail / 3 skipped.
 - `node scripts/validate-schemas.mjs` → 69 pass / 0 fail.
