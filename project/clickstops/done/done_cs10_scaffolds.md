@@ -1,10 +1,10 @@
 # CS10 — Author scaffolds
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs10/content
+**Branch:** cs10/content (squash-merged as `bac6217`)
 **Started:** 2026-05-03
-**Closed:** —
+**Closed:** 2026-05-03
 **Filed by:** CS09 close-out (per [`harness-cs-plan.md` § CS10](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs10--author-scaffolds)).
 **Depends on:** CS09
 
@@ -34,7 +34,7 @@ The key behavioral constraint: `harness init --with-scaffold <name>` drops scaff
 ## Exit criteria
 
 - `harness init --with-scaffold <name>` drops the scaffold files for all 8 named scaffolds. ✅
-- `node --test tests/*.test.mjs` still passes (407 tests; +23 in `tests/cs10-scaffolds.test.mjs`). ✅
+- `node --test tests/*.test.mjs` still passes (411 tests; +27 in `tests/cs10-scaffolds.test.mjs`). ✅
 - `node scripts/validate-schemas.mjs` still passes (64/0). ✅
 - `node bin/harness.mjs lint --quiet` exits 0 against this repo (9 pass / 0 fail / 3 skipped). ✅
 - ~~All scaffold README.md files pass `check-readme.mjs`.~~ **Dropped (scope adjustment).** Scaffold READMEs are pattern-doc artifacts (audience: a developer evaluating whether to opt into the scaffold), not consumer-project READMEs. `check-readme.mjs` enforces project-README structure (`## Quickstart`, `## License`, `## Architecture`, `## Status`) which doesn't apply to pattern docs. The harness aggregator already runs `check-readme.mjs` only against the consumer-root `README.md` (see `bin/harness.mjs` cmdLint). Filing as planned CS for a dedicated `check-scaffold-readme.mjs` if/when scaffold-doc enforcement becomes valuable.

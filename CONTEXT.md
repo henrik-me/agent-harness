@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS09 close-out + HANDOFF.md added)
+> **Last updated:** 2026-05-03 (CS10 close-out)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -27,7 +27,9 @@
 
 - **CS09 complete** (closed 2026-05-03). Delivered: 5 seeded skeleton files (`template/seeded/CONTEXT.md`, `ARCHITECTURE.md`, `LEARNINGS.md`, `WORKBOARD.md`, `README.md`), `template/seeded/harness.config.json`, 3 `.gitkeep` scaffold dirs, fixture test `tests/cs09-init.test.mjs` (9 new tests). **384 tests pass total** (375+9 new). 3 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers; R2=1 blocker [inline marker in OPERATIONS.md prose]; R3=clean). 5 additional learnings filed (LRN-054 through LRN-058): early-return gate anti-pattern, `$schema` canonical URL rule, inline marker in prose, init/sync integration test gap, 6-way dispatch validated (cumulative 32 dispatches). 2 planned CSs filed (CS09b: sync fixture extension; CS10: scaffolds). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #24 as `ceab301`. **`harness init` now produces a fully linter-passing consumer repo from a single command.**
 
-**CS09 is complete. CS10 (scaffolds) is in flight on `cs10/content` (yoga-ah).**
+- **CS10 complete** (closed 2026-05-03). Delivered: 8 scaffold bundles (`scaffolds/{smoke,migrations,container-validate,health-check,seed,verify-deploy,feature-flags,cs-probes}/`), each with a harness-side `README.md` pattern doc + `files/` subtree copied verbatim into the consumer; 2 shipped consumer-side linters (`check-migration-policy.mjs`, `check-feature-flag-policy.mjs`); `bin/harness.mjs cmdInit` extended with `--with-scaffold <name>` (repeatable) including pre-validation, malformed-config gate, idempotent skip-if-exists, and `harness.config.json` `scaffolds[]` opt-in recording; `tests/cs10-scaffolds.test.mjs` (27 new tests). **411 tests pass total** (384+27 new). 2 GPT-5.5 review rounds (R1=4 blockers + 2 non-blockers; R2=GO). 5 additional learnings filed (LRN-059 through LRN-063): 8-way parallel dispatch validated (cumulative 40), pre-validation before any writes, shipped-linter --cwd-relative paths, pair-on-full-stem (not numeric prefix), exit-criteria scope drift. 1 planned CS filed (CS10b: scaffold-readme linter + aggregator integration of optional linters). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #29 as `bac6217`. **First true 8-way parallel sub-agent dispatch on user-facing surface; zero file races, zero rogue commits, zero consumer-path collisions across 36 scaffold-shipped files.**
+
+**CS10 is complete. CS11 (dogfood: harness governs itself) is ready to claim.**
 
 ## Architecture pointer
 
@@ -35,7 +37,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS10 (scaffolds) is in flight on `cs10/content`.
+- None. CS10 is complete; CS11 (dogfood) is ready to claim.
 
 ## Parallelism (single-orchestrator default)
 

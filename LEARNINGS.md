@@ -1196,6 +1196,110 @@ claim_area: orchestrator-loop
 
 **Disposition:** Pattern validated. Cumulative dispatch count (32) is the new documented baseline for CS10+. Continue applying LRN-016 + LRN-021 on all future fan-outs.
 
+### LRN-059
+
+```yaml
+id: LRN-059
+date: 2026-05-03
+category: process
+source_cs: CS10
+status: applied
+tags: [sub-agents, parallel-dispatch, no-commit, scale-validation, cumulative-count]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS10 dispatched 8 parallel sub-agents (one per scaffold bundle). Does the zero-commit / zero-race discipline continue to hold at cumulative dispatch 40?
+
+**Finding:** 8-way parallel fan-out validated cleanly: all 8 sub-agents preflight-recorded HEAD `7748e1f`; all 8 final SHAs matched; `git status` showed only their owned `scaffolds/<name>/` directories with zero overlap. Cumulative count: ~40 sub-agent dispatches across CS01–CS10 with zero commit-discipline violations and zero file races after [LRN-021](LEARNINGS.md#lrn-021) and [LRN-016](LEARNINGS.md#lrn-016) standardization. The pattern continues to scale.
+
+**Evidence:** CS10 content branch (`a0f8fe4`) was the only orchestrator commit between the claim merge (`7748e1f`) and the R1 fix commit (`a2ec41e`). Each sub-agent's report explicitly stated "No commit was created" with matching preflight/final SHAs. Cross-scaffold consumer-path collision check (orchestrator-level test) caught zero collisions on first author — disjoint namespacing held without coordination overhead.
+
+**Disposition:** Pattern continues to validate. Cumulative count (40) is the updated baseline. The disjoint-file-ownership + namespace-suggestion-in-briefing combination remains the safety mechanism.
+
+### LRN-060
+
+```yaml
+id: LRN-060
+date: 2026-05-03
+category: tooling
+source_cs: CS10
+status: applied
+tags: [scaffolds, init, pre-validation, fail-fast, partial-state, malformed-config]
+claim_area: cli-init
+```
+
+**Problem:** `harness init --with-scaffold <name>` initially copied seeded files and scaffold files first, then validated post-hoc; an unknown scaffold name or a malformed pre-existing `harness.config.json` could leave the target in a partial state. The R1 review surfaced exactly this: a malformed config was caught, warned to stderr, but the scaffold files were already on disk and the init exited 0 — misleading success.
+
+**Finding:** Any "drop a bundle" CLI mode must (a) validate ALL inputs (scaffold-name existence, config parseability, etc.) BEFORE any filesystem writes, and (b) on validation failure exit non-zero leaving the target untouched. Tests must assert the "target untouched" property explicitly — exit-code-only assertions miss the partial-state failure mode.
+
+**Evidence:** CS10 PR #29 R1 review found that with a pre-existing malformed `harness.config.json`, `init --with-scaffold smoke` copied `scripts/smoke.mjs` and exited 0. Fix: hoist `configDest`/`configExists` computation above the scaffold pre-validation block, then `JSON.parse` the existing config inside the same pre-validation gate. Test added: `tests/cs10-scaffolds.test.mjs` "malformed existing harness.config.json fails BEFORE any scaffold copies" asserts (i) non-zero exit, (ii) `/malformed JSON/` in stderr, (iii) no scaffold or seeded file appears on disk, (iv) original malformed config preserved verbatim.
+
+**Disposition:** Apply this gate pattern to every future "bundle drop" subcommand (e.g. CS10 follow-ups that wire `harness sync --add-scaffold`, or any future `--apply-template <name>` flag). Pre-validate all inputs; on validation failure, exit before any write. Test the untouched-target property.
+
+### LRN-061
+
+```yaml
+id: LRN-061
+date: 2026-05-03
+category: tooling
+source_cs: CS10
+status: applied
+tags: [scaffolds, shipped-linters, consumer-root, --cwd, path-resolution]
+claim_area: scaffold-linters
+```
+
+**Problem:** Shipped consumer-side linters (e.g. `scripts/check-migration-policy.mjs`, `scripts/check-feature-flag-policy.mjs` from the migrations / feature-flags scaffolds) need to be runnable from anywhere — including from a parent directory or from a CI runner that has `cwd` somewhere unrelated. The scaffolds initially used `path.resolve(arg)` for `--config` and `--flags-file`, which resolves against `process.cwd()`, NOT against `--cwd`. Result: `node scripts/check-feature-flag-policy.mjs --cwd /consumer --flags-file flags/flags.json` invoked from outside `/consumer` looked for `<process.cwd()>/flags/flags.json` and failed with "flags file not found".
+
+**Finding:** A consumer-shipped linter that accepts `--cwd` must resolve every relative path argument against `--cwd`, not against `process.cwd()`. The pattern `path.resolve(cwd, arg)` is correct for both relative and absolute inputs (absolute paths pass through unchanged). This complements [LRN-050](LEARNINGS.md#lrn-050) (consumer-root-relative paths in the harness) but applies inside the script: the script's notion of "the consumer root" is `--cwd`, not `process.cwd()`, when the two differ.
+
+**Evidence:** CS10 PR #29 R1 review (Blocking #2). Both shipped linters (`check-migration-policy.mjs:53,56` and `check-feature-flag-policy.mjs:104,158`) were fixed to use `path.resolve(cwdArg, configArg)` and `path.resolve(cwd, flagsFileArg)`. Regression test added: `tests/cs10-scaffolds.test.mjs` "flags linter resolves --flags-file relative to --cwd" runs the linter from `REPO_ROOT` with `--cwd <tmp>` and asserts no "flags file not found" error.
+
+**Disposition:** Convention to apply to every future shipped consumer-linter: any path argument is relative to `--cwd` (default `process.cwd()` when `--cwd` is not provided). Briefings for sub-agents authoring shipped consumer scripts must call this out explicitly alongside [LRN-050](LEARNINGS.md#lrn-050).
+
+### LRN-062
+
+```yaml
+id: LRN-062
+date: 2026-05-03
+category: tooling
+source_cs: CS10
+status: applied
+tags: [scaffolds, migrations, linter-correctness, naming-convention, semantic-pairing]
+claim_area: scaffold-linters
+```
+
+**Problem:** The migration linter (`check-migration-policy.mjs`, shipped by `scaffolds/migrations/`) initially paired `*.up.sql` and `*.down.sql` files by 4-digit numeric prefix only. This passed mismatched-stem pairs as valid: `0001_create-users.up.sql` + `0001_drop-posts.down.sql` was reported as a complete pair, defeating the linter's core safety guarantee (a rollback file actually rolls back what the up file did).
+
+**Finding:** Lexical conventions (filename prefix, suffix, casing) are a useful first-pass index, but they must not stand in for semantic identity. The "matching down" of an up migration must share the FULL stem (e.g. `0001_create-users`), not just the prefix. The 4-digit prefix encodes ordering / sequence-number uniqueness; the stem encodes WHICH migration. Conflating the two collapses two independent rules into one and silently weakens both.
+
+**Evidence:** CS10 PR #29 R1 review (Blocking #3). `0001_create-users.up.sql` + `0001_drop-posts.down.sql` was reported as 0 violations by the original linter; after the fix (pair by stem in `stemMap`), the same pair produces a `paired-up-down: "0001_create-users.up.sql" has no matching "0001_create-users.down.sql" file` violation AND a separate `no-duplicate-prefix` violation (because both `*.up.sql`/`*.down.sql` share the `0001` prefix bucket). Regression test: `tests/cs10-scaffolds.test.mjs` "migration linter rejects mismatched up/down stems".
+
+**Disposition:** When authoring linters that enforce a "paired files" rule, pair on the full semantic identifier (the stem), not the auxiliary index (the prefix). Document the distinction explicitly in the linter's README §Rules. Add a test for the mismatched-stem case alongside the missing-pair case.
+
+### LRN-063
+
+```yaml
+id: LRN-063
+date: 2026-05-03
+category: process
+source_cs: CS10
+status: applied
+tags: [briefings, exit-criteria, scope-drift, lint-vs-pattern-doc, scope-adjustment]
+claim_area: cs-planning
+```
+
+**Problem:** The CS10 planned spec (filed at CS09 close-out) listed exit criterion "All scaffold README.md files pass `check-readme.mjs`". But scaffold READMEs are pattern-doc artifacts (audience: a developer evaluating opt-in), not consumer-project READMEs. `check-readme.mjs` enforces project-README structure (`## Quickstart`, `## License`, `## Architecture`, `## Status`) which doesn't apply. One sub-agent (cs10-smoke) "defended" against this by adding all four sections to the smoke scaffold's pattern doc, even though the briefing explicitly said "pattern docs do NOT need Quickstart/License/Architecture/Status sections" — it inferred the exit criterion overrode the briefing.
+
+**Finding:** When a CS spec's exit criteria contradict a sub-agent briefing, sub-agents (correctly) defer to the exit criteria — they cannot know the orchestrator's intent. The orchestrator must (a) reconcile inconsistencies BEFORE dispatch, OR (b) explicitly mark the resolution in the briefing. In CS10 the right call was to drop the over-specified exit criterion (scaffold READMEs are not project READMEs) and document the scope adjustment in the active CS file with rationale + follow-up note. Filed in PR #29 §"Notable scope adjustment".
+
+**Evidence:** CS10 PR #29: cs10-smoke sub-agent surfaced this as a learning candidate ("future briefings should note this conflict explicitly so sub-agents don't waste time"). Active CS file Exit-criteria block updated in PR #29 to strike the over-specified criterion with a documented rationale and a follow-up note: "A dedicated `check-scaffold-readme.mjs` can be filed if scaffold-doc enforcement becomes valuable."
+
+**Disposition:** Two-part rule for CS authoring:
+1. When pre-filing a CS in a close-out PR, scrutinize each exit criterion against the deliverables: do they apply, or are they aspirational?
+2. When claiming a CS, do an explicit "exit-criteria sanity check" before dispatch and reconcile or document any inconsistencies in the active CS file.
+
+Pre-flight rubber-duck reviews of CS plans (already part of the workflow) should be asked specifically whether exit criteria match deliverable scope.
+
 ## Obsolete
 
 (none yet)
