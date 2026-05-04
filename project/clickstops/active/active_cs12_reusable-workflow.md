@@ -1,9 +1,9 @@
 # CS12 — Reusable GitHub workflow + drift-detection template
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs12/content
+**Started:** 2026-05-04
 **Closed:** —
 **Filed by:** CS11b close-out (per `harness-cs-plan.md` § CS12, lines 227-236).
 **Depends on:** CS11
@@ -89,7 +89,10 @@ Plus orchestrator-owned: `tests/cs12-workflows.test.mjs`, sync apply for the ren
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| `.github/workflows/harness-checks.yml` (reusable) + `.github/workflows/harness-self-check-via-reusable.yml` (self-host) | pending | sub-agent cs12-reusable | agent-id=yoga-ah-sub-1 \| role=workflow-author \| report-status=pending \| learnings=0 |
+| `template/managed/.github/workflows/harness-drift.yml` (drift template) | pending | sub-agent cs12-drift | agent-id=yoga-ah-sub-2 \| role=workflow-author \| report-status=pending \| learnings=0 |
+| OPERATIONS.md doc paragraphs (template + root mirror) | pending | sub-agent cs12-docs | agent-id=yoga-ah-sub-3 \| role=doc-author \| report-status=pending \| learnings=0 |
+| `tests/cs12-workflows.test.mjs` + sync apply for rendered drift workflow at root + lock fixup | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Plan-vs-implementation review
 
