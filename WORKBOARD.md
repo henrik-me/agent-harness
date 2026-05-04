@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-03T23:55Z (CS10 claim)
+> **Last updated:** 2026-05-03T24:30Z (CS10 close-out)
 
 ## Orchestrators
 
@@ -10,18 +10,19 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-03T05:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-03T24:30Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS10 | Author scaffolds | claimed | yoga-ah | cs10/content | 2026-05-03 | _(none)_ |
+| — | No active CS — CS11 ready to claim | — | — | — | 2026-05-03 | _(none)_ |
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS10 | Author scaffolds (8 bundles + harness init --with-scaffold wiring) | 2026-05-03 | **Done.** Squash-merged as `bac6217`. 2 GPT-5.5 review rounds (R1=4 blockers [malformed-config partial-state, --cwd-relative paths in shipped linters, migration mismatched-stem pairing, CRLF normalization] + 2 non-blockers; R2=GO). 411 tests pass (384+27 new in `tests/cs10-scaffolds.test.mjs`). 5 LRN filed (LRN-059..063). 1 planned CS filed (CS10b: scaffold-readme linter + aggregator integration of optional linters). Claim PR #28. Content PR #29. **First 8-way parallel sub-agent dispatch on user-facing surface; zero file races, zero rogue commits, zero consumer-path collisions across 36 scaffold-shipped files. Cumulative dispatch count: 40.** `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. |
 | CS09 | Seeded skeletons (create-if-missing set) | 2026-05-03 | **Done.** Squash-merged as `ceab301`. 3 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers; R2=1 blocker [inline marker]; R3=clean). 384 tests pass (+9 new in cs09-init.test.mjs). 5 LRN filed (LRN-054..058). 2 planned CSs filed (CS09b, CS10). Claim PR #23. Content PR #24. **`harness init` now produces a fully linter-passing consumer repo from a single command. 6-way parallel dispatch: zero races, zero rogue commits. `harness lint --quiet`: 9 pass, 0 fail, 3 skipped.** |
 | CS08 | Managed/composed process docs canonicalization (10 templates) | 2026-05-03 | **Done.** Squash-merged as `676c494`. 2 GPT-5.5 review rounds (R1=3 blockers+4 non-blockers; R2=1 small NB inline-fixed, GO). 375 tests pass (docs-only CS, no new tests). 5 LRN filed (LRN-049..053). 2 planned CSs filed (CS08b, CS09). Claim PR #20. Content PR #21. **Largest fan-out by output volume yet: 8 substantive doc-authoring tasks; validates 8-way parallel scaling with disjoint file ownership. `harness lint --quiet`: 9 pass, 0 fail, 3 skipped.** |
 | CS07 | Generic policy linters (4 linters) | 2026-05-03 | **Done.** Squash-merged as `4c3c913`. 2 GPT-5.5 review rounds (R1=2 blockers+3 non-blockers all in render-deploy-summary, R2=GO). 375 tests pass (333+42 new). 5 LRN filed (LRN-044..048). 1 planned CS filed (CS08). Claim PR #17. Content PR #18. **Inline R2 fix (all 5 findings in 1 file) more efficient than sub-agent fan-out (LRN-047). `harness lint` now 13 linters.** |

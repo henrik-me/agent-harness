@@ -1,10 +1,10 @@
 # CS10 — Author scaffolds
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs10/content
+**Branch:** cs10/content (squash-merged as `bac6217`)
 **Started:** 2026-05-03
-**Closed:** —
+**Closed:** 2026-05-03
 **Filed by:** CS09 close-out (per [`harness-cs-plan.md` § CS10](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs10--author-scaffolds)).
 **Depends on:** CS09
 
