@@ -43,7 +43,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS03c (text-encoding linter) in flight on `cs03c/content`. Then CS11b → CS12 → CS13 → CS14 (per autopilot directive: stop before CS15).
+- None. CS03c complete; CS11b (small) -> CS12 -> CS13 -> CS14 are next on the mainline.
 
 ## Parallelism (single-orchestrator default)
 
