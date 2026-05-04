@@ -11,6 +11,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -161,8 +163,10 @@ describe('check-public-artifact linter', () => {
   });
 
   // 7. Empty dir → exit 0
+  // NOTE: Created at runtime because git cannot track empty directories.
   it('7. empty dir exits 0', () => {
-    const r = runLinter(['--dir', fixtureDir('empty-dir')]);
+    const emptyDir = mkdtempSync(path.join(tmpdir(), 'check-pub-empty-'));
+    const r = runLinter(['--dir', emptyDir]);
     assert.equal(
       r.status, 0,
       `Expected exit 0 for empty dir; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
