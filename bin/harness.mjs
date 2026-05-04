@@ -91,6 +91,9 @@ Options:
   --dry-run                     Alias for --mode=dry-run
   --accept-major                Allow major version bumps
   --report                      Print planned changes per file
+  --resolved-sha <40hex>        Pin the recorded lock resolved_sha to <40hex>
+                                 (apply-mode only; see CS11b/LRN-070 for the
+                                 post-commit-regenerate ordering trap this fixes).
   --cwd <path>                  Consumer repo path (default: cwd)
   --config <path>               Path to harness.config.json
   --help                        Print this help
@@ -557,6 +560,7 @@ async function cmdSync(args, global, defaultMode = 'check') {
   let mode = defaultMode;
   let acceptMajor = false;
   let report = false;
+  let resolvedShaOverride = null;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -571,6 +575,26 @@ async function cmdSync(args, global, defaultMode = 'check') {
       acceptMajor = true;
     } else if (a === '--report') {
       report = true;
+    } else if (a === '--resolved-sha') {
+      // CS11b: pin the recorded resolved_sha in the lock to a specific commit
+      // (avoids the LRN-070 post-commit-regenerate ordering trap).
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        die(`--resolved-sha requires a value\n\n${SUBCOMMAND_HELP['sync']}`, 2);
+      }
+      resolvedShaOverride = args[++i];
+      if (!/^[0-9a-f]{40}$/.test(resolvedShaOverride)) {
+        die(
+          `--resolved-sha must be a 40-character lowercase hex string; got: "${resolvedShaOverride}"\n\n${SUBCOMMAND_HELP['sync']}`,
+          2
+        );
+      }
+    } else if (a.startsWith('--resolved-sha=')) {
+      const v = a.slice('--resolved-sha='.length);
+      if (!v) die(`--resolved-sha= requires a value\n\n${SUBCOMMAND_HELP['sync']}`, 2);
+      if (!/^[0-9a-f]{40}$/.test(v)) {
+        die(`--resolved-sha must be a 40-character lowercase hex string; got: "${v}"\n\n${SUBCOMMAND_HELP['sync']}`, 2);
+      }
+      resolvedShaOverride = v;
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['sync']}`, 2);
     }
@@ -578,6 +602,11 @@ async function cmdSync(args, global, defaultMode = 'check') {
 
   if (!['apply', 'check', 'dry-run'].includes(mode)) {
     die(`Invalid --mode value: "${mode}". Must be apply, check, or dry-run.\n\n${SUBCOMMAND_HELP['sync']}`, 2);
+  }
+
+  // CS11b: --resolved-sha only meaningful in apply mode (only apply writes the lock).
+  if (resolvedShaOverride !== null && mode !== 'apply') {
+    die(`--resolved-sha is only valid with --mode=apply (got mode: "${mode}").\n\n${SUBCOMMAND_HELP['sync']}`, 2);
   }
 
   const { sync: syncFn } = await import('../lib/sync.mjs');
@@ -588,6 +617,7 @@ async function cmdSync(args, global, defaultMode = 'check') {
       harnessRepoPath: REPO_ROOT,
       mode,
       acceptMajor,
+      resolvedShaOverride,
     });
 
     if (result.warnings.length > 0) {

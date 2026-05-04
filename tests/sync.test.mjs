@@ -1797,3 +1797,84 @@ describe('sync() — Review #6 #1: __proto__ canonical-key collision detection',
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// CS11b — `--resolved-sha` override / `resolvedShaOverride` arg
+// ---------------------------------------------------------------------------
+
+describe('sync() — CS11b resolvedShaOverride', () => {
+  let harnessDir;
+  let consumerDir;
+
+  beforeEach(() => {
+    harnessDir = makeTmpDir('cs11b-harness-');
+    consumerDir = makeTmpDir('cs11b-consumer-');
+    buildHarnessRepo(harnessDir, {
+      managed: { 'INSTRUCTIONS.md': '# Instructions\n' },
+    });
+    buildConsumerRepo(consumerDir, { managed: { files: ['INSTRUCTIONS.md'] } });
+  });
+
+  afterEach(() => {
+    removeTmpDir(harnessDir);
+    removeTmpDir(consumerDir);
+  });
+
+  it('valid 40-hex override is recorded in lock', async () => {
+    const override = '0123456789abcdef0123456789abcdef01234567';
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+      resolvedShaOverride: override,
+    });
+    assert.equal(result.lockAfter.resolved_sha, override);
+    const onDisk = JSON.parse(readFileSync(path.join(consumerDir, '.harness-lock.json'), 'utf8'));
+    assert.equal(onDisk.resolved_sha, override);
+  });
+
+  it('non-hex override throws ESYNC_INVALID_RESOLVED_SHA', async () => {
+    await assert.rejects(
+      sync({
+        consumerRepoPath: consumerDir,
+        harnessRepoPath: harnessDir,
+        mode: 'apply',
+        resolvedShaOverride: 'not-a-sha',
+      }),
+      (err) => err instanceof SyncError && err.code === 'ESYNC_INVALID_RESOLVED_SHA'
+    );
+  });
+
+  it('uppercase hex rejected (must be lowercase per schema)', async () => {
+    await assert.rejects(
+      sync({
+        consumerRepoPath: consumerDir,
+        harnessRepoPath: harnessDir,
+        mode: 'apply',
+        resolvedShaOverride: 'ABCDEF0123456789ABCDEF0123456789ABCDEF01',
+      }),
+      (err) => err instanceof SyncError && err.code === 'ESYNC_INVALID_RESOLVED_SHA'
+    );
+  });
+
+  it('absent override preserves current behavior', async () => {
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'apply',
+    });
+    assert.match(result.lockAfter.resolved_sha, /^[0-9a-f]{40}$/);
+  });
+
+  it('override with non-string value rejected', async () => {
+    await assert.rejects(
+      sync({
+        consumerRepoPath: consumerDir,
+        harnessRepoPath: harnessDir,
+        mode: 'apply',
+        resolvedShaOverride: 12345,
+      }),
+      (err) => err instanceof SyncError && err.code === 'ESYNC_INVALID_RESOLVED_SHA'
+    );
+  });
+});
