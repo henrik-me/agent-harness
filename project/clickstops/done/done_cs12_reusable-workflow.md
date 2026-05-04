@@ -1,10 +1,10 @@
 # CS12 — Reusable GitHub workflow + drift-detection template
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs12/content
+**Branch:** cs12/content (squash-merged as `09365a8`)
 **Started:** 2026-05-04
-**Closed:** —
+**Closed:** 2026-05-04
 **Filed by:** CS11b close-out (per `harness-cs-plan.md` § CS12, lines 227-236).
 **Depends on:** CS11
 
