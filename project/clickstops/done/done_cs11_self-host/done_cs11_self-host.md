@@ -1,10 +1,10 @@
 # CS11 — Self-host swap (harness governs itself) + canonical sub-agent briefing preamble
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs11/content
+**Branch:** cs11/content (squash-merged as `68c2ce4`)
 **Started:** 2026-05-04
-**Closed:** —
+**Closed:** 2026-05-04
 **Filed by:** CS10 close-out (per [`harness-cs-plan.md` § CS11](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs11--dogfood-harness-governs-itself)). Preamble work folded in per [LRN-068](../../../LEARNINGS.md#lrn-068).
 **Depends on:** CS03b (templating + lock + plan-vs-impl review gate).
 **Risk class:** **HIGH-RISK** (single coordinated swap; cs-plan + OPERATIONS § Review).
