@@ -1300,6 +1300,106 @@ claim_area: cs-planning
 
 Pre-flight rubber-duck reviews of CS plans (already part of the workflow) should be asked specifically whether exit criteria match deliverable scope.
 
+### LRN-064
+
+```yaml
+id: LRN-064
+date: 2026-05-04
+category: process
+source_cs: CS03b
+status: applied
+tags: [close-out, gate, plan-vs-implementation, review, gpt-5.5, recursive-validation, mechanical-enforcement]
+claim_area: orchestrator-loop
+```
+
+**Problem:** Through CS01–CS10 the close-out review process consisted of a GPT-5.5 review of the *content PR diff* — comprehensive on code correctness but blind to "did we actually build what the plan said we'd build?" Multiple CSs (e.g. CS10) closed with a "Notable scope adjustment" buried in the PR body; CS09 close-out filed planned CSs whose exit criteria didn't match the planned deliverables (later flagged at CS10 R1 as LRN-063). The pattern: silent plan/implementation drift accumulates without a gating step that explicitly compares the active CS file against the merged work.
+
+**Finding:** Add a **plan-vs-implementation review gate** as the mandatory last step before close-out, distinct from the content-PR code review. The gate uses GPT-5.5 (rubber-duck) to (a) compare each plan deliverable against what landed on disk, marking each as `match | diverged | added | dropped` with rationale, (b) assess test coverage as `sufficient | gaps with specific gap list`, and (c) issue an overall `GO | NEEDS-FIX` outcome. The verdict is captured verbatim in the active CS file's `## Plan-vs-implementation review` H2 section BEFORE the active→done rename. NEEDS-FIX blocks close-out — fix on the content branch and re-run. Mechanical enforcement: `check-clickstop.mjs` requires the H2 in every `active/` and `done/` CS file; `done/` files must additionally contain `**Reviewer:**`, `**Date:**`, `**Outcome:**` markers OR a literal grandfathering line for files closed before the gate existed.
+
+**Evidence:** CS03b PR #32 introduced the gate (process docs in root + template OPERATIONS.md/INSTRUCTIONS.md/copilot-instructions.md; linter check #4 in `scripts/check-clickstop.mjs`; 6 new fixtures + 6 new tests; 10 done CSs grandfathered + 9 planned CSs placeholder-stamped) and exercised it on itself: R1 caught 2 blockers (missing unicode test, ENOLOCK enum mismatch) + 1 NB (strict-default doc); R2 caught 1 blocker (unicode test only covered values, not keys) + 1 NB (Tasks ledger row stale); R3 GO. Three iterations of the gate on the CS that introduces it — this would not have surfaced without the explicit plan/built comparison.
+
+**Disposition:** Permanent. Every CS from this point forward must run the gate at close-out. The recursive self-application pattern (a process-change CS exercising its new gate on itself) is a strong validation idiom — apply when introducing future close-out gates. Long-term: the gate may be auto-runnable via `harness close-out --gate`; until then it's an orchestrator-driven step.
+
+### LRN-065
+
+```yaml
+id: LRN-065
+date: 2026-05-04
+category: tooling
+source_cs: CS03b
+status: applied
+tags: [sub-agents, windows, bom, file-creation, post-completion-verification]
+claim_area: sub-agent-coordination
+```
+
+**Problem:** The CS03b cs03b-gate sub-agent (Sonnet 4.6) wrote 19 retrofitted `.md` files on Windows, every single one with a UTF-8 BOM. The sub-agent's self-checks did not catch this; the orchestrator's content-PR review caught it as a blocker. The same pattern was previously surfaced as LRN-018 ("file creates may carry BOM") and LRN-006 ("create tool writes CRLF on Windows"), but those LRNs frame BOM as a *create-tool* issue. Sub-agents using `edit` to APPEND content can also reintroduce BOM if the file is rewritten end-to-end.
+
+**Finding:** BOM creep is not limited to fresh `create` calls — any sub-agent operation that rewrites an entire file on Windows (via `edit` collapsing to a full overwrite, PowerShell `Out-File` without `-Encoding utf8NoBOM`, or Node `fs.writeFileSync` with a string that picked up a BOM from earlier reads) can reintroduce the BOM. Mitigation: orchestrator's post-sub-agent verification must explicitly check for BOM on every modified file (`Get-Content -Encoding Byte ... -TotalCount 3` or equivalent), and strip silently before commit. Long-term: a `check-no-bom.mjs` linter in the aggregator would catch this mechanically.
+
+**Evidence:** CS03b PR #32 R1 review found BOM in all 19 retrofitted CS files (`project/clickstops/{done,planned}/*.md`); none of the cs03b-gate sub-agent's self-checks listed BOM verification, even though the briefing said "LF line endings, no BOM. Verify after writes on Windows." The orchestrator added a one-shot strip pass and a manual byte-check after; same pattern can be encoded as a linter for permanent mechanical coverage.
+
+**Disposition:** (a) Update sub-agent briefing template (in OPERATIONS.md § Sub-agent dispatch § Briefing template) to require an explicit BOM check in every self-check block: `Get-ChildItem -Recurse <owned-paths> | %{ first 3 bytes != EF BB BF }` or Node equivalent. (b) File a planned CS (see CS-bom-linter follow-up) for `scripts/check-no-bom.mjs` as part of the harness lint aggregator — would have caught this in the sub-agent's own self-checks AND in the content PR's CI. (c) For the immediate term: orchestrators MUST run `Get-ChildItem -Recurse <changed-files> | <bom check>` in their post-sub-agent verification.
+
+### LRN-066
+
+```yaml
+id: LRN-066
+date: 2026-05-04
+category: tooling
+source_cs: CS03b
+status: applied
+tags: [linters, regex, anchoring, includes-vs-regex, false-positive, markdown-h2]
+claim_area: linter-design
+```
+
+**Problem:** The first iteration of `scripts/check-clickstop.mjs` check #4 (CS03b plan-vs-implementation review gate H2 detection) used `content.includes('## Plan-vs-implementation review')`. This passes if the literal string appears anywhere — including inside a fenced code block, prose backticks, or even a comment. R1 review (PR #32) reproduced the bypass: a done CS file with only a prose mention of the section header passed the linter without having an actual H2. The check was unsound.
+
+**Finding:** Pattern-matching linters that enforce structural Markdown invariants (H1/H2 sections, callouts, etc.) MUST use anchored, line-mode regex — `/^## <title>\s*$/m` — not raw `includes()` or `indexOf()`. The fix: `const GATE_H2_RE = /^## Plan-vs-implementation review\s*$/m; const headingMatch = content.match(GATE_H2_RE);` then use `headingMatch.index + headingMatch[0].length` for body extraction. Cost: one extra line. Benefit: prose mention can no longer satisfy the rule. Reviewer noted a residual edge case (fenced-code line containing the exact heading still satisfies the regex) — fully fence-aware parsing requires `lib/doc-schema.mjs` primitives (CS06b territory) and is a non-blocker for v0.1.x.
+
+**Evidence:** CS03b PR #32 R1 review reproduced the bypass: a done CS file with only `` `## Plan-vs-implementation review` `` in prose plus Reviewer/Date/Outcome lines passed `check-clickstop` cleanly. After the fix in commit `d6aea0c`, the same construct fails as expected.
+
+**Disposition:** Convention to apply to every future Markdown structural linter: use anchored multiline regex (`^...$/m`) for heading detection. Document in `template/composed/CONVENTIONS.md` § Linter conventions (or carry into `lib/doc-schema.mjs` primitives at CS06b). For full fence-awareness, CS06b (planned) should provide a parsed-Markdown helper that all linters share — until then, anchored regex is the floor.
+
+### LRN-067
+
+```yaml
+id: LRN-067
+date: 2026-05-04
+category: tooling
+source_cs: CS03b
+status: applied
+tags: [linters, regex, naming-convention, cs-id, precision-vs-permissiveness]
+claim_area: linter-design
+```
+
+**Problem:** `scripts/check-workboard.mjs` initially required CS-Task IDs to match `^CS\d+$`. CS03b's claim PR introduced a hyphenated ID (`CS03b`) which the linter rejected. The orchestrator widened the regex to `^CS\d+[a-z]?$` — but this accepted ANY digit count, including malformed single-digit IDs like `CS3b` or `CS3`. R1 review caught the over-permissive widening.
+
+**Finding:** When loosening a linter to accommodate a new convention, encode the convention's PRECISE shape, not the minimal substring that lets the new case pass. The repo convention is two-digit zero-padded sequence numbers (`CS01`, `CS02`, ..., `CS22`) with optional lowercase suffix letter (`CS03b`, `CS04a`). The correct regex is `^CS\d{2,}[a-z]?$` (≥2 digits to reject `CS3`/`CS3b`, allow ≥3 for forward-compatibility with CS100+). One-character permissiveness slip (`+` vs `{2,}`) silently weakens the integrity check.
+
+**Evidence:** PR #32 R1 found `CS3b` would have passed the widened regex; tightened to `^CS\d{2,}[a-z]?$` in `scripts/check-workboard.mjs:221` per commit `d6aea0c`. No production drift occurred (no CS3b ever existed) but the gap was real.
+
+**Disposition:** When widening a regex during a CS, write down the exact set of values the convention SHOULD admit (positive examples) AND the values it should REJECT (negative examples), and write the regex from those. Add both positive and negative test fixtures in the same change. This is the "specification via examples" pattern — a small upfront cost that prevents over-permissive permissive widening.
+
+### LRN-068
+
+```yaml
+id: LRN-068
+date: 2026-05-04
+category: process
+source_cs: CS03b
+status: applied
+tags: [orchestrator, mid-cs-edits, branch-transitions, working-tree-loss, post-edit-verification]
+claim_area: orchestrator-loop
+```
+
+**Problem:** During CS03b setup, the orchestrator applied 5 `edit` calls to `active_cs03b_*.md` to extend the CS scope (adding the plan-vs-implementation gate work). Each edit returned "File updated with changes." Several minutes later, when the gate sub-agent ran the linter against the project, the active CS file showed the ORIGINAL (un-extended) content — the orchestrator's edits had been silently lost. Root cause was not definitively identified but most likely candidates: (a) one of the parallel sub-agent shells ran a git operation that affected the working tree, (b) a stale file handle from before the edits got rewritten on a later flush, or (c) the edit tool reported success without actually persisting on a particular branch state. The orchestrator detected the loss only because the gate sub-agent surfaced it as an escalation.
+
+**Finding:** Orchestrator file edits to "long-lived" files (active CS files, WORKBOARD, CONTEXT) interleaved with parallel sub-agent dispatch carry a non-zero loss risk. The mitigation that worked: re-read the file via `view` or `grep` immediately after each batch of edits AND immediately before any subsequent operation on that file. For critical orchestrator-owned files (active CS), spot-check the on-disk content at every milestone (post-dispatch, post-sub-agent-completion, pre-PR-open). If lost, re-apply — losses are usually clean (file reverts to last committed state, no mid-state corruption).
+
+**Evidence:** CS03b session log shows 5 successful `edit` returns followed by `task` dispatches; on later inspection (post-sub-agent completion) the file matched the post-claim merge state, not the post-edit state. Re-applying the edits restored the intended content. The lost edits did not affect sub-agents' work because they were instructed not to touch the active CS file.
+
+**Disposition:** Operational mitigation: orchestrators should verify on-disk content of long-lived owned files at each session milestone, not assume edit-tool success implies durable persistence under concurrent shell activity. Long-term mitigation: when feasible, commit orchestrator-owned long-lived file edits BEFORE dispatching parallel sub-agents, so the canonical state lives in git, not working tree. This may add a no-content commit-ahead but trades that overhead for robustness.
+
 ## Obsolete
 
 (none yet)

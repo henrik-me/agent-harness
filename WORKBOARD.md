@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T03:00Z (CS03b claim)
+> **Last updated:** 2026-05-04T05:00Z (CS03b close-out)
 
 ## Orchestrators
 
@@ -10,13 +10,19 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-04T00:30Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-04T05:00Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS03b | Upgrade `lib/templating.mjs` + `lib/lock.mjs` from stubs to rich APIs | claimed | yoga-ah | cs03b/content | 2026-05-04 | _(none)_ |
+| — | No active CS — CS11 ready to claim (planned file pending) | — | — | — | 2026-05-04 | _(none)_ |
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS03b | Templating + lock rich APIs + plan-vs-implementation review gate | 2026-05-04 | **Done.** Squash-merged as `846f3be`. Long-overdue (deferred since CS03 close-out) + introduces the mandatory plan-vs-implementation review gate as the last step before any CS close-out. R1 content review (3 blockers + 1 NB) → R2 GO. CS03b exercised its own new gate: R1 NEEDS-FIX → R2 NEEDS-FIX → R3 GO. 432 tests pass (411+21). 5 LRN filed (LRN-064..068). 1 planned CS filed (CS03c: `check-no-bom.mjs`). Claim PR #31. Content PR #32. **Every future CS now closes under the new gate, mechanically enforced via `check-clickstop.mjs` check #4. Engine surface hardened for CS11.** |
 
 ## Recently Completed
 

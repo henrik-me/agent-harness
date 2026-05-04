@@ -1,10 +1,10 @@
 # CS03b — Upgrade `lib/templating.mjs` and `lib/lock.mjs` from stubs to rich APIs + add plan-vs-implementation review gate
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs03b/content
+**Branch:** cs03b/content (squash-merged as `846f3be`)
 **Started:** 2026-05-04
-**Closed:** —
+**Closed:** 2026-05-04
 **Filed by:** CS03 close-out per [LRN-016](../../../LEARNINGS.md#lrn-016) (parallel sub-agent file race lost the rich APIs that `cs03-templating` and `cs03-lock` had authored).
 **Depends on:** CS03
 

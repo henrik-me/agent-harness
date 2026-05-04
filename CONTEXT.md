@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-03 (CS10 close-out)
+> **Last updated:** 2026-05-04 (CS03b close-out)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -29,7 +29,9 @@
 
 - **CS10 complete** (closed 2026-05-03). Delivered: 8 scaffold bundles (`scaffolds/{smoke,migrations,container-validate,health-check,seed,verify-deploy,feature-flags,cs-probes}/`), each with a harness-side `README.md` pattern doc + `files/` subtree copied verbatim into the consumer; 2 shipped consumer-side linters (`check-migration-policy.mjs`, `check-feature-flag-policy.mjs`); `bin/harness.mjs cmdInit` extended with `--with-scaffold <name>` (repeatable) including pre-validation, malformed-config gate, idempotent skip-if-exists, and `harness.config.json` `scaffolds[]` opt-in recording; `tests/cs10-scaffolds.test.mjs` (27 new tests). **411 tests pass total** (384+27 new). 2 GPT-5.5 review rounds (R1=4 blockers + 2 non-blockers; R2=GO). 5 additional learnings filed (LRN-059 through LRN-063): 8-way parallel dispatch validated (cumulative 40), pre-validation before any writes, shipped-linter --cwd-relative paths, pair-on-full-stem (not numeric prefix), exit-criteria scope drift. 1 planned CS filed (CS10b: scaffold-readme linter + aggregator integration of optional linters). `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #29 as `bac6217`. **First true 8-way parallel sub-agent dispatch on user-facing surface; zero file races, zero rogue commits, zero consumer-path collisions across 36 scaffold-shipped files.**
 
-**CS10 is complete. CS03b (templating + lock rich APIs) is in flight on `cs03b/content` (yoga-ah) — the long-overdue recovery of the CS03 file-race-lost APIs, scheduled before CS11 self-host so the engine surface is stable.**
+- **CS03b complete** (closed 2026-05-04). HIGH-LEVERAGE process CS. Delivered: (a) `lib/templating.mjs` rich API rewrite (TemplatingError class, opts.strict, opts.placeholderPattern with capture-group guard, whitespace tolerance, escape syntax, single-pass guarantee; default `opts.strict=false` for v0.1.x backcompat); (b) `lib/lock.mjs` `newEmptyLock` factory with schema-validated skeleton; (c) `lib/sync.mjs` wired to use `newEmptyLock`; (d) **plan-vs-implementation review gate** as the mandatory last step before close-out — process docs amended in root + template (OPERATIONS.md, INSTRUCTIONS.md, .github/copilot-instructions.md), `check-clickstop.mjs` extended with anchored-regex section detection + done-body validation, 6 new fixtures + 6 new linter tests, 10 done CSs grandfathered + 9 planned CSs placeholder-stamped. CS03b is the first CS to exercise the gate on itself (R1 NEEDS-FIX, R2 NEEDS-FIX, R3 GO). Inline orchestrator fix: `check-workboard.mjs` regex tightened to `^CS\d{2,}[a-z]?$`. **432 tests pass total** (411+21 new). Content-PR review iterations: R1 (3 blockers + 1 NB) → R2 GO. 5 additional LRNs filed (LRN-064 through LRN-068): plan-vs-implementation gate, BOM creep in sub-agent file writes, anchored regex over `includes()` for Markdown structural linters, precision-vs-permissiveness in regex widening, orchestrator-owned long-lived file edits across branch transitions. 1 planned CS filed (CS03c: `check-no-bom.mjs` linter). 3-way parallel sub-agent dispatch (cumulative 43); zero rogue commits. `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #32 as `846f3be`. **Every future CS now closes under the new plan-vs-implementation review gate, mechanically enforced.**
+
+**CS03b is complete. CS11 (dogfood: harness governs itself) is now ready to claim — engine surface is hardened and the close-out gate is in place. Next priority is to draft a corrected planned CS11 file (the prior draft was discarded after a flawed audit).**
 
 ## Architecture pointer
 
@@ -37,7 +39,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS03b (templating + lock rich APIs) is in flight on `cs03b/content`; CS11 (self-host) blocked on CS03b.
+- None. CS03b is complete; CS11 is ready to claim (planned file needs to be drafted with the corrected audit).
 
 ## Parallelism (single-orchestrator default)
 
