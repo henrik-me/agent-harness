@@ -1,9 +1,9 @@
 # CS11 — Self-host swap (harness governs itself) + canonical sub-agent briefing preamble
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs11/content
+**Started:** 2026-05-04
 **Closed:** —
 **Filed by:** CS10 close-out (per [`harness-cs-plan.md` § CS11](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#cs11--dogfood-harness-governs-itself)). Preamble work folded in per [LRN-068](../../../LEARNINGS.md#lrn-068).
 **Depends on:** CS03b (templating + lock + plan-vs-impl review gate).
@@ -210,7 +210,16 @@ Total: 3 sub-agents + heavy orchestrator. **All sub-agent dispatches use the new
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Stage 0: canonical sub-agent briefing preamble (template + root OPERATIONS.md, INSTRUCTIONS.md, .github/copilot-instructions.md) | pending | sub-agent cs11-preamble | agent-id=yoga-ah-sub-1 \| role=process-doc-author \| report-status=pending \| learnings=0 |
+| Stage A.1+A.6: harness.config.json + cs11-self-host-config.test.mjs | pending | sub-agent cs11-config | agent-id=yoga-ah-sub-2 \| role=config-author \| report-status=pending \| learnings=0 |
+| Stage A.2: bootstrap snapshot copies | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage A.3: sync-probe-report.md + render-preview.mjs/.md + placeholder-audit.mjs/.md | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage A.4+A.5: harness-self-check.yml skeleton + reviewer-checklist.md | pending | sub-agent cs11-ci | agent-id=yoga-ah-sub-3 \| role=ci-workflow-author \| report-status=pending \| learnings=0 |
+| Stage B.1+B.2: render+write all 10 root files; byte-match verification | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage B.3: untouched-file verification | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage B.4: activate full CI gate | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage B.5: idempotency + lint gate (sync --check; harness lint) | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage B.6: plan-vs-implementation review (CS03b gate) | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Plan-vs-implementation review
 

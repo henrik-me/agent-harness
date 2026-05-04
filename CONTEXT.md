@@ -39,7 +39,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS03b is complete; CS11 is ready to claim (planned file needs to be drafted with the corrected audit).
+- None. CS11 (self-host) is in flight on `cs11/content`.
 
 ## Parallelism (single-orchestrator default)
 

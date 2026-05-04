@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T05:00Z (CS03b close-out)
+> **Last updated:** 2026-05-04T05:30Z (CS11 claim)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — CS11 ready to claim (planned file pending) | — | — | — | 2026-05-04 | _(none)_ |
+| CS11 | Self-host swap + canonical sub-agent briefing preamble | claimed | yoga-ah | cs11/content | 2026-05-04 | _(none)_ |
 
 ## Recently Completed
 
