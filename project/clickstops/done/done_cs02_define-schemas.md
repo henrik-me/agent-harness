@@ -1,4 +1,4 @@
-# CS02 — Define schemas (config + lock + learning) + parameterization model + file classes
+﻿# CS02 — Define schemas (config + lock + learning) + parameterization model + file classes
 
 **Status:** done
 **Owner:** yoga-ah
@@ -76,3 +76,7 @@ CS02 delivered the foundational schema contracts (`harness.config`, `harness-loc
 - 2-wave dispatch (Wave 1 schemas+ADRs, Wave 2 examples+CI) was the right granularity. Examples couldn't validate until schemas existed; schemas could be designed independently.
 - 3 GPT-5.5 review iterations is high for a content PR — most fixes were ADR↔schema↔cs-plan contract drifts that better cross-checking would have caught. LRN-007 captures this for future briefings.
 - Sub-agent reports were uniformly well-structured (all 9 followed the OPERATIONS report shape). The structured ledger format (`agent-id|role|report-status|learnings`) made consolidation straightforward.
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

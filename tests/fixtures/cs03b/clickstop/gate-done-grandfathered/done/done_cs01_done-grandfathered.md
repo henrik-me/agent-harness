@@ -1,4 +1,4 @@
-# CS01 — Valid done clickstop (fixture)
+# CS01 — Done grandfathered (fixture)
 
 **Status:** done
 **Owner:** fixture-owner
@@ -9,7 +9,7 @@
 
 ## Goal
 
-Fixture file for check-clickstop.mjs tests — valid done clickstop.
+Fixture: done clickstop with grandfathering line. Linter should pass.
 
 ## Plan-vs-implementation review
 

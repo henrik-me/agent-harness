@@ -1,4 +1,4 @@
-# CS04c — `harness pack` whitelist verification
+﻿# CS04c — `harness pack` whitelist verification
 
 **Status:** planned
 **Owner:** —
@@ -49,3 +49,7 @@ Single sub-agent (owns `bin/harness.mjs` pack subcommand + `tests/cli.test.mjs` 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

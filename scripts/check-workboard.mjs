@@ -217,10 +217,10 @@ for (const row of activeRows) {
       );
     }
   } else {
-    // Non-placeholder must match CS\d+
-    if (!/^CS\d+$/.test(csId)) {
+    // Non-placeholder must match CSnnn or CSnnn[a-z] (e.g. CS01, CS03b)
+    if (!/^CS\d+[a-z]?$/.test(csId)) {
       logError(
-        `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d+ format`
+        `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d+(a-z)? format`
       );
     }
   }

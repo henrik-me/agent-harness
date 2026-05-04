@@ -1,4 +1,4 @@
-# CS07 — Generic policy linters
+﻿# CS07 — Generic policy linters
 
 **Status:** done
 **Owner:** yoga-ah
@@ -115,3 +115,6 @@ Each script lives under `scripts/`, uses `lib/doc-schema.mjs` where applicable, 
 - `bin/harness.mjs` `cmdLint` extended to 13-linter aggregator.
 - `harness lint --quiet`: 9 pass, 0 fail, 3 skipped (pr-body, compose-v2, public-artifact).
 
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

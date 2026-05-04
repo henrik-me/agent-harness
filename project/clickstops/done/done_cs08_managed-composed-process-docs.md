@@ -1,4 +1,4 @@
-# CS08 — Managed/composed process docs canonicalization
+﻿# CS08 — Managed/composed process docs canonicalization
 
 **Status:** done
 **Owner:** yoga-ah
@@ -127,3 +127,7 @@ CS01 hand-authored proto process docs (INSTRUCTIONS, CONVENTIONS, OPERATIONS, RE
 - `harness lint --quiet`: 9 pass, 0 fail, 3 skipped (pr-body, compose-v2, public-artifact).
 - 5 LRN entries filed (LRN-049..053).
 - 2 planned CSs filed (CS08b: template linter; CS09: seeded skeletons).
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

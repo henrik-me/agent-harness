@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { readLock, writeLock, validateLockObject, LockError } from '../lib/lock.mjs';
+import { readLock, writeLock, validateLockObject, newEmptyLock, LockError } from '../lib/lock.mjs';
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'agent-harness-test-'));
@@ -205,5 +205,70 @@ describe('validateLockObject', () => {
     assert.doesNotThrow(() => validateLockObject(null));
     assert.doesNotThrow(() => validateLockObject({}));
     assert.doesNotThrow(() => validateLockObject('string'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests for newEmptyLock (factory function for initial lock skeleton)
+// ---------------------------------------------------------------------------
+
+test('newEmptyLock with valid args returns a schema-valid lock', () => {
+  const result = newEmptyLock({
+    harnessRef: 'v0.1.0',
+    resolvedSha: 'a'.repeat(40),
+    configSchemaVersion: 'v0.1.0',
+  });
+
+  assert.equal(result.harness_ref, 'v0.1.0');
+  assert.equal(result.resolved_sha, 'a'.repeat(40));
+  assert.equal(result.config_schema_version, 'v0.1.0');
+  assert.ok(typeof result.synced_at === 'string');
+  assert.deepEqual(result.files, []);
+  assert.deepEqual(result.scaffolds, []);
+  assert.deepEqual(result.excluded, []);
+
+  // Verify it passes validation.
+  const valid = validateLockObject(result);
+  assert.equal(valid.valid, true);
+});
+
+test('newEmptyLock auto-fills syncedAt with current ISO timestamp when omitted', () => {
+  const before = new Date();
+  const result = newEmptyLock({
+    harnessRef: 'v0.1.0',
+    resolvedSha: 'b'.repeat(40),
+    configSchemaVersion: 'v0.1.0',
+  });
+  const after = new Date();
+
+  assert.ok(result.synced_at);
+  const syncedDate = new Date(result.synced_at);
+  assert.ok(syncedDate >= before && syncedDate <= after, 'synced_at should be within test window');
+});
+
+test('newEmptyLock with invalid resolved_sha throws LockError ESCHEMA', () => {
+  assert.throws(
+    () => newEmptyLock({
+      harnessRef: 'v0.1.0',
+      resolvedSha: 'not-hex',
+      configSchemaVersion: 'v0.1.0',
+    }),
+    { name: 'LockError', code: 'ESCHEMA' }
+  );
+});
+
+test('newEmptyLock result writeLock-roundtrips cleanly', async () => {
+  await withTempDir(async (dir) => {
+    const original = newEmptyLock({
+      harnessRef: 'refs/tags/v1.0.0',
+      resolvedSha: 'c'.repeat(40),
+      configSchemaVersion: 'v0.1.0',
+      syncedAt: '2026-05-03T12:00:00Z',
+    });
+
+    await writeLock(dir, original);
+    const roundtripped = await readLock(dir);
+
+    assert.deepEqual(roundtripped, original);
   });
 });

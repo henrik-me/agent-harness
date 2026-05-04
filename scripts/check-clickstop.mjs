@@ -164,6 +164,40 @@ function checkFile(filePath, subdir) {
     }
   }
   // Note: missing Status is already caught by the required-fields check above.
+
+  // 4. Plan-vs-implementation review gate (CS03b)
+  // active/ and done/ must have the H2; done/ must have content or grandfathering.
+  if (subdir === 'active' || subdir === 'done') {
+    const gateH2 = '## Plan-vs-implementation review';
+    if (!content.includes(gateH2)) {
+      logError(
+        `${subdir}/${basename}: missing required H2 section ` +
+        `"## Plan-vs-implementation review" (CS03b gate)`
+      );
+    } else if (subdir === 'done') {
+      // Extract body: text after the H2 until the next H1/H2 or EOF
+      const h2Index = content.indexOf(gateH2);
+      const afterH2 = content.slice(h2Index + gateH2.length);
+      const nextHeadingMatch = afterH2.match(/\n#{1,2} /);
+      const body = nextHeadingMatch
+        ? afterH2.slice(0, nextHeadingMatch.index)
+        : afterH2;
+
+      const GRANDFATHERING = '> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).';
+      const hasGrandfathering = body.includes(GRANDFATHERING);
+      const hasReviewer = /^\*\*Reviewer:\*\*/m.test(body);
+      const hasDate = /^\*\*Date:\*\*/m.test(body);
+      const hasOutcome = /^\*\*Outcome:\*\*/m.test(body);
+      const hasAllFields = hasReviewer && hasDate && hasOutcome;
+
+      if (!hasGrandfathering && !hasAllFields) {
+        logError(
+          `${subdir}/${basename}: "## Plan-vs-implementation review" section ` +
+          `must contain Reviewer/Date/Outcome fields OR the grandfathering line`
+        );
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

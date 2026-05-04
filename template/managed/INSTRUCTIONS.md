@@ -40,6 +40,10 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 
 ### Closing a CS
 
+- **Run the plan-vs-implementation review gate (GPT-5.5)** — see
+  [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
+  Capture the review in the active CS file's `## Plan-vs-implementation review`
+  section before the `active → done` rename. NEEDS-FIX outcome blocks close-out.
 - Rename `active_cs<NN>_*.md` → `done_cs<NN>_*.md` and move it to
   `project/clickstops/done/`. Use the directory form if the CS carries artifacts.
 - Remove the row from `WORKBOARD.md`.
@@ -149,11 +153,16 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 10. **Resolve all threads**, then **squash-merge**. Never merge with unresolved
     suggestions or blocking review threads.
 
-11. **Post-merge closeout.** Rename `active_cs<NN>_*.md` → `done_cs<NN>_*.md`. Update
+11. **Plan-vs-implementation review gate (GPT-5.5).** Run before the close-out PR.
+    See [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
+    Record the review in the active CS file's `## Plan-vs-implementation review`
+    section. NEEDS-FIX outcome blocks close-out.
+
+12. **Post-merge closeout.** Rename `active_cs<NN>_*.md` → `done_cs<NN>_*.md`. Update
     `WORKBOARD.md` (remove row or mark done). Update `CONTEXT.md` if the codebase
     state changed. File new learnings in `LEARNINGS.md`.
 
-12. **Harvest** if the cadence triggers — see [Harvest Cadence](#harvest-cadence).
+13. **Harvest** if the cadence triggers — see [Harvest Cadence](#harvest-cadence).
 
 ### Harvest Cadence
 

@@ -1,4 +1,4 @@
-# CS04d — Global `--ref` flag wiring
+﻿# CS04d — Global `--ref` flag wiring
 
 **Status:** planned
 **Owner:** —
@@ -51,3 +51,7 @@ Recommend Option B for the near term (cleaner semantics deferred to a CS where t
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

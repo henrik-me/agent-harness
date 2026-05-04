@@ -1,4 +1,4 @@
-# CS05 — Doc-schema lib + first reference linter (`check-learnings.mjs`)
+﻿# CS05 — Doc-schema lib + first reference linter (`check-learnings.mjs`)
 
 **Status:** done
 **Owner:** yoga-ah
@@ -129,3 +129,6 @@ Validates every entry in `LEARNINGS.md`. Per the cs-plan canonical deliverables:
 - 1 planned CS filed (CS06).
 - Claim PR: #11 (`b65e045`). Content PR: #12 (squash-merged as `adc2777`).
 
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

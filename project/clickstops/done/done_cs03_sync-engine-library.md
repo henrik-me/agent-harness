@@ -1,4 +1,4 @@
-# CS03 — Sync engine library (`lib/sync.mjs`)
+﻿# CS03 — Sync engine library (`lib/sync.mjs`)
 
 **Status:** done
 **Owner:** yoga-ah
@@ -110,3 +110,7 @@ See [`done_cs01_bootstrap-repo/harness-cs-plan.md` § CS03](../done/done_cs01_bo
 - `lib/templating.mjs`: 1.3KB stub (lenient {{key}} substitution); rich API recovery in CS03b.
 - 94 fixture files + 8 test files (including added orchestrator tests).
 - 10 new LRN entries (LRN-016 through LRN-025); 1 planned CS filed (CS03b).
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).

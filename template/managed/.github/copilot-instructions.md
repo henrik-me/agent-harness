@@ -73,9 +73,13 @@ Each clickstop (CS) follows this lifecycle. See `OPERATIONS.md` and
    model + timestamp in the PR body.
 7. **Open PR** — use `pull_request_template.md`; CI must pass.
 8. **Review + merge** — threads resolved; squash-merge.
-9. **Close-out** — rename `active_csNN_*.md` → `done_csNN_*.md`; update
+9. **Plan-vs-implementation review gate (GPT-5.5)** — run before the
+   close-out PR. See `OPERATIONS.md § Plan-vs-implementation review (close-out gate)`.
+   Record the review in the active CS file's `## Plan-vs-implementation review`
+   section. NEEDS-FIX outcome blocks close-out.
+10. **Close-out** — rename `active_csNN_*.md` → `done_csNN_*.md`; update
    `WORKBOARD.md` + `CONTEXT.md`; file learnings in `LEARNINGS.md`.
-10. **Harvest** — if weekly cadence or pre-claim cadence triggers.
+11. **Harvest** — if weekly cadence or pre-claim cadence triggers.
 
 ---
 

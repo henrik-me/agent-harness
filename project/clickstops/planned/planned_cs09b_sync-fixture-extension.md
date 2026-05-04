@@ -1,4 +1,4 @@
-# CS09b — Sync fixture extension (`harness sync --mode=check` in init test)
+﻿# CS09b — Sync fixture extension (`harness sync --mode=check` in init test)
 
 **Status:** planned
 **Owner:** —
@@ -50,3 +50,7 @@ The unit tests all passed; the integration bug required both (a) the seeded conf
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

@@ -1,4 +1,4 @@
-# CS22b — Multi-orchestrator coordination
+﻿# CS22b — Multi-orchestrator coordination
 
 **Status:** planned
 **Owner:** —
@@ -89,3 +89,7 @@ Briefings MUST include all standard guards (no-commit preflight per [LRN-021](..
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_

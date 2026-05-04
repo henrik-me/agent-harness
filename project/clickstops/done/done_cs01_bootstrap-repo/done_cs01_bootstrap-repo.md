@@ -1,4 +1,4 @@
-# CS01 — Bootstrap repo + skeleton + proto process docs
+﻿# CS01 — Bootstrap repo + skeleton + proto process docs
 
 **Status:** done
 **Owner:** yoga-ah
@@ -74,3 +74,7 @@ This CS is partially executed via direct-commit-to-main (the bootstrap commit on
 The two pre-CS01 planning artifacts are kept in this folder rather than promoted to root because they are historical/contextual, not active process docs. They move with this CS file to `done/` at close-out, using the directory form documented in [TRACKING.md § Clickstop lifecycle](../../../../TRACKING.md#clickstop-lifecycle).
 
 Five learnings captured during CS01 (LRN-001 through LRN-005); all `applied`. Two downstream planned CSs filed (CS04a from LRN-002; CS02 itself for the next claim). The CS01 close-out commit lands these in the same PR.
+
+## Plan-vs-implementation review
+
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).
