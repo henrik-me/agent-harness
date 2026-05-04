@@ -1544,6 +1544,65 @@ claim_area: workflow-design
 
 **Disposition:** Convention to apply to every future GitHub Actions workflow in this repo and in template/managed/.github/workflows/: any GitHub expression consumed by `run:` MUST go through `env:`, NEVER directly interpolated; any externally-influenced value going to shell MUST be validated against an allowlist regex. Document as a CONVENTIONS.md entry (or extend `check-workflow-pins.mjs` to mechanically detect direct-expression-in-run patterns at lint time — file as a follow-up CS if/when needed).
 
+### LRN-076
+
+```yaml
+id: LRN-076
+date: 2026-05-04
+category: tooling
+source_cs: CS13
+status: applied
+tags: [test-fixtures, gitignore, ci-windows-linux-divergence, mechanical-enforcement, false-green]
+claim_area: linter-design
+```
+
+**Problem:** Two `tests/check-public-artifact.test.mjs` subtests (CS06) silently behaved differently on Windows vs Linux CI for many CSes:
+- Test 3 used fixture file `tests/fixtures/cs06/public-artifact/aws-key/credentials.log`. The repo `.gitignore` includes `*.log` (line 2), so the fixture was never committed. Locally on Windows the file existed in the working tree (the original author created it) and the test passed; on CI the file did not exist, the linter scanned an empty dir, no AWS pattern was found, exit 0, and the test asserted exit 1 → fail.
+- Test 7 referenced `tests/fixtures/cs06/public-artifact/empty-dir/` which never gets committed by git (git cannot track empty directories). On Linux CI the dir didn't exist → linter exited with "directory not found" → test fail.
+
+These two failures had been red on `harness-self-check` since CS06 land but the orchestrator workflow (Windows) never noticed them because `node --test` was green locally. CS13 PR #51 made them visible because the new green-CI gate revealed the historical false-green.
+
+**Finding:** Test-fixture trees are particularly susceptible to invisible drift between local dev and CI: the CI environment is the only one with the authoritative view of "what's actually committed". Two cheap mechanical defenses prevent the class:
+1. **No gitignored files under `tests/fixtures/`.** A linter that runs `git check-ignore` over every path under `tests/fixtures/` and fails on any match catches the credentials.log case.
+2. **Empty dirs need a `.gitkeep` OR the test must mkdtemp at runtime.** Pattern: `mkdtempSync(path.join(tmpdir(), 'prefix-'))` for tests that need a guaranteed-empty directory. Avoids tracking empty dirs and guarantees clean state per test run.
+
+**Evidence:** CS13 PR #51 R1 saw both tests failing on Linux CI with the exact symptoms above (`Expected exit 1; got 0; got: ''` and `Expected exit 0 for empty dir; got 1; stderr: directory not found`). Fixed by (a) renaming `credentials.log` → `credentials.txt` (also stripped CRLF per LRN-074), and (b) switching the empty-dir test to `mkdtempSync(path.join(tmpdir(), 'check-pub-empty-'))`. After fix: 486/486 local + green CI on the merged commit. Mechanical enforcement added in CS13: `scripts/check-fixtures.mjs` runs `git check-ignore` over `tests/fixtures/**` and fails on any match; wired into `harness lint` aggregator (15 linters now).
+
+**Disposition:** Convention: never use file extensions that overlap `.gitignore` (`*.log`, `*.tmp`, build outputs) inside `tests/fixtures/`. For tests requiring an empty dir, always `mkdtempSync` at runtime. The `check-fixtures` linter mechanically enforces (a). Future scaffold/template fixture authoring follows the same rule.
+
+### LRN-077
+
+```yaml
+id: LRN-077
+date: 2026-05-04
+category: tooling
+source_cs: CS13
+status: applied
+tags: [linter-design, self-host, consumer-vs-harness, opt-in, default-skip]
+claim_area: linter-design
+```
+
+**Problem:** CS13 added `check-pack` which validates the harness's own npm tarball shape (forbidden patterns, required entries, size budget). This linter only makes sense when the cwd IS the agent-harness repo — running it against a consumer repo would produce false failures (different `package.json`, different required entries, different size budget). But `harness lint` runs all registered linters by default. How to register a harness-only linter that doesn't break consumers?
+
+**Finding:** Self-host-only linters should be registered in the aggregator with a `target: null` skip pattern guarded by a runtime check that inspects the cwd's `package.json.name`. Example:
+
+```js
+const pkgJsonPath = path.join(consumerRoot, 'package.json');
+const isHarnessSelfHost = (() => {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    return pkg.name === '@henrik-me/agent-harness';
+  } catch { return false; }
+})();
+const target = isHarnessSelfHost ? consumerRoot : null;
+```
+
+Setting `target: null` makes the aggregator skip the linter cleanly (counted in the "skipped" tally, not "failed"). The linter still works when invoked directly via `node scripts/check-pack.mjs --cwd .` for ad-hoc consumer use. This pattern preserves the principle that `harness lint` against a consumer repo never produces false failures from harness-internal-only checks.
+
+**Evidence:** CS13 PR #51 implementation: `bin/harness.mjs` `cmdLint` aggregator's `check-pack` entry uses the guard above. Local verification: `node bin/harness.mjs lint --quiet` against the harness repo shows `pack: pass`; against a non-harness consumer repo (tested with a scratch `package.json`) shows `pack: skipped (target not found)`. Aggregator total: 14 pass / 0 fail / 3 skipped on harness; 13 pass / 0 fail / 4 skipped on consumer.
+
+**Disposition:** Pattern documented in CONVENTIONS.md (or future `LINTER-AUTHORING.md`): linters that validate the harness package, the harness templates, the harness CI workflows, or any other harness-internal artifact MUST use the self-host guard. Consumer-side linters (the default) MUST NOT need any guard. A small naming convention helps: harness-only linter scripts can be prefixed `check-self-` (e.g. `check-self-pack`) to make their intent obvious — defer until we have a second example to justify the rename.
+
 ## Obsolete
 
 (none yet)

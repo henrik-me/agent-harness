@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-04 (CS03c close-out)
+> **Last updated:** 2026-05-04 (CS13 close-out)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -39,7 +39,9 @@
 
 - **CS12 complete** (closed 2026-05-04). Reusable GitHub workflow (`.github/workflows/harness-checks.yml` with `on: workflow_call`) + drift-detection template (`template/managed/.github/workflows/harness-drift.yml`, weekly cron with auto-PR via `peter-evans/create-pull-request`) + self-host integration workflow (`.github/workflows/harness-self-check-via-reusable.yml`) + OPERATIONS.md doc paragraphs. Drift template's ref-derivation has 3 branches: real version / self-host fallback to `${{ github.sha }}` (guarded by `github.repository == henrik-me/agent-harness`) / fail-loud for consumers with unresolvable version. Both workflows pass GitHub expressions through `env:` and validate refs via allowlist regex `^[a-zA-Z0-9._/-]+$` to prevent shell injection (R1 PR review fix). 3-way parallel sub-agent dispatch (cumulative ~50). **480 tests pass total** (463+17 new). `harness lint --quiet`: 13/0/3. Plan-vs-impl gate: R1 NEEDS-FIX (self-host 0.0.0-pre ref) → R2 NEEDS-FIX (unguarded fallback unsafe for consumers) → R3 GO. Content PR review: R1 NEEDS-FIX (shell injection + missing least-privilege) → R2 GO. 1 LRN filed (LRN-075: GitHub Actions shell-injection prevention via env-passing + allowlist validation). Squash-merged PR #48 as `09365a8`.
 
-**CS12 is complete. Next mainline CSs: CS13 (npm packaging readiness) → CS14 (release tooling + v0.1.0 + private smoke). Per autopilot directive, stopping before CS15.**
+- **CS13 complete** (closed 2026-05-04). npm packaging readiness for v0.1.0 (CS14) + public flip (CS15). Delivered: `scripts/check-pack.mjs` (parses `npm pack --dry-run --json`, validates forbidden patterns + required entries + size budget, fail-closed); `tests/check-pack.test.mjs` (6 tests); `bin/harness.mjs` `cmdLint` extended to **14-linter aggregator** with `pack` linter wired behind a self-host guard (only runs when consumer cwd's `package.json.name === @henrik-me/agent-harness`); `README.md` new `## Installation` section (Option B = `npx github:` today; Option C = `npx @henrik-me/...` post-flip). Also fixed two pre-existing CI failures latent on Linux (`tests/check-public-artifact.test.mjs`: `*.log` fixture renamed to `.txt` so it stops being gitignored; empty-dir test switched to `mkdtempSync` since git can't track empty dirs). CS04c (planned `pack whitelist verification`) closed as **partially superseded** — CS13 uses denylist + required-entries, not exact whitelist; exact-allowlist enforcement deferred. **486 tests pass total** (480+6 new). `harness lint --quiet`: **14 pass / 0 fail / 3 skipped** (was 13/0/3; +1 pack). Plan-vs-impl gate: R1 GO (gpt-5.5 rubber-duck; 3 NBs, 2 fixed inline). 1 sub-agent dispatch (cumulative ~51). Squash-merged PR #51 as `<close-out-fills-this-in>`.
+
+**CS13 is complete. Next mainline CSs: CS14 (release tooling + v0.1.0 + private smoke). Per autopilot directive, stopping before CS15.**
 
 ## Architecture pointer
 
@@ -47,7 +49,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS13 (npm packaging) in flight on `cs13/content`. Then CS14.
+- None. CS13 complete. CS14 (release tooling + v0.1.0 + private smoke) next on the mainline. Stopping before CS15 per autopilot directive.
 
 ## Parallelism (single-orchestrator default)
 

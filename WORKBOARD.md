@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T12:30Z (CS13 claim — combined file-plan + claim PR)
+> **Last updated:** 2026-05-04T15:10Z (CS13 close-out)
 
 ## Orchestrators
 
@@ -10,19 +10,21 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-04T08:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-04T15:10Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS13 | npm packaging readiness | claimed | yoga-ah | cs13/content | 2026-05-04 | _(none)_ |
+
+_(no active CS — CS14 next on the mainline.)_
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
-| CS12 | Reusable workflow + drift-detection template | 2026-05-04 | **Done.** Squash-merged as `09365a8`. `harness-checks.yml` (workflow_call reusable) + `harness-drift.yml` (weekly drift PR template) + self-host integration via `${{ github.sha }}`. Drift template has 3-branch ref derivation. Both workflows pass GitHub expressions through `env:` and validate via allowlist regex `^[a-zA-Z0-9._/-]+$` to prevent shell injection (R1 PR fix). 3-way parallel dispatch (cumulative ~50). 480 tests pass (was 463; +17 new). Lint 13/0/3. Sync no drift. Plan-vs-impl gate R1→R2→R3 GO; content PR R1→R2 GO. 1 LRN filed (LRN-075). Plan PR #45. Claim PR #46. Claim-fixup PR #47. Content PR #48. |
+| CS13 | npm packaging readiness | 2026-05-04 | **Done.** Squash-merged as PR #51. `scripts/check-pack.mjs` (denylist + required-entries + size budget), 6 new tests, wired into `harness lint` aggregator behind self-host guard. README `## Installation` section added. Also fixed two pre-existing Linux-CI failures in `check-public-artifact.test.mjs` (`*.log` fixture renamed to `.txt` so it stops being gitignored; empty-dir test switched to `mkdtempSync`). CS04c (`pack whitelist verification`) closed as **partially superseded** — exact-allowlist deferred. **486 tests pass** (was 480; +6). `harness lint --quiet`: **14/0/3** (was 13/0/3; +1 pack). Plan-vs-impl gate R1 GO with 3 NBs (2 fixed inline). 1 sub-agent (cumulative ~51). |
+| CS04c | pack whitelist verification | 2026-05-04 | **Closed as partially superseded by CS13.** CS13's `check-pack` provides denylist + required-entries + size-budget validation (most of CS04c's intent). Exact-whitelist enforcement (any unexpected file fails) is deferred — achievable as a small extension to `check-pack.mjs` if needed at CS15+. |
 
 ## Recently Completed
 
