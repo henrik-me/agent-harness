@@ -1,0 +1,29 @@
+{
+  "_comment": "Feature flag declarations. TODO: customize — replace these examples with your project's real flags. See flags/README.md for lifecycle guidance.",
+  "flags": [
+    {
+      "name": "new-checkout-flow",
+      "description": "Enable the redesigned multi-step checkout experience.",
+      "default": false,
+      "owner": "checkout-team",
+      "expires": "2025-12-31",
+      "rollout": "percent"
+    },
+    {
+      "name": "dark-mode",
+      "description": "Enable dark-mode UI theme for all users.",
+      "default": false,
+      "owner": "design-team",
+      "expires": null,
+      "rollout": "off"
+    },
+    {
+      "name": "api-v2",
+      "description": "Route traffic to the v2 REST API endpoints.",
+      "default": false,
+      "owner": "platform-team",
+      "expires": "2025-06-30",
+      "rollout": "on"
+    }
+  ]
+}

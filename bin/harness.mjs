@@ -70,9 +70,14 @@ Scaffold harness.config.json + seeded files into target_dir (default: cwd).
 Reads template/seeded/ from the harness repo and copies any missing files.
 If harness.config.json already exists, prints a warning and skips (no overwrite).
 
+Optionally drops one or more named scaffolds from scaffolds/<name>/files/
+(create-if-missing). Drops do not overwrite existing files. After successful
+drop, the scaffold name is appended to harness.config.json scaffolds[].
+
 Options:
-  --from-example=<gwn|si|self>  Use a bundled example config as the initial config
-  --help                        Print this help
+  --from-example=<gwn|si|self>   Use a bundled example config as the initial config
+  --with-scaffold <name>         Drop the named scaffold (repeatable; also accepts --with-scaffold=<name>)
+  --help                         Print this help
 `.trimStart(),
 
   sync: `
@@ -349,6 +354,7 @@ async function cmdInit(args, global) {
   // Parse init-specific args
   let targetDir = cwd;
   let fromExample = null;
+  const withScaffolds = [];
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -357,10 +363,39 @@ async function cmdInit(args, global) {
       process.exit(0);
     } else if (a.startsWith('--from-example=')) {
       fromExample = a.slice('--from-example='.length);
+    } else if (a === '--with-scaffold') {
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        die(`--with-scaffold requires a value\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      }
+      withScaffolds.push(args[++i]);
+    } else if (a.startsWith('--with-scaffold=')) {
+      const v = a.slice('--with-scaffold='.length);
+      if (!v) die(`--with-scaffold= requires a value\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      withScaffolds.push(v);
     } else if (!a.startsWith('-')) {
       targetDir = path.resolve(cwd, a);
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['init']}`, 2);
+    }
+  }
+
+  // Pre-validate all requested scaffolds before any writes (per CS10 plan critique).
+  // If any name is unknown, fail fast with exit 2 — leaves target untouched.
+  const scaffoldsRoot = path.join(REPO_ROOT, 'scaffolds');
+  if (withScaffolds.length > 0) {
+    const available = existsSync(scaffoldsRoot)
+      ? readdirSync(scaffoldsRoot, { withFileTypes: true })
+          .filter((e) => e.isDirectory() && existsSync(path.join(scaffoldsRoot, e.name, 'files')))
+          .map((e) => e.name)
+          .sort()
+      : [];
+    for (const name of withScaffolds) {
+      if (!available.includes(name)) {
+        die(
+          `Unknown scaffold: "${name}". Available: ${available.length ? available.join(', ') : '(none)'}`,
+          2
+        );
+      }
     }
   }
 
@@ -436,6 +471,62 @@ async function cmdInit(args, global) {
         copyFileSync(path.join(entry.parentPath ?? seededDir, entry.name), dest);
         process.stdout.write(`Created ${rel}\n`);
       }
+    }
+  }
+
+  // Drop opt-in scaffolds (CS10). Validation already happened above.
+  // For each requested scaffold, walk scaffolds/<name>/files/** and copy each
+  // file create-if-missing into the consumer cwd. Existing files are skipped
+  // with a stderr warning. After all copies succeed, append the scaffold names
+  // to harness.config.json scaffolds[].
+  const droppedScaffolds = [];
+  for (const name of withScaffolds) {
+    const src = path.join(scaffoldsRoot, name, 'files');
+    const entries = readdirSync(src, { recursive: true, withFileTypes: true });
+    let anyCopied = false;
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const rel = entry.parentPath
+        ? path.join(path.relative(src, entry.parentPath), entry.name)
+        : entry.name;
+      const dest = path.join(targetDir, rel);
+      if (existsSync(dest)) {
+        process.stderr.write(`Skipped (exists): ${rel}\n`);
+        continue;
+      }
+      mkdirSync(path.dirname(dest), { recursive: true });
+      copyFileSync(path.join(entry.parentPath ?? src, entry.name), dest);
+      process.stdout.write(`Created ${rel}\n`);
+      anyCopied = true;
+    }
+    droppedScaffolds.push({ name, anyCopied });
+  }
+
+  // Record opted-in scaffold names in consumer's harness.config.json scaffolds[].
+  // Only mutate after at least one scaffold was processed and config is parseable.
+  if (droppedScaffolds.length > 0 && existsSync(configDest)) {
+    try {
+      const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      if (!Array.isArray(cfg.scaffolds)) cfg.scaffolds = [];
+      let mutated = false;
+      const added = [];
+      for (const { name } of droppedScaffolds) {
+        if (!cfg.scaffolds.includes(name)) {
+          cfg.scaffolds.push(name);
+          mutated = true;
+          added.push(name);
+        }
+      }
+      if (mutated) {
+        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+        process.stdout.write(
+          `Recorded scaffolds in harness.config.json: ${added.join(', ')}\n`
+        );
+      }
+    } catch (err) {
+      process.stderr.write(
+        `Warning: could not update harness.config.json scaffolds[]: ${err.message}\n`
+      );
     }
   }
 }
