@@ -1,0 +1,19 @@
+# harness-self-check-via-reusable.yml — CS12 self-host integration.
+#
+# Calls the new harness-checks.yml reusable workflow against the harness repo
+# itself, using ${{ github.sha }} as the cli-ref. This proves the reusable
+# workflow works end-to-end and is the cs-plan-mandated dogfood gate ("Both
+# workflows used by this repo's own CI"). Future, post-CS14: switch cli-ref
+# to harness.config.json.version once real semver tags exist.
+
+name: harness-self-check-via-reusable
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/harness-checks.yml
+    with:
+      cli-ref: "${{ github.sha }}"

@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs11b/close-out",
-  "resolved_sha": "0a707d7d9f58189b8134fe0e72bdab7e061319ea",
+  "harness_ref": "cs12/content",
+  "resolved_sha": "0665c5baec4b957b6e4af2d1863447162a78765d",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T14:02:01.526Z",
+  "synced_at": "2026-05-04T14:36:50.091Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -54,6 +54,13 @@
       "action": "skipped"
     },
     {
+      "target": ".github/workflows/harness-drift.yml",
+      "source_template": "template/managed/.github/workflows/harness-drift.yml",
+      "class": "managed",
+      "rendered_hash": "3227d99c38c732381aa42b90d796c6c8cb2d7af0de9aade316fc6f30fd6c6489",
+      "action": "skipped"
+    },
+    {
       "target": "CONVENTIONS.md",
       "source_template": "template/composed/CONVENTIONS.md",
       "class": "composed",
@@ -76,14 +83,14 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "e09dc9083b3e864c11dd8e3530341c405c3ee2601176e6004a4c85b7d5137655",
+      "rendered_hash": "c598740f4754273b8dc8cd1fa8db5de4ebde1a2e1743cdaed3178473754c703e",
       "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 922,
-            "end": 924
+            "start": 982,
+            "end": 984
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
@@ -114,7 +121,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "8d36f27d64385ef54d77094d996c3a94ef270c4c47926ca7737fbad08cbf64c2",
+      "rendered_hash": "b64d486a1259f5c9b468b84e949c8c49dada083ba04b29d4e8715b0fc9f380e6",
       "action": "preserved"
     },
     {
@@ -135,7 +142,7 @@
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "02349bafa0f802af408808ec01c00d4109aa9c30dbc116e1764a81678dc2f60f",
+      "rendered_hash": "e8750d35c76e0746df1fa4d5f5cdc8c27ed0793a0504cdac23cb136246152176",
       "action": "preserved"
     }
   ],

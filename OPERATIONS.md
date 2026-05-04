@@ -638,6 +638,66 @@ and composed files. The CLI warns when sync is invoked while a CS branch is
 in flight (detected from the active branch name). Major-version syncs require
 `--accept-major` to proceed.
 
+### Reusable CI workflow
+
+`harness-checks.yml` is a reusable GitHub Actions workflow (`on: workflow_call`)
+that runs `harness lint` in any consumer repo with roughly ten lines of caller
+YAML. Callers reference it via:
+
+```yaml
+jobs:
+  harness-checks:
+    uses: henrik-me/agent-harness/.github/workflows/harness-checks.yml@<ref>
+    with:
+      cli-ref: ''   # optional — leave blank to auto-read harness.config.json
+```
+
+**Version-locking model:** the workflow accepts an optional `cli-ref` input.
+When blank (the default), an inline shell step reads the `version` field from
+the caller repo's `harness.config.json` and uses that as the install ref for
+the harness CLI (`npx -y github:henrik-me/agent-harness#<resolved-ref>`).
+When `cli-ref` is set explicitly, that value is used instead. This ensures
+local `harness lint` and CI always invoke the exact same harness version —
+no version skew between developer machines and the CI runner.
+
+The workflow's steps are: checkout (pinned SHA), setup-node 20 (pinned SHA),
+derive-ref shell step, `npx -y github:henrik-me/agent-harness#<ref> lint --quiet`.
+All third-party `uses:` refs are pinned to 40-character commit SHAs.
+
+### Drift-detection workflow
+
+`template/managed/.github/workflows/harness-drift.yml` is a managed workflow
+template that consumers receive via `harness sync`. It runs weekly (Monday
+06:00 UTC, cron `0 6 * * 1`) and on `workflow_dispatch`, detecting when the
+consumer repo has drifted from the harness version pinned in
+`harness.config.json`.
+
+**Behaviour:**
+
+1. An inline shell step reads `harness.config.json` `.version` to derive the
+   install ref.
+2. `npx -y github:henrik-me/agent-harness#<ref> sync --mode=check --cwd .` is
+   run and its exit code captured explicitly:
+   - **exit 0** — no drift; the workflow sets `drift_detected=false` and all
+     subsequent apply/PR steps skip cleanly via `if:` conditions.
+   - **exit 1** — drift detected; `drift_detected=true` is set.
+   - **any other exit code** — the workflow fails loudly (broken install,
+     network error, or harness crash — never silently produces a PR in this
+     state).
+3. On drift: `sync --mode=apply` is run to generate the update, then
+   `peter-evans/create-pull-request` (pinned to a 40-char SHA) opens a PR
+   whose body explains the drift, links to the harness ref, and lists changed
+   files.
+
+The template uses `agent-harness` and `henrik-me` placeholders
+for PR reviewer/assignee fields; all YAML scalar values containing
+`{{...}}` placeholders are quoted so the unrendered template parses as valid
+YAML.
+
+**Critical:** never use bare `npx harness ...` in these workflows — the
+harness package is not published to npm. Always use
+`npx -y github:henrik-me/agent-harness#<ref>`.
+
 ---
 
 ## Harvest

