@@ -772,6 +772,14 @@ async function cmdLint(args, _global) {
       target: path.join(cwd, '.github', 'workflows'),
     },
     {
+      // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd
+      // recursively. Always enabled; can be skipped via --skip text-encoding.
+      name: 'text-encoding',
+      script: 'check-text-encoding.mjs',
+      args: ['--dir', cwd],
+      target: cwd,
+    },
+    {
       name: 'public-artifact',
       script: 'check-public-artifact.mjs',
       args: publicDir
