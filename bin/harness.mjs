@@ -128,6 +128,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
   - check-workflow-pins.mjs (.github/workflows/)
   - check-text-encoding.mjs (BOM + line endings; walks --cwd recursively)
+  - check-fixtures.mjs    (tests/fixtures/ — gitignored fixture paths; LRN-076)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
@@ -809,6 +810,15 @@ async function cmdLint(args, _global) {
       script: 'check-text-encoding.mjs',
       args: ['--dir', cwd],
       target: cwd,
+    },
+    {
+      // CS13 (LRN-076): fixtures linter. Detects test-fixture paths matched by
+      // .gitignore (would silently false-green on CI). Skipped if there is no
+      // tests/fixtures directory.
+      name: 'fixtures',
+      script: 'check-fixtures.mjs',
+      args: ['--dir', path.join(cwd, 'tests', 'fixtures')],
+      target: path.join(cwd, 'tests', 'fixtures'),
     },
     // CS13: pack linter. Self-host-guarded: only runs when the consumer's
     // package.json `name` matches `@henrik-me/agent-harness` (i.e. when the

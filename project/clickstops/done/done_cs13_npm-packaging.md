@@ -1,6 +1,6 @@
 # CS13 — npm packaging readiness
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs13/content
 **Started:** 2026-05-04
