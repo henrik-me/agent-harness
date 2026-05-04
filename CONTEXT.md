@@ -43,7 +43,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS03c complete; CS11b (small) -> CS12 -> CS13 -> CS14 are next on the mainline.
+- None. CS11b (--resolved-sha override) in flight on `cs11b/content`. Then CS12 → CS13 → CS14.
 
 ## Parallelism (single-orchestrator default)
 
