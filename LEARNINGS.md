@@ -1400,6 +1400,110 @@ claim_area: orchestrator-loop
 
 **Disposition:** Operational mitigation: orchestrators should verify on-disk content of long-lived owned files at each session milestone, not assume edit-tool success implies durable persistence under concurrent shell activity. Long-term mitigation: when feasible, commit orchestrator-owned long-lived file edits BEFORE dispatching parallel sub-agents, so the canonical state lives in git, not working tree. This may add a no-content commit-ahead but trades that overhead for robustness.
 
+### LRN-069
+
+```yaml
+id: LRN-069
+date: 2026-05-04
+category: process
+source_cs: CS11
+status: applied
+tags: [self-host, dogfood, recursive-validation, cs03b-gate, sub-agent-preamble, milestone]
+claim_area: orchestrator-loop
+```
+
+**Problem:** CS11 was the long-anticipated "dogfood" moment — replacing the CS01 hand-authored proto root docs with the rendered output of `template/managed/` + `template/composed/`, and activating the harness's own CI gate (`harness lint --quiet` + `sync --mode=check`) so future drift between templates and root files becomes mechanically impossible. The risk surface was substantial: HIGH-RISK by cs-plan; CS03b gate exercising itself for the second time; canonical sub-agent briefing preamble (LRN-068 follow-up) folded in as Stage 0; and the swap itself irreversible once `sync --mode=apply` writes `.harness-lock.json`.
+
+**Finding:** Self-hosting succeeded cleanly at first attempt. Key validating patterns:
+1. **Plan iteration before claim** — 5 rubber-duck iterations of the planned CS file (R1–R5) caught the original NO-GO blockers (composed-block markers missed, Stage A self-failing workflow, wrong `--cwd` flag, incorrect placeholder audit, fan-out table contradicting D7) BEFORE dispatch. Cumulative R1+R2 critique cost: ~30 minutes. Estimated cost of executing the broken plan: hours of recovery + likely restart. Plan-iteration ROI is high for HIGH-RISK CSs.
+2. **D7 manual-write strategy** — bypassing `harness sync --mode=apply` for the one-time migration write was the right call. The engine's composed-merge fail-closed semantics (correctly) reject markerless root files, so any sync-based migration would have required either weakening composed semantics (bad — undermines fail-closed) or implementing an `--initial-sync` flag (out of scope per D6). Manual render-and-write all 10 files via a one-shot Node script is the correct one-time migration mechanism.
+3. **Canonical preamble verbatim-paste discipline** — every CS11 sub-agent dispatch (preamble, config, ci) had the canonical block pasted in full. Sub-agents reported zero confusion about preflight / file-ownership / report-shape. The cost is large prompts; the benefit is no forgotten process steps. Worth it.
+4. **CS03b's plan-vs-impl review gate** caught 2 real blockers in CS11's R1 (placeholder audit over-reporting `should-have-resolved` because it didn't detect escape-rendered tokens; tests/cli.test.mjs Stage-A workarounds left in) plus 1 NB. Without the gate, both would have shipped silently. Gate ROI confirmed for the second CS that uses it.
+
+**Evidence:** CS11 PR #37 squash-merged as `68c2ce4`. After the swap: `harness lint --quiet` 12/0/3 (was 9/0/3 baseline; +3 composed-blocks for the now-marker-bearing root docs); `sync --mode=check` exits 0 ("No drift detected"); 436 tests pass; `harness-self-check.yml` workflow active with `harness lint --quiet` + `sync --mode=check` enforcement. From this CS forward, intentional drift between `template/managed|composed/` and root files is mechanically prevented.
+
+**Disposition:** Self-hosting milestone reached. Future template changes flow `template/...` → `harness sync --mode=apply` → root files (no manual writes; CS11 was the one-time migration). Future CSs that touch `template/managed/` or `template/composed/` MUST also run `harness sync --mode=apply` and commit the resulting root + lock changes; CI's `sync --mode=check` enforces this. The pre-claim plan-iteration discipline (5 iterations for HIGH-RISK CSs) is now empirically validated and should be the norm for HIGH-RISK work going forward.
+
+### LRN-070
+
+```yaml
+id: LRN-070
+date: 2026-05-04
+category: tooling
+source_cs: CS11
+status: applied
+tags: [harness-lock, sync-apply, ordering, audit-trail, resolved-sha, post-commit-regenerate]
+claim_area: sync-engine
+```
+
+**Problem:** CS11 ran `harness sync --mode=apply` during Stage B.5 to create the initial `.harness-lock.json`. The lock captured `resolved_sha` from `git rev-parse HEAD` AT SYNC TIME — which was the pre-CS11 claim-merge SHA (`5f19bf9`), since no CS11 work had been committed yet. The CS11 R1 review correctly flagged this as a lock-integrity issue: the lock claimed a `resolved_sha` that could not have produced the `rendered_hash` entries, since the templates that produced those hashes were uncommitted at the time.
+
+**Finding:** `.harness-lock.json` `resolved_sha` is an audit/provenance field that must point at a commit containing both the templates AND the produced root files. When `sync --mode=apply` runs in a working tree with uncommitted template changes, `resolveHarnessRef()` correctly returns the current HEAD (it cannot see uncommitted changes), but the resulting lock is stale by construction. Mitigation: when `sync --mode=apply` is invoked in a CS that ALSO modifies templates, the orchestrator must (a) commit the template + root + initial lock together first, then (b) re-run `sync --mode=apply` to update the lock's `resolved_sha`/`synced_at` to point at the just-made commit, then (c) commit the lock fixup. CS11 R1 fix did exactly this: lock fixup commit `a4d9ece` followed CS11 content commit `f6cb2dc`. Future engine improvement: `sync --mode=apply` could optionally accept `--resolved-sha <sha>` to pin the recorded provenance explicitly, removing the ordering trap.
+
+**Evidence:** PR #37 R1 review showed `.harness-lock.json` `resolved_sha = 5f19bf9` (claim-merge SHA) instead of `f6cb2dc` (CS11 content SHA). Re-running `sync --mode=apply` after the CS11 commit landed produced a 1-line update (`resolved_sha` + `synced_at`) committed as `a4d9ece`. R2 review verified rendered_hash entries unchanged (no content drift; only metadata fixup).
+
+**Disposition:** Document the post-commit-regenerate pattern in OPERATIONS.md § Sync (or as a future LRN-driven addition). Consider filing CS11b: "harness sync --mode=apply --resolved-sha <sha> override flag" as a small follow-up so the ordering trap can be avoided cleanly. For now, the pattern is: when both templates and root files change in the same CS, commit content first, then re-apply for lock fixup, then commit lock.
+
+### LRN-071
+
+```yaml
+id: LRN-071
+date: 2026-05-04
+category: tooling
+source_cs: CS11
+status: applied
+tags: [placeholder-audit, escape-syntax, classification, false-positive, cs03b-templating]
+claim_area: scaffold-linters
+```
+
+**Problem:** CS11 Stage A.3 authored a `placeholder-audit.mjs` script that scans rendered template output for any remaining `{{key}}` tokens and classifies each. The first version classified a token as `should-have-resolved` if its inner key existed in the templating map — on the assumption that any unresolved key-in-map indicated a substitution bug. But CS03b's templating engine supports an escape syntax: `\{{key}}` in the template renders to literal `{{key}}` in the output (the backslash is consumed). When `template/managed/TRACKING.md` used `\{{repo_short}}` in path-example prose to display the literal placeholder syntax, the audit (correctly seeing `{{repo_short}}` post-render with `repo_short` IN the templating map) flagged it as `should-have-resolved` — but it was actually intentional escape behavior.
+
+**Finding:** Linters that scan rendered output for "missing substitutions" must be aware of the source-template escape syntax. Mitigation: `classify()` now reads the source template AND checks for the escaped form `\{{token}}` at the same position; if found, classifies as `intentional-literal` with note "escape-rendered per CS03b". This pattern generalizes: any post-processing analyzer of templated output must reason about the template's escape-syntax semantics, not just the rendered output's surface form.
+
+**Evidence:** CS11 PR #37 R1 flagged 5 `should-have-resolved` `{{repo_short}}` tokens in `TRACKING.md` rendered output. Inspection of `template/managed/TRACKING.md:254,263-266` showed `\{{repo_short}}` escapes. Post-fix: 0 `should-have-resolved`, 7 `intentional-literal` (5 escape-rendered + 2 documented prose), 0 `unclassified`. Audit script's exit-code logic also tightened to fail on either `should-have-resolved` OR `unclassified` (not just unclassified).
+
+**Disposition:** Apply this principle to any future template-output analyzer. Update sub-agent briefings authoring such linters to specifically call out: "rendered-output analyzers must be aware of escape syntax (`\{{key}}`) in the source template and classify escape-rendered literals correctly."
+
+### LRN-072
+
+```yaml
+id: LRN-072
+date: 2026-05-04
+category: process
+source_cs: CS11
+status: applied
+tags: [stage-enforcement-window, ci-gate, test-skips, todo-markers, multi-stage-cs]
+claim_area: cs-planning
+```
+
+**Problem:** CS11's Stage A landed `harness.config.json` with `composed.files` declared, but the root composed docs (CONVENTIONS, OPERATIONS, REVIEWS) didn't yet have local-block markers (those land in Stage B.1). This created a window where `harness lint --quiet` would fail (`check-composed-blocks` rejects markerless root docs). The local test suite's `tests/cli.test.mjs` had assertions of the form "harness lint exits 0 against the real repo" — these started failing as soon as Stage A.1 landed `harness.config.json`. The orchestrator added `--skip composed-blocks` workarounds with `TODO(CS11 B.4)` markers, planning to remove them in B.4. The CI workflow `harness-self-check.yml` was authored in A.4 with a similar enforcement-window omission. B.4 successfully removed the workflow-side omission. But the test-side `--skip` markers were forgotten until the plan-vs-impl review gate caught them in R1.
+
+**Finding:** Multi-stage CSs that introduce a known enforcement window need an EXPLICIT B.4-equivalent cleanup checklist that enumerates every workaround marker (in CI workflows, test files, scripts, AND active CS Tasks ledger). Relying on memory or "obvious removal" is fragile. Mitigation: when adding a TODO marker tied to a future CS stage, also add the marker file path to a dedicated "Stage-window markers to remove" section of the active CS file. The plan-vs-impl review gate's "no `TODO(CSnn)` markers remain" exit criterion is a backstop, not a substitute for explicit tracking.
+
+**Evidence:** CS11 PR #37 R1 plan-vs-impl gate found `--skip composed-blocks` + `TODO(CS11 B.4)` markers still in `tests/cli.test.mjs` after B.4 had supposedly cleaned up. The fix was a one-line removal per affected test, but the gate caught what would otherwise have shipped as a quiet correctness regression (tests would have continued reporting "pass" while skipping the very check they should have been validating).
+
+**Disposition:** When authoring a multi-stage CS spec that introduces enforcement-window workarounds, add an explicit "Stage-window markers" section to the active CS file listing every workaround marker file path. The B.4-equivalent stage's exit criteria reference this list explicitly. The plan-vs-impl gate continues to backstop, but explicit tracking is cheaper than gate-iteration cost.
+
+### LRN-073
+
+```yaml
+id: LRN-073
+date: 2026-05-04
+category: process
+source_cs: CS11
+status: applied
+tags: [canonical-preamble, sub-agent-briefing, verbatim-paste, large-prompts, cumulative-validation, lrn-068-followup]
+claim_area: sub-agent-coordination
+```
+
+**Problem:** LRN-068 mandated that every sub-agent dispatch paste the canonical briefing preamble verbatim into the prompt. CS11 was the first CS to operationalize this: the cs11-preamble sub-agent (Stage 0) authored the canonical block in `template/composed/OPERATIONS.md` § Sub-agent dispatch, and the orchestrator pasted the block verbatim into the cs11-config and cs11-ci sub-agent dispatches. Open question: does the verbatim paste actually improve sub-agent compliance vs. a hyperlinked reference?
+
+**Finding:** Yes, materially. Both cs11-config and cs11-ci sub-agent reports cleanly addressed every section of the canonical preamble: PREFLIGHT SHA recording (matches), file-ownership scope (only owned files modified), conventions (BOM check pass, LF/no-BOM, `requireValue` guard noted, schema-source-of-truth), self-checks (`git status`, `git log`, BOM check, syntax checks), and the mandatory report shape (all required fields populated). The cs11-preamble sub-agent's own dispatch (the bootstrap moment) also cleanly addressed all sections even though the canonical block was authored DURING that dispatch (the orchestrator pasted the de-facto pre-existing requirements). Zero rogue commits across 3 CS11 dispatches; cumulative count ~46 across CS01–CS11 with zero violations after LRN-021 standardization.
+
+**Evidence:** CS11 PR #37: 3 sub-agent reports in cs11/content commit history all match the canonical preamble structure exactly. Stage 0's cs11-preamble report explicitly noted that the BOM check returned `False` for all 5 owned files — a section that previously had been intermittently reported across CSs. The verbatim paste produced consistent, complete self-checks where reference-only briefings had produced sporadic ones.
+
+**Disposition:** Permanent. The verbatim-paste discipline is the new normal for every sub-agent dispatch. Cost (large prompts) is real but worth it. Future improvement: tooling (e.g. `harness brief --preamble`) could automate the paste, but the discipline is mechanical enough that orchestrator-side paste is sustainable in the meantime. The cumulative dispatch count (~46) with zero violations is the strongest empirical evidence that the LRN-016 + LRN-021 + LRN-068 + LRN-073 pattern stack is durable at scale.
+
 ## Obsolete
 
 (none yet)

@@ -1,56 +1,56 @@
 {
-  "harness_ref": "cs11/content",
-  "resolved_sha": "f6cb2dc2954340a1a9dbb9e95ce1f65149554ab3",
+  "harness_ref": "cs11/close-out",
+  "resolved_sha": "cca3a8796150efb6b442bd918850adc5af59521e",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T06:17:47.819Z",
+  "synced_at": "2026-05-04T06:31:43.833Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
       "source_template": "template/managed/INSTRUCTIONS.md",
       "class": "managed",
-      "rendered_hash": "9282390c76e8235065774d4359670896fc0f29bc9145d9249cce58006459b46d",
+      "rendered_hash": "eb9d8f00f2ff6ebe97d167481f7d66ede1498eeebbcf1471519cc26a1381b5c9",
       "action": "skipped"
     },
     {
       "target": "TRACKING.md",
       "source_template": "template/managed/TRACKING.md",
       "class": "managed",
-      "rendered_hash": "af3aae20f73963d9d5bd208732ced51a75e2f4d625952de1de0f388d4bd98807",
+      "rendered_hash": "1b87eacd3b609c46bfc14f4c21cac591cb56ca2c69395dd9d7d750324df12756",
       "action": "skipped"
     },
     {
       "target": "RETROSPECTIVES.md",
       "source_template": "template/managed/RETROSPECTIVES.md",
       "class": "managed",
-      "rendered_hash": "6222c9191e473569a89889ac0cdd7ea9effcc16b04564517b212eabacb202a85",
+      "rendered_hash": "ebe601aa5e85211801bc3d0892e05a66d523fe0c65afe31953fc9f41dc40755d",
       "action": "skipped"
     },
     {
       "target": "READMEGUIDE.md",
       "source_template": "template/managed/READMEGUIDE.md",
       "class": "managed",
-      "rendered_hash": "52c275f1ddb875284ceab464f71bd56ca8abe41c6f0456430ff82cfc3549c3c3",
+      "rendered_hash": "e82e54ddb6a3096ae18140fd41efc0d44f1c1481f1aec605608e8794ebdb70e3",
       "action": "skipped"
     },
     {
       "target": ".github/CODEOWNERS",
       "source_template": "template/managed/.github/CODEOWNERS",
       "class": "managed",
-      "rendered_hash": "6b09b86b4141746486e930728fd373266242ef6ce5b852bc805d82736c0d69e2",
+      "rendered_hash": "d7346f9cccccdb0338f4568575b9d058c212405804f6bc377a7dd889dbf3187e",
       "action": "skipped"
     },
     {
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
-      "rendered_hash": "60826bdd251f2b0e7d0c4819bc1ee4a9e442f13e17c813326690be68616fe777",
+      "rendered_hash": "67d27bfc83ea3b3e7064f45926fe669e4240ebdba1ac3208839b01123d9b6981",
       "action": "skipped"
     },
     {
       "target": ".github/pull_request_template.md",
       "source_template": "template/managed/.github/pull_request_template.md",
       "class": "managed",
-      "rendered_hash": "196dc64ad2627b653de363531885838703e30a637384a1fb32b7641ba444b1ad",
+      "rendered_hash": "ff9fed6484f4da43bb6fac3a334fa37d81062f0a916ef36df27ffc492a97fb24",
       "action": "skipped"
     },
     {
@@ -114,28 +114,28 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "5d66e4c2efaa50d2d8f0020f02c61b6e168766af69ac24698bcde3b2447ae062",
+      "rendered_hash": "61b57c9abd5c0ee6e87a189f121de4e16e952897e482efc84075f90abc5e963c",
       "action": "preserved"
     },
     {
       "target": "ARCHITECTURE.md",
       "source_template": "template/seeded/ARCHITECTURE.md",
       "class": "seeded",
-      "rendered_hash": "9fd46130a406475651b10ccdcc3cc10ed70a084cf740a2c8c0776566a0582c6c",
+      "rendered_hash": "72a11d59698f2388012eb087e5d7b7239b482129e5432e5f49fdc225aea71a62",
       "action": "preserved"
     },
     {
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "cbab1e3e238acc4bcc21d0c0634baa1cf0f929f7f7c6a12364a6ed03f3955c87",
+      "rendered_hash": "f5f50217b378489693feccdb88ee52ab08d5e28860a8e74d9715a5c61199311e",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "53f959d9a1df8a7687fd813ce28765c173f4ea504ceefc9307a8ef450052f4d0",
+      "rendered_hash": "fb2f7e7b0c319350b267e45696fb67b770c7ac5e88ce0a6124e87b7e264fc080",
       "action": "preserved"
     }
   ],

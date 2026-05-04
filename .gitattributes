@@ -1,0 +1,23 @@
+# CS11b: Force LF line endings for all repo text files.
+#
+# The harness self-host swap (CS11) renders templates → root files via
+# `applyTemplating()`, which produces LF output. On Windows, git's
+# `core.autocrlf=true` converts LF → CRLF on checkout, causing
+# `harness sync --mode=check` to detect false drift.
+#
+# This `.gitattributes` forces LF for all text files in the repo, so the
+# working-tree state matches what the templating engine produces, and the
+# CI drift gate stays accurate cross-platform.
+
+* text=auto eol=lf
+
+# Explicit binary types — left as-is.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary

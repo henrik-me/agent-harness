@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-04 (CS03b close-out)
+> **Last updated:** 2026-05-04 (CS11 close-out — harness now governs itself)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -31,7 +31,9 @@
 
 - **CS03b complete** (closed 2026-05-04). HIGH-LEVERAGE process CS. Delivered: (a) `lib/templating.mjs` rich API rewrite (TemplatingError class, opts.strict, opts.placeholderPattern with capture-group guard, whitespace tolerance, escape syntax, single-pass guarantee; default `opts.strict=false` for v0.1.x backcompat); (b) `lib/lock.mjs` `newEmptyLock` factory with schema-validated skeleton; (c) `lib/sync.mjs` wired to use `newEmptyLock`; (d) **plan-vs-implementation review gate** as the mandatory last step before close-out — process docs amended in root + template (OPERATIONS.md, INSTRUCTIONS.md, .github/copilot-instructions.md), `check-clickstop.mjs` extended with anchored-regex section detection + done-body validation, 6 new fixtures + 6 new linter tests, 10 done CSs grandfathered + 9 planned CSs placeholder-stamped. CS03b is the first CS to exercise the gate on itself (R1 NEEDS-FIX, R2 NEEDS-FIX, R3 GO). Inline orchestrator fix: `check-workboard.mjs` regex tightened to `^CS\d{2,}[a-z]?$`. **432 tests pass total** (411+21 new). Content-PR review iterations: R1 (3 blockers + 1 NB) → R2 GO. 5 additional LRNs filed (LRN-064 through LRN-068): plan-vs-implementation gate, BOM creep in sub-agent file writes, anchored regex over `includes()` for Markdown structural linters, precision-vs-permissiveness in regex widening, orchestrator-owned long-lived file edits across branch transitions. 1 planned CS filed (CS03c: `check-no-bom.mjs` linter). 3-way parallel sub-agent dispatch (cumulative 43); zero rogue commits. `harness lint --quiet`: 9 pass, 0 fail, 3 skipped. Squash-merged PR #32 as `846f3be`. **Every future CS now closes under the new plan-vs-implementation review gate, mechanically enforced.**
 
-**CS03b is complete. CS11 (dogfood: harness governs itself) is now in flight on `cs11/content` — engine surface is hardened and the close-out gate is in place. The corrected planned CS11 file landed via PR #35; claim merged via PR #36.**
+- **CS11 complete** (closed 2026-05-04). **HIGH-RISK self-host swap — the dogfood moment.** Delivered: (a) `harness.config.json` at repo root pinning the harness to govern itself; (b) 7 managed + 3 composed root files now rendered from `template/managed/` + `template/composed/` via D7 manual write (one-time migration; `sync --mode=apply` would have blocked on composed-merge fail); (c) `.harness-lock.json` recording the synced state; (d) **canonical sub-agent briefing preamble** in `template/composed/OPERATIONS.md` § Sub-agent dispatch (LRN-068 follow-up; orchestrator pastes verbatim into every dispatch); (e) `.github/workflows/harness-self-check.yml` — full drift gate (`harness lint --quiet` + `sync --mode=check`) active on every PR; (f) bootstrap snapshot of 6 root proto docs preserved under `done_cs11_self-host/bootstrap-snapshot/`; (g) 3 reviewer artifacts (sync-probe-report.md, render-preview.md, placeholder-audit.md). **436 tests pass total** (432+4 new). 2 review rounds (R1=1 blocker [stale lock resolved_sha] + 1 NB; R2=GO). CS11 also exercised the CS03b plan-vs-impl review gate on itself (R1 NEEDS-FIX → R2 GO). 5 additional LRNs filed (LRN-069 through LRN-073): self-hosting milestone + plan-iteration ROI; lock resolved_sha post-commit-regenerate pattern; placeholder-audit must be escape-syntax-aware; multi-stage CSs need explicit Stage-window marker tracking; verbatim canonical preamble paste validated at scale. 1 planned CS filed (CS11b: `harness sync --mode=apply --resolved-sha <sha>` override flag — LRN-070 follow-up). 3-way parallel sub-agent dispatch (preamble + config + ci; cumulative ~46); zero rogue commits, zero file races. `harness lint --quiet`: 12 pass, 0 fail, 3 skipped (was 9/0/3 — composed-blocks for CONVENTIONS/OPERATIONS/REVIEWS now pass since markers exist). `harness sync --mode=check --cwd .`: **No drift detected** — the binding correctness gate is GREEN. Squash-merged PR #37 as `68c2ce4`. **From this CS forward, intentional drift between `template/managed|composed/` and root files is mechanically prevented by CI. The harness governs itself.**
+
+**CS11 is complete. The dogfood milestone is reached. Next mainline CS is CS12 (reusable GitHub workflow + drift-detection template) per the cs-plan.**
 
 ## Architecture pointer
 
@@ -39,7 +41,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS11 (self-host) is in flight on `cs11/content`.
+- None. CS11 (self-host) is complete; harness now governs itself. CS12 (reusable GitHub workflow + drift-detection template) is the next mainline CS to claim.
 
 ## Parallelism (single-orchestrator default)
 
