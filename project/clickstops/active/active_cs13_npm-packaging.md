@@ -40,7 +40,7 @@ What's still needed:
   - (c) **Size-budget violation**: against the harness with `--max-size-bytes 1` (1 byte) → exit 1 with size-violation message.
   - (d) **Missing-required violation**: tmpdir fixture with `files: []` (empty) → exit 1 because `bin/harness.mjs` etc. are missing from pack.
 
-- [ ] `bin/harness.mjs cmdLint` — wire `check-pack` as a new linter. **Guarded**: only enabled when the consumer cwd's `package.json` `name` matches `@henrik-me/agent-harness` OR when `--enable pack` is passed. This prevents false failures when consumers run `harness lint` against their own repos with different packaging conventions.
+- [ ] `bin/harness.mjs cmdLint` — wire `check-pack` as a new linter. **Guarded**: only enabled when the consumer cwd's `package.json` `name` matches `@henrik-me/agent-harness`. This prevents false failures when consumers run `harness lint` against their own repos with different packaging conventions. (A future `--enable pack` opt-in for non-harness packages is filed as out-of-scope here; can be added in a follow-up if needed.)
 
 - [ ] `.github/workflows/harness-self-check.yml` — no separate `npm pack --dry-run` step needed; `harness lint --quiet` already invokes the new check-pack linter for the harness self-host case (per the guard above). The cs-plan exit "npm pack --dry-run reproducible" is satisfied by the lint gate failing on any pack regression.
 
@@ -48,7 +48,7 @@ What's still needed:
   - **Today (Option B)**: `npx -y github:henrik-me/agent-harness#<ref>` works on the private repo with a `GITHUB_TOKEN` having `contents:read`.
   - **Future (Option C, post-public-flip)**: `npx -y @henrik-me/agent-harness@<version>` — labelled as planned for CS14+ / post-CS15b. Not yet active.
 
-- [ ] Mark planned CS04c (`pack whitelist verification`) as **superseded by CS13** in its planned file's preface, OR move it to done with a "absorbed-into-CS13" note. Avoids duplicate dispatch.
+- [ ] Mark planned CS04c (`pack whitelist verification`) as **partially superseded by CS13** — CS13's `check-pack` provides denylist/required-entries/size-budget validation. CS04c's original "exact whitelist" goal (any unexpected file → fail) is broader; it remains achievable as a follow-up extension to `check-pack.mjs` if needed but is not required for v0.1.0 go-public. Move the planned file to done/ with the supersession note. Avoids duplicate dispatch.
 
 ## Exit criteria
 
@@ -66,9 +66,40 @@ Single sub-agent for `scripts/check-pack.mjs` + `tests/check-pack.test.mjs`. Orc
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| `scripts/check-pack.mjs` + `tests/check-pack.test.mjs` | pending | sub-agent cs13-pack | agent-id=yoga-ah-sub-1 \| role=linter-author \| report-status=pending \| learnings=0 |
-| `bin/harness.mjs cmdLint` aggregator wiring (with self-host guard) + README installation sub-section + supersede planned CS04c | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| `scripts/check-pack.mjs` + `tests/check-pack.test.mjs` | done | sub-agent cs13-pack | agent-id=yoga-ah-sub-1 \| role=linter-author \| report-status=complete \| learnings=2 |
+| `bin/harness.mjs cmdLint` aggregator wiring (with self-host guard) + README installation sub-section + supersede planned CS04c | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-04
+**Outcome:** GO (R1 verdict; 3 non-blockers, 2 of which fixed inline by tightening the active CS plan)
+
+### Plan vs implementation
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| `scripts/check-pack.mjs` (size budget + forbidden patterns + required entries) | match | 197 lines; `spawnSync('npm', ['pack', '--dry-run', '--json'], { shell: true })` per LRN-029; fail-closed JSON parse; clean exit codes 0/1/2. |
+| `tests/check-pack.test.mjs` (≥4 tests) | match | 6 tests: clean repo passes; forbidden-pattern (uses `tests/` since npm strips `node_modules/`); size budget; missing required; usage errors. |
+| `bin/harness.mjs cmdLint` wired with self-host guard | match | Linter enabled only when cwd's `package.json.name === "@henrik-me/agent-harness"`. Other consumers see clean skip. (R1 NB: `--enable pack` opt-in dropped from plan as out-of-scope; documented in Deliverables.) |
+| README installation sub-section | match | Added "## Installation" with Option B (today) + Option C (future, post-public-flip). |
+| Supersede CS04c | match | Moved planned → done with supersession note. (R1 NB: wording softened to "partially superseded" since CS13 uses denylist + required-entries, NOT exact whitelist; documented in done CS04c file.) |
+
+### Test coverage
+
+Sufficient. Final state:
+- `node --test tests/*.test.mjs` → **486 pass / 0 fail** (was 480 baseline; +6 in check-pack.test.mjs).
+- `node bin/harness.mjs lint --quiet` → **14 pass / 0 fail / 3 skipped** (was 13/0/3; +1 pack).
+- `node bin/harness.mjs sync --mode=check --cwd .` → No drift.
+- `node scripts/check-pack.mjs --cwd .` → exit 0; 594652 bytes / 94 entries / 0 violations.
+
+### Findings
+
+R1 (GO with 3 NBs, 2 addressed inline):
+1. (NB) `--enable pack` opt-in planned but not implemented → plan updated to mark as out-of-scope; self-host guard is the only enablement mechanism for v0.1.0.
+2. (NB) CS04c supersession overstated "whitelist" → done CS04c file updated to clarify CS13 uses denylist + required-entries, not exact whitelist. Future allowlist extension filed as a CS04c-residual follow-up if needed.
+3. (NB) `.harness-lock.json` mutation noted → expected from `sync --mode=apply`; intentional.
+
+Sub-agent learning candidates (filed by cs13-pack):
+- npm always strips `node_modules/` from tarballs; `node_modules/` cannot be tested as a forbidden-pattern violation via real npm fixtures.
+- `check-text-encoding.mjs --dir <file>` rejects file paths; only accepts directories.

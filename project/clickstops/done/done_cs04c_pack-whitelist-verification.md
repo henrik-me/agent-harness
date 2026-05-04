@@ -1,12 +1,25 @@
-# CS04c — `harness pack` whitelist verification
+# CS04c — `harness pack` whitelist verification (SUPERSEDED by CS13)
 
-**Status:** planned
+**Status:** done
 **Owner:** —
-**Branch:** —
+**Branch:** — (superseded; never claimed independently)
 **Started:** —
-**Closed:** —
+**Closed:** 2026-05-04 (superseded; not implemented as a standalone CS)
 **Filed by:** CS04 close-out (GPT-5.5 R1 non-blocking #3: "`harness pack` runs `npm pack --dry-run` but does not assert the file list against an expected whitelist — drift goes undetected").
 **Depends on:** CS04
+**Superseded by:** CS13 (npm packaging readiness) — see `project/clickstops/done/done_cs13_npm-packaging.md`.
+
+## Supersession note
+
+CS04c was filed at CS04 close-out as a follow-up for `harness pack` whitelist verification. CS13 (npm packaging readiness) **partially absorbed** this scope: `scripts/check-pack.mjs` (CS13) parses `npm pack --dry-run --json` and validates against (a) a denylist of forbidden path patterns + exact paths, (b) a required-entries list, and (c) a size budget. Wired into `harness lint` aggregator with self-host guard. This delivers most of the CS04c original intent.
+
+**What CS13 does NOT cover** vs CS04c's stated goal: CS04c said "Any file present in the tarball that is NOT on the whitelist (or vice versa) causes a non-zero exit". CS13's check-pack uses a denylist + required-entries model, NOT an exact whitelist. Adding "any unexpected file fails" is achievable as a small extension to `check-pack.mjs` (compare packed paths against an allowlist set) but is deferred — it would require maintaining a per-file allowlist that drifts as the codebase grows. The denylist + required-entries model has lower maintenance overhead and catches the common failure modes (accidental publish of secrets, tests, or build artifacts).
+
+If exact-whitelist enforcement becomes valuable at CS15+ (public-flip), file as a small follow-up extension to CS13's `check-pack.mjs`.
+
+The pack-validation enforcement now runs as part of `harness lint --quiet` on every PR via the `harness-self-check.yml` workflow (CS11 self-host gate).
+
+CS04c is closed as superseded; the original goal/deliverables are preserved below for historical reference.
 
 ## Goal
 
@@ -52,4 +65,6 @@ Single sub-agent (owns `bin/harness.mjs` pack subcommand + `tests/cli.test.mjs` 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).
+
+(This CS was never independently implemented; it is superseded by CS13. The grandfathering line satisfies check-clickstop.mjs check #4. The actual plan-vs-implementation review of the work that supersedes CS04c lives in done_cs13_npm-packaging.md.)

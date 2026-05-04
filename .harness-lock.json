@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs12/close-out",
-  "resolved_sha": "09365a8ea800809b89b5896237857bc5c1789322",
+  "harness_ref": "cs13/content",
+  "resolved_sha": "6ded51cc631db6170610dc2e1d0e1f215510905d",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T14:40:20.456Z",
+  "synced_at": "2026-05-04T14:57:05.279Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -121,7 +121,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "df1dcdc25cd18b60d728ab53be18ceb8e89379eb86e8548ff95b08e161e631f5",
+      "rendered_hash": "ed3fc47cb08fdef7763aba48b393d8cdbf29d6b9eccad20d64166fe4f35370c6",
       "action": "preserved"
     },
     {
@@ -142,7 +142,7 @@
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "28d7d2c12e1c0131f867025e969b8d9b90247276cb66f4da3b172c032426ba63",
+      "rendered_hash": "eec64f440ad43849fb98a1e7b2e14d0da0af53e2e04cc14b6868854ab6b7444e",
       "action": "preserved"
     }
   ],

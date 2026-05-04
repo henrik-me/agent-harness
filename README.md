@@ -19,6 +19,14 @@ Three file classes:
 - **composed** — managed core + marker-preserved local blocks for project-specific extensions.
 - **seeded** — created if missing, never overwritten.
 
+## Installation
+
+Two install models are supported:
+
+**Option B — install from GitHub by ref** (today, while the repo is private + pre-publish): `npx -y github:henrik-me/agent-harness#<ref>` works in any environment with a `GITHUB_TOKEN` having `contents:read` on the harness repo. `<ref>` is a semver tag (e.g. `v0.1.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility.
+
+**Option C — install from npm by version** (planned for CS14+ post-public-flip; not active today): `npx -y @henrik-me/agent-harness@<version>` will work once the package is published. The `name` field in `package.json` already reserves the npm scope; the package is currently `private: true`. Same pinning advice via `harness.config.json` `version`.
+
 ## Quickstart (when v0.1.0 ships)
 
 ```bash
