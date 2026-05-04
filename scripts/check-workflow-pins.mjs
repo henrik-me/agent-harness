@@ -254,24 +254,36 @@ for (const filePath of allYmlFiles) {
 
   let refs;
   let usedFallback = false;
+  let yamlParseError = null;
 
   if (yaml) {
     try {
       const parsed = yaml.load(fileText);
       refs = collectRefsFromParsed(parsed);
-    } catch {
-      // YAML parse error — fall back to regex extraction.
+    } catch (e) {
+      // YAML parse error — fall back to regex extraction, but flag for fail-closed
+      // behavior since a parse failure when js-yaml IS available almost always means
+      // a real YAML bug in the workflow file (LRN-078 — CS14 private-smoke.yml had
+      // an unquoted `:` in a step name that caused GitHub Actions to reject the
+      // file silently). This is mechanical enforcement of valid YAML.
       refs = collectRefsFromText(fileText);
       usedFallback = true;
+      yamlParseError = e?.message ?? String(e);
     }
   } else {
     refs = collectRefsFromText(fileText);
     usedFallback = true;
   }
 
-  if (usedFallback && !quiet) {
+  if (yamlParseError) {
+    // Hard error — js-yaml is installed and parse failed. The workflow is broken.
     process.stdout.write(
-      `WARNING: ${relPath}: YAML parse failed — using regex fallback for pin extraction\n`
+      `ERROR: ${relPath}: YAML parse failed (${yamlParseError}). The workflow file is invalid and would be rejected by GitHub Actions. See LRN-078.\n`
+    );
+    totalErrors++;
+  } else if (usedFallback && !quiet) {
+    process.stdout.write(
+      `WARNING: ${relPath}: js-yaml unavailable — using regex fallback for pin extraction\n`
     );
   }
 

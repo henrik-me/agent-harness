@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T15:10Z (CS13 close-out)
+> **Last updated:** 2026-05-04T15:35Z (CS14 close-out — final CS before stopping)
 
 ## Orchestrators
 
@@ -23,6 +23,7 @@ _(no active CS — CS14 next on the mainline.)_
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS14 | Release tooling + v0.1.0 + private-consumption smoke test | 2026-05-04 | **Done.** Squash-merged as PR #53. CHANGELOG.md (Keep-a-Changelog), `release.yml` (tag-triggered, gh release create --draft, LRN-075 applied), `private-smoke.yml` (workflow_dispatch + schedule + PR; npx-from-private with GITHUB_TOKEN url-rewrite), `docs/private-consumption.md`, package.json bumped 0.0.0-pre → 0.1.0. 18 new tests (7 release + 11 smoke). **509 tests / 15/0/3 lint / no drift**. Plan-vs-impl R1 NEEDS-FIX → 2 inline fixes → R2 GO. Tag `v0.1.0` pushed; release.yml fired and produced a draft GitHub Release. Initial smoke run failed (YAML parse: unquoted `:` in step name) → fixed in close-out + LRN-078 filed (warning upgraded to error in `check-workflow-pins.mjs` when js-yaml is available). **Last CS before stopping per autopilot directive.** |
 | CS13 | npm packaging readiness | 2026-05-04 | **Done.** Squash-merged as PR #51. `scripts/check-pack.mjs` (denylist + required-entries + size budget), 6 new tests, wired into `harness lint` aggregator behind self-host guard. README `## Installation` section added. Also fixed two pre-existing Linux-CI failures in `check-public-artifact.test.mjs` (`*.log` fixture renamed to `.txt` so it stops being gitignored; empty-dir test switched to `mkdtempSync`). CS04c (`pack whitelist verification`) closed as **partially superseded** — exact-allowlist deferred. **486 tests pass** (was 480; +6). `harness lint --quiet`: **14/0/3** (was 13/0/3; +1 pack). Plan-vs-impl gate R1 GO with 3 NBs (2 fixed inline). 1 sub-agent (cumulative ~51). |
 | CS04c | pack whitelist verification | 2026-05-04 | **Closed as partially superseded by CS13.** CS13's `check-pack` provides denylist + required-entries + size-budget validation (most of CS04c's intent). Exact-whitelist enforcement (any unexpected file fails) is deferred — achievable as a small extension to `check-pack.mjs` if needed at CS15+. |
 
