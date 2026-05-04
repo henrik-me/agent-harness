@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T00:30Z (CS10 close-out)
+> **Last updated:** 2026-05-04T03:00Z (CS03b claim)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — CS11 ready to claim | — | — | — | 2026-05-03 | _(none)_ |
+| CS03b | Upgrade `lib/templating.mjs` + `lib/lock.mjs` from stubs to rich APIs | claimed | yoga-ah | cs03b/content | 2026-05-04 | _(none)_ |
 
 ## Recently Completed
 
