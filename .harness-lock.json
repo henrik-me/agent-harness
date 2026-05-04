@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs03c/content",
-  "resolved_sha": "7028d7691719c0ce6290109e86f4cce59b90f68e",
+  "resolved_sha": "ea718207d3046e2c24aba8b9ce6dd093caed5a01",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T13:36:15.676Z",
+  "synced_at": "2026-05-04T13:39:05.049Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
