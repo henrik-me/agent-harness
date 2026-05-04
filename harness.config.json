@@ -40,7 +40,8 @@
     "package-lock.json",
     ".gitignore",
     ".editorconfig",
-    "HANDOFF.md"
+    "HANDOFF.md",
+    "CHANGELOG.md"
   ],
   "templating": {
     "project_name": "agent-harness",

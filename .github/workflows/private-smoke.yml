@@ -1,0 +1,100 @@
+# .github/workflows/private-smoke.yml — CS14
+#
+# Verifies that a clean GitHub Actions runner can install + run the harness
+# from this private GitHub repository via `npx -y github:<owner>/<repo>#<ref>`.
+# Used as the canonical reproduction of the private-consumption flow.
+#
+# Triggers:
+#   - workflow_dispatch (manual, with `ref` input — defaults to `v0.1.0`)
+#   - schedule: weekly Monday 09:00 UTC (catches infra-side regressions)
+#   - pull_request: on main (small regression sanity check on the workflow itself)
+#
+# REQUIRED PAT SCOPES (for external private-tier consumers — NOT used by this
+# in-repo workflow, which uses the runner's `GITHUB_TOKEN`):
+#   - Fine-grained PAT, scoped to the harness repo, with:
+#     * Repository permissions: Contents: Read
+#   - Or classic PAT with `repo` (full) — not recommended.
+# Document and rotate as needed; placeholder examples MUST use ghp_FAKE_DO_NOT_USE.
+#
+# SECURITY (LRN-075): The `ref` input is an externally-influenced value. It is
+# passed through `env:` (never directly interpolated into `run:`) and validated
+# against a strict allowlist regex before any shell consumption.
+
+name: private-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (tag/branch/SHA) to smoke-test'
+        required: true
+        default: 'v0.1.0'
+  schedule:
+    - cron: '0 9 * * 1'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/private-smoke.yml'
+      - '.github/workflows/release.yml'
+      - 'bin/harness.mjs'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine ref
+        id: derive
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          if [ -n "$INPUT_REF" ]; then
+            ref="$INPUT_REF"
+            source="input"
+          else
+            ref="$GH_SHA"
+            source="github.sha"
+          fi
+          # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
+          # Covers semver tags (v0.1.0), branch names (main, feature/x), and 40-char SHAs.
+          # Rejects anything with shell metacharacters.
+          if ! printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'; then
+            echo "ERROR: ref \"$ref\" (source=$source) contains characters outside allowlist [a-zA-Z0-9._/-]." >&2
+            echo "ERROR: Refusing to interpolate into shell — see LRN-075." >&2
+            exit 2
+          fi
+          echo "Smoke ref: $ref (source=$source)"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Configure git url-rewrite (use GITHUB_TOKEN for github: protocol)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git so `npx -y github:owner/repo#ref` clones successfully
+          # against a private repo using the workflow's GITHUB_TOKEN.
+          # No tokens are echoed to stdout/stderr.
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Smoke — npx --help
+        env:
+          REF: ${{ steps.derive.outputs.ref }}
+        run: |
+          npx -y "github:henrik-me/agent-harness#${REF}" --help
+
+      - name: Smoke — harness init in a tempdir
+        env:
+          REF: ${{ steps.derive.outputs.ref }}
+        run: |
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          git init -q
+          npx -y "github:henrik-me/agent-harness#${REF}" init
+          # Verify init produced expected scaffolding.
+          test -f harness.config.json || (echo "ERROR: init did not produce harness.config.json" >&2 && exit 1)
+          echo "init succeeded; cwd=$tmp; tree:"
+          ls -la
