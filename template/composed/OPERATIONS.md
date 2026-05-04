@@ -343,6 +343,130 @@ as a `LEARNINGS CANDIDATES` entry. The orchestrator decides whether to elevate
 to `LEARNINGS.md`. **No silent decisions.** Silent decisions are the primary
 source of drift between what a sub-agent reports and what lands on disk.
 
+### Mandatory briefing preamble (copy verbatim into every dispatch)
+
+The orchestrator MUST paste the block below verbatim into every sub-agent
+dispatch prompt — including small or seemingly "obvious" ones. This is not
+a style preference; it is the discipline that prevents individual requirements
+(preflight SHA recording, BOM check, file-ownership scope, report-shape
+completeness) from being silently omitted. When orchestrators re-draft the
+preamble from memory or reference this section by hyperlink only, individual
+steps are routinely forgotten. LRN-068 demonstrates how silently-lost process
+steps are not surfaced until a downstream sub-agent raises them as
+escalations — if the preamble itself is incomplete, that catch also fails.
+
+A hyperlink to this section is NOT sufficient. Sub-agents operating under
+tight context or fast-path prompting will skip non-pasted references.
+Verbatim paste, not reference, is the mechanism that makes the discipline
+reliable.
+
+After pasting the block, append the task-specific sections: **Identity +
+scope** (agent role, CS, exact owned files, what NOT to touch), **Required
+reading** (explicit paths for this CS), **Deliverables**, **Decision
+authority**, and any additional task-specific conventions. Do not modify the
+pasted block itself.
+
+```text
+## CRITICAL PREFLIGHT (LRN-021)
+
+1. Run `git log --oneline -1` NOW and record the SHA. Include it in your
+   report as `PREFLIGHT SHA: <sha>`.
+2. You MUST NOT commit, push, rebase, reset, `git add`, or `gh pr ...` at
+   any point. The orchestrator commits at CS end.
+3. At the end of your work, re-run `git log --oneline -1`. It MUST equal
+   the preflight SHA. Include it as `FINAL SHA: <sha>`.
+4. Run `git status --short` and include the output in your report. Only
+   your owned files should appear; nothing must be staged.
+5. State literally in your report: "No commit was created."
+
+## File ownership (LRN-016)
+
+OWN EXCLUSIVELY — you may read AND write only the files listed in the
+Identity + scope section of this dispatch. You MUST NOT modify, rename,
+or delete any file outside that list. Curiosity reads (grep/view) are
+fine; writes are not.
+
+Rationale: parallel sub-agents share a working tree. If two agents write
+the same file, the later writer silently overwrites the earlier one's work
+with no error or warning. Non-overlapping ownership is the only safe
+parallel model (validated across CS03 where stubs silently replaced rich
+APIs — see LRN-016).
+
+## Required reading
+
+Read every path listed in the Required reading section of this dispatch.
+Do not infer what to read — only the explicit list counts. "Read what you
+need" produces silent gaps that surface as integration failures later.
+
+## Conventions to follow
+
+- ESM `.mjs` only, Node 20+ stdlib. No CommonJS `require()`, no `.cjs`
+  files, no npm dependencies unless explicitly authorized in this dispatch.
+
+- LF line endings, no BOM. After every file write on Windows, normalize:
+  strip BOM if present (first 3 bytes must NOT be 0xEF 0xBB 0xBF), replace
+  \r\n with \n. All content comparisons must normalize in the read step.
+  (LRN-006, LRN-018, LRN-065)
+
+- `requireValue(args, i, flagName)` guard for every value-taking CLI flag
+  (LRN-040). Must verify args[i+1] exists AND reject tokens starting with
+  `-`, exiting code 2 + usage message. Bare `if (args[i+1])` silently
+  consumes the next flag as a value.
+
+- Schema is source of truth (LRN-039). Read `schemas/*.schema.json` BEFORE
+  writing any field access against harness.config.json, .harness-lock.json,
+  or any other structured config. Do not guess field names.
+
+- Stdout for success output; stderr for errors and warnings (LRN-044).
+  `--quiet` suppresses success stdout only. Errors always go to stderr.
+
+- No dot-notation placeholders (LRN-049). Use flat keys only:
+  `{{agent_suffix}}` not `{{project.agent_suffix}}`. Dot-notation is not
+  supported by the template engine and will be emitted literally.
+
+- Consumer-root-relative paths (LRN-050). Scripts run from the consumer's
+  cwd, not the harness source location. Never use `import.meta.url` or
+  `process.cwd()` to resolve consumer-repo files.
+
+- Fail-closed parsers (LRN-033). Malformed JSON/YAML/etc → clear error
+  message to stderr + process.exit(1). NEVER silent default. NEVER let a
+  stack trace be the only error signal.
+
+## Self-checks before reporting
+
+Run all of the following and include each result in SELF-CHECKS RUN:
+
+1. `git status --short` — only owned files appear; nothing staged.
+2. `git log --oneline -1` — must match preflight SHA.
+3. BOM check on every modified file (LRN-065):
+     PowerShell: $b = [System.IO.File]::ReadAllBytes($path)
+                 ($b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) must be False
+     Node:       (await fs.readFile(p))[0] === 0xEF  must be false
+4. If tests were added/modified: `node --test` — report count delta
+   (e.g. "23 → 27 tests; all pass").
+5. For any .mjs files authored: `node -c <file>` exits 0.
+
+## Mandatory report shape
+
+Reports missing any field are rejected; orchestrator re-dispatches with
+missing fields explicitly listed.
+
+    STATUS: complete | partial | blocked
+    PREFLIGHT SHA: <sha>
+    FINAL SHA: <sha>
+    SUMMARY: <one paragraph>
+    FILES CHANGED:
+      - <path> (created | edited | deleted) — <one-line why> — <line count>
+    SELF-CHECKS RUN:
+      - git status / git log / BOM check / [other checks]: pass | fail
+    DECISIONS MADE:
+      - <decision> — rationale
+    ESCALATIONS: (none) | <issue> — recommended path
+    LEARNINGS CANDIDATES: (none) | <category>: <problem>: <finding>: <evidence>
+    NEXT STEPS (if partial/blocked):
+      - <what's needed to complete>
+```
+
 ### Sub-agent report shape (mandatory)
 
 Every sub-agent reports back with **exactly** this structure. A report

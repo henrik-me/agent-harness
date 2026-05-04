@@ -1,0 +1,28 @@
+# harness-self-check.yml
+#
+# CS11 Stage B.4: full drift gate active. Runs harness lint + sync --check
+# on every PR; intentional drift between template/managed|composed/ and
+# root files is mechanically prevented from this CS forward.
+
+name: harness-self-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: node scripts/validate-schemas.mjs
+      - run: node scripts/check-workflow-pins.mjs --dir .github/workflows
+      - run: node --test tests/*.test.mjs
+      - run: node bin/harness.mjs lint --quiet
+      - run: node bin/harness.mjs sync --mode=check --cwd .

@@ -1,0 +1,152 @@
+{
+  "harness_ref": "cs11/content",
+  "resolved_sha": "5f19bf962882736b0acf4201d36e65a26ec715dd",
+  "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
+  "synced_at": "2026-05-04T06:05:08.720Z",
+  "files": [
+    {
+      "target": "INSTRUCTIONS.md",
+      "source_template": "template/managed/INSTRUCTIONS.md",
+      "class": "managed",
+      "rendered_hash": "9282390c76e8235065774d4359670896fc0f29bc9145d9249cce58006459b46d",
+      "action": "updated"
+    },
+    {
+      "target": "TRACKING.md",
+      "source_template": "template/managed/TRACKING.md",
+      "class": "managed",
+      "rendered_hash": "af3aae20f73963d9d5bd208732ced51a75e2f4d625952de1de0f388d4bd98807",
+      "action": "updated"
+    },
+    {
+      "target": "RETROSPECTIVES.md",
+      "source_template": "template/managed/RETROSPECTIVES.md",
+      "class": "managed",
+      "rendered_hash": "6222c9191e473569a89889ac0cdd7ea9effcc16b04564517b212eabacb202a85",
+      "action": "updated"
+    },
+    {
+      "target": "READMEGUIDE.md",
+      "source_template": "template/managed/READMEGUIDE.md",
+      "class": "managed",
+      "rendered_hash": "52c275f1ddb875284ceab464f71bd56ca8abe41c6f0456430ff82cfc3549c3c3",
+      "action": "updated"
+    },
+    {
+      "target": ".github/CODEOWNERS",
+      "source_template": "template/managed/.github/CODEOWNERS",
+      "class": "managed",
+      "rendered_hash": "6b09b86b4141746486e930728fd373266242ef6ce5b852bc805d82736c0d69e2",
+      "action": "updated"
+    },
+    {
+      "target": ".github/copilot-instructions.md",
+      "source_template": "template/managed/.github/copilot-instructions.md",
+      "class": "managed",
+      "rendered_hash": "60826bdd251f2b0e7d0c4819bc1ee4a9e442f13e17c813326690be68616fe777",
+      "action": "updated"
+    },
+    {
+      "target": ".github/pull_request_template.md",
+      "source_template": "template/managed/.github/pull_request_template.md",
+      "class": "managed",
+      "rendered_hash": "196dc64ad2627b653de363531885838703e30a637384a1fb32b7641ba444b1ad",
+      "action": "updated"
+    },
+    {
+      "target": "CONVENTIONS.md",
+      "source_template": "template/composed/CONVENTIONS.md",
+      "class": "composed",
+      "rendered_hash": "380f604632ce9a9f799f5861524b43692e7bd4cb6235ced6a6725e47a0641a2a",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "conventions.project",
+          "source_line_range": {
+            "start": 145,
+            "end": 148
+          },
+          "body_hash": "6b83cfcb83b017bc39299353cebea5097efeb5f6d442690ad7a03ccdc1a0a534",
+          "template_marker_hash": "d6d8dcea1d31794b2b9a755a199b5c0b76cc2c34e513164718e917c4945f1b92",
+          "provenance": "seeded-empty"
+        }
+      ]
+    },
+    {
+      "target": "OPERATIONS.md",
+      "source_template": "template/composed/OPERATIONS.md",
+      "class": "composed",
+      "rendered_hash": "91318f8f69d77f17ea71f72a93adad717cbb785a160f947f61fe20af560e1f10",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "operations.project-deploy",
+          "source_line_range": {
+            "start": 911,
+            "end": 913
+          },
+          "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
+          "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
+          "provenance": "seeded-empty"
+        }
+      ]
+    },
+    {
+      "target": "REVIEWS.md",
+      "source_template": "template/composed/REVIEWS.md",
+      "class": "composed",
+      "rendered_hash": "d604b363fe3350e0ce0945ee642d919f9689bcac4a74f6b07e52d2e7ecf1fd19",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "reviews.project-gates",
+          "source_line_range": {
+            "start": 262,
+            "end": 279
+          },
+          "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
+          "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
+          "provenance": "seeded-empty"
+        }
+      ]
+    },
+    {
+      "target": "CONTEXT.md",
+      "source_template": "template/seeded/CONTEXT.md",
+      "class": "seeded",
+      "rendered_hash": "5d66e4c2efaa50d2d8f0020f02c61b6e168766af69ac24698bcde3b2447ae062",
+      "action": "preserved"
+    },
+    {
+      "target": "ARCHITECTURE.md",
+      "source_template": "template/seeded/ARCHITECTURE.md",
+      "class": "seeded",
+      "rendered_hash": "9fd46130a406475651b10ccdcc3cc10ed70a084cf740a2c8c0776566a0582c6c",
+      "action": "preserved"
+    },
+    {
+      "target": "LEARNINGS.md",
+      "source_template": "template/seeded/LEARNINGS.md",
+      "class": "seeded",
+      "rendered_hash": "cbab1e3e238acc4bcc21d0c0634baa1cf0f929f7f7c6a12364a6ed03f3955c87",
+      "action": "preserved"
+    },
+    {
+      "target": "WORKBOARD.md",
+      "source_template": "template/seeded/WORKBOARD.md",
+      "class": "seeded",
+      "rendered_hash": "53f959d9a1df8a7687fd813ce28765c173f4ea504ceefc9307a8ef450052f4d0",
+      "action": "preserved"
+    }
+  ],
+  "scaffolds": [],
+  "excluded": [
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    ".editorconfig",
+    "HANDOFF.md"
+  ]
+}

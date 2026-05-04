@@ -210,17 +210,58 @@ Total: 3 sub-agents + heavy orchestrator. **All sub-agent dispatches use the new
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Stage 0: canonical sub-agent briefing preamble (template + root OPERATIONS.md, INSTRUCTIONS.md, .github/copilot-instructions.md) | pending | sub-agent cs11-preamble | agent-id=yoga-ah-sub-1 \| role=process-doc-author \| report-status=pending \| learnings=0 |
-| Stage A.1+A.6: harness.config.json + cs11-self-host-config.test.mjs | pending | sub-agent cs11-config | agent-id=yoga-ah-sub-2 \| role=config-author \| report-status=pending \| learnings=0 |
-| Stage A.2: bootstrap snapshot copies | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage A.3: sync-probe-report.md + render-preview.mjs/.md + placeholder-audit.mjs/.md | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage A.4+A.5: harness-self-check.yml skeleton + reviewer-checklist.md | pending | sub-agent cs11-ci | agent-id=yoga-ah-sub-3 \| role=ci-workflow-author \| report-status=pending \| learnings=0 |
-| Stage B.1+B.2: render+write all 10 root files; byte-match verification | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage B.3: untouched-file verification | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage B.4: activate full CI gate | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage B.5: idempotency + lint gate (sync --check; harness lint) | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Stage B.6: plan-vs-implementation review (CS03b gate) | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Stage 0: canonical sub-agent briefing preamble (template + root OPERATIONS.md, INSTRUCTIONS.md, .github/copilot-instructions.md) | done | sub-agent cs11-preamble | agent-id=yoga-ah-sub-1 \| role=process-doc-author \| report-status=complete \| learnings=0 |
+| Stage A.1+A.6: harness.config.json + cs11-self-host-config.test.mjs | done | sub-agent cs11-config | agent-id=yoga-ah-sub-2 \| role=config-author \| report-status=complete \| learnings=0 |
+| Stage A.2: bootstrap snapshot copies | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage A.3: sync-probe-report.md + render-preview.mjs/.md + placeholder-audit.mjs/.md | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage A.4+A.5: harness-self-check.yml skeleton + reviewer-checklist.md | done | sub-agent cs11-ci | agent-id=yoga-ah-sub-3 \| role=ci-workflow-author \| report-status=complete \| learnings=0 |
+| Stage B.1+B.2: render+write all 10 root files; byte-match verification | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage B.3: untouched-file verification | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage B.4: activate full CI gate | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage B.5: idempotency + lint gate (sync --check; harness lint) | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Stage B.6: plan-vs-implementation review (CS03b gate) | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the CS03b gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-04
+**Outcome:** GO (R2 verdict; R1 surfaced 2 blockers + 1 NB, all addressed inline)
+
+### Plan vs implementation
+
+| Plan deliverable | What got built | Outcome | Notes |
+|---|---|---|---|
+| Stage 0: canonical sub-agent briefing preamble (LRN-068) | Sub-section added to `template/composed/OPERATIONS.md` § Sub-agent dispatch + root mirror; bullet added to `template/managed/INSTRUCTIONS.md` + root mirror; Hard rule 5 added to `template/managed/.github/copilot-instructions.md` | match | All Stage A + B sub-agent dispatches in CS11 itself pasted the canonical preamble verbatim (D8 self-application validated). Mechanical enforcement limited to file-presence per D8. |
+| A.1: `harness.config.json` self-host config | Authored at root; passes schema validation; matches D4 templating values + D5 local_blocks + D2 exclusion list (HANDOFF.md included) | match | Used `version: "0.0.0-pre"` from package.json. |
+| A.2: bootstrap snapshot of 6 root proto docs | `project/clickstops/active/active_cs11_self-host/bootstrap-snapshot/` populated | match | BOM-stripped; gitkeep removed. |
+| A.3: sync-probe-report.md + render-preview.md + placeholder-audit.md | All 3 artifacts present; probe captured expected-nonzero composed failure with explanatory header; render-preview correctly identified all 10 files as needing migration write; placeholder-audit classifies all 7 unresolved tokens as intentional-literal (5 escape-rendered, 2 documented prose) | match | R1 fix: classifier now detects `\{{key}}` escape-rendered intentionals via source-template inspection. |
+| A.4 + B.4: harness-self-check.yml validate-only skeleton → full drift gate | Skeleton authored with TODO(CS11 B.4); B.4 activated full gate by adding `harness lint --quiet` and `sync --mode=check --cwd .` steps and removing TODO block | match | Workflow uses `@v4` tag refs (consistent with validate-schemas.yml; check-workflow-pins.mjs only enforces SHA pins on internal harness refs). |
+| A.5: reviewer-checklist.md | Authored under active CS dir; covers all cs-plan-mandated gates + CS11-specific gates | match | — |
+| A.6: cs11-self-host-config.test.mjs (≥4 tests) | Authored: schema validation, file-class exhaustive partition, local_blocks mirrors composed-template block IDs, templating values defensible | match | Test 3 catches future drift if a composed template renames a local block. |
+| B.1: render+write all 10 root files (D7 manual-write strategy) | One-shot Node script rendered+wrote 7 managed + 3 composed root files; `harness sync --mode=apply` was NOT used | match | D7 strategy validated: composed planning would have rejected before any write (sync-probe-report.md confirms expected fail). |
+| B.2: byte-match verification | All 10 files match `applyTemplating(template, config.templating)` byte-for-byte (managed + composed including placeholder local-block bodies) | match | — |
+| B.3: untouched-file verification | Project-owned (README, LICENSE, package.json, package-lock.json, .gitignore, .editorconfig, HANDOFF.md): zero diff vs main. Seeded (CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD): only CONTEXT.md has 1-line orchestrator cursor update | match | — |
+| B.4: activate full CI gate | `harness-self-check.yml` updated; `harness lint --quiet` + `sync --mode=check --cwd .` steps added; TODO block removed | match | R1 fix: also removed `--skip composed-blocks` and `TODO(CS11 B.4)` markers from `tests/cli.test.mjs`. |
+| B.5: idempotency + lint gate | First-time `sync --mode=apply` created `.harness-lock.json` (11 changes applied); subsequent `sync --mode=check` exits 0 (no drift); `harness lint --quiet` passes 12/0/3 (was 9/0/3 — 3 new composed-blocks passes for the now-marker-bearing root files); `node --test` 436/0; schemas 74/0; check-workflow-pins clean | match | Binding correctness gate GREEN. |
+| B.6: this gate | Iterated R1 → R2 GO | match | Recursive validation pattern (CS exercises its own gate) successful for 2nd time after CS03b. |
+| Inline orchestrator fix: CONTEXT.md "ready to claim" stale phrase removed (check-context linter rejected) | added | Documented-behavior defect per D6 inline-OK examples. |
+
+### Test coverage
+
+Sufficient. Verified after R1 fixes:
+- `node --test tests/*.test.mjs` → **436 pass / 0 fail** (was 432 baseline; +4 new in `tests/cs11-self-host-config.test.mjs`).
+- `node scripts/validate-schemas.mjs` → 74 / 0.
+- `node bin/harness.mjs lint --quiet` → **12 pass / 0 fail / 3 skipped** (was 9/0/3 — composed-blocks for CONVENTIONS/OPERATIONS/REVIEWS now pass since markers exist).
+- `node bin/harness.mjs sync --mode=check --cwd .` → **No drift detected (exit 0)** — binding correctness gate.
+- `node scripts/check-clickstop.mjs --dir project/clickstops` → 0 errors.
+- `node scripts/check-workflow-pins.mjs --dir .github/workflows` → 0 errors.
+- `node project/clickstops/active/active_cs11_self-host/placeholder-audit.mjs` → exit 0, 0 should-have-resolved, 0 unclassified.
+
+### Findings
+
+R1 (NEEDS-FIX, 2 blockers + 1 NB):
+1. Placeholder audit reported 5 `should-have-resolved` `{{repo_short}}` tokens that were actually escape-rendered via CS03b's `\{{key}}` syntax in `template/managed/TRACKING.md` path examples → fixed by enhancing `placeholder-audit.mjs` `classify()` to inspect source template for escape syntax.
+2. `tests/cli.test.mjs` had Stage-A `--skip composed-blocks` workarounds + `TODO(CS11 B.4)` markers → removed; tests pass without skips since root composed docs now have markers.
+3. (NB) Tasks ledger rows still showed `pending` → flipped all 10 to `done`/`complete`.
+
+R2: GO. No remaining blockers. Self-application of the gate validated end-to-end for the second time (CS03b was first).
