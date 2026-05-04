@@ -1,0 +1,94 @@
+# harness-drift.yml — scheduled drift detection per CS12 / LRN-074.
+#
+# Runs weekly. Calls `harness sync --mode=check` against this repo. If drift
+# is detected (exit 1), runs `sync --mode=apply` to generate the update,
+# then opens a PR via peter-evans/create-pull-request. Skips PR on no drift.
+# Other exit codes fail the workflow loudly (broken install / network /
+# harness crash MUST NOT silently produce drift PRs).
+
+name: harness-drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '20'
+      - id: derive-ref
+        name: Derive harness CLI ref from harness.config.json
+        # Self-host fallback (CS12 R1+R2 gate fix): if version is empty or the
+        # placeholder "0.0.0-pre" AND the running repo is henrik-me/agent-harness
+        # itself, use ${{ github.sha }} (a valid agent-harness commit SHA). For
+        # any OTHER repo with an unresolvable version, fail LOUDLY — github.sha
+        # there would be the consumer's commit SHA, NOT an agent-harness ref,
+        # and `npx github:henrik-me/agent-harness#<consumer-sha>` would fail
+        # with a confusing "Could not resolve" error.
+        run: |
+          version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('harness.config.json','utf8')).version || '')")
+          if [ -n "$version" ] && [ "$version" != "0.0.0-pre" ]; then
+            ref="$version"
+            echo "Using harness.config.json version ref: $ref"
+          elif [ "${{ github.repository }}" = "henrik-me/agent-harness" ]; then
+            ref="${{ github.sha }}"
+            echo "Using github.sha self-host fallback: $ref"
+          else
+            echo "ERROR: harness.config.json version is empty or '0.0.0-pre' but this is not the henrik-me/agent-harness repo." >&2
+            echo "ERROR: Pin a real semver tag (e.g. 'v0.1.0'), branch name, or 40-char SHA in harness.config.json 'version'." >&2
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - id: check-drift
+        name: Check for drift
+        # Capture exit code explicitly. set +e so the script can branch on rc.
+        run: |
+          set +e
+          npx -y "github:henrik-me/agent-harness#${{ steps.derive-ref.outputs.ref }}" sync --mode=check --cwd .
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "No drift detected."
+            echo "drift_detected=false" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 1 ]; then
+            echo "Drift detected."
+            echo "drift_detected=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: harness sync exited with unexpected code $rc (not 0=no-drift, 1=drift)" >&2
+            exit "$rc"
+          fi
+      - name: Apply drift fix
+        if: steps.check-drift.outputs.drift_detected == 'true'
+        run: npx -y "github:henrik-me/agent-harness#${{ steps.derive-ref.outputs.ref }}" sync --mode=apply --cwd .
+      - name: Open PR
+        if: steps.check-drift.outputs.drift_detected == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1 as of 2026-05-04
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          commit-message: "chore: harness drift fix"
+          title: "harness drift detected: apply auto-update"
+          body: |
+            The harness drift gate detected divergence between
+            `template/managed|composed/` (at ref `${{ steps.derive-ref.outputs.ref }}`)
+            and the root files in `{{repo_short}}`. This PR contains the
+            output of `harness sync --mode=apply --cwd .`.
+
+            Reviewer checklist:
+            - [ ] Confirm the changes are expected (matches the upstream
+              harness ref).
+            - [ ] Run `harness lint --quiet` locally to validate.
+
+            Cc: @{{default_codeowner}}
+          branch: harness-drift-fix
+          delete-branch: true
+          assignees: "{{default_codeowner}}"
+          reviewers: "{{default_codeowner}}"

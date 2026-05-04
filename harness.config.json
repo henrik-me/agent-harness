@@ -14,7 +14,8 @@
       "READMEGUIDE.md",
       ".github/CODEOWNERS",
       ".github/copilot-instructions.md",
-      ".github/pull_request_template.md"
+      ".github/pull_request_template.md",
+      ".github/workflows/harness-drift.yml"
     ]
   },
   "composed": {

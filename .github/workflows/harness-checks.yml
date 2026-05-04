@@ -1,0 +1,50 @@
+# harness-checks.yml — reusable workflow per CS12.
+#
+# Consumers invoke this with ~10 lines:
+#   jobs:
+#     harness:
+#       uses: henrik-me/agent-harness/.github/workflows/harness-checks.yml@v0.1.0
+#       with:
+#         cli-ref: v0.1.0  # optional; defaults to harness.config.json version
+#
+# Runs `harness lint --quiet` against the caller repo using the harness CLI
+# pinned to the supplied (or auto-derived) ref.
+
+name: harness-checks
+
+on:
+  workflow_call:
+    inputs:
+      cli-ref:
+        description: |
+          Harness CLI ref (semver tag, branch name, or full 40-char SHA) to
+          install via `npx -y github:henrik-me/agent-harness#<ref>`. If
+          omitted, derived from the caller repo's harness.config.json version
+          field.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  harness-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '20'
+      - id: derive-ref
+        name: Derive effective harness CLI ref
+        run: |
+          if [ -n "${{ inputs.cli-ref }}" ]; then
+            ref="${{ inputs.cli-ref }}"
+          elif [ -f harness.config.json ]; then
+            ref=$(node -e "console.log(JSON.parse(require('fs').readFileSync('harness.config.json','utf8')).version)")
+          else
+            echo "ERROR: no cli-ref input AND no harness.config.json found" >&2
+            exit 2
+          fi
+          echo "Effective harness CLI ref: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Run harness lint
+        run: "npx -y github:henrik-me/agent-harness#${{ steps.derive-ref.outputs.ref }} lint --quiet"

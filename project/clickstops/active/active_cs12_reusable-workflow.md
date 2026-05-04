@@ -89,11 +89,45 @@ Plus orchestrator-owned: `tests/cs12-workflows.test.mjs`, sync apply for the ren
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| `.github/workflows/harness-checks.yml` (reusable) + `.github/workflows/harness-self-check-via-reusable.yml` (self-host) | pending | sub-agent cs12-reusable | agent-id=yoga-ah-sub-1 \| role=workflow-author \| report-status=pending \| learnings=0 |
-| `template/managed/.github/workflows/harness-drift.yml` (drift template) | pending | sub-agent cs12-drift | agent-id=yoga-ah-sub-2 \| role=workflow-author \| report-status=pending \| learnings=0 |
-| OPERATIONS.md doc paragraphs (template + root mirror) | pending | sub-agent cs12-docs | agent-id=yoga-ah-sub-3 \| role=doc-author \| report-status=pending \| learnings=0 |
-| `tests/cs12-workflows.test.mjs` + sync apply for rendered drift workflow at root + lock fixup | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| `.github/workflows/harness-checks.yml` (reusable) + `.github/workflows/harness-self-check-via-reusable.yml` (self-host) | done | sub-agent cs12-reusable | agent-id=yoga-ah-sub-1 \| role=workflow-author \| report-status=complete \| learnings=1 |
+| `template/managed/.github/workflows/harness-drift.yml` (drift template) | done | sub-agent cs12-drift | agent-id=yoga-ah-sub-2 \| role=workflow-author \| report-status=complete \| learnings=1 |
+| OPERATIONS.md doc paragraphs (template + root mirror) | done | sub-agent cs12-docs | agent-id=yoga-ah-sub-3 \| role=doc-author \| report-status=complete \| learnings=0 |
+| `tests/cs12-workflows.test.mjs` + sync apply for rendered drift workflow at root + lock fixup | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-04
+**Outcome:** GO (R3 verdict; R1+R2 found 2 blockers + 1 NB, all addressed inline)
+
+### Plan vs implementation
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| `.github/workflows/harness-checks.yml` (reusable workflow_call) | match | Optional `cli-ref` input with harness.config.json fallback; runs `npx -y github:henrik-me/agent-harness#<ref> lint --quiet`; SHA-pinned `actions/checkout` + `actions/setup-node`. |
+| `.github/workflows/harness-self-check-via-reusable.yml` (self-host integration) | match | Calls reusable workflow with `cli-ref: "${{ github.sha }}"` (NOT `0.0.0-pre`). |
+| `template/managed/.github/workflows/harness-drift.yml` (drift template) | match | Weekly `0 6 * * 1` cron + `workflow_dispatch`; permissions block (contents+pull-requests write); explicit `rc=$?` capture (0=no-drift, 1=drift+open-PR, else=fail-loud); `peter-evans/create-pull-request@5f6978f...` SHA-pinned; all `{{...}}` placeholders quoted. |
+| Drift ref-derivation: 3-branch logic (real version / self-host fallback / fail-loud) | match (R2 fix) | R2 caught unguarded `${{ github.sha }}` fallback would fail in consumer repos; now guarded by `github.repository == henrik-me/agent-harness` check, with explicit fail-loud branch + "Pin a real semver tag" error message for unguarded consumer cases. |
+| OPERATIONS.md doc paragraphs (template + root mirror) | match | Two new sub-sections in § Sync: "### Reusable CI workflow" and "### Drift-detection workflow". Mirrored byte-aligned. |
+| `harness.config.json` `managed.files` extended with `.github/workflows/harness-drift.yml` | match | Sync renders the drift template at root; harness self-hosts the drift workflow. |
+| `tests/cs12-workflows.test.mjs` | match | 15 tests covering all the above (initial 14 + 1 R1 fix for fallback assertion). All pass. |
+| Inline orchestrator: tests/cs12-workflows.test.mjs CRLF normalization | added | `Add-Content` PowerShell call introduced CRLF; check-text-encoding linter caught it pre-commit (working as designed — proves CS03c's value). |
+
+### Test coverage
+
+Sufficient. Final state:
+- `node --test tests/*.test.mjs` → **478 pass / 0 fail** (was 463; +15 in tests/cs12-workflows.test.mjs).
+- `node bin/harness.mjs lint --quiet` → 13 pass / 0 fail / 3 skipped.
+- `node bin/harness.mjs sync --mode=check --cwd .` → No drift.
+- `node scripts/check-workflow-pins.mjs --dir .github/workflows` → 0 errors.
+
+### Findings
+
+R1 (NEEDS-FIX, 1 blocker + 1 NB):
+1. Self-host root drift workflow used `harness.config.json.version = 0.0.0-pre` as cli-ref → invalid git ref. Fixed via `${{ github.sha }}` fallback.
+2. (NB) PR body doesn't list changed files. Intentional divergence: PR body explains drift in prose; reviewer can `git diff` the PR for details. Documented as deliberate scope tradeoff.
+
+R2 (NEEDS-FIX, 1 blocker):
+1. Unguarded `${{ github.sha }}` fallback would fail in consumer repos (their `github.sha` isn't an agent-harness ref). Fixed: guarded with `github.repository == henrik-me/agent-harness` check + fail-loud "Pin a real semver tag" branch for consumers with unresolvable version.
+
+R3: GO. No remaining blockers. The 3-iteration depth (consistent with HIGH-RISK workflow CS) reflects the genuine subtlety of cross-repo workflow templating; the gate caught both the self-host trap AND the consumer regression risk that a less rigorous review would have missed.
