@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T08:00Z (CS11 close-out)
+> **Last updated:** 2026-05-04T08:30Z (CS03c claim)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — CS12 (reusable workflow + drift template) is next | — | — | — | 2026-05-04 | _(none)_ |
+| CS03c | Add `check-text-encoding.mjs` linter (BOM + line endings) | claimed | yoga-ah | cs03c/content | 2026-05-04 | _(none)_ |
 
 ## Recently Completed
 
