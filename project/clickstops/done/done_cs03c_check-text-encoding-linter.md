@@ -1,10 +1,10 @@
 # CS03c — Add `check-text-encoding.mjs` linter to harness aggregator (BOM + line endings)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs03c/content
+**Branch:** cs03c/content (squash-merged as `fcb635e`)
 **Started:** 2026-05-04
-**Closed:** —
+**Closed:** 2026-05-04
 **Filed by:** CS03b close-out per [LRN-065](../../../LEARNINGS.md#lrn-065). Scope extended at claim time to also cover line endings (LRN-074, surfaced in CS11 close-out R1/R2 — Windows core.autocrlf + sync drift gate interaction).
 **Depends on:** CS03b, CS11 (self-host so the linter exercises against rendered root files).
 

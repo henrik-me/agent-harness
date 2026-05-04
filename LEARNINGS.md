@@ -1504,6 +1504,26 @@ claim_area: sub-agent-coordination
 
 **Disposition:** Permanent. The verbatim-paste discipline is the new normal for every sub-agent dispatch. Cost (large prompts) is real but worth it. Future improvement: tooling (e.g. `harness brief --preamble`) could automate the paste, but the discipline is mechanical enough that orchestrator-side paste is sustainable in the meantime. The cumulative dispatch count (~46) with zero violations is the strongest empirical evidence that the LRN-016 + LRN-021 + LRN-068 + LRN-073 pattern stack is durable at scale.
 
+### LRN-074
+
+```yaml
+id: LRN-074
+date: 2026-05-04
+category: tooling
+source_cs: CS03c
+status: applied
+tags: [line-endings, crlf, autocrlf, sync-drift, harness-self-check, windows, mechanical-enforcement]
+claim_area: linter-design
+```
+
+**Problem:** CS11's self-host swap (PR #37) landed all 10 root files as LF in the git index, but on Windows the working tree carried CRLF (git's `core.autocrlf=true` converted on checkout). `harness sync --mode=check` reads working-tree bytes and compares against the rendered template (LF). Result: false-drift detected on Windows even though the git history was LF-canonical and Linux CI would see no drift. CS11 R1 review caught this with a 3-step fix (`.gitattributes` + `core.autocrlf=false` + lock refresh). The deeper failure: there was no linter that would have caught CRLF in the working tree before sync surfaced it as drift.
+
+**Finding:** Windows-Linux line-ending mismatches are a recurring, mechanical problem that affects any tool comparing file bytes (sync drift detection, hash-based caches, content-address validators). The defensive layer is a linter that runs in `harness lint` on every PR (and as part of sub-agent self-checks) and rejects any text-file with CRLF or bare `\r`. Combined with `.gitattributes eol=lf`, this prevents the class of bugs entirely. CS03c added this as `scripts/check-text-encoding.mjs` (also covers LRN-006/018/065 BOM detection in the same scan — single linter, two checks for efficiency).
+
+**Evidence:** CS11 PR #37 R1 found `harness sync --mode=check` failing on Windows due to CRLF drift; R2 found `.harness-lock.json` rendered_hash entries had been computed from CRLF content. Two iterations of fix; root cause was Windows autocrlf interaction. CS03c PR #40 added `check-text-encoding.mjs` (BOM + CRLF detection); wired into `harness lint`; ran clean against the harness repo (338 files checked, 0 violations). The plan-vs-impl gate caught a `.git`-substring-matches-`.github` exclude bug in the linter itself (R1 NEEDS-FIX → R2 GO with segment-prefix matching) — meta-validation that the gate works.
+
+**Disposition:** `check-text-encoding` is now part of the standard 13-linter aggregator and runs by default. Future projects bootstrapped via `harness init` will inherit the same enforcement. The linter is also referenced in the canonical sub-agent briefing preamble (CS11 LRN-068 follow-up) as the standard self-check command — replaces the previous PowerShell BOM-check snippet.
+
 ## Obsolete
 
 (none yet)
