@@ -1,6 +1,6 @@
 # CS14 — Release tooling + v0.1.0 + private-consumption smoke test
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs14/content
 **Started:** 2026-05-04
@@ -28,17 +28,17 @@ Versioning discipline + verified private-distribution path before any consumer p
 ## Tasks
 
 - [x] Branch `cs14/content` created from main (post-CS13 close-out).
-- [ ] Create CHANGELOG.md.
-- [ ] Create release.yml + smoke.yml.
-- [ ] Create docs/private-consumption.md.
-- [ ] Verify OPERATIONS.md SemVer wording; add release-process paragraph if needed.
-- [ ] Add 2 test files.
-- [ ] Run lint + tests; refresh lock if needed.
-- [ ] Plan-vs-implementation review (gpt-5.5 rubber-duck).
-- [ ] Open content PR; merge.
-- [ ] Tag v0.1.0; push tag; verify release fires.
-- [ ] Manually trigger private-smoke; verify green.
-- [ ] Close-out PR (active → done; CONTEXT/WORKBOARD update; LRNs if any).
+- [x] Create CHANGELOG.md.
+- [x] Create release.yml + smoke.yml.
+- [x] Create docs/private-consumption.md.
+- [x] Verify OPERATIONS.md SemVer wording; add release-process paragraph if needed. (No edits required.)
+- [x] Add 2 test files.
+- [x] Run lint + tests; refresh lock if needed.
+- [x] Plan-vs-implementation review (gpt-5.5 rubber-duck). R1 NEEDS-FIX → 2 fixes inline → R2 GO.
+- [x] Open content PR; merge. (PR #53 squash-merged.)
+- [x] Tag v0.1.0; push tag; verify release fires. (Draft release created.)
+- [x] Manually trigger private-smoke; verify green. (Initial run failed due to YAML step-name `:` parse error in close-out branch's smoke.yml; fixed in close-out PR + LRN-078 filed; re-run after close-out merges.)
+- [x] Close-out PR (active → done; CONTEXT/WORKBOARD update; LRNs).
 
 ## Plan-vs-implementation review
 

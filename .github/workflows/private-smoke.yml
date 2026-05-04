@@ -70,7 +70,7 @@ jobs:
           echo "Smoke ref: $ref (source=$source)"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
-      - name: Configure git url-rewrite (use GITHUB_TOKEN for github: protocol)
+      - name: 'Configure git url-rewrite (use GITHUB_TOKEN for github: protocol)'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

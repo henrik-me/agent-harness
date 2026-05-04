@@ -1603,6 +1603,26 @@ Setting `target: null` makes the aggregator skip the linter cleanly (counted in 
 
 **Disposition:** Pattern documented in CONVENTIONS.md (or future `LINTER-AUTHORING.md`): linters that validate the harness package, the harness templates, the harness CI workflows, or any other harness-internal artifact MUST use the self-host guard. Consumer-side linters (the default) MUST NOT need any guard. A small naming convention helps: harness-only linter scripts can be prefixed `check-self-` (e.g. `check-self-pack`) to make their intent obvious — defer until we have a second example to justify the rename.
 
+### LRN-078
+
+```yaml
+id: LRN-078
+date: 2026-05-04
+category: tooling
+source_cs: CS14
+status: applied
+tags: [github-actions, yaml-parse, fail-loud, mechanical-enforcement, ci-silent-failure, workflow-design]
+claim_area: linter-design
+```
+
+**Problem:** CS14's `private-smoke.yml` had an unquoted `:` in a step name (`- name: Configure git url-rewrite (use GITHUB_TOKEN for github: protocol)`). YAML's parser reads this as `name: Configure git url-rewrite (use GITHUB_TOKEN for github` followed by an invalid mapping `: protocol)`, and rejects the file. GitHub Actions silently failed the workflow run with the unhelpful message "This run likely failed because of a workflow file issue" — no syntax-error pointer, no log content. The local linter `check-workflow-pins.mjs` (CS06) detected the parse failure but only emitted a WARNING and fell back to regex extraction for its specific job (extracting action refs); the warning was acceptable because js-yaml might be unavailable on consumer machines.
+
+**Finding:** The fail-soft fallback in `check-workflow-pins.mjs` was correct for the "js-yaml not installed" case (regex fallback works for the pin-extraction job) but masked the more important "js-yaml IS installed AND the file is genuinely broken YAML" case. Mechanical enforcement: when js-yaml IS available and parsing fails, that ALWAYS means the workflow file is broken (because if a real GitHub runner can't parse it, the workflow will silently fail). Promote the warning to an ERROR in that specific case; keep the regex fallback as a last-resort path only for the js-yaml-unavailable case (with a friendly WARNING).
+
+**Evidence:** CS14 PR #53 close-out: extended `scripts/check-workflow-pins.mjs` to track `yamlParseError` separately from `usedFallback`. When `yamlParseError` is non-null AND js-yaml is available, emit `ERROR: <path>: YAML parse failed (<message>). The workflow file is invalid and would be rejected by GitHub Actions. See LRN-078.` and increment `totalErrors` (causes non-zero exit). Tested against the broken `private-smoke.yml` from the failed CI run — the linter now exits 1 with the parse error pointed at the exact line. After fixing the YAML (quoted the step name), linter passes again.
+
+**Disposition:** Now mechanically enforced. Future YAML errors in `.github/workflows/` will fail at lint time before the workflow ever reaches GitHub Actions, eliminating the "silent run failure" class. The pattern generalizes: any tool that has both a "best-effort fallback" path and a "strict-mode" path should prefer strict-mode-by-default when the strict-path is reliably available. The fallback is for environment-degraded scenarios, not for accommodating broken inputs.
+
 ## Obsolete
 
 (none yet)
