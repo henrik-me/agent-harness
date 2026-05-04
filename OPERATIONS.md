@@ -438,10 +438,11 @@ Run all of the following and include each result in SELF-CHECKS RUN:
 
 1. `git status --short` — only owned files appear; nothing staged.
 2. `git log --oneline -1` — must match preflight SHA.
-3. BOM check on every modified file (LRN-065):
-     PowerShell: $b = [System.IO.File]::ReadAllBytes($path)
-                 ($b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) must be False
-     Node:       (await fs.readFile(p))[0] === 0xEF  must be false
+3. Text-encoding check on every modified file (BOM + line endings; LRN-065, LRN-074):
+   `node scripts/check-text-encoding.mjs --dir <owned-paths> --quiet`
+   must exit 0. (Replaces the prior inline PowerShell BOM-check snippet; the
+   linter also catches CRLF/bare-\r line endings introduced by Windows
+   core.autocrlf or stale editor settings.)
 4. If tests were added/modified: `node --test` — report count delta
    (e.g. "23 → 27 tests; all pass").
 5. For any .mjs files authored: `node -c <file>` exits 0.
@@ -458,7 +459,7 @@ missing fields explicitly listed.
     FILES CHANGED:
       - <path> (created | edited | deleted) — <one-line why> — <line count>
     SELF-CHECKS RUN:
-      - git status / git log / BOM check / [other checks]: pass | fail
+      - git status / git log / text-encoding / [other checks]: pass | fail
     DECISIONS MADE:
       - <decision> — rationale
     ESCALATIONS: (none) | <issue> — recommended path

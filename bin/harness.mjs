@@ -124,6 +124,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-readme.mjs      (README.md)
   - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
   - check-workflow-pins.mjs (.github/workflows/)
+  - check-text-encoding.mjs (BOM + line endings; walks --cwd recursively)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
@@ -770,6 +771,14 @@ async function cmdLint(args, _global) {
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
       ],
       target: path.join(cwd, '.github', 'workflows'),
+    },
+    {
+      // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd
+      // recursively. Always enabled; can be skipped via --skip text-encoding.
+      name: 'text-encoding',
+      script: 'check-text-encoding.mjs',
+      args: ['--dir', cwd],
+      target: cwd,
     },
     {
       name: 'public-artifact',

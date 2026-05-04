@@ -43,9 +43,36 @@ Each was caught at content-PR review by the orchestrator after sub-agents' self-
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| `scripts/check-text-encoding.mjs` + `tests/check-text-encoding.test.mjs` (≥9 tests) | pending | sub-agent cs03c-linter | agent-id=yoga-ah-sub-1 \| role=linter-author \| report-status=pending \| learnings=0 |
-| `bin/harness.mjs` aggregator wiring + canonical briefing preamble update (root + template) | pending | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| `scripts/check-text-encoding.mjs` + `tests/check-text-encoding.test.mjs` (≥9 tests) | done | sub-agent cs03c-linter | agent-id=yoga-ah-sub-1 \| role=linter-author \| report-status=complete \| learnings=0 |
+| `bin/harness.mjs` aggregator wiring + canonical briefing preamble update (root + template) | done | orchestrator | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-04
+**Outcome:** GO (R2 verdict; R1 found 1 blocker, fixed inline)
+
+### Plan vs implementation
+
+| Deliverable | What got built | Outcome | Notes |
+|---|---|---|---|
+| `scripts/check-text-encoding.mjs` (BOM + CRLF detection, glob/exclude flags, `--quiet`, exit 0/1/2) | Authored 167 lines; default `--include` covers 12 text extensions; `--exclude` uses directory-segment matching (R1 fix); `requireValue` guard on every value-taking flag | match | R1 caught a real bug: substring exclude match was skipping `.github/`. Fixed to segment-prefix match. |
+| `tests/check-text-encoding.test.mjs` (≥9 tests) | 14 tests (9 required + 3 extras + 2 R1-regression for the segment-match bug) | match | Includes self-host check (`--dir REPO_ROOT` exits 0). |
+| `bin/harness.mjs cmdLint` aggregator wired with `text-encoding` linter | Added after `workflow-pins`; always enabled; skip via `--skip text-encoding` | match | `harness lint --quiet` now reports 13 pass / 0 fail / 3 skipped (was 12/0/3). |
+| Canonical sub-agent briefing preamble updated (root + template) | Replaced inline PowerShell BOM-check snippet with `node scripts/check-text-encoding.mjs --dir <owned-paths> --quiet`; updated SELF-CHECKS RUN report-shape line accordingly | match | Single-command self-check is more reliable than the previous PowerShell scriptlet. |
+| `harness sync --mode=apply` re-run after template edit (LRN-070 pattern) | Lock refreshed; `sync --mode=check` exits 0 cleanly | match | — |
+
+### Test coverage
+
+Sufficient. Final state:
+- `node --test tests/*.test.mjs` → **450 pass / 0 fail** (was 436 baseline; +14 in tests/check-text-encoding.test.mjs).
+- `node bin/harness.mjs lint --quiet` → 13 pass / 0 fail / 3 skipped.
+- `node bin/harness.mjs sync --mode=check --cwd .` → No drift detected.
+- `node scripts/check-text-encoding.mjs --dir .` → 338 files checked, 0 violations.
+
+### Findings
+
+R1 (NEEDS-FIX, 1 blocker):
+- `.git` substring match in default exclude was false-matching `.github/`, hiding any future BOM/CRLF in workflow/copilot-instructions files. Fixed via segment-prefix match (`relPathNorm === p || relPathNorm.startsWith(p + '/')`); 2 new regression tests pin the correct behavior.
+
+R2: GO. No remaining blockers. Linter is the third CS-introduced enforcement gate (after CS03b plan-vs-impl review gate and CS11 harness-self-check.yml drift gate); the discipline-based BOM/EOL convention now has mechanical backing.
