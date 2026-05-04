@@ -1,4 +1,4 @@
-﻿# CS06b — Shared parser primitives refactor + cross-link validation
+# CS06b — Shared parser primitives refactor + cross-link validation
 
 **Status:** planned
 **Owner:** —

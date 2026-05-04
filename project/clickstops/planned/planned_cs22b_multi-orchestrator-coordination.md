@@ -1,4 +1,4 @@
-﻿# CS22b — Multi-orchestrator coordination
+# CS22b — Multi-orchestrator coordination
 
 **Status:** planned
 **Owner:** —

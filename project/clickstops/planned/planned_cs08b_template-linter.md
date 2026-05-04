@@ -1,4 +1,4 @@
-﻿# CS08b — Template linter (`check-templates.mjs`)
+# CS08b — Template linter (`check-templates.mjs`)
 
 **Status:** planned
 **Owner:** —

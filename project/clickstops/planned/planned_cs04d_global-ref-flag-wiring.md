@@ -1,4 +1,4 @@
-﻿# CS04d — Global `--ref` flag wiring
+# CS04d — Global `--ref` flag wiring
 
 **Status:** planned
 **Owner:** —

@@ -1,4 +1,4 @@
-﻿# CS10b — Scaffold-readme linter + aggregator integration of optional scaffold linters
+# CS10b — Scaffold-readme linter + aggregator integration of optional scaffold linters
 
 **Status:** planned
 **Owner:** —

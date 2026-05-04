@@ -1,4 +1,4 @@
-﻿# CS04b — Thread `--config` flag through `lib/sync.mjs`
+# CS04b — Thread `--config` flag through `lib/sync.mjs`
 
 **Status:** planned
 **Owner:** —

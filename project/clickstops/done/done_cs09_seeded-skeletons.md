@@ -1,4 +1,4 @@
-﻿# CS09 — Seeded skeletons (create-if-missing set)
+# CS09 — Seeded skeletons (create-if-missing set)
 
 **Status:** done
 **Owner:** yoga-ah

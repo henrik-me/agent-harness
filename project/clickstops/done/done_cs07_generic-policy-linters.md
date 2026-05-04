@@ -1,4 +1,4 @@
-﻿# CS07 — Generic policy linters
+# CS07 — Generic policy linters
 
 **Status:** done
 **Owner:** yoga-ah

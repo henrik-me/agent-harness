@@ -1,4 +1,4 @@
-﻿# CS03 — Sync engine library (`lib/sync.mjs`)
+# CS03 — Sync engine library (`lib/sync.mjs`)
 
 **Status:** done
 **Owner:** yoga-ah

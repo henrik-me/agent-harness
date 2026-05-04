@@ -1,4 +1,4 @@
-﻿# CS04c — `harness pack` whitelist verification
+# CS04c — `harness pack` whitelist verification
 
 **Status:** planned
 **Owner:** —

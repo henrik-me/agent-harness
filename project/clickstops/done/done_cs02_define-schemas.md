@@ -1,4 +1,4 @@
-﻿# CS02 — Define schemas (config + lock + learning) + parameterization model + file classes
+# CS02 — Define schemas (config + lock + learning) + parameterization model + file classes
 
 **Status:** done
 **Owner:** yoga-ah

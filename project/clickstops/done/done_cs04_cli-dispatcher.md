@@ -1,4 +1,4 @@
-﻿# CS04 — CLI dispatcher (`bin/harness.mjs`)
+# CS04 — CLI dispatcher (`bin/harness.mjs`)
 
 **Status:** done
 **Owner:** yoga-ah

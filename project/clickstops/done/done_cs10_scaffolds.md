@@ -1,4 +1,4 @@
-﻿# CS10 — Author scaffolds
+# CS10 — Author scaffolds
 
 **Status:** done
 **Owner:** yoga-ah

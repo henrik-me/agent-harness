@@ -1,4 +1,4 @@
-﻿# CS04a — `harness init` detects private-repo / free-tier constraints
+# CS04a — `harness init` detects private-repo / free-tier constraints
 
 **Status:** planned
 **Owner:** —

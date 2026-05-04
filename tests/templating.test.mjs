@@ -151,3 +151,14 @@ test('custom placeholderPattern can support non-ASCII keys via Unicode property 
     'Hello 世界'
   );
 });
+
+test('custom placeholderPattern with no capture group throws ETPL_BAD_PATTERN (CS03b R1 fix)', () => {
+  // Per R1 review: a regex without a first capture group produces undefined key.
+  // The runtime guard inside the replace callback must surface this as a clear
+  // ETPL_BAD_PATTERN error, not a misleading "{{undefined}}" report.
+  const noCaptureGroup = /\{\{\s*[a-z]+\s*\}\}/g;
+  assert.throws(
+    () => applyTemplating('Hello {{name}}', { name: 'world' }, { placeholderPattern: noCaptureGroup }),
+    (err) => err.code === 'ETPL_BAD_PATTERN'
+  );
+});

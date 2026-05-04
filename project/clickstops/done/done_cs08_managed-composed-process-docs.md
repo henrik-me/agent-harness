@@ -1,4 +1,4 @@
-﻿# CS08 — Managed/composed process docs canonicalization
+# CS08 — Managed/composed process docs canonicalization
 
 **Status:** done
 **Owner:** yoga-ah

@@ -1,4 +1,4 @@
-﻿# CS09b — Sync fixture extension (`harness sync --mode=check` in init test)
+# CS09b — Sync fixture extension (`harness sync --mode=check` in init test)
 
 **Status:** planned
 **Owner:** —

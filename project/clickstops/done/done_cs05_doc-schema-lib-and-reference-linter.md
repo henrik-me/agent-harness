@@ -1,4 +1,4 @@
-﻿# CS05 — Doc-schema lib + first reference linter (`check-learnings.mjs`)
+# CS05 — Doc-schema lib + first reference linter (`check-learnings.mjs`)
 
 **Status:** done
 **Owner:** yoga-ah

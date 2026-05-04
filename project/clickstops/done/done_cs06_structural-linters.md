@@ -1,4 +1,4 @@
-﻿# CS06 — Remaining structural linters
+# CS06 — Remaining structural linters
 
 **Status:** done
 **Owner:** yoga-ah

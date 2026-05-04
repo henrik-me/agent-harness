@@ -167,17 +167,19 @@ function checkFile(filePath, subdir) {
 
   // 4. Plan-vs-implementation review gate (CS03b)
   // active/ and done/ must have the H2; done/ must have content or grandfathering.
+  // Anchored multi-line regex (CS03b R1 review fix): inline mention of the H2
+  // in prose or fenced code must NOT satisfy the check.
   if (subdir === 'active' || subdir === 'done') {
-    const gateH2 = '## Plan-vs-implementation review';
-    if (!content.includes(gateH2)) {
+    const GATE_H2_RE = /^## Plan-vs-implementation review\s*$/m;
+    const headingMatch = content.match(GATE_H2_RE);
+    if (!headingMatch) {
       logError(
         `${subdir}/${basename}: missing required H2 section ` +
         `"## Plan-vs-implementation review" (CS03b gate)`
       );
     } else if (subdir === 'done') {
-      // Extract body: text after the H2 until the next H1/H2 or EOF
-      const h2Index = content.indexOf(gateH2);
-      const afterH2 = content.slice(h2Index + gateH2.length);
+      // Extract body: text after the H2 line until the next H1/H2 or EOF
+      const afterH2 = content.slice(headingMatch.index + headingMatch[0].length);
       const nextHeadingMatch = afterH2.match(/\n#{1,2} /);
       const body = nextHeadingMatch
         ? afterH2.slice(0, nextHeadingMatch.index)

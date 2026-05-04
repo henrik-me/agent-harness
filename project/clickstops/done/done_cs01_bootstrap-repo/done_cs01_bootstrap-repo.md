@@ -1,4 +1,4 @@
-﻿# CS01 — Bootstrap repo + skeleton + proto process docs
+# CS01 — Bootstrap repo + skeleton + proto process docs
 
 **Status:** done
 **Owner:** yoga-ah
