@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T12:00Z (CS12 close-out)
+> **Last updated:** 2026-05-04T12:30Z (CS13 claim — combined file-plan + claim PR)
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — CS13 (npm packaging) is next | — | — | — | 2026-05-04 | _(none)_ |
+| CS13 | npm packaging readiness | claimed | yoga-ah | cs13/content | 2026-05-04 | _(none)_ |
 
 ## Recently Completed
 

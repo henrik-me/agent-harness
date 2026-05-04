@@ -47,7 +47,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS12 complete; CS13 → CS14 next.
+- None. CS13 (npm packaging) in flight on `cs13/content`. Then CS14.
 
 ## Parallelism (single-orchestrator default)
 
