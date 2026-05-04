@@ -1,57 +1,57 @@
 {
-  "harness_ref": "cs11/content",
-  "resolved_sha": "f6cb2dc2954340a1a9dbb9e95ce1f65149554ab3",
+  "harness_ref": "cs11/close-out",
+  "resolved_sha": "c32cda9c87052b6d8023426a6b56b57e19619166",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-04T06:17:47.819Z",
+  "synced_at": "2026-05-04T06:28:01.608Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
       "source_template": "template/managed/INSTRUCTIONS.md",
       "class": "managed",
       "rendered_hash": "9282390c76e8235065774d4359670896fc0f29bc9145d9249cce58006459b46d",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": "TRACKING.md",
       "source_template": "template/managed/TRACKING.md",
       "class": "managed",
       "rendered_hash": "af3aae20f73963d9d5bd208732ced51a75e2f4d625952de1de0f388d4bd98807",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": "RETROSPECTIVES.md",
       "source_template": "template/managed/RETROSPECTIVES.md",
       "class": "managed",
       "rendered_hash": "6222c9191e473569a89889ac0cdd7ea9effcc16b04564517b212eabacb202a85",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": "READMEGUIDE.md",
       "source_template": "template/managed/READMEGUIDE.md",
       "class": "managed",
       "rendered_hash": "52c275f1ddb875284ceab464f71bd56ca8abe41c6f0456430ff82cfc3549c3c3",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": ".github/CODEOWNERS",
       "source_template": "template/managed/.github/CODEOWNERS",
       "class": "managed",
       "rendered_hash": "6b09b86b4141746486e930728fd373266242ef6ce5b852bc805d82736c0d69e2",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
       "rendered_hash": "60826bdd251f2b0e7d0c4819bc1ee4a9e442f13e17c813326690be68616fe777",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": ".github/pull_request_template.md",
       "source_template": "template/managed/.github/pull_request_template.md",
       "class": "managed",
       "rendered_hash": "196dc64ad2627b653de363531885838703e30a637384a1fb32b7641ba444b1ad",
-      "action": "skipped"
+      "action": "updated"
     },
     {
       "target": "CONVENTIONS.md",
@@ -114,7 +114,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "5d66e4c2efaa50d2d8f0020f02c61b6e168766af69ac24698bcde3b2447ae062",
+      "rendered_hash": "d18efe93d84283274f2cd79d37706dcc304e521ffc493b2e5f16f5071eaee2c4",
       "action": "preserved"
     },
     {
@@ -128,14 +128,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "cbab1e3e238acc4bcc21d0c0634baa1cf0f929f7f7c6a12364a6ed03f3955c87",
+      "rendered_hash": "7599e621a80c4a5d62f7f8feb11ef278a7ca0a171f64da549af8b6130f05efe2",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "53f959d9a1df8a7687fd813ce28765c173f4ea504ceefc9307a8ef450052f4d0",
+      "rendered_hash": "3eb0d609a7153ce88e527856439b6923a2cb08db8eda9afdf019d0da583f2278",
       "action": "preserved"
     }
   ],
