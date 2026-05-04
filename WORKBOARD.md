@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T09:30Z (CS11b claim)
+> **Last updated:** 2026-05-04T10:30Z (CS11b close-out)
 
 ## Orchestrators
 
@@ -16,7 +16,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS11b | `harness sync --mode=apply --resolved-sha <sha>` override flag | claimed | yoga-ah | cs11b/content | 2026-05-04 | _(none)_ |
+| — | No active CS — CS12 (reusable workflow) is next | — | — | — | 2026-05-04 | _(none)_ |
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS11b | `--resolved-sha` override flag (closes LRN-070 ordering trap) | 2026-05-04 | **Done.** Squash-merged as `0a707d7`. Adds `harness sync --mode=apply --resolved-sha <40hex>` so CSs touching templates AND root files in one commit record a lock pointing at the actual commit (no post-commit-regenerate dance). 463 tests pass (was 450; +13 new: 5 lib + 8 CLI). Lint 13/0/3. Self-applied plan-vs-impl gate: R1 NEEDS-FIX (OPERATIONS docs + CLI tests) → R2 GO. CS11b uses its own new flag for the lock-fixup commit (recursive validation). 0 sub-agents (orchestrator-owned). Claim PR #42. Content PR #43. |
 
 ## Recently Completed
 

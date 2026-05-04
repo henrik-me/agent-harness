@@ -35,7 +35,9 @@
 
 - **CS03c complete** (closed 2026-05-04). Adds `scripts/check-text-encoding.mjs` (BOM + line-endings linter) wired into the `harness lint` aggregator. Mechanically prevents the recurring failure modes documented in 4 LRNs (LRN-006, LRN-018, LRN-065, LRN-074). Also updated the canonical sub-agent briefing preamble (root + template OPERATIONS.md) to use the new linter for self-checks instead of the previous inline PowerShell BOM-check snippet. Self-applied plan-vs-impl gate (R1 NEEDS-FIX → R2 GO; caught a `.git` substring matches `.github` exclude bug in the linter itself). 1 sub-agent dispatch (cumulative ~47). **450 tests pass total** (436+14 new). `harness lint --quiet`: **13 pass / 0 fail / 3 skipped** (was 12/0/3). 1 LRN filed (LRN-074: line-endings as a mechanical-enforcement target). Squash-merged PR #40 as `fcb635e`.
 
-**CS03c is complete. Next mainline CSs: CS11b (small) → CS12 → CS13 → CS14. Per autopilot directive, stopping before CS15a.**
+- **CS11b complete** (closed 2026-05-04). Adds `harness sync --mode=apply --resolved-sha <40hex>` override flag — closes the LRN-070 post-commit-regenerate ordering trap. CSs that touch templates AND root files in the same commit can now record a lock that points at the actual content commit in a single shot. Includes `lib/sync.mjs` `resolvedShaOverride` arg with format validation (throws `ESYNC_INVALID_RESOLVED_SHA` on non-string/non-hex/uppercase/wrong length); `bin/harness.mjs cmdSync` parses `--resolved-sha <v>` and `--resolved-sha=<v>` with `requireValue` guard + apply-only restriction (rejects in check/dry-run); OPERATIONS.md docs paragraph (template + root mirror); 5 lib + 8 CLI tests = 13 new. CS11b uses its own new flag for the lock-fixup commit (recursive validation pattern). **463 tests pass total** (450+13 new). `harness lint --quiet`: 13/0/3. Self-applied plan-vs-impl gate: R1 NEEDS-FIX (OPERATIONS docs missing + CLI tests missing) → R2 GO. 0 sub-agents (orchestrator-owned). Squash-merged PR #43 as `0a707d7`.
+
+**CS11b is complete. Next mainline CSs: CS12 (reusable workflow + drift template) → CS13 (npm packaging) → CS14 (release tooling + v0.1.0 + private smoke). Per autopilot directive, stopping before CS15.**
 
 ## Architecture pointer
 
@@ -43,7 +45,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS11b (--resolved-sha override) in flight on `cs11b/content`. Then CS12 → CS13 → CS14.
+- None. CS11b complete; CS12 → CS13 → CS14 next on the mainline.
 
 ## Parallelism (single-orchestrator default)
 
