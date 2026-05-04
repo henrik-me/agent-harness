@@ -101,7 +101,7 @@ for (let i = 0; i < argv.length; i++) {
 // ---------------------------------------------------------------------------
 
 const cwd = cwdArg ? path.resolve(cwdArg) : process.cwd();
-const configPath = configArg ? path.resolve(configArg) : path.join(cwd, 'harness.config.json');
+const configPath = configArg ? path.resolve(cwd, configArg) : path.join(cwd, 'harness.config.json');
 
 // ---------------------------------------------------------------------------
 // Load optional harness config for linter sub-config
@@ -155,7 +155,7 @@ if (fs.existsSync(configPath)) {
 
 // Priority: --flags-file CLI > config.flagsFile > default
 const flagsFilePath = flagsFileArg
-  ? path.resolve(flagsFileArg)
+  ? path.resolve(cwd, flagsFileArg)
   : linterConfig.flagsFile
     ? path.resolve(cwd, linterConfig.flagsFile)
     : path.join(cwd, 'flags', 'flags.json');
@@ -255,6 +255,13 @@ const seenNames = new Map(); // name → first index
 
 for (let idx = 0; idx < flags.length; idx++) {
   const flag = flags[idx];
+  // Guard against null / non-object entries (per CS10 R1 review): a flags
+  // array containing `null` or a primitive must produce a formatted error,
+  // not an uncaught TypeError stack trace.
+  if (flag === null || flag === undefined || typeof flag !== 'object' || Array.isArray(flag)) {
+    errors.push(`flag[${idx}]: entry must be a non-null object.`);
+    continue;
+  }
   const label = flag.name ? `flag[${idx}] "${flag.name}"` : `flag[${idx}]`;
 
   // Rule 1: Required fields

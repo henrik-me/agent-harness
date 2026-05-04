@@ -53,7 +53,7 @@ for (let i = 0; i < argv.length; i++) {
     cwdArg = path.resolve(argv[++i]);
   } else if (a === '--config') {
     requireValue(argv, i, '--config');
-    configArg = path.resolve(argv[++i]);
+    configArg = argv[++i];
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
@@ -77,7 +77,11 @@ for (let i = 0; i < argv.length; i++) {
 // Load harness.config.json (fail-closed per LRN-033)
 // ---------------------------------------------------------------------------
 
-const configPath = configArg ?? path.join(cwdArg, 'harness.config.json');
+// Resolve --config relative to cwdArg so the linter can be invoked from outside
+// the consumer root. Absolute paths pass through unchanged.
+const configPath = configArg
+  ? path.resolve(cwdArg, configArg)
+  : path.join(cwdArg, 'harness.config.json');
 
 /** @type {Record<string,unknown>} */
 let linterConfig = {};
@@ -182,24 +186,28 @@ const canonicalFiles = strictNaming
   : sqlFiles.filter((f) => CANONICAL_RE.test(f)); // always parse canonical shape
 
 // ---------------------------------------------------------------------------
-// Build prefix → { up, down } index
+// Build stem → { up, down } index. The "stem" is the full filename minus the
+// `.up.sql` / `.down.sql` suffix (e.g. "0001_create-users-table"). Pairing on
+// the full stem (not just the 4-digit prefix) is required so that mismatched
+// names like "0001_create-users.up.sql" + "0001_drop-posts.down.sql" are
+// caught as unpaired (per CS10 R1 review).
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {{ up: string|null; down: string|null }} PrefixEntry
- * @type {Map<string, PrefixEntry>}
+ * @typedef {{ up: string|null; down: string|null }} StemEntry
+ * @type {Map<string, StemEntry>}
  */
-const prefixMap = new Map();
+const stemMap = new Map();
 
 for (const f of canonicalFiles) {
-  const m = /^(\d{4})_[a-z0-9-]+\.(up|down)\.sql$/.exec(f);
+  const m = /^(\d{4}_[a-z0-9-]+)\.(up|down)\.sql$/.exec(f);
   if (!m) continue;
-  const prefix = m[1];
+  const stem = m[1];
   const dir = /** @type {'up'|'down'} */ (m[2]);
-  if (!prefixMap.has(prefix)) prefixMap.set(prefix, { up: null, down: null });
-  const entry = /** @type {PrefixEntry} */ (prefixMap.get(prefix));
+  if (!stemMap.has(stem)) stemMap.set(stem, { up: null, down: null });
+  const entry = /** @type {StemEntry} */ (stemMap.get(stem));
   if (entry[dir] !== null) {
-    // Will be caught by duplicate-prefix check below.
+    // Will be caught by duplicate-stem check below.
     continue;
   }
   entry[dir] = f;
@@ -207,17 +215,18 @@ for (const f of canonicalFiles) {
 
 // ---------------------------------------------------------------------------
 // Rule 3: no-duplicate-prefix
-// No two files may share the same four-digit numeric prefix of the same direction.
+// No two files may share the same four-digit numeric prefix of the same
+// direction. (Two files with the same numeric prefix but different stems are
+// also caught here — a single sequence number must map to a single migration.)
 // ---------------------------------------------------------------------------
 
 /** @type {Map<string, string[]>} */
 const prefixDirIndex = new Map();
 
 for (const f of canonicalFiles) {
-  const m = /^(\d{4}_[a-z0-9-]+\.(up|down))\.sql$/.exec(f);
+  const m = /^(\d{4})_[a-z0-9-]+\.(up|down)\.sql$/.exec(f);
   if (!m) continue;
-  const key = m[1]; // e.g. "0001_create-users-table.up"
-  const numericPrefix = m[1].slice(0, 4); // "0001"
+  const numericPrefix = m[1];
   const dirSuffix = f.endsWith('.up.sql') ? '.up' : '.down';
   const bucketKey = numericPrefix + dirSuffix;
   if (!prefixDirIndex.has(bucketKey)) prefixDirIndex.set(bucketKey, []);
@@ -234,18 +243,18 @@ for (const [bucketKey, files] of prefixDirIndex) {
 
 // ---------------------------------------------------------------------------
 // Rule 1: paired-up-down
-// Every up file must have a matching down file and vice versa.
+// Every up file must have a matching down file (same full stem) and vice versa.
 // ---------------------------------------------------------------------------
 
-for (const [prefix, entry] of prefixMap) {
+for (const [stem, entry] of stemMap) {
   if (entry.up !== null && entry.down === null) {
     addViolation(
-      `paired-up-down: "${entry.up}" has no matching .down.sql file`
+      `paired-up-down: "${entry.up}" has no matching "${stem}.down.sql" file`
     );
   }
   if (entry.down !== null && entry.up === null) {
     addViolation(
-      `paired-up-down: "${entry.down}" has no matching .up.sql file`
+      `paired-up-down: "${entry.down}" has no matching "${stem}.up.sql" file`
     );
   }
 }
@@ -256,7 +265,7 @@ for (const [prefix, entry] of prefixMap) {
 // ---------------------------------------------------------------------------
 
 if (enforceSafeUp) {
-  for (const [, entry] of prefixMap) {
+  for (const [, entry] of stemMap) {
     if (entry.up === null) continue;
     const filePath = path.join(migrationsDir, entry.up);
     let content;

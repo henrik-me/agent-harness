@@ -237,4 +237,104 @@ describe('CS10 — composition + idempotency + error cases', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('malformed existing harness.config.json fails BEFORE any scaffold copies (R1 #1)', () => {
+    const dir = makeTmpDir();
+    try {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, 'harness.config.json'), '{ malformed', 'utf8');
+
+      const r = runHarness(['--cwd', dir, 'init', '--with-scaffold', 'smoke']);
+      assert.notEqual(r.status, 0, `Expected non-zero exit; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+      assert.match(r.stderr, /malformed JSON/i);
+
+      // No scaffold or seeded files should be dropped
+      assert.ok(!existsSync(path.join(dir, 'scripts', 'smoke.mjs')), 'Scaffold file must NOT be dropped');
+      assert.ok(!existsSync(path.join(dir, 'CONTEXT.md')), 'Seeded file must NOT be dropped');
+      // Original malformed config is preserved
+      assert.equal(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'), '{ malformed');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('CS10 — shipped scaffold linters: regression tests for R1 review', () => {
+  it('migration linter rejects mismatched up/down stems (R1 #3)', () => {
+    const dir = makeTmpDir();
+    try {
+      // Init with migrations scaffold
+      const r0 = runHarness(['--cwd', dir, 'init', '--with-scaffold', 'migrations']);
+      assert.equal(r0.status, 0, `init failed: ${r0.stderr}`);
+
+      // Replace example pair with a mismatched-stem pair
+      const mig = path.join(dir, 'migrations');
+      rmSync(path.join(mig, '0001_example.up.sql'));
+      rmSync(path.join(mig, '0001_example.down.sql'));
+      writeFileSync(path.join(mig, '0001_create-users.up.sql'), '-- create users\n', 'utf8');
+      writeFileSync(path.join(mig, '0001_drop-posts.down.sql'), '-- drop posts\n', 'utf8');
+
+      const linter = path.join(dir, 'scripts', 'check-migration-policy.mjs');
+      const r = spawnSync(NODE, [linter, '--cwd', dir], { encoding: 'utf8', cwd: dir });
+      assert.equal(r.status, 1, `Expected exit 1 (paired-up-down violation); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+      assert.match(r.stdout + r.stderr, /paired-up-down/i);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('flags linter resolves --flags-file relative to --cwd (R1 #2)', () => {
+    const dir = makeTmpDir();
+    try {
+      const r0 = runHarness(['--cwd', dir, 'init', '--with-scaffold', 'feature-flags']);
+      assert.equal(r0.status, 0, `init failed: ${r0.stderr}`);
+
+      const linter = path.join(dir, 'scripts', 'check-feature-flag-policy.mjs');
+      // Run from REPO_ROOT (NOT from consumer dir) with relative --flags-file
+      const r = spawnSync(
+        NODE,
+        [linter, '--cwd', dir, '--flags-file', 'flags/flags.json'],
+        { encoding: 'utf8', cwd: REPO_ROOT }
+      );
+      // Should resolve flags/flags.json against --cwd (the consumer), not REPO_ROOT.
+      // Note: the example flags.json may itself contain policy violations (e.g.
+      // expired flags); we only assert path resolution, not policy outcome.
+      assert.doesNotMatch(
+        r.stderr,
+        /flags file not found/i,
+        `--flags-file should resolve against --cwd; got stderr: ${r.stderr}`
+      );
+      assert.doesNotMatch(
+        r.stderr + r.stdout,
+        /no such file/i,
+        `Flags file should be findable; got: ${r.stderr}\n${r.stdout}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('flags linter handles null entry without stack trace (R1 #5)', () => {
+    const dir = makeTmpDir();
+    try {
+      const r0 = runHarness(['--cwd', dir, 'init', '--with-scaffold', 'feature-flags']);
+      assert.equal(r0.status, 0, `init failed: ${r0.stderr}`);
+
+      // Replace flags.json with one containing a null entry
+      writeFileSync(
+        path.join(dir, 'flags', 'flags.json'),
+        JSON.stringify({ flags: [null, { name: 'ok-flag', description: 'd', default: false, owner: 'x' }] }, null, 2),
+        'utf8'
+      );
+
+      const linter = path.join(dir, 'scripts', 'check-feature-flag-policy.mjs');
+      const r = spawnSync(NODE, [linter, '--cwd', dir], { encoding: 'utf8', cwd: dir });
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+      // Must produce a formatted error, not a stack trace
+      assert.doesNotMatch(r.stderr, /TypeError|at .*\.mjs:\d+/i, 'Expected formatted error, got stack trace');
+      assert.match(r.stdout + r.stderr, /flag\[0\]/i);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

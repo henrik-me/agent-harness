@@ -379,6 +379,11 @@ async function cmdInit(args, global) {
     }
   }
 
+  // Compute config destination eagerly (used by both pre-validation and the
+  // seeded-config write below).
+  const configDest = path.join(targetDir, 'harness.config.json');
+  const configExists = existsSync(configDest);
+
   // Pre-validate all requested scaffolds before any writes (per CS10 plan critique).
   // If any name is unknown, fail fast with exit 2 — leaves target untouched.
   const scaffoldsRoot = path.join(REPO_ROOT, 'scaffolds');
@@ -397,10 +402,20 @@ async function cmdInit(args, global) {
         );
       }
     }
+    // Pre-parse existing harness.config.json so a malformed file fails fast
+    // BEFORE any scaffold/seeded files are dropped (per CS10 R1 review).
+    if (configExists) {
+      try {
+        JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      } catch (err) {
+        die(
+          `Existing harness.config.json is malformed JSON; refusing to drop scaffolds.\n` +
+            `Path: ${configDest}\nError: ${err.message}`,
+          1
+        );
+      }
+    }
   }
-
-  const configDest = path.join(targetDir, 'harness.config.json');
-  const configExists = existsSync(configDest);
 
   if (configExists) {
     process.stderr.write(
