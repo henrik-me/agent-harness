@@ -17,6 +17,36 @@ cs-plan + LRNs.
 
 That's all you need to type. HANDOFF.md (this file) pulls in everything else in the right order.
 
+## Prerequisites
+
+- **Node.js** ≥ 20 (uses `node:test`, ESM, `node --test`).
+- **npm** (for `npm pack --dry-run --json` used by `check-pack.mjs`).
+- **git** + **`gh` CLI** authenticated to `henrik-me/agent-harness` (PR creation, merge, workflow_dispatch, release view all use `gh`).
+- **Python** ≥ 3.11 with `pyyaml` (optional — only used for `python -c "import yaml; ..."` ad-hoc YAML validation; not required for tests/lint).
+- After `git pull`, run `npm ci` (or `npm install`) once to install devDeps (`ajv`, `ajv-formats`, `js-yaml`). The `js-yaml` dep is what makes `check-workflow-pins.mjs` fail-loud on YAML errors per LRN-078.
+
+## Bootstrap sanity check (run these AFTER reading TL;DR, BEFORE claiming any CS)
+
+```bash
+cd C:\src\agent-harness
+git pull --ff-only origin main
+git status --short                                    # expect: clean
+git log -3 --oneline                                  # last 3 commits on main
+git tag --list 'v*' | tail -5                         # latest release tags (v0.1.0 expected)
+node --test tests/*.test.mjs 2>&1 | grep -E '^# (tests|pass|fail)'   # expect: all pass
+node bin/harness.mjs lint --quiet                     # expect: "Total: N passed, 0 failed, M skipped"
+node bin/harness.mjs sync --mode=check --cwd .        # expect: "No drift detected"
+gh pr list --state open --limit 10                    # expect: empty (or just docs PRs)
+```
+
+If any of these fail, **stop and investigate** before claiming new work. The repo's invariant is "main is always green".
+
+## Stop rules (when to halt and check in with the human)
+
+- **CS15a (public-readiness preparation) is the next mainline gate.** Per the cs-plan and the user's directive, **do NOT auto-claim CS15a.** When the bootstrap shows the next mainline CS is CS15a, **post a check-in question to the user** with the CS15a pre-conditions audit results (see § Current mainline state below for the audit list).
+- Any "substantive design decision not derivable from the cs-plan + LRNs" — defer to the user.
+- Any post-merge CI failure on main that you can't trivially explain.
+
 ## TL;DR
 
 1. **Where are we?** Read [`CONTEXT.md`](CONTEXT.md) for current state and the commit ref of the last completed CS.
@@ -99,6 +129,22 @@ Fallback per [Decision #22](project/clickstops/done/done_cs01_bootstrap-repo/har
 - **Don't push a workboard-only claim and content in the same PR.** They're separate PRs by design (per the 3-PR shape in OPERATIONS.md § Claim).
 - **Don't bypass GPT-5.5 review** even for small docs PRs. The discipline is the value.
 - **Don't run `harness lint` from the harness package directory expecting it to lint a consumer repo.** Pass `--cwd <consumer-path>` (per [LRN-032](LEARNINGS.md#lrn-032)).
+- **Don't push a tag without checking the tag-allowlist regex first.** `release.yml` validates the tag against `^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$`. Tags outside this pattern fail the release workflow with exit 2 (per LRN-075).
+- **Don't put unquoted `:` in YAML step names** (LRN-078). YAML treats them as mapping separators and the GH Actions parser silently fails the run with "This run likely failed because of a workflow file issue". `check-workflow-pins.mjs` will catch this at lint time, but only when `js-yaml` is installed (`npm ci` first).
+
+## Open-LRN audit (CS15a pre-condition)
+
+CS15a requires "All `open` LRNs dispositioned". To enumerate:
+
+```bash
+# All entries by status
+grep -E '^status: ' LEARNINGS.md | sort | uniq -c
+
+# Just the open ones (with their IDs)
+grep -B 4 '^status: open' LEARNINGS.md | grep '^id: '
+```
+
+Each `open` entry needs a status flip to `applied` / `obsolete` / `deferred` (with `deferred_until: <date>` for the last) before CS15a can claim.
 
 ## Where to ask the human
 
