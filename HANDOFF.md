@@ -21,7 +21,7 @@ That's all you need to type. HANDOFF.md (this file) pulls in everything else in 
 
 1. **Where are we?** Read [`CONTEXT.md`](CONTEXT.md) for current state and the commit ref of the last completed CS.
 2. **Is anything in flight?** Read [`WORKBOARD.md`](WORKBOARD.md). If the **Active Work** row shows a CS in `claimed`/`active`, finish or hand off that CS before claiming a new one.
-3. **What's the working model?** Read [`template/composed/OPERATIONS.md`](template/composed/OPERATIONS.md) — the canonical claim → dispatch → handoff → sync → harvest loop, sub-agent dispatch contract, SemVer policy, and conventions. (The root `OPERATIONS.md` is the CS01 proto; the canonical version under `template/composed/` will replace it during CS11 dogfood.)
+3. **What's the working model?** Read [`template/composed/OPERATIONS.md`](template/composed/OPERATIONS.md) — the canonical claim → dispatch → handoff → sync → harvest loop, sub-agent dispatch contract, SemVer policy, and conventions. (Self-host is live since CS11; the root `OPERATIONS.md` is rendered from the template via `harness sync`.)
 4. **What conventions apply?** Read [`template/composed/CONVENTIONS.md`](template/composed/CONVENTIONS.md), [`template/composed/REVIEWS.md`](template/composed/REVIEWS.md), and [`template/managed/INSTRUCTIONS.md`](template/managed/INSTRUCTIONS.md) (especially the **Quick Reference Checklist** and **Per-CS Loop**).
 5. **What's been learned?** Skim [`LEARNINGS.md`](LEARNINGS.md). Use a bounded subset: filter to the upcoming CS's area + `status: open`/`applied` (per [LRN-031](LEARNINGS.md#lrn-031) bounded-prompt rule). Don't dump all entries into context.
 6. **What's the master plan?** Read [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the full 22-CS roadmap, locked decisions table, and parallelisation guidance.
@@ -67,6 +67,13 @@ These prevent recurring failure modes — read in full before dispatching any su
 - [LRN-049](LEARNINGS.md#lrn-049) — Templates use **flat keys** (`{{agent_suffix}}`) not dot notation (`{{project.agent_suffix}}`).
 - [LRN-050](LEARNINGS.md#lrn-050) — Managed templates use **consumer-root-relative** paths (`LEARNINGS.md`, `docs/adr/...`), never source-relative (`../LEARNINGS.md`).
 - [LRN-056](LEARNINGS.md#lrn-056) — Composed templates: never embed literal harness markers in prose, even inside backticks.
+- [LRN-064](LEARNINGS.md#lrn-064) — **Plan-vs-implementation review gate is MANDATORY before any close-out.** Every active/done CS file MUST have a populated `## Plan-vs-implementation review` H2 section with `**Reviewer:**`, `**Date:**`, and `**Outcome:**` markers. Mechanically enforced by `check-clickstop.mjs` check #4. Use a gpt-5.5 rubber-duck pass (or equivalent independent reviewer) to verify implementation matches plan + test coverage adequate.
+- [LRN-068](LEARNINGS.md#lrn-068) — **Canonical sub-agent briefing preamble** lives in `template/composed/OPERATIONS.md` § Sub-agent dispatch. Orchestrator pastes it verbatim into every dispatch — no ad-hoc briefings.
+- [LRN-070](LEARNINGS.md#lrn-070) / [LRN-074](LEARNINGS.md#lrn-074) — When a CS modifies templates AND root files in one commit, refresh the lock with `harness sync --mode=apply --resolved-sha $(git rev-parse HEAD) --cwd .` AFTER the content commit. Avoids ordering trap.
+- [LRN-075](LEARNINGS.md#lrn-075) — GitHub Actions workflows MUST pass externally-influenced values through `env:` (never directly into `run:`) AND validate against an allowlist regex before shell consumption. Defence-in-depth against shell injection.
+- [LRN-076](LEARNINGS.md#lrn-076) — Test-fixture files must NOT be matched by `.gitignore`; empty-dir tests must use `mkdtempSync`. Mechanically enforced by `check-fixtures.mjs` (CS13).
+- [LRN-077](LEARNINGS.md#lrn-077) — Self-host-only linters (e.g. `check-pack`) use a `package.json.name === '@henrik-me/agent-harness'` runtime guard with `target: null` clean skip.
+- [LRN-078](LEARNINGS.md#lrn-078) — `check-workflow-pins.mjs` ERRORS on YAML parse failures when `js-yaml` is available. Catches malformed workflows BEFORE they fail silently on GitHub Actions (e.g. unquoted `:` in step names).
 
 ## Reviewer
 
@@ -76,12 +83,14 @@ Fallback per [Decision #22](project/clickstops/done/done_cs01_bootstrap-repo/har
 
 ## Verification before declaring a CS done
 
-- `node --test tests/*.test.mjs` — all green
+- `node --test tests/*.test.mjs` — all green (509+ at v0.1.0)
 - `node scripts/validate-schemas.mjs` — N/0
 - `node scripts/check-learnings.mjs` — exit 0
-- `node bin/harness.mjs lint --quiet` — `0 failed`
+- `node bin/harness.mjs lint --quiet` — `0 failed` (15 linters at v0.1.0; 3 skipped is normal: pr-body, commit-trailers, compose-v2 lack targets)
+- `node bin/harness.mjs sync --mode=check --cwd .` — "No drift detected"
 - `git status --short` — only the expected files modified
 - Sub-agent commits **never** appear in `git log` (verify SHA preflight discipline)
+- The active/done CS file has a populated `## Plan-vs-implementation review` section (LRN-064 gate)
 
 ## Common pitfalls
 
@@ -97,7 +106,14 @@ The human owner is `henrik-me` (GitHub user). Per the directive in CS01, the hum
 - `CS15a` (public-readiness hardening — explicit approval before public flip)
 - Anything that would require a substantive design decision not derivable from the cs-plan + LRNs (e.g. cost trade-offs, naming for new things not already locked, scope changes)
 
-Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-dispatch confidence: ~32 sub-agent dispatches across CS01–CS09 with zero commit-discipline violations means the model works at scale.
+Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-dispatch confidence: ~51 sub-agent dispatches across CS01–CS14 with zero commit-discipline violations means the model works at scale.
+
+## Current mainline state (as of last update)
+
+- **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
+- **CS01 → CS14 complete.** No active CS. WORKBOARD `## Active Work` row is empty.
+- **Next gate: CS15a** (public-readiness preparation) — REQUIRES USER CHECK-IN per the directive. Do not auto-claim CS15a.
+- 15 linters in `harness lint`; 509 tests passing; private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 
@@ -110,7 +126,7 @@ Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). What works today with care:
 
-1. **Lane split.** One orchestrator on mainline (CS10 → CS11 → ...), another on the deferred backlog (CS03b, CS04a/b/c/d, CS06b, CS08b, CS09b). Backlog CSs target narrow disjoint areas — low race risk.
+1. **Lane split.** One orchestrator on mainline (post-v0.1.0: CS15a gate, then CS15b–CS22), another on the deferred backlog (CS04a/b/d, CS06b, CS08b, CS09b, CS10b). Backlog CSs target narrow disjoint areas — low race risk.
 2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
 
 **What's missing for safe true-parallel orchestration** (would itself be a future CS — call it `CS22b: multi-orchestrator coordination`):
