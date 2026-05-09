@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs03d/content",
-  "resolved_sha": "4a19dd023b80d9e1bbf6d95cc94fac4adbed8313",
+  "resolved_sha": "d08f0ffe3eb754f33ce4079caa6ffac4d3be93bd",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-09T18:24:36.692Z",
+  "synced_at": "2026-05-09T18:26:47.364Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -138,7 +138,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "bebfa541778e18d64ac829d7d1232f9e756b1c4dc0f06b29716cae00ab2a2bc9",
+      "rendered_hash": "6166f27d03e2ae3a0712a0b5554a8b2faa9baef17eccf3ccafc15b54e0381107",
       "action": "preserved"
     },
     {
