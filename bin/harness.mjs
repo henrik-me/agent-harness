@@ -793,8 +793,12 @@ async function cmdLint(args, _global) {
     ...composedFilePaths.map((filePath) => {
       const cf = path.join(cwd, filePath);
       const allowedIds = Array.isArray(localBlocks[filePath]) ? localBlocks[filePath] : [];
-      const composedArgs = ['--file', cf];
-      if (allowedIds.length) composedArgs.push('--allowed-ids', allowedIds.join(','));
+      // ALWAYS pass --allowed-ids for composed files (per CS02b / LRN-009):
+      // an empty list explicitly forbids any local blocks, which is the
+      // intended semantics for a composed file without a composed.overrides
+      // entry. Without this, check-composed-blocks would treat absence of
+      // --allowed-ids as "no constraint" and silently permit any block ID.
+      const composedArgs = ['--file', cf, '--allowed-ids', allowedIds.join(',')];
       if (existsSync(lockPath)) composedArgs.push('--lock', lockPath);
       return {
         name: `composed-blocks:${path.basename(cf)}`,
