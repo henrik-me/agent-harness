@@ -423,8 +423,7 @@ id: LRN-020
 date: 2026-05-03
 category: architectural
 source_cs: CS03
-status: deferred
-deferred_until: 2026-07-01
+status: applied
 tags: [composed-merge, evolution, ux, future-cs]
 claim_area: schema-design
 ```
@@ -436,6 +435,8 @@ claim_area: schema-design
 **Evidence:** `cs03-composed` sub-agent escalation #2.
 
 **Disposition:** Defer to a future CS (post-CS06). Architectural design needed; not blocking v0.1.0 since first-sync (fresh consumer) doesn't hit this. **Revisit trigger:** at the first cross-version sync of guesswhatisnext or sub-invaders (whichever comes first), OR by 2026-07-01.
+
+**Applied (CS03d, 2026-05-09):** Per user directive 2026-05-09. Added optional `template_prose_hash` field to `schemas/harness-lock.schema.json` `fileEntry` (composed-class only — `if/then/else` clause forbids it on managed/seeded entries). Exported new helper `computeTemplateProseHash(template)` from `lib/composed.mjs` (reuses existing private `extractSkeleton()`). Extended `mergeComposed()` with `opts.lockTemplateProseHash` and a four-case state machine in the skeleton-divergence branch: (a) prior hash present + matches consumer skeleton → auto-adopt new template prose; (b) prior hash present + does not match → fail-closed (existing v0.1.x behavior preserved); (c) prior lock entry exists but has no `template_prose_hash` (pre-v0.2.0) → silent bootstrap auto-adopt for one sync; (d) no prior lock entry at all → preserve v0.1.x conservative fail-closed (cannot distinguish "never-synced" from "user-edited"). `mergeComposed` now returns `templateProseHash` for the lock-write site; `lib/sync.mjs` reads prior `template_prose_hash` per composed target and writes the new one into the lock entry. ADR 0001 grew a "Template prose evolution" subsection with the four-case table. Self-host lock refreshed (3 composed files now carry `template_prose_hash`). 11 new tests in `tests/composed.test.mjs` (4 covering `computeTemplateProseHash` + 7 covering the state machine including all four cases). Targets v0.2.0 (additive, non-breaking).
 
 ### LRN-021
 
