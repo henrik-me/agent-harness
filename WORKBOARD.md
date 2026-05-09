@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T19:00Z (CS03d claimed)
+> **Last updated:** 2026-05-09T19:45Z (CS03d closed; pre-CS15a deferred-LRN cleanup complete)
 
 ## Orchestrators
 
@@ -10,13 +10,21 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T19:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T19:45Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 🟢 Active | yoga-ah | cs03d/content (pending) | 2026-05-09T19:00Z | — |
+
+_(no active CS — CS15a is the next mainline gate and requires user check-in per HANDOFF.md.)_
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 2026-05-09 | **Done.** Squash-merged as `015ed87` (PR #63). NON-BREAKING (v0.2.0): adds optional `template_prose_hash` to lock `fileEntry` (composed-only); `mergeComposed()` four-case state machine distinguishes 'template prose evolved' (auto-adopt) from 'consumer edited prose' (fail-closed retained). Bootstrap path covers v0.1.0 → v0.2.0 lock upgrade silently for one sync. R1 GPT-5.5 surfaced 1 alleged blocker (fixture hash placeholders) → R2 re-classified as pre-existing. R1 plan-vs-impl gate GO. **519 tests / 15-0-3 lint / no drift.** 11 new tests in `tests/composed.test.mjs` covering all four state-machine cases + helper. 0 sub-agent dispatches (orchestrator-owned). LRN candidates: first-sync-on-populated-repo UX + unwired schema fixtures (low priority). Plan PR #58, claim PR #62, content PR #63, close-out PR pending. |
+| CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 2026-05-09 | **Done.** Squash-merged as `90b04db` (PR #60). BREAKING (v0.2.0): top-level `local_blocks` removed from `harness.config.json` schema; `composed.overrides[<file>].local_blocks` is now the single source of truth. R1 GPT-5.5 caught a high-severity blocker (empty-allowlist enforcement gap in `cmdLint`) → R2 fix (always-pass `--allowed-ids`, even when empty) + new B2b regression test. R1 plan-vs-impl gate GO. **508 tests / 15-0-3 lint / no drift.** 2 LRN candidates surfaced (mid-CS sync noise; rubber-duck behavior-coverage gap) — LRN-079 elevated. Plan PR #58, claim PR #59, content PR #60, close-out PR #61. |
 
 ## Recently Completed
 
