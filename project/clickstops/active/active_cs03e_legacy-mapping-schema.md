@@ -1,9 +1,9 @@
 # CS03e — `legacy-composed-mapping.schema.json` (closes LRN-019)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs03e/content (pending)
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** [LRN-019](../../../LEARNINGS.md#lrn-019) at 2026-05-09 pre-CS15a hygiene pass (per user directive 2026-05-09 "I like those gates to be in place")
 **Depends on:** CS03 (sync engine), CS03d (template-prose-hash, which reduced the legacy-mapping path frequency but didn't eliminate it)
