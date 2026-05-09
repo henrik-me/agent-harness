@@ -157,9 +157,11 @@ Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative
 ## Current mainline state (as of last update)
 
 - **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
-- **CS01 → CS14 complete.** No active CS. WORKBOARD `## Active Work` row is empty.
+- **v0.2.0 unreleased** (CS02b + CS03d + CS03e cleared the pre-CS15a deferred-LRN backlog 2026-05-09; CHANGELOG `[Unreleased]` carries 1 BREAKING + 2 Added/Changed entries — see `CHANGELOG.md`).
+- **CS01 → CS14 + CS02b + CS03d + CS03e complete.** No active CS. WORKBOARD `## Active Work` row is empty.
+- **PR-side `smoke / harness-lint` red is fixed** (PR #66, 2026-05-09) — all 3 CI checks now green on PRs.
 - **Next gate: CS15a** (public-readiness preparation) — REQUIRES USER CHECK-IN per the directive. Do not auto-claim CS15a.
-- 15 linters in `harness lint`; 509 tests passing; private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
+- 15 linters in `harness lint`; 533 tests passing; private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 
