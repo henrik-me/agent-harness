@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-04T15:35Z (CS14 close-out — final CS before stopping)
+> **Last updated:** 2026-05-09T17:50Z (CS02b claimed)
 
 ## Orchestrators
 
@@ -10,14 +10,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-04T15:10Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T17:50Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-
-_(no active CS — CS14 next on the mainline.)_
+| CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 🟢 Active | yoga-ah | cs02b/content (pending) | 2026-05-09T17:50Z | — |
 
 ## Recently Completed
 

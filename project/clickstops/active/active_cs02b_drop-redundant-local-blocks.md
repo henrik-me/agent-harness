@@ -1,9 +1,9 @@
 # CS02b — Drop redundant top-level `local_blocks` (option b for LRN-009)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs02b/content (pending)
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** [LRN-009](../../../LEARNINGS.md#lrn-009) at 2026-05-09 pre-CS15a hygiene pass
 **Depends on:** CS02 (schema baseline), CS03 (sync engine), CS06 (composed-block linter)
