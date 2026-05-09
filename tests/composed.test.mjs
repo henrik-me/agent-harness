@@ -20,6 +20,7 @@ import {
   serializeComposed,
   mergeComposed,
   computeBlockRecords,
+  computeTemplateProseHash,
   ComposedParseError,
   ComposedMergeError,
 } from '../lib/composed.mjs';
@@ -1083,5 +1084,133 @@ describe('computeBlockRecords — string input', () => {
     const merged   = '<!-- harness:local-start id=q -->\n\n<!-- harness:local-end id=q -->\n';
     const records = computeBlockRecords(merged, template);
     assert.equal(records[0].provenance, 'seeded-empty');
+  });
+});
+
+// ===========================================================================
+// CS03d / LRN-020 — template_prose_hash + three-way state machine
+// ===========================================================================
+
+describe('CS03d — computeTemplateProseHash', () => {
+  it('returns a 64-char lowercase hex SHA-256 of the template skeleton', () => {
+    const template = '# Header\n\n<!-- harness:local-start id=foo -->\nbody\n<!-- harness:local-end id=foo -->\n\nfooter\n';
+    const hash = computeTemplateProseHash(template);
+    assert.match(hash, /^[0-9a-f]{64}$/);
+  });
+
+  it('is invariant to local-block body content (same skeleton -> same hash)', () => {
+    const t1 = '# Header\n<!-- harness:local-start id=x -->\nA\n<!-- harness:local-end id=x -->\n';
+    const t2 = '# Header\n<!-- harness:local-start id=x -->\nB\n<!-- harness:local-end id=x -->\n';
+    assert.equal(computeTemplateProseHash(t1), computeTemplateProseHash(t2));
+  });
+
+  it('changes when the template prose changes (different non-block lines -> different hash)', () => {
+    const t1 = '# Header v1\n<!-- harness:local-start id=x -->\n\n<!-- harness:local-end id=x -->\n';
+    const t2 = '# Header v2\n<!-- harness:local-start id=x -->\n\n<!-- harness:local-end id=x -->\n';
+    assert.notEqual(computeTemplateProseHash(t1), computeTemplateProseHash(t2));
+  });
+
+  it('is LF-normalized: CRLF input produces the same hash as LF input', () => {
+    const tLF   = '# Header\n<!-- harness:local-start id=x -->\nA\n<!-- harness:local-end id=x -->\n';
+    const tCRLF = '# Header\r\n<!-- harness:local-start id=x -->\r\nA\r\n<!-- harness:local-end id=x -->\r\n';
+    assert.equal(computeTemplateProseHash(tLF), computeTemplateProseHash(tCRLF));
+  });
+});
+
+describe('CS03d — mergeComposed three-way state machine (LRN-020)', () => {
+  // Template v1: original prose
+  const TEMPLATE_V1 = '# Doc\n\nIntro paragraph v1.\n\n<!-- harness:local-start id=foo -->\n\n<!-- harness:local-end id=foo -->\n\nFooter.\n';
+  // Template v2: prose evolved (intro paragraph changed)
+  const TEMPLATE_V2 = '# Doc\n\nIntro paragraph v2 (improved wording).\n\n<!-- harness:local-start id=foo -->\n\n<!-- harness:local-end id=foo -->\n\nFooter.\n';
+
+  // Consumer file: untouched skeleton (matches v1 prose), block customized
+  const CONSUMER_UNTOUCHED_PROSE = '# Doc\n\nIntro paragraph v1.\n\n<!-- harness:local-start id=foo -->\nMy custom block content\n<!-- harness:local-end id=foo -->\n\nFooter.\n';
+  // Consumer file: edited prose (intro paragraph differs from BOTH v1 and v2)
+  const CONSUMER_EDITED_PROSE = '# Doc\n\nIntro paragraph EDITED BY USER.\n\n<!-- harness:local-start id=foo -->\nMy custom block content\n<!-- harness:local-end id=foo -->\n\nFooter.\n';
+
+  const v1Hash = computeTemplateProseHash(TEMPLATE_V1);
+
+  it('case (a): template prose evolved, consumer untouched -> auto-adopts new template prose; preserves block', () => {
+    const result = mergeComposed(TEMPLATE_V2, CONSUMER_UNTOUCHED_PROSE, {
+      allowedBlockIds: ['foo'],
+      lockRecords: [{ id: 'foo' }],
+      lockTemplateProseHash: v1Hash,
+    });
+    // Adopts v2 prose
+    assert.ok(result.content.includes('Intro paragraph v2 (improved wording).'));
+    assert.ok(!result.content.includes('Intro paragraph v1.'));
+    // Preserves consumer block
+    assert.ok(result.content.includes('My custom block content'));
+    // Returns the new (v2) hash for lock recording
+    assert.equal(result.templateProseHash, computeTemplateProseHash(TEMPLATE_V2));
+  });
+
+  it('case (b): template prose evolved, consumer ALSO edited prose -> EMERGE_LEGACY_UNMAPPED (fail-closed retained)', () => {
+    assert.throws(
+      () => mergeComposed(TEMPLATE_V2, CONSUMER_EDITED_PROSE, {
+        allowedBlockIds: ['foo'],
+        lockRecords: [{ id: 'foo' }],
+        lockTemplateProseHash: v1Hash,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('case (c): bootstrap — prior lock exists but no template_prose_hash (pre-v0.2.0) -> silent auto-adopt + new hash recorded', () => {
+    const result = mergeComposed(TEMPLATE_V2, CONSUMER_UNTOUCHED_PROSE, {
+      allowedBlockIds: ['foo'],
+      lockRecords: [{ id: 'foo' }],
+      lockTemplateProseHash: null,  // pre-v0.2.0 lock format
+    });
+    assert.ok(result.content.includes('Intro paragraph v2'));
+    assert.ok(result.content.includes('My custom block content'));
+    assert.equal(result.templateProseHash, computeTemplateProseHash(TEMPLATE_V2));
+  });
+
+  it('case (c) bootstrap: even when consumer edited prose, pre-v0.2.0 silently auto-adopts (acceptable risk per CS03d D4)', () => {
+    // This is the documented trade-off for the upgrade path. Existing
+    // consumers (gwn, sub-invaders) have unedited template prose; for them
+    // this case never fires in practice.
+    const result = mergeComposed(TEMPLATE_V2, CONSUMER_EDITED_PROSE, {
+      allowedBlockIds: ['foo'],
+      lockRecords: [{ id: 'foo' }],
+      lockTemplateProseHash: null,
+    });
+    // Auto-adopts v2 prose silently (the consumer's edits to non-block prose are dropped).
+    assert.ok(result.content.includes('Intro paragraph v2'));
+    assert.ok(!result.content.includes('Intro paragraph EDITED BY USER'));
+    assert.ok(result.content.includes('My custom block content'));
+  });
+
+  it('case (d): no prior lock at all (lockRecords=null) preserves v0.1.x fail-closed behavior on prose divergence', () => {
+    // Distinct from case (c): no lock entry exists at all (fresh consumer
+    // with extra prose), so we cannot safely silently auto-adopt — could
+    // erase real user data.
+    assert.throws(
+      () => mergeComposed(TEMPLATE_V2, CONSUMER_UNTOUCHED_PROSE, {
+        allowedBlockIds: ['foo'],
+        lockRecords: null,
+        lockTemplateProseHash: null,
+      }),
+      (err) => err instanceof ComposedMergeError && err.code === 'EMERGE_LEGACY_UNMAPPED',
+    );
+  });
+
+  it('skeleton match (template prose unchanged): no-op merge; returns current template hash', () => {
+    const result = mergeComposed(TEMPLATE_V1, CONSUMER_UNTOUCHED_PROSE, {
+      allowedBlockIds: ['foo'],
+      lockRecords: [{ id: 'foo' }],
+      lockTemplateProseHash: v1Hash,
+    });
+    assert.ok(result.content.includes('Intro paragraph v1.'));
+    assert.ok(result.content.includes('My custom block content'));
+    assert.equal(result.templateProseHash, v1Hash);
+  });
+
+  it('fresh start (empty current file) returns templateProseHash for the new lock', () => {
+    const result = mergeComposed(TEMPLATE_V1, '', {
+      allowedBlockIds: ['foo'],
+    });
+    assert.equal(result.templateProseHash, v1Hash);
   });
 });

@@ -9,6 +9,28 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+### Added
+
+- **Lock schema:** new optional `fileEntry.template_prose_hash` field
+  (composed-class only) records the SHA-256 of the template skeleton
+  (post-templating, post-local-block-strip, LF-normalised) at sync time.
+  Per CS03d / [LRN-020](LEARNINGS.md#lrn-020).
+
+### Changed
+
+- **`harness sync` no longer requires a `legacy_composed_mapping.json` when
+  the only divergence between a consumer's composed file and the template is
+  harness-side prose evolution.** `mergeComposed()` now uses the new
+  `template_prose_hash` to distinguish "template prose evolved" (consumer
+  didn't touch their prose — auto-adopt the new template prose) from
+  "consumer edited prose" (existing fail-closed `EMERGE_LEGACY_UNMAPPED`
+  behavior retained). First sync after upgrade from v0.1.x bootstraps the
+  new field automatically (silent auto-adopt for one sync; subsequent syncs
+  use full evolution detection). Per CS03d / [LRN-020](LEARNINGS.md#lrn-020).
+- New public helper `computeTemplateProseHash(template)` exported from
+  `lib/composed.mjs` for downstream tooling that needs to compute the same
+  hash the lock writer uses.
+
 ### Changed (BREAKING)
 
 - **Schema:** removed top-level `local_blocks` from `harness.config.json`.

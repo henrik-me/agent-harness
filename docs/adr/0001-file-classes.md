@@ -193,6 +193,31 @@ harness.
 See the cs-plan [CS03 sync invariant](../../project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)
 for the exact fixture specification.
 
+### Template prose evolution (v0.2.0 / CS03d / [LRN-020](../../LEARNINGS.md#lrn-020))
+
+In v0.1.x, every harness-side prose update to a composed file (e.g. fixing a typo in the
+managed core of `OPERATIONS.md`) tripped the legacy fail-closed invariant on every
+existing consumer's next sync, because the consumer's old skeleton no longer matched the
+new template's skeleton. Consumers had to author a `legacy_composed_mapping.json` for
+every routine doc tweak — punishingly bad UX.
+
+CS03d extends the lock-file `fileEntry` with a per-composed-file `template_prose_hash`
+field that records the SHA-256 of the template skeleton (post-templating, post-block-strip,
+LF-normalised) at the most recent sync. On the next sync, `mergeComposed()` consults the
+recorded hash to distinguish four cases:
+
+| Case | Prior lock has `template_prose_hash`? | Consumer skeleton matches recorded hash? | Behaviour |
+|---|---|---|---|
+| (a) | yes | yes | **Auto-adopt** new template prose. Consumer didn't touch their prose; the divergence is entirely template-side. Local blocks preserved. No `legacyMapping` required. |
+| (b) | yes | no | **Fail-closed** (`EMERGE_LEGACY_UNMAPPED`). Consumer truly edited their prose; existing v0.1.x semantics apply unless `legacyMapping` is provided. |
+| (c) | no (pre-v0.2.0 lock entry exists for this file) | n/a | **Bootstrap**: silently auto-adopt for this one sync; record the new hash. Subsequent syncs use cases (a)/(b). Acceptable risk for upgrade UX (CS03d D4). |
+| (d) | no prior lock entry at all (fresh consumer file with extra prose) | n/a | **Fail-closed** (`EMERGE_LEGACY_UNMAPPED`). Cannot distinguish "never-synced existing file" from "user-edited prose post-sync" without a prior lock; preserve v0.1.x conservative behaviour. |
+
+The new `template_prose_hash` field is **optional** in the schema — managed and seeded
+file entries do not carry it, and pre-v0.2.0 composed entries that lack it trigger case
+(c) bootstrap on first re-sync. From the second sync onward, evolution detection is fully
+active.
+
 ---
 
 ## Lock-file recording for composed files

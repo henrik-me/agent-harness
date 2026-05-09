@@ -169,6 +169,10 @@
           "items": {
             "$ref": "#/$defs/blockEntry"
           }
+        },
+        "template_prose_hash": {
+          "$ref": "#/$defs/sha256Hex",
+          "description": "Optional. SHA-256 hash of the template's skeleton (post-templating, post-local-block-strip, LF-normalised) at the last sync. Composed-class only. When present, mergeComposed() uses it to distinguish 'template prose evolved' (the template's prose changed but the consumer didn't touch their prose — auto-adopt the new template prose) from 'consumer edited prose' (the consumer made out-of-band edits to non-block content — fall through to the existing fail-closed legacy_composed_mapping path). Absent on locks written by harness < v0.2.0; the engine bootstraps on first encounter (silently auto-adopts current template prose and records the hash for the next sync). Per CS03d / LRN-020."
         }
       },
       "if": {
@@ -186,12 +190,14 @@
           "blocks"
         ],
         "properties": {
-          "blocks": true
+          "blocks": true,
+          "template_prose_hash": true
         }
       },
       "else": {
         "properties": {
-          "blocks": false
+          "blocks": false,
+          "template_prose_hash": false
         }
       }
     },
