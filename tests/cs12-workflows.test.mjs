@@ -76,12 +76,27 @@ describe('CS12 — reusable workflow harness-checks.yml', () => {
     assert.match(text, /cli-ref/, 'must declare cli-ref input');
   });
 
-  it('invokes harness via npx -y github: install pattern (NOT bare npx harness)', () => {
+  it('invokes harness via authenticated git clone + node bin/harness.mjs (npm 10.8/10.9 GitFetcher workaround)', () => {
     const text = loadText(REUSABLE);
+    // NOTE: the original CS12 design used `npx -y "github:owner/repo#<ref>"` per
+    // the cs-plan Option B install pattern. After CS14 a regression in npm 10.8.x
+    // (and 10.9.x) broke that path with `npm error GitFetcher requires an Arborist
+    // constructor to pack a tarball`. The reusable workflow now clones + runs
+    // directly to bypass the broken npm git fetcher; functional intent is identical.
     assert.match(
       text,
-      /npx\s+-y\s+github:henrik-me\/agent-harness#/,
-      'reusable workflow must use github: install pattern (per cs-plan Option B)'
+      /git\s+clone[^\n]*github\.com\/henrik-me\/agent-harness/,
+      'reusable workflow must clone the harness repo from github.com/henrik-me/agent-harness'
+    );
+    assert.match(
+      text,
+      /git\s+checkout\s+(--quiet\s+)?["']?\$\{?CLI_REF\}?["']?/,
+      'reusable workflow must checkout the validated CLI_REF env value'
+    );
+    assert.match(
+      text,
+      /node\s+bin\/harness\.mjs\s+lint/,
+      'reusable workflow must invoke the harness CLI via node bin/harness.mjs lint after cloning'
     );
     assert.doesNotMatch(
       text,
@@ -119,12 +134,25 @@ describe('CS12 — self-host integration harness-self-check-via-reusable.yml', (
     );
   });
 
-  it('passes cli-ref: ${{ github.sha }} (NOT harness.config.json version)', () => {
+  it('passes cli-ref: ${{ github.event.pull_request.head.sha }} (PR head SHA, NOT merge SHA)', () => {
     const text = loadText(SELF_HOST);
+    // Per the post-CS12 fix: github.sha on pull_request events resolves to
+    // the synthetic merge-commit SHA on refs/pull/<N>/merge, which is NOT
+    // npx-fetchable (exits 128). github.event.pull_request.head.sha is the
+    // PR's actual head commit on the contributor's branch, which IS
+    // fetchable AND is the right value to smoke-test (it's what would land
+    // on main if the PR squash-merged this instant).
     assert.match(
       text,
+      /cli-ref:\s*["']?\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\}\}["']?/,
+      'self-host MUST use github.event.pull_request.head.sha as cli-ref (PR head SHA is npx-fetchable; merge-commit SHA is not)'
+    );
+    // Belt-and-suspenders: the bare `github.sha` form should NOT appear in
+    // the cli-ref position (only inside comments / rationale text is fine).
+    assert.doesNotMatch(
+      text,
       /cli-ref:\s*["']?\$\{\{\s*github\.sha\s*\}\}["']?/,
-      'self-host MUST use github.sha as cli-ref (the unreleased 0.0.0-pre semver is not a valid git ref)'
+      'self-host MUST NOT use bare github.sha as cli-ref (resolves to unfetchable merge-commit SHA on pull_request events)'
     );
   });
 });

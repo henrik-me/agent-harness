@@ -1,10 +1,25 @@
 # harness-self-check-via-reusable.yml — CS12 self-host integration.
 #
-# Calls the new harness-checks.yml reusable workflow against the harness repo
-# itself, using ${{ github.sha }} as the cli-ref. This proves the reusable
-# workflow works end-to-end and is the cs-plan-mandated dogfood gate ("Both
-# workflows used by this repo's own CI"). Future, post-CS14: switch cli-ref
-# to harness.config.json.version once real semver tags exist.
+# Calls the harness-checks.yml reusable workflow against the harness repo
+# itself, using the PR head commit SHA as the cli-ref. This proves the
+# reusable workflow works end-to-end and is the cs-plan-mandated dogfood
+# gate ("Both workflows used by this repo's own CI").
+#
+# WHY github.event.pull_request.head.sha (not github.sha):
+#   On a `pull_request` event, ${{ github.sha }} resolves to the synthetic
+#   merge-commit SHA that GitHub creates internally on `refs/pull/<N>/merge`.
+#   That SHA is NOT reachable via the default `git fetch` refspec, so
+#   `npx -y "github:owner/repo#<merge-sha>"` (which clones + checks out the
+#   ref) exits 128 with a clone/checkout failure.
+#
+#   github.event.pull_request.head.sha is the PR's actual head commit on the
+#   contributor's branch — reachable via fetch, npx-installable. This is the
+#   value that should be smoke-tested anyway: it's what would land on main
+#   if the PR were squash-merged this instant.
+#
+# Future, post-CS14: switch cli-ref to harness.config.json.version once a
+# stable cross-PR ref exists for the in-flight branch (likely needs
+# tag-on-PR-open tooling — out of scope here).
 
 name: harness-self-check-via-reusable
 
@@ -16,4 +31,4 @@ jobs:
   smoke:
     uses: ./.github/workflows/harness-checks.yml
     with:
-      cli-ref: "${{ github.sha }}"
+      cli-ref: "${{ github.event.pull_request.head.sha }}"
