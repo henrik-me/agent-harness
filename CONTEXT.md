@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-04 (CS14 close-out — final CS before stopping)
+> **Last updated:** 2026-05-09 (CS02b close-out — pre-CS15a deferred-LRN cleanup)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -43,7 +43,9 @@
 
 - **CS14 complete** (closed 2026-05-04). **The last CS before stopping per autopilot directive.** Release tooling + v0.1.0 + private-consumption smoke test. Delivered: `CHANGELOG.md` (Keep-a-Changelog with `[Unreleased]` + `[0.1.0]`); `.github/workflows/release.yml` (tag-triggered on `v*.*.*`, applies LRN-075 env-pass + allowlist `^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$`, least-privilege `contents: write`, `gh release create --draft`); `.github/workflows/private-smoke.yml` (`workflow_dispatch` + weekly schedule + PR triggers; `npx -y "github:henrik-me/agent-harness#${REF}" --help` + `init` in tempdir; uses `secrets.GITHUB_TOKEN` via git url-rewrite); `docs/private-consumption.md` (external PAT scopes — Contents: Read; placeholder `ghp_FAKE_DO_NOT_USE`); `package.json` + `package-lock.json` bumped 0.0.0-pre → 0.1.0; `harness.config.json` adds CHANGELOG.md to `excluded`; `tests/cs14-release-workflow.test.mjs` (7 tests); `tests/cs14-smoke-workflow.test.mjs` (11 tests). **509 tests pass total** (491+18 new). `harness lint --quiet`: **15/0/3**. Plan-vs-impl gate (gpt-5.5): R1 NEEDS-FIX (1 B = package.json version still 0.0.0-pre + 1 NB = release.yml extraction logic backwards) → BOTH FIXED INLINE → R2 GO. Tag `v0.1.0` pushed to main; `release.yml` ran successfully and created a draft GitHub Release. Initial private-smoke run failed due to a YAML parse error (unquoted `:` in step name `(use GITHUB_TOKEN for github: protocol)`); fixed in close-out PR; LRN-078 filed (failing-loud on YAML parse errors when js-yaml is available, mechanically enforced by upgrading `check-workflow-pins.mjs` warning to error). 0 sub-agent dispatches (orchestrator-owned). Squash-merged PR #53.
 
-**CS14 is complete. Stopping mainline progress per autopilot directive — CS15 (public-flip preparation) is the next gate and requires user check-in (per HANDOFF.md).**
+- **CS02b complete** (closed 2026-05-09). **Pre-CS15a hygiene CS** addressing [LRN-009](LEARNINGS.md#lrn-009) per user directive 2026-05-09. Removes the redundant top-level `local_blocks` field from `harness.config.json` schema; `composed.overrides[<file>].local_blocks` is now the single source of truth. **BREAKING change** (v0.2.0): consumer configs carrying the old top-level form are rejected by Ajv with an `additional properties` error naming `local_blocks`. Migration: move every entry from `local_blocks[<file>]` into `composed.overrides[<file>].local_blocks` and delete the top-level key. Delivered: schema removal; engine cleanup in `lib/sync.mjs` (`canonLocalBlocks` block + `resolveAllowedBlockIds()` + warning path) and `bin/harness.mjs cmdLint` (iterates `composed.overrides`); Ajv error messages now name the offending property; `scripts/check-composed-blocks.mjs` `--allowed-ids` parser hardened to accept `''` as "explicit empty allowlist" (R1 follow-up); 8 in-repo configs migrated; 2 new regression tests (schema rejection + empty-allowlist enforcement); 3 obsolete dual-form tests removed; ADR 0001 v0.2.0 subsection; `template/managed/INSTRUCTIONS.md` updated + root re-rendered; `LEARNINGS.md` LRN-009 flipped to `applied`; `CHANGELOG.md` BREAKING entry. **508 tests pass total** (was 509; net -1). `harness lint --quiet`: **15/0/3**. R1 GPT-5.5 caught a high-severity blocker (empty-allowlist enforcement gap in `cmdLint` — without R2 fix, a composed file without overrides would silently allow all block IDs) → R2 GO. R1 plan-vs-impl gate GO. Lock-fixup commits per LRN-070/074 (CS11b `--resolved-sha` flag). 0 sub-agent dispatches (orchestrator-owned). Plan PR #58, claim PR #59, content PR #60.
+
+**Next mainline gate is CS03d** (template-prose-hash, [LRN-020](LEARNINGS.md#lrn-020)) — second pre-CS15a hygiene CS, planned at PR #58, ready to claim. After cs03d closes, the next gate is **CS15a** (public-readiness preparation) which requires user check-in per HANDOFF.md.
 
 ## Architecture pointer
 
@@ -51,7 +53,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS14 complete; stopped before CS15 per autopilot directive. CS15 (public-flip preparation) requires user check-in (per HANDOFF.md).
+- None. CS02b complete (LRN-009 applied). CS03d (LRN-020) is filed and ready to claim. CS15a (public-readiness preparation) remains the next user-check-in gate per HANDOFF.md.
 
 ## Parallelism (single-orchestrator default)
 

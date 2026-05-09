@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T17:50Z (CS02b claimed)
+> **Last updated:** 2026-05-09T18:30Z (CS02b closed; CS03d ready to claim)
 
 ## Orchestrators
 
@@ -10,13 +10,20 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T17:50Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T18:30Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 🟢 Active | yoga-ah | cs02b/content (pending) | 2026-05-09T17:50Z | — |
+
+_(no active CS — CS03d ready to claim next.)_
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 2026-05-09 | **Done.** Squash-merged as `90b04db` (PR #60). BREAKING (v0.2.0): top-level `local_blocks` removed from `harness.config.json` schema; `composed.overrides[<file>].local_blocks` is now the single source of truth. R1 GPT-5.5 caught a high-severity blocker (empty-allowlist enforcement gap in `cmdLint`) → R2 fix (always-pass `--allowed-ids`, even when empty) + new B2b regression test. R1 plan-vs-impl gate GO. **508 tests / 15-0-3 lint / no drift.** 2 LRN candidates surfaced (mid-CS sync noise; rubber-duck behavior-coverage gap) — TBD elevated. Plan PR #58, claim PR #59, content PR #60, close-out PR pending. |
 
 ## Recently Completed
 
