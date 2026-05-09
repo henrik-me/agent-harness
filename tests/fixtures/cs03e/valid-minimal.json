@@ -1,0 +1,5 @@
+{
+  "regions": [
+    { "action": "discard", "content": "stale legacy paragraph\n" }
+  ]
+}

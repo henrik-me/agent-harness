@@ -1,0 +1,5 @@
+{
+  "regions": [
+    { "action": "map_to_block", "content": "missing block_id" }
+  ]
+}

@@ -413,8 +413,7 @@ id: LRN-019
 date: 2026-05-03
 category: architectural
 source_cs: CS03
-status: deferred
-deferred_until: 2026-06-15
+status: applied
 tags: [legacy_composed_mapping, schema, cs06, cs19]
 claim_area: schema-design
 ```
@@ -426,6 +425,8 @@ claim_area: schema-design
 **Evidence:** `cs03-composed` sub-agent escalation #1.
 
 **Disposition:** Defer to CS06 (when `check-composed-blocks.mjs` is built — it's the natural home for legacy-mapping validation tooling). Filed as planned CS for CS06 deliverables expansion. **Revisit trigger:** at CS06 claim/start, OR by 2026-06-15, whichever comes first.
+
+**Applied (CS03e, 2026-05-09):** Per user directive 2026-05-09 ("I like those gates to be in place"). Authored `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12) mirroring the runtime rules of `validateLegacyMapping` in `lib/composed.mjs`: `regions: [...]`, each region with `action: 'map_to_block' | 'discard'`, `content: string` (required), `block_id?: string` (required-and-pattern-matched when `map_to_block`, forbidden when `discard`), `additionalProperties: false` everywhere, optional `_comment` at the root. Wired into `scripts/validate-schemas.mjs` (added to `schemaFiles` array; bumped `EXPECTED_MIN.schemas` from 3 to 4). Authored `examples/legacy-composed-mapping.example.json` as a starter file with `$schema` self-reference + 1 of each region action. Added 7 fixtures under `tests/fixtures/cs03e/` (2 valid + 5 invalid covering missing-regions, bad-action, map-without-block-id, discard-with-block-id, bad-block-id-pattern). New `tests/legacy-composed-mapping-schema.test.mjs` with 10 tests covering all fixtures + the example + schema-document self-validation. ADR 0001 § Legacy-content fail-closed invariant grew a one-paragraph pointer to the new schema. **Did NOT** wire Ajv into `mergeComposed()` runtime — `validateLegacyMapping` already enforces the same rules; the schema is for authoring-time / IDE / `validate-schemas.mjs` static validation, not runtime belt-and-suspenders. Non-breaking, additive. Targets v0.2.0 (Added). **Note:** CS03d's evolution detection (LRN-020) reduced the legacy-mapping path frequency dramatically; this schema closes the remaining authoring-time UX gap for cases (b) and (d) that still trigger the path.
 
 ### LRN-020
 

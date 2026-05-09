@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/henrik-me/agent-harness/schemas/legacy-composed-mapping.schema.json",
+  "title": "Agent Harness legacy composed-block mapping",
+  "description": "Schema for `legacy_composed_mapping.json`. Authored by a consumer when `harness sync` raises EMERGE_LEGACY_UNMAPPED on a composed-class file (i.e. the consumer's file contains non-template, non-block prose that does not match the harness template skeleton). Each entry under `regions` describes ONE such legacy region by exact byte content and tells the sync engine to either map the content into a named local block (`map_to_block`) or discard it (`discard`). Per CS03e / LRN-019. The runtime validator in `lib/composed.mjs` (`validateLegacyMapping`) enforces the same rules at sync time; this schema mirrors them for IDE autocomplete + standalone validation via `harness lint` / `validate-schemas.mjs`. CS03d's `template_prose_hash` evolution detection reduces how often this file is needed but does not eliminate it (cases (b) consumer-edited-prose and (d) no-prior-lock still require it).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["regions"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional self-reference to this schema's $id for IDE autocomplete. Set to 'https://github.com/henrik-me/agent-harness/schemas/legacy-composed-mapping.schema.json' or to a relative path during local development."
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Free-form note (single string). Ignored by the sync engine. Useful for recording why each region exists or what the author did to determine the right action."
+    },
+    "regions": {
+      "type": "array",
+      "description": "Ordered list of legacy region descriptors. The order does not affect correctness — `validateLegacyMapping` performs multiset accounting against the actual legacy regions detected in the consumer file. Each entry must describe a region by EXACT byte content (whitespace included); a whitespace-only mismatch raises EMERGE_LEGACY_BAD_MAPPING.",
+      "items": {
+        "$ref": "#/$defs/regionEntry"
+      }
+    }
+  },
+  "$defs": {
+    "regionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "content"],
+      "description": "A single legacy region descriptor. The `action` field selects between `map_to_block` (preserve content, write it into the named local block) and `discard` (drop content, leave the block empty if no other source). `content` is the EXACT byte string (LF-normalised) from the consumer's file that this entry describes.",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["map_to_block", "discard"],
+          "description": "Action for this region. `map_to_block` → preserve the region's content as the body of the local block named in `block_id` (sync writes provenance: 'migrated-from-legacy' for that block in the lock). `discard` → drop the region; `block_id` MUST be omitted. Any other value (e.g. 'drop', 'keep') is rejected as EMERGE_LEGACY_BAD_MAPPING."
+        },
+        "block_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]*$",
+          "description": "Identifier of the local block to receive this region's content. REQUIRED when `action` is `map_to_block`; FORBIDDEN when `action` is `discard`. Must match the same pattern as composed-block IDs elsewhere in the harness (`^[a-z][a-z0-9.-]*$`) and must be present in the template's local-block markers AND in the consumer's `harness.config.json` `composed.overrides[<file>].local_blocks` allowlist."
+        },
+        "content": {
+          "type": "string",
+          "description": "EXACT byte content of the legacy region from the consumer's file (LF-normalised, no leading/trailing whitespace trimming). The runtime validator performs an exact string match against the actual region detected in the file; even a single space difference raises EMERGE_LEGACY_BAD_MAPPING. Use a trailing newline if the region in the file has one."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "map_to_block" }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["block_id"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "discard" }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "not": { "required": ["block_id"] }
+          }
+        }
+      ]
+    }
+  }
+}
