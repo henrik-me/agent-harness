@@ -148,11 +148,12 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
       // composed.files matches seeded template
       assert.deepEqual(cfg.composed.files, ['CONVENTIONS.md', 'OPERATIONS.md', 'REVIEWS.md']);
 
-      // local_blocks has the 3 expected entries
-      assert.equal(Object.keys(cfg.local_blocks).length, 3);
-      assert.ok('CONVENTIONS.md' in cfg.local_blocks, 'Expected local_blocks.CONVENTIONS.md');
-      assert.ok('OPERATIONS.md' in cfg.local_blocks, 'Expected local_blocks.OPERATIONS.md');
-      assert.ok('REVIEWS.md' in cfg.local_blocks, 'Expected local_blocks.REVIEWS.md');
+      // composed.overrides has the 3 expected per-file allowlists (LRN-009 / CS02b)
+      assert.equal(Object.keys(cfg.composed.overrides).length, 3);
+      assert.deepEqual(cfg.composed.overrides['CONVENTIONS.md'].local_blocks, ['conventions.project']);
+      assert.deepEqual(cfg.composed.overrides['OPERATIONS.md'].local_blocks, ['operations.project-deploy']);
+      assert.deepEqual(cfg.composed.overrides['REVIEWS.md'].local_blocks, ['reviews.project-gates']);
+      assert.equal(cfg.local_blocks, undefined, 'Top-level local_blocks must not be present (removed in v0.2.0)');
 
       // templating map has expected keys
       for (const key of ['project_name', 'agent_suffix', 'agent_suffix_upper', 'repo_owner', 'default_codeowner', 'lib_codeowner', 'repo_short']) {

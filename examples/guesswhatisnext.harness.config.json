@@ -78,11 +78,6 @@
     "agent_suffix": "gwn",
     "node_version": "20"
   },
-  "local_blocks": {
-    "CONVENTIONS.md": ["conventions.project"],
-    "OPERATIONS.md": ["operations.project-deploy"],
-    "REVIEWS.md": ["reviews.project-gates"]
-  },
   "excluded": [
     "README.md",
     "LICENSE",

@@ -12,12 +12,18 @@
       "CONVENTIONS.md",
       "OPERATIONS.md",
       "REVIEWS.md"
-    ]
-  },
-  "local_blocks": {
-    "CONVENTIONS.md": ["conventions.project"],
-    "OPERATIONS.md": ["operations.project-deploy"],
-    "REVIEWS.md": ["reviews.project-gates"]
+    ],
+    "overrides": {
+      "CONVENTIONS.md": {
+        "local_blocks": ["conventions.project"]
+      },
+      "OPERATIONS.md": {
+        "local_blocks": ["operations.project-deploy"]
+      },
+      "REVIEWS.md": {
+        "local_blocks": ["reviews.project-gates"]
+      }
+    }
   },
   "templating": {
     "project_name": "my-project",

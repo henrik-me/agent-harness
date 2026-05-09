@@ -9,7 +9,15 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
-(no changes yet)
+### Changed (BREAKING)
+
+- **Schema:** removed top-level `local_blocks` from `harness.config.json`.
+  `composed.overrides[<file>].local_blocks` is now the single source of truth
+  for per-file composed-block allowlists. Configs carrying the old top-level
+  form are now rejected by Ajv with an `additional properties` error naming
+  `local_blocks`. Migration: move every entry from `local_blocks[<file>]`
+  into `composed.overrides[<file>].local_blocks` and delete the top-level
+  key. Resolves [LRN-009](LEARNINGS.md#lrn-009) (CS02b).
 
 ## [0.1.0] — 2026-05-04
 

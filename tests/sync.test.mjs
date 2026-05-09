@@ -831,7 +831,7 @@ user content here
     assert(typeof block.source_line_range?.end === 'number');
   });
 
-  it('warns when local_blocks differs between overrides and top-level (LRN-009)', async () => {
+  it('rejects config with top-level `local_blocks` (LRN-009 / CS02b: removed in v0.2.0)', async () => {
     buildHarnessRepo(harnessDir, {
       composed: { 'NOTES.md': COMPOSED_TEMPLATE },
     });
@@ -840,16 +840,15 @@ user content here
         files: ['NOTES.md'],
         overrides: { 'NOTES.md': { local_blocks: ['my-section'] } },
       },
-      local_blocks: { 'NOTES.md': ['other-section'] },  // Disagrees with overrides.
+      local_blocks: { 'NOTES.md': ['other-section'] },  // top-level form removed
     });
 
-    const result = await sync({
-      consumerRepoPath: consumerDir,
-      harnessRepoPath: harnessDir,
-      mode: 'check',
-    });
-
-    assert(result.warnings.some(w => w.includes('LRN-009') || w.includes('local_blocks')));
+    await assert.rejects(
+      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'check' }),
+      (err) => err instanceof SyncError
+        && err.code === 'ESYNC_INVALID_CONFIG'
+        && /local_blocks/.test(err.message),
+    );
   });
 });
 
@@ -1616,22 +1615,11 @@ user content preserved
     );
   });
 
-  it('throws EBADCONFIG_DUP_PATH for canonical-collision in top-level local_blocks keys', async () => {
-    buildHarnessRepo(harnessDir, {
-      composed: { 'dir/NOTES.md': '# composed\n' },
-    });
-    buildConsumerRepo(consumerDir, {
-      composed: { files: ['dir/NOTES.md'] },
-      local_blocks: {
-        './dir/NOTES.md': ['a'],
-        'dir/NOTES.md':   ['b'],
-      },
-    });
-    await assert.rejects(
-      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
-      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
-    );
-  });
+  // Removed: top-level `local_blocks` was deleted from the schema in CS02b
+  // (v0.2.0 / LRN-009), so the canonical-collision detection on top-level
+  // local_blocks keys is obsolete. The schema now rejects the field outright;
+  // see "rejects config with top-level `local_blocks`" in the composed-files
+  // describe block above.
 });
 
 
@@ -1748,16 +1736,15 @@ describe('sync() — Review #6 #1: __proto__ canonical-key collision detection',
 
   // Helper: write a harness.config.json that has '__proto__' as an OWN property
   // (object literals treat '__proto__' as the prototype-set syntax, so we hand-author the JSON).
-  function writeProtoConfig(consumerDir, overridesOrLocalBlocks) {
+  function writeProtoConfig(consumerDir, opts) {
     const json = `{
       "version": "v0.1.0",
       "project": { "name": "test-project", "agent_suffix": "test" },
       "managed": { "files": [] },
-      "composed": ${overridesOrLocalBlocks.composed},
+      "composed": ${opts.composed},
       "seeded": { "files": [] },
       "excluded": [],
       "templating": {}
-      ${overridesOrLocalBlocks.local_blocks ? ', "local_blocks": ' + overridesOrLocalBlocks.local_blocks : ''}
     }`;
     writeText(path.join(consumerDir, 'harness.config.json'), json);
   }
@@ -1780,22 +1767,10 @@ describe('sync() — Review #6 #1: __proto__ canonical-key collision detection',
     );
   });
 
-  it('throws EBADCONFIG_DUP_PATH for __proto__ canonical-collision in top-level local_blocks', async () => {
-    mkdirSync(path.join(harnessDir, 'template', 'composed'), { recursive: true });
-    writeText(path.join(harnessDir, 'template', 'composed', '__proto__'), '# composed\n');
-    writeText(
-      path.join(harnessDir, 'schemas', 'harness.config.schema.json'),
-      readFileSync(path.join(repoRoot, 'schemas', 'harness.config.schema.json'), 'utf8'),
-    );
-    writeProtoConfig(consumerDir, {
-      composed: '{ "files": ["__proto__"] }',
-      local_blocks: '{ "./__proto__": ["a"], "__proto__": ["b"] }',
-    });
-    await assert.rejects(
-      () => sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply' }),
-      (err) => err instanceof SyncError && err.code === 'EBADCONFIG_DUP_PATH',
-    );
-  });
+  // Removed: top-level `local_blocks` was deleted from the schema in CS02b
+  // (v0.2.0 / LRN-009), so the __proto__ canonical-collision case on top-level
+  // local_blocks is obsolete. The schema now rejects any top-level local_blocks
+  // outright before canonicalization runs.
 });
 
 // ---------------------------------------------------------------------------

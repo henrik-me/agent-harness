@@ -289,7 +289,8 @@ keep them inline.
   - **Composed** (`template/composed/`): harness manages a core block; the consumer
     may add local content via `<!-- harness:local-start id=<block-id> -->` /
     `<!-- harness:local-end id=<block-id> -->` markers (block ID must be allowlisted
-    in `harness.config.json` `local_blocks`). Use for files that need a
+    in `harness.config.json` `composed.overrides[<file>].local_blocks`).
+    Use for files that need a
     harness-provided core plus project-specific extensions.
 
 **Add** a file to `template/seeded/` when:

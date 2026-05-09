@@ -60,11 +60,6 @@
   "templating": {
     "project_name": "agent-harness"
   },
-  "local_blocks": {
-    "CONVENTIONS.md": ["conventions.project"],
-    "OPERATIONS.md": ["operations.project-deploy"],
-    "REVIEWS.md": ["reviews.project-gates"]
-  },
   "excluded": [
     "README.md",
     "LICENSE",
