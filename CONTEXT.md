@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-09 (CS03d close-out — pre-CS15a deferred-LRN cleanup complete)
+> **Last updated:** 2026-05-09 (CS03e close-out — pre-CS15a hygiene + CI fix complete)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -47,7 +47,11 @@
 
 - **CS03d complete** (closed 2026-05-09). **Pre-CS15a hygiene CS** addressing [LRN-020](LEARNINGS.md#lrn-020) per user directive 2026-05-09. Adds optional per-composed-file `template_prose_hash` to `.harness-lock.json` so `mergeComposed()` distinguishes 'template prose evolved' (auto-adopt) from 'consumer edited prose' (existing fail-closed `EMERGE_LEGACY_UNMAPPED` retained). **NON-BREAKING** (v0.2.0 / Changed); existing locks without the new field trigger a one-sync silent bootstrap and subsequent syncs use full evolution detection. Four-case state machine in the skeleton-divergence branch: (a) prior hash present + matches consumer skeleton → auto-adopt; (b) prior hash present + mismatch → fail-closed; (c) prior lock entry exists but no `template_prose_hash` (pre-v0.2.0) → silent bootstrap; (d) no prior lock entry at all → preserve v0.1.x conservative fail-closed. Delivered: schema field added (composed-only via `if/then/else`); `lib/composed.mjs` exports new `computeTemplateProseHash(template)` helper and `mergeComposed()` accepts `opts.lockTemplateProseHash` and returns `templateProseHash`; `lib/sync.mjs` threads prior hash and writes new hash into lock entry; ADR 0001 grew "Template prose evolution" subsection with four-case table; `LEARNINGS.md` LRN-020 flipped to `applied`; `CHANGELOG.md` Added + Changed entries; self-host `.harness-lock.json` refreshed (3 composed files now carry the field). **519 tests pass total** (508 + 11 new in two `CS03d --` describe blocks covering helper + all four state-machine cases). `harness lint --quiet`: **15/0/3**. R1 GPT-5.5 surfaced 1 alleged blocker (fixture hash placeholders) → R2 re-classified as pre-existing on `main` (fixtures unwired in tests). R1 plan-vs-impl gate GO. Lock-fixup commits per LRN-070/074. 0 sub-agent dispatches (orchestrator-owned). Plan PR #58, claim PR #62, content PR #63.
 
-**Pre-CS15a hygiene complete.** Both deferred LRNs (009 and 020) that had revisit triggers tied to closed CSs are now applied. The two remaining deferred LRNs (LRN-011, LRN-014, LRN-019) remain `deferred` with future revisit dates and are NOT public-flip blockers. **Next mainline gate is CS15a** (public-readiness preparation) which requires user check-in per HANDOFF.md.
+- **CI fix complete** (PR #66 merged 2026-05-09). Closed the long-standing PR-side `smoke / harness-lint` failure (red on every PR since CS12) by addressing three layered root causes: (1) `harness-self-check-via-reusable.yml` used `${{ github.sha }}` which on `pull_request` events is the unfetchable merge-commit SHA → switched to `${{ github.event.pull_request.head.sha }}`; (2) `harness-checks.yml` reusable workflow had no GITHUB_TOKEN url-rewrite for the private repo → added the same pattern `private-smoke.yml` already uses; (3) `npx -y "github:owner/repo#<sha>"` hits an npm 10.8.x/10.9.x `GitFetcher requires an Arborist constructor` regression → bypassed `npx` entirely with authenticated `git clone` + `npm ci` + `node bin/harness.mjs lint --quiet`. Updated 2 `tests/cs12-workflows.test.mjs` assertions with rationale. **All 3 CI checks now green on PRs** for the first time in the project's history.
+
+- **CS03e complete** (closed 2026-05-09). **Pre-CS15a hygiene CS** addressing [LRN-019](LEARNINGS.md#lrn-019) per user directive 2026-05-09 ("I like those gates to be in place"). Adds `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12) formally defining the shape of `legacy_composed_mapping.json` — the file consumers author when `mergeComposed()` raises `EMERGE_LEGACY_UNMAPPED` (cases (b) consumer-edited-prose + (d) no-prior-lock per CS03d's four-case state machine). Mirrors runtime rules in `lib/composed.mjs validateLegacyMapping`. **NON-BREAKING** (v0.2.0 / Added). Wired into `scripts/validate-schemas.mjs` (now 4 schemas validated). Shipped `examples/legacy-composed-mapping.example.json` with `$schema` self-reference for IDE autocomplete. New `tests/legacy-composed-mapping-schema.test.mjs` with 14 tests across 10 fixtures (4 valid + 6 invalid). ADR 0001 grew a one-paragraph pointer; CHANGELOG Added entry; LRN-019 flipped to `applied`. R1 GPT-5.5 caught 2 schema/runtime drift blockers (empty `regions` accepted by schema but rejected by runtime; `additionalProperties: false` on regionEntry rejected unknown keys runtime tolerates) → R2 fix; R2 caught residual root-level `additionalProperties: false` drift → R3 GO with full schema↔runtime parity (proven by 2 explicit "extra-key tolerated" tests). R1 plan-vs-impl gate GO. **533 tests / 15-0-3 lint / no drift.** First PR (#69) merged after the CI fix — all 3 CI checks green.
+
+**Pre-CS15a hygiene + CI fix complete.** Three deferred LRNs (009, 020, 019) and the long-standing PR-side smoke red are all addressed. **Next mainline gate is CS15a** (public-readiness preparation) which requires user check-in per HANDOFF.md.
 
 ## Architecture pointer
 
@@ -55,7 +59,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS02b + CS03d complete (LRN-009 + LRN-020 applied). Pre-CS15a hygiene complete. CS15a (public-readiness preparation) remains the next user-check-in gate per HANDOFF.md.
+- None. CS02b + CS03d + CS03e + CI fix all merged; LRN-009/011/019/020/079 = `applied`. Only LRN-014 remains `deferred` (CS19-bound). CS15a (public-readiness preparation) remains the next user-check-in gate per HANDOFF.md.
 
 ## Parallelism (single-orchestrator default)
 
