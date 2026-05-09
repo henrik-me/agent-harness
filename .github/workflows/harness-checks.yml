@@ -42,6 +42,33 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: '20'
+      - name: 'Pin npm >= 10.9 (works around npm 10.8.x GitFetcher bug)'
+        # actions/setup-node@v4 with Node 20.20.2 ships npm 10.8.2 which has
+        # a regression in the git fetcher (`npm error GitFetcher requires an
+        # Arborist constructor to pack a tarball`) when invoking
+        # `npx -y "github:owner/repo#<sha>"`. Fixed in npm 10.9.x. We pin
+        # explicitly to a known-good version so the smoke is stable across
+        # GitHub Actions image refreshes.
+        run: npm install -g npm@10.9.2
+      - name: 'Configure git url-rewrite for github: protocol (uses GITHUB_TOKEN)'
+        # `npx -y "github:owner/repo#<ref>"` does an underlying `git clone`.
+        # When the harness repo is private (pre-CS15 public flip) AND the
+        # caller is the harness repo itself OR a private consumer, the clone
+        # needs an authenticated url. We rewrite `github:` / `https://github.com/`
+        # to use the workflow's GITHUB_TOKEN. Same pattern as the standalone
+        # private-smoke.yml workflow.
+        #
+        # Safe for the post-public-flip world too: the rewrite is a no-op when
+        # the underlying ref is public-readable; the token is only used if
+        # auth is actually required.
+        #
+        # No tokens are echoed to stdout/stderr; the GITHUB_TOKEN is masked
+        # in workflow logs by GitHub Actions.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
       - id: derive-ref
         name: Derive + validate effective harness CLI ref
         # CS12 R1 (PR #48 review): pass the GitHub expression through env: AND
@@ -78,6 +105,25 @@ jobs:
       - name: Run harness lint
         # Pass the validated ref through env: as well; never interpolate the
         # GitHub expression directly into the run script body.
+        #
+        # IMPLEMENTATION NOTE: we used to invoke
+        #   npx -y "github:henrik-me/agent-harness#${CLI_REF}" lint --quiet
+        # but `npx` (npm 10.8.x and 10.9.x at minimum) hits an internal
+        # `GitFetcher requires an Arborist constructor to pack a tarball`
+        # error when installing from a `github:` URL with a SHA ref. This
+        # is a known npm regression that affects all `npx -y "github:..."`
+        # invocations on Actions runners (not specific to this workflow).
+        #
+        # Workaround: clone the harness repo manually into a tempdir using
+        # the GITHUB_TOKEN-rewritten URL, install dependencies with `npm ci`,
+        # and run the CLI directly. Functionally identical to the npx path
+        # but bypasses the broken git fetcher in npm.
         env:
           CLI_REF: ${{ steps.derive-ref.outputs.ref }}
-        run: 'npx -y "github:henrik-me/agent-harness#${CLI_REF}" lint --quiet'
+        run: |
+          tmpdir="$(mktemp -d)"
+          git clone --quiet --no-checkout https://github.com/henrik-me/agent-harness.git "$tmpdir"
+          cd "$tmpdir"
+          git checkout --quiet "$CLI_REF"
+          npm ci --omit=optional --no-audit --no-fund
+          node bin/harness.mjs lint --quiet
