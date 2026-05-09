@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T20:00Z (CS03e claimed)
+> **Last updated:** 2026-05-09T20:30Z (CS03e closed; pre-CS15a hygiene + CI fix complete)
 
 ## Orchestrators
 
@@ -10,13 +10,22 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T20:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T20:30Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS03e | `legacy-composed-mapping.schema.json` (LRN-019) | 🟢 Active | yoga-ah | cs03e/content (pending) | 2026-05-09T20:00Z | — |
+
+_(no active CS — CS15a is the next mainline gate and requires user check-in per HANDOFF.md.)_
+
+## Recently Completed
+
+| CS | Title | Closed | Notes |
+|---|---|---|---|
+| CS03e | `legacy-composed-mapping.schema.json` (LRN-019) | 2026-05-09 | **Done.** Squash-merged as `ca637d1` (PR #69). NON-BREAKING (v0.2.0): formally defines the shape of `legacy_composed_mapping.json`. Mirrors runtime rules in `lib/composed.mjs validateLegacyMapping`. Wired into `validate-schemas.mjs`; new `tests/legacy-composed-mapping-schema.test.mjs` (14 tests across 10 fixtures); ADR 0001 pointer + CHANGELOG entry + LRN-019 → `applied`. R1 GPT-5.5 caught 2 schema/runtime drift blockers (empty `regions`; `additionalProperties: false` rejecting unknown keys runtime tolerates) → R2 + R3 GO with full schema↔runtime parity. **533 tests / 15-0-3 lint / no drift.** First PR after the CI fix → all 3 CI checks green. |
+| CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 2026-05-09 | **Done.** Squash-merged as `015ed87` (PR #63). NON-BREAKING (v0.2.0): adds optional `template_prose_hash` to lock `fileEntry`; `mergeComposed()` four-case state machine. R1 alleged blocker re-classified as pre-existing. R1 plan-vs-impl gate GO. **519 tests / 15-0-3 lint / no drift.** 0 sub-agent dispatches. |
+| CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 2026-05-09 | **Done.** Squash-merged as `90b04db` (PR #60). BREAKING (v0.2.0): `composed.overrides[<file>].local_blocks` is now the single source of truth. R1 caught a high-severity blocker → R2 GO. R1 plan-vs-impl gate GO. **508 tests / 15-0-3 lint / no drift.** LRN-079 elevated. |
 
 ## Recently Completed
 

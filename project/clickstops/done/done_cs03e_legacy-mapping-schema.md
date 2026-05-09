@@ -1,10 +1,10 @@
 # CS03e — `legacy-composed-mapping.schema.json` (closes LRN-019)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs03e/content (pending)
+**Branch:** cs03e/content (squash-merged as `ca637d1` via PR #69)
 **Started:** 2026-05-09
-**Closed:** —
+**Closed:** 2026-05-09
 **Filed by:** [LRN-019](../../../LEARNINGS.md#lrn-019) at 2026-05-09 pre-CS15a hygiene pass (per user directive 2026-05-09 "I like those gates to be in place")
 **Depends on:** CS03 (sync engine), CS03d (template-prose-hash, which reduced the legacy-mapping path frequency but didn't eliminate it)
 
@@ -100,4 +100,42 @@ CS03d (just shipped) reduced the legacy-mapping path frequency by introducing `t
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-09
+**Outcome:** GO (R1 — no blockers; 1 NB about LRN-019 prose refresh, addressed inline at close-out)
+
+### Plan vs implementation
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12) | diverged (intentional) | Final schema allows extra root/region keys to match runtime leniency (R2/R3 fix). All other shape rules match `validateLegacyMapping` exactly. |
+| `examples/legacy-composed-mapping.example.json` | match | `$schema` self-reference + both region actions. |
+| 7 D8 fixtures | added | All 7 plan-listed fixtures shipped + 3 added during R2/R3 (`invalid-empty-regions`, `invalid-region-missing-content`, `valid-root-with-extra-key`, plus `valid-region-with-extra-key`). 10 fixtures total. |
+| New test file ≥ 5 tests | added | `tests/legacy-composed-mapping-schema.test.mjs` has 14 tests (was 10 at content-PR; +2 at R2 +2 at R3). |
+| `validate-schemas.mjs` wire-up | match | Schema listed in `schemaFiles`; `EXPECTED_MIN.schemas` bumped to 4. |
+| ADR 0001 pointer paragraph | match | Present in § Legacy-content fail-closed invariant. |
+| `LEARNINGS.md` LRN-019 status flip | match | `deferred` → `applied` with citation paragraph (refreshed at close-out to accurately reflect the final R3 state). |
+| CHANGELOG entry | match | Unreleased / Added entry present. |
+| `lib/composed.mjs` runtime not changed | match | No diff. Schema is authoring-time only per D9. |
+
+### Test coverage
+
+**Sufficient.** Schema/runtime pure-shape parity verified end-to-end after R2/R3.
+
+- `node --test tests/*.test.mjs` → 533 / 533 / 0.
+- `node bin/harness.mjs lint --quiet` → 15 / 0 / 3.
+- `node scripts/validate-schemas.mjs` → 4 schemas + 3 examples + 79 learnings = 86 passed / 0 failed.
+
+### Findings
+
+**Blocking:** none.
+
+**Non-blocking:** original LRN-019 applied paragraph (drafted at content-PR time) said "additionalProperties: false everywhere / 7 fixtures / 10 tests" — replaced at close-out with accurate "additionalProperties NOT set to false (matches runtime leniency) / 10 fixtures / 12+ tests" wording.
+
+## Notes / Learnings
+
+### LRN candidates
+
+1. **Schema-stricter-than-runtime drift can be a real blocker even when the strictness seems "harmless".** R1 and R2 of CS03e both hinged on this: the initial schema had `additionalProperties: false` at root and per-region for typo prevention, classified as a strengthening. The reviewer correctly identified it as drift — runtime accepts what schema rejects, so a consumer following the runtime spec but not the schema gets confusing schema errors. **Severity:** moderate. **Disposition candidate:** add to the rubber-duck briefing for schema-authoring CSs: "for every shape rule in the schema, identify the matching runtime check (or document the deliberate divergence with rationale)."
+
+2. **The 3-PR shape plus the plan PR adds up to 4 PRs per CS, which feels heavy for a small schema-only CS.** CS03e was 4 PRs (#67/#68/#69/#70) for ~150 LOC of net additions. Future small CSs could legitimately combine plan+claim into a single workboard-only PR. **Severity:** very low. **Disposition candidate:** document as a shortcut for "small docs/schema CSs filed and claimed by the same orchestrator in the same session", or leave alone for consistency.
