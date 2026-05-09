@@ -23,7 +23,18 @@
       "CONVENTIONS.md",
       "OPERATIONS.md",
       "REVIEWS.md"
-    ]
+    ],
+    "overrides": {
+      "CONVENTIONS.md": {
+        "local_blocks": ["conventions.project"]
+      },
+      "OPERATIONS.md": {
+        "local_blocks": ["operations.project-deploy"]
+      },
+      "REVIEWS.md": {
+        "local_blocks": ["reviews.project-gates"]
+      }
+    }
   },
   "seeded": {
     "files": [
@@ -52,11 +63,6 @@
     "repo_short": "agent-harness",
     "default_codeowner": "henrik-me",
     "lib_codeowner": "henrik-me"
-  },
-  "local_blocks": {
-    "CONVENTIONS.md": ["conventions.project"],
-    "OPERATIONS.md": ["operations.project-deploy"],
-    "REVIEWS.md": ["reviews.project-gates"]
   },
   "scaffolds": []
 }

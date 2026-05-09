@@ -57,17 +57,6 @@
   "templating": {
     "project_name": "Sub Invaders"
   },
-  "local_blocks": {
-    "CONVENTIONS.md": [
-      "conventions.project"
-    ],
-    "OPERATIONS.md": [
-      "operations.project-deploy"
-    ],
-    "REVIEWS.md": [
-      "reviews.project-gates"
-    ]
-  },
   "excluded": [
     "README.md",
     "LICENSE",

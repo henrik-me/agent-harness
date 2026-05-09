@@ -189,8 +189,7 @@ id: LRN-009
 date: 2026-05-03
 category: architectural
 source_cs: CS02
-status: deferred
-deferred_until: 2026-06-03
+status: applied
 tags: [schema-design, redundancy, single-source-of-truth]
 claim_area: schema-design
 ```
@@ -206,6 +205,8 @@ These can drift. The schema doesn't enforce that they agree; the engine has to p
 **Evidence:** `cs02-example-gwn` LRN candidate #4. Confirmed by inspecting all 3 example configs — they all have the duplication.
 
 **Disposition:** Defer to CS03 (sync engine) where the engine must choose. Decision recorded here so CS03 implementer doesn't have to re-derive it. **Recommended decision at CS03:** make `composed.overrides[file].local_blocks` authoritative; deprecate top-level `local_blocks`; emit a schema warning (not error) if both are present and disagree; remove top-level `local_blocks` from schema in v0.2.0. **Revisit trigger:** at CS03 claim/start, OR by 2026-06-03, whichever comes first.
+
+**Applied (CS02b, 2026-05-09):** Option (b) per user directive 2026-05-09. Top-level `local_blocks` was removed from `schemas/harness.config.schema.json`; `composed.overrides[<file>].local_blocks` is now the single source of truth. `lib/sync.mjs` `resolveAllowedBlockIds()` simplified to read only the nested form; the `canonLocalBlocks` canonicalisation block was removed; the previous "top-level vs override disagreement" warning was deleted. `bin/harness.mjs` `cmdLint` now iterates `cfg.composed.overrides` to assemble the per-file allowlist. All 8 in-repo configs (self-host, 4 examples/templates, 3 fixtures) migrated. ADR 0001 grew a "v0.2.0" subsection documenting the migration. Ajv now rejects any config carrying top-level `local_blocks` with an `additional properties` error naming the offending key. Targets v0.2.0; CHANGELOG updated.
 
 ### LRN-010
 

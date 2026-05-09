@@ -275,12 +275,15 @@ describe('harness lint', () => {
   it('composed-blocks linter runs and passes with schema-valid config + valid composed file', () => {
     const dir = makeTmpDir('harness-lint-composed-');
     try {
-      // Write a valid harness.config.json using schema-correct composed.files + local_blocks
+      // Write a valid harness.config.json using composed.overrides[file].local_blocks
+      // (the single source of truth as of v0.2.0 / LRN-009 / CS02b).
       writeJSON(path.join(dir, 'harness.config.json'), {
         version: 'v0.1.0',
         project: { name: 'test-composed', agent_suffix: 'tc' },
-        composed: { files: ['CONVENTIONS.md'] },
-        local_blocks: { 'CONVENTIONS.md': ['conventions.project'] },
+        composed: {
+          files: ['CONVENTIONS.md'],
+          overrides: { 'CONVENTIONS.md': { local_blocks: ['conventions.project'] } },
+        },
       });
       // Write a composed file with the expected local block
       writeText(path.join(dir, 'CONVENTIONS.md'), [
@@ -305,7 +308,40 @@ describe('harness lint', () => {
     }
   });
 
-  // B3: workflow-pins passes via aggregator with --config threading (version field)
+  // B2b (LRN-009 / CS02b regression): composed file with no composed.overrides[file]
+  // entry must have an empty allowlist enforced — any local block in the file
+  // is rejected. Without the explicit empty-allowlist propagation in cmdLint,
+  // check-composed-blocks would treat absence of --allowed-ids as "no constraint"
+  // and silently permit any block ID.
+  it('composed-blocks rejects local blocks when composed.overrides[file] is absent (CS02b empty-allowlist enforcement)', () => {
+    const dir = makeTmpDir('harness-lint-composed-empty-');
+    try {
+      writeJSON(path.join(dir, 'harness.config.json'), {
+        version: 'v0.1.0',
+        project: { name: 'test-composed-empty', agent_suffix: 'tce' },
+        composed: { files: ['CONVENTIONS.md'] },  // no overrides → empty allowlist
+      });
+      writeText(path.join(dir, 'CONVENTIONS.md'), [
+        '# Conventions',
+        '',
+        '<!-- harness:local-start id=conventions.project -->',
+        'Project-specific conventions go here.',
+        '<!-- harness:local-end id=conventions.project -->',
+        '',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--only', 'composed-blocks', '--quiet']);
+      assert.notEqual(
+        r.status, 0,
+        `Expected non-zero exit (block id="conventions.project" is not in the (empty) allowed IDs list); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(
+        r.stdout.includes('composed-blocks:CONVENTIONS.md: fail') || r.stderr.includes('not in the allowed IDs list'),
+        `Expected fail signal; got stdout:\n${r.stdout}\nstderr:\n${r.stderr}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
   it('workflow-pins passes via aggregator when config has version matching workflow ref', () => {
     const dir = makeTmpDir('harness-lint-wfpins-');
     try {

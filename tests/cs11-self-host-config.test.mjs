@@ -77,7 +77,7 @@ describe('CS11 — self-host harness.config.json', () => {
     );
   });
 
-  it('3. local_blocks mirrors composed-template block IDs (catches drift if a template renames a local block)', () => {
+  it('3. composed.overrides[file].local_blocks mirrors composed-template block IDs (catches drift if a template renames a local block) [LRN-009 / CS02b: single source of truth]', () => {
     const config = readJson('harness.config.json');
     const composedFiles = config.composed?.files ?? [];
 
@@ -93,7 +93,7 @@ describe('CS11 — self-host harness.config.json', () => {
         templateIds.add(m[1]);
       }
 
-      const configIds = new Set(config.local_blocks?.[file] ?? []);
+      const configIds = new Set(config.composed?.overrides?.[file]?.local_blocks ?? []);
 
       // Check set equality
       const missingInConfig = [...templateIds].filter(id => !configIds.has(id));
@@ -102,14 +102,17 @@ describe('CS11 — self-host harness.config.json', () => {
       assert.deepEqual(
         missingInConfig,
         [],
-        `${file}: template has block IDs not listed in config.local_blocks: ${missingInConfig.join(', ')}`
+        `${file}: template has block IDs not listed in composed.overrides[${file}].local_blocks: ${missingInConfig.join(', ')}`
       );
       assert.deepEqual(
         extraInConfig,
         [],
-        `${file}: config.local_blocks lists IDs not found in template: ${extraInConfig.join(', ')}`
+        `${file}: composed.overrides[${file}].local_blocks lists IDs not found in template: ${extraInConfig.join(', ')}`
       );
     }
+
+    // Schema invariant: top-level local_blocks was removed in v0.2.0 (LRN-009 / CS02b)
+    assert.equal(config.local_blocks, undefined, 'Top-level local_blocks must not be present (removed in v0.2.0)');
   });
 
   it('4. templating values are defensible — 8 required keys, all non-empty strings, agent_suffix matches pattern', () => {

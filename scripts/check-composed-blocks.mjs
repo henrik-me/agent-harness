@@ -48,7 +48,12 @@ for (let i = 0; i < argv.length; i++) {
     }
     filePath = argv[++i];
   } else if (a === '--allowed-ids') {
-    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
+    // Distinguish "no value provided" (undefined) from "explicit empty" (''
+    // or argv[++i] = '' after split). Empty string is a valid value: it means
+    // the file's allowlist is explicitly empty (no local blocks permitted).
+    // Per LRN-009 / CS02b: a composed file without a composed.overrides[file]
+    // entry must have an empty allowlist enforced (not "no constraint").
+    if (argv[i + 1] === undefined || argv[i + 1].startsWith('-')) {
       process.stderr.write('check-composed-blocks: missing value for --allowed-ids\n');
       process.exit(2);
     }

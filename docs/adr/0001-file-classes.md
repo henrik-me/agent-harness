@@ -129,7 +129,7 @@ Local blocks are delimited by a pair of HTML comment markers (the markers below 
 ```
 
 The `id` attribute identifies the block. IDs are stable across harness versions; they
-appear in the lock file and in `harness.config.json` → `local_blocks` (per-file allowlist).
+appear in the lock file and in `harness.config.json` → `composed.overrides[<file>].local_blocks` (per-file allowlist).
 
 ### Parser rules (normative — identical to `lib/composed.mjs` per CS03)
 
@@ -348,6 +348,19 @@ across harness versions) is defined in `schemas/harness.config.schema.json` but 
 engine in CS03 exits non-zero with a clear `"block ID renamed/split needs migration spec"`
 message if a block disappears from the template without a migration entry. Full migration
 execution is deferred to a later CS.
+
+### v0.2.0 — `local_blocks` allowlist canonicalised under `composed.overrides`
+
+In v0.1.0 the per-file allowlist could be expressed in two interchangeable
+forms — top-level `local_blocks: { "FILE.md": [...] }` and per-file
+`composed.overrides["FILE.md"].local_blocks: [...]`. The schema accepted both
+and the engine emitted a warning when they disagreed. In v0.2.0 (CS02b) the
+top-level form was removed entirely and `composed.overrides[<file>].local_blocks`
+is now the single source of truth (per [LRN-009](../../LEARNINGS.md#lrn-009)).
+Configs carrying the old top-level form are rejected by Ajv with an
+`additional properties` error naming `local_blocks`. Migration: move every
+entry from `local_blocks[<file>]` into
+`composed.overrides[<file>].local_blocks` and delete the top-level key.
 
 ### Cross-references
 

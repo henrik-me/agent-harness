@@ -711,8 +711,12 @@ async function cmdLint(args, _global) {
 
   const cwd = _global.cwd ?? process.cwd();
 
-  // Resolve composed-files list and local_blocks allowlists from harness.config.json.
-  // Schema: composed.files is string[] (file paths relative to cwd).
+  // Resolve composed-files list and per-file local-block allowlists from
+  // harness.config.json. Schema: composed.files is string[] (file paths
+  // relative to cwd); composed.overrides[file].local_blocks is the per-file
+  // allowlist (single source of truth as of v0.2.0 / LRN-009). Files in
+  // composed.files without a matching composed.overrides[file] entry have an
+  // empty allowlist (no local blocks permitted).
   // NOTE: public_artifact_redaction has no target_dir in the schema — it is a
   // per-artifact-type map. Public-artifact linting is only enabled via --public-artifact-dir.
   let composedFilePaths = [];
@@ -725,8 +729,13 @@ async function cmdLint(args, _global) {
       if (Array.isArray(cfg.composed?.files)) {
         composedFilePaths = cfg.composed.files;
       }
-      if (cfg.local_blocks && typeof cfg.local_blocks === 'object') {
-        localBlocks = cfg.local_blocks;
+      const overrides = cfg.composed?.overrides;
+      if (overrides && typeof overrides === 'object') {
+        for (const [file, override] of Object.entries(overrides)) {
+          if (Array.isArray(override?.local_blocks)) {
+            localBlocks[file] = override.local_blocks;
+          }
+        }
       }
     } catch {
       // ignore — let the per-linter validation surface config issues
@@ -784,8 +793,12 @@ async function cmdLint(args, _global) {
     ...composedFilePaths.map((filePath) => {
       const cf = path.join(cwd, filePath);
       const allowedIds = Array.isArray(localBlocks[filePath]) ? localBlocks[filePath] : [];
-      const composedArgs = ['--file', cf];
-      if (allowedIds.length) composedArgs.push('--allowed-ids', allowedIds.join(','));
+      // ALWAYS pass --allowed-ids for composed files (per CS02b / LRN-009):
+      // an empty list explicitly forbids any local blocks, which is the
+      // intended semantics for a composed file without a composed.overrides
+      // entry. Without this, check-composed-blocks would treat absence of
+      // --allowed-ids as "no constraint" and silently permit any block ID.
+      const composedArgs = ['--file', cf, '--allowed-ids', allowedIds.join(',')];
       if (existsSync(lockPath)) composedArgs.push('--lock', lockPath);
       return {
         name: `composed-blocks:${path.basename(cf)}`,

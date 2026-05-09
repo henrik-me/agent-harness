@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
   "title": "Agent Harness configuration",
-  "description": "Root configuration schema for a harness.config.json file. Declares the pinned harness version, project identity, file-class memberships, scaffold opt-ins, linter settings, templating variables, composed-block allowlists, optional block migration specs, and public-artifact redaction rules.",
+  "description": "Root configuration schema for a harness.config.json file. Declares the pinned harness version, project identity, file-class memberships, scaffold opt-ins, linter settings, templating variables, optional per-file composed-block overrides, optional block migration specs, and public-artifact redaction rules.",
   "type": "object",
   "required": ["version", "project"],
   "additionalProperties": false,
@@ -63,7 +63,7 @@
     },
     "composed": {
       "$ref": "#/$defs/fileClass",
-      "description": "Composed file class: the harness owns the skeleton and template blocks, but local-block markers (<!-- harness:local-start id=<blockId> --> ... <!-- harness:local-end id=<blockId> -->) preserve project-specific content across syncs. Only blocks listed in 'local_blocks' for the file are preserved; all other content is overwritten."
+      "description": "Composed file class: the harness owns the skeleton and template blocks, but local-block markers (<!-- harness:local-start id=<blockId> --> ... <!-- harness:local-end id=<blockId> -->) preserve project-specific content across syncs. Only blocks listed in 'composed.overrides[<file>].local_blocks' for the file are preserved; all other local-block markers are rejected by the composed-class merge engine. (Top-level 'local_blocks' was removed in v0.2.0 per LRN-009 — use the per-file form under 'composed.overrides' instead.)"
     },
     "seeded": {
       "$ref": "#/$defs/fileClass",
@@ -121,26 +121,6 @@
           "project_name": "guesswhatisnext",
           "repo_slug": "henrik-me/guesswhatisnext",
           "node_version": "20"
-        }
-      ]
-    },
-    "local_blocks": {
-      "type": "object",
-      "description": "Per-file allowlist of composed-block IDs. Keys are file paths (relative to the consumer repo root, matching paths listed under 'composed.files'). Values are arrays of block IDs that are permitted to exist in that file. Any local block found in the file but not listed here is treated as an error by the composed-class merge engine. Block IDs must match [a-z][a-z0-9.-]* per the composed-parser strict rules.",
-      "additionalProperties": {
-        "type": "array",
-        "description": "Array of permitted local-block IDs for this file.",
-        "items": {
-          "type": "string",
-          "description": "A local-block ID matching [a-z][a-z0-9.-]* as required by the composed-class marker parser.",
-          "pattern": "^[a-z][a-z0-9.-]*$"
-        },
-        "uniqueItems": true
-      },
-      "examples": [
-        {
-          "CONVENTIONS.md": ["conventions.project"],
-          "ARCHITECTURE.md": ["architecture.consumers", "architecture.deployment"]
         }
       ]
     },
