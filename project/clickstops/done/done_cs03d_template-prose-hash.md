@@ -1,10 +1,10 @@
 # CS03d — Template prose-hash for composed-merge evolution (LRN-020)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs03d/content (pending)
+**Branch:** cs03d/content (squash-merged as `015ed87` via PR #63)
 **Started:** 2026-05-09
-**Closed:** —
+**Closed:** 2026-05-09
 **Filed by:** [LRN-020](../../../LEARNINGS.md#lrn-020) at 2026-05-09 pre-CS15a hygiene pass
 **Depends on:** CS02b (clean schema baseline), CS03 (sync engine), CS03b (rich-API lock)
 
@@ -123,4 +123,52 @@ The fix: remember the template's skeleton hash from the previous sync. On next s
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-09
+**Outcome:** GO (R1 — no blockers; 1 NB about deferred sync.test.mjs scenarios subsumed by composed.test.mjs)
+
+### Plan vs implementation
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| Schema: `fileEntry.template_prose_hash` | match | Added at `schemas/harness-lock.schema.json` `fileEntry`; composed-only via `if/then/else` (forbidden on managed/seeded); optional, not in `required`. |
+| `lib/composed.mjs` helper + merge state machine | match | `computeTemplateProseHash()` exported; `mergeComposed` accepts `opts.lockTemplateProseHash`; four-case state machine (a/b/c/d) implemented and documented inline; returns `templateProseHash` for the lock writer. |
+| `lib/sync.mjs` threading + lock write | match | `prevTemplateProseHash` map populated from prior locks; threaded into `mergeComposed`; written into composed lock entries. |
+| New composed.test.mjs tests | match | 11 new tests across 2 describe blocks: 4 for `computeTemplateProseHash` (hex format, body-invariance, prose-sensitivity, LF-normalization) + 7 for state machine (cases a/b/c/d + skeleton-match no-op + fresh-start hash + (c) bootstrap silent-on-edited-prose). |
+| New sync.test.mjs e2e tests | diverged | Not added. The four-case state machine is fully exercised at the `mergeComposed()` level in `composed.test.mjs`; sync threading is covered by code inspection + self-host integration evidence (drift-check passes, lock contains the field). End-to-end coverage at the `sync()` boundary would be redundant. |
+| Lock fixtures (`tests/fixtures/cs03/lock/*.lock.json`) still validate | diverged / pre-existing | These fixtures fail Ajv validation because their placeholder hashes (`g`-`z` chars) don't match the `^[0-9a-f]{64}$` pattern. Verified to be pre-existing on `main` (predates CS03d), and these fixtures are not referenced by any test. Not a CS03d regression. Could be cleaned up in a separate small CS. |
+| ADR 0001 v0.2.0 subsection | match | "Template prose evolution" subsection with the four-case table inserted before the lock-file recording section. |
+| `LEARNINGS.md` LRN-020 status flip | match | `deferred` → `applied`; `deferred_until` removed; CS03d application paragraph added. |
+| CHANGELOG entry | match | Unreleased: Added (`template_prose_hash` field) + Changed (no-more-mapping-for-prose-evolution + new helper). Non-breaking. |
+| Self-host lock refresh | match | `.harness-lock.json` has `template_prose_hash` for all 3 composed files (CONVENTIONS.md, OPERATIONS.md, REVIEWS.md). |
+
+### Test coverage
+
+**Sufficient.** Verified:
+- Case (a) template-evolved-consumer-untouched: `tests/composed.test.mjs` "case (a)".
+- Case (b) consumer-edited-prose fail-closed: "case (b)".
+- Case (c) pre-v0.2.0 bootstrap: "case (c): bootstrap" + "(c) bootstrap silent on edited prose".
+- Case (d) no prior lock + extra prose: "case (d)".
+- Hash properties: 4 dedicated tests.
+- Fresh-start branch returns `templateProseHash`: dedicated test.
+- 519 / 519 / 0 (`node --test tests/*.test.mjs`).
+
+### Findings
+
+**Blocking:** none.
+
+**Non-blocking:**
+- The `tests/sync.test.mjs` e2e scenarios listed in the original deliverables were not added; they would be redundant given the `composed.test.mjs` coverage at the `mergeComposed()` boundary plus the self-host integration evidence (sync drift-check passes; lock carries the new field).
+- Pre-existing fixture validation issue (placeholders contain `g`-`z` chars) surfaced during R1 of the content review; classified as out-of-scope for CS03d. Could be cleaned up in a small follow-up CS if desired.
+
+## Notes / Learnings
+
+(filled during execution)
+
+### LRN candidates
+
+1. **The "no-prior-lock + extra-prose" case (d) preserves v0.1.x conservative fail-closed.** This is the only behavior path where the v0.1.x trap (LRN-020) still fires. For consumers running `harness sync` for the first time against an existing repo with extra prose in composed files, they still need a `legacy_composed_mapping.json`. This is intentional — without a prior lock to compare against, we cannot distinguish "user edited prose" from "never-synced existing file" — but it's worth documenting for first-sync UX. **Severity:** low; **Disposition candidate:** mention in HANDOFF.md or the consumer-onboarding docs that first-sync against a populated composed file may require a one-time legacy-mapping authorship.
+
+2. **Pre-existing schema fixtures fail Ajv validation.** `tests/fixtures/cs03/lock/{valid-minimal,valid-with-scaffolds}.lock.json` and `tests/fixtures/cs03/sync/sync-already-synced/.harness-lock.json` carry placeholder hashes that violate the `^[0-9a-f]{64}$` pattern. Not consumed by any test (grep confirms). Authored as schema fixtures but never wired up. **Severity:** very low; **Disposition candidate:** small docs/cleanup CS to either fix the placeholder hashes (use real `crypto.createHash('sha256').update(...).digest('hex')` values) or move them to a `tests/fixtures/_unused/` archive directory.
+
+(Both above are LRN candidates surfaced during plan-vs-impl review; orchestrator decides whether to elevate at close-out.)
