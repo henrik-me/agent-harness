@@ -1,0 +1,5 @@
+{
+  "regions": [
+    { "action": "discard", "block_id": "should.not.be.here", "content": "x" }
+  ]
+}

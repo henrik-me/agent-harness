@@ -1,0 +1,4 @@
+{
+  "_comment": "Empty regions array is rejected by both the schema (minItems: 1) and the runtime (EMERGE_LEGACY_UNMAPPED at lib/composed.mjs:752-756)",
+  "regions": []
+}

@@ -15,7 +15,7 @@ const repoRoot = path.resolve(__dirname, '..');
 // at the end of the script to catch accidental fixture removals (per GPT-5.5
 // CS02 review suggestion #9).
 const EXPECTED_MIN = {
-  schemas: 3,
+  schemas: 4,
   examples: 3,
   learnings: 5
 };
@@ -36,7 +36,8 @@ console.log('=== Schema Self-Validation ===\n');
 const schemaFiles = [
   'schemas/harness.config.schema.json',
   'schemas/harness-lock.schema.json',
-  'schemas/learning.schema.json'
+  'schemas/learning.schema.json',
+  'schemas/legacy-composed-mapping.schema.json'
 ];
 
 for (const schemaFile of schemaFiles) {

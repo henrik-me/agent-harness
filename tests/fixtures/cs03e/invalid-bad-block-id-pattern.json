@@ -1,0 +1,5 @@
+{
+  "regions": [
+    { "action": "map_to_block", "block_id": "BadCaseId", "content": "x" }
+  ]
+}

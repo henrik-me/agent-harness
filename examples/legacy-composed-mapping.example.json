@@ -1,0 +1,15 @@
+{
+  "$schema": "../schemas/legacy-composed-mapping.schema.json",
+  "_comment": "Worked example for a consumer migrating an existing composed file. The first region is preserved into a named local block; the second is discarded outright. Update the `content` strings to match your file's actual legacy regions byte-for-byte (including trailing newlines if present).",
+  "regions": [
+    {
+      "action": "map_to_block",
+      "block_id": "operations.project-deploy",
+      "content": "Run `make deploy` after merging to main. Smoke tests live in tests/smoke/.\n"
+    },
+    {
+      "action": "discard",
+      "content": "TODO: replace this section with the harness OPERATIONS.md template.\n"
+    }
+  ]
+}

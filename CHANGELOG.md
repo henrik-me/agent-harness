@@ -11,6 +11,13 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **Schema:** new `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12)
+  formally defines the shape of `legacy_composed_mapping.json` (the file
+  consumers author when `harness sync` raises `EMERGE_LEGACY_UNMAPPED`).
+  Mirrors the runtime rules in `lib/composed.mjs validateLegacyMapping`.
+  Consumer files may set `"$schema"` to the new schema for IDE autocomplete.
+  Example starter file shipped at `examples/legacy-composed-mapping.example.json`.
+  Per CS03e / [LRN-019](LEARNINGS.md#lrn-019).
 - **Lock schema:** new optional `fileEntry.template_prose_hash` field
   (composed-class only) records the SHA-256 of the template skeleton
   (post-templating, post-local-block-strip, LF-normalised) at sync time.

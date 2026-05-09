@@ -190,6 +190,15 @@ The `harness composed-audit --from-existing-harness` command (CS04) assists in g
 the initial `legacy_composed_mapping.json` for an existing repo being migrated onto the
 harness.
 
+The shape of `legacy_composed_mapping.json` is formally defined in
+[`schemas/legacy-composed-mapping.schema.json`](../../schemas/legacy-composed-mapping.schema.json)
+(Draft-2020-12) per [LRN-019](../../LEARNINGS.md#lrn-019) / CS03e — consumer files may set
+`"$schema"` to that path for IDE autocomplete and standalone validation. See
+[`examples/legacy-composed-mapping.example.json`](../../examples/legacy-composed-mapping.example.json)
+for a starter file. The runtime validator in `lib/composed.mjs` (`validateLegacyMapping`)
+enforces the same rules at sync time; the JSON Schema mirrors them for authoring-time
+validation via `validate-schemas.mjs`.
+
 See the cs-plan [CS03 sync invariant](../../project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md)
 for the exact fixture specification.
 

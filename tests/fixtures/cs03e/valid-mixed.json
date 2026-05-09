@@ -1,0 +1,7 @@
+{
+  "_comment": "Mixed valid mapping with one map_to_block + one discard region",
+  "regions": [
+    { "action": "map_to_block", "block_id": "conventions.project", "content": "project-specific rule A\n" },
+    { "action": "discard", "content": "obsolete paragraph\n" }
+  ]
+}
