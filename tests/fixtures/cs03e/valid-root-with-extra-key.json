@@ -1,0 +1,9 @@
+{
+  "regions": [
+    { "action": "discard", "content": "x\n" }
+  ],
+  "_consumer_metadata": {
+    "migration_script_version": "v3.2.1",
+    "authored_by": "alice@example.com"
+  }
+}

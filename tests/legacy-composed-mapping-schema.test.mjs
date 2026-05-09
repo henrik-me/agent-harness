@@ -125,6 +125,11 @@ describe('legacy-composed-mapping schema — schema/runtime parity (CS03e R2)', 
     const ok = validate(loadFixture('valid-region-with-extra-key.json'));
     assert.equal(ok, true, JSON.stringify(validate.errors));
   });
+
+  it('accepts valid-root-with-extra-key (root has no additionalProperties:false; runtime only inspects regions)', () => {
+    const ok = validate(loadFixture('valid-root-with-extra-key.json'));
+    assert.equal(ok, true, JSON.stringify(validate.errors));
+  });
 });
 
 describe('legacy-composed-mapping schema — schema document itself', () => {

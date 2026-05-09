@@ -4,8 +4,8 @@
   "title": "Agent Harness legacy composed-block mapping",
   "description": "Schema for `legacy_composed_mapping.json`. Authored by a consumer when `harness sync` raises EMERGE_LEGACY_UNMAPPED on a composed-class file (i.e. the consumer's file contains non-template, non-block prose that does not match the harness template skeleton). Each entry under `regions` describes ONE such legacy region by exact byte content and tells the sync engine to either map the content into a named local block (`map_to_block`) or discard it (`discard`). Per CS03e / LRN-019. The runtime validator in `lib/composed.mjs` (`validateLegacyMapping`) enforces the same rules at sync time; this schema mirrors them for IDE autocomplete + standalone validation via `harness lint` / `validate-schemas.mjs`. CS03d's `template_prose_hash` evolution detection reduces how often this file is needed but does not eliminate it (cases (b) consumer-edited-prose and (d) no-prior-lock still require it).",
   "type": "object",
-  "additionalProperties": false,
   "required": ["regions"],
+  "description_additional_properties_note": "Note: `additionalProperties` is intentionally NOT set to `false` at the root either. The runtime validator in `lib/composed.mjs validateLegacyMapping` only inspects `regions`, so extra root keys are tolerated for forward-compat (e.g. consumer annotations beyond `_comment`/`$schema`); the schema mirrors that leniency to avoid schema/runtime drift (per CS03e R2 reviewer finding).",
   "properties": {
     "$schema": {
       "type": "string",
