@@ -1,9 +1,9 @@
 # CS03d — Template prose-hash for composed-merge evolution (LRN-020)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs03d/content (pending)
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** [LRN-020](../../../LEARNINGS.md#lrn-020) at 2026-05-09 pre-CS15a hygiene pass
 **Depends on:** CS02b (clean schema baseline), CS03 (sync engine), CS03b (rich-API lock)
