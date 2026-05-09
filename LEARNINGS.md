@@ -235,8 +235,7 @@ id: LRN-011
 date: 2026-05-03
 category: operational
 source_cs: CS02
-status: deferred
-deferred_until: 2026-06-15
+status: applied
 tags: [composed-blocks, coordinated-authoring, cs06, cs08, cs10]
 claim_area: composed-class-implementation
 ```
@@ -253,6 +252,18 @@ If any of these three drifts (e.g. CS08 author adds a new template marker withou
 **Evidence:** `cs02-example-si` LRN candidate #2.
 
 **Disposition:** Add to CS06 deliverables (in cs-plan): `check-composed-blocks.mjs` must enforce three-way consistency, not just within-file marker validity. Defer until CS06 implementation. **Revisit trigger:** at CS06 claim/start, OR by 2026-06-15, whichever comes first.
+
+**Applied (CS06 + CS02b R2 + harness-self-check, 2026-05-09):** Three-way consistency is now enforced through a combination of three mechanisms:
+
+1. **Config ↔ file markers**, both directions, by `scripts/check-composed-blocks.mjs --allowed-ids`:
+   - Every ID in the allowlist is required to be present as a marker in the file (config → file).
+   - No marker in the file may exist outside the allowlist (file → config).
+2. **Always-enforce per CS02b R2** (LRN-009 follow-up): `bin/harness.mjs cmdLint` now passes `--allowed-ids` for every file in `composed.files`, even when the allowlist is empty. A composed file without a `composed.overrides[<file>]` entry has its empty allowlist enforced (any local block in the file is rejected).
+3. **Template ↔ file markers**, by `harness sync --mode=check`: re-renders every composed file from its template and compares the result hash to the on-disk content. Any template-side marker change that hasn't been propagated to the consumer file shows as drift. The harness itself runs this gate on every PR via `.github/workflows/harness-self-check.yml`.
+
+Combined coverage: any drift between (template markers, config allowlist, file markers) is caught either by `harness lint` (config ↔ file directions) or by `harness sync --mode=check` (template ↔ file direction), both of which are wired into self-host CI. Consumers who adopt the same CI pattern (`harness-checks.yml` reusable workflow shipped in CS12) get the same coverage.
+
+**Caveat:** the template ↔ config direction is not directly checked by a single linter — it's the transitive consequence of (template ↔ file) ∧ (file ↔ config) ⇒ (template ↔ config) being enforced. A consumer who edits a template marker in `template/composed/*` without re-running sync would have stale `harness.config.json` allowlists; that gap is closed at the moment they next sync (sync re-renders → drift surfaces → consumer must update the allowlist). For now this is acceptable: harness authors are the only people who edit `template/composed/*` and they always run lint+sync before opening a PR. If a stronger guarantee is ever needed, a small dedicated `check-template-markers-vs-config.mjs` could parse `template/composed/*.md` and compare to `composed.overrides[*].local_blocks` directly; deferred as out-of-scope for the pre-CS15a hygiene window.
 
 ### LRN-012
 
