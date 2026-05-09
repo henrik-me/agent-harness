@@ -1,10 +1,10 @@
 # CS02b — Drop redundant top-level `local_blocks` (option b for LRN-009)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs02b/content (pending)
+**Branch:** cs02b/content (squash-merged as `90b04db` via PR #60)
 **Started:** 2026-05-09
-**Closed:** —
+**Closed:** 2026-05-09
 **Filed by:** [LRN-009](../../../LEARNINGS.md#lrn-009) at 2026-05-09 pre-CS15a hygiene pass
 **Depends on:** CS02 (schema baseline), CS03 (sync engine), CS06 (composed-block linter)
 
@@ -112,4 +112,54 @@ If any individual deliverable grows unexpectedly large during execution, the orc
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-09
+**Outcome:** GO (R1 — no blockers, no NBs requiring fix)
+
+### Plan vs implementation
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| Schema removal of top-level `local_blocks` | match | Root schema is `additionalProperties: false`; `local_blocks` no longer a root property. Description updated to reference nested form. |
+| `bin/harness.mjs cmdLint` migration | match | Reads `cfg.composed?.overrides[*].local_blocks`; passes empty allowlists explicitly per R2 fix. |
+| `lib/composed.mjs` doc comment update | match | Engine contract now names nested form as source of truth. |
+| `lib/sync.mjs` cleanup | match | `resolveAllowedBlockIds()` reads only nested overrides; `canonLocalBlocks` block removed; warning path removed; Ajv error messages now name the offending `additionalProperty`. |
+| `scripts/check-composed-blocks.mjs` (R1 fix) | added | `--allowed-ids` parser hardened to distinguish explicit empty (`''`) from no constraint (`undefined`); enables empty-allowlist enforcement. |
+| All 8 config files migrated | match | self-host root, 3 examples, template/seeded, 3 fixtures (already nested-only pre-CS). |
+| Schema-rejection regression test | diverged | Implemented in `tests/sync.test.mjs` (close to existing composed-files describe block) rather than `tests/cli.test.mjs`. Asserts `ESYNC_INVALID_CONFIG` + `local_blocks` in error message. Cleaner placement; same intent. |
+| Empty-allowlist enforcement regression (R1 follow-up) | added | `tests/cli.test.mjs` B2b: composed file with no `composed.overrides[file]` entry + a local block → linter exits non-zero. |
+| Updated `cs09-init` tests | match | Init assertions now require nested overrides + explicit `cfg.local_blocks === undefined`. |
+| Updated `cs11-self-host-config` tests | match | Self-host compliance compares template IDs to nested config IDs and rejects top-level key. |
+| ADR 0001 v0.2.0 subsection | match | Migration/history subsection added before Cross-references. |
+| Template/INSTRUCTIONS update + root re-render | match | Template + root both reference nested allowlist path. |
+| `LEARNINGS.md` LRN-009 status flip | match | `deferred` → `applied`; `deferred_until` removed; CS02b application paragraph added. |
+| CHANGELOG entry | match | Unreleased / Changed (BREAKING) entry naming the migration. |
+| Lock refresh per LRN-070/074 | match | Two lock-fixup commits (R1, R2) per CS11b/CS12 R1 precedent; squashed into the merged PR. |
+| Test count target (≥512) | diverged | Net 508 (was 509). Plan target presumed pure-add; actuals removed 3 obsolete dual-form tests and added 2 new regressions. Coverage requirements still met. |
+
+### Test coverage
+
+**Sufficient.** Verified:
+- Schema rejection (`tests/sync.test.mjs:834-851`).
+- Empty-allowlist enforcement (`tests/cli.test.mjs:311-339`).
+- Nested happy path (`tests/cli.test.mjs:274-305`).
+- Self-host compliance (`tests/cs11-self-host-config.test.mjs:80-115`).
+- 508 / 508 / 0 (`node --test tests/*.test.mjs`).
+
+### Findings
+
+**Blocking:** none.
+
+**Non-blocking:** test-count target diverged from the original CS plan by -1, explained by the removal of obsolete dual-form tests; the required regression coverage is present.
+
+## Notes / Learnings
+
+(filled during execution)
+
+### LRN candidates
+
+1. **`harness sync` mid-CS warning is correct discipline but noisy in a CS that legitimately must re-render templates.** Every sync invocation during cs02b/content emitted "WORKBOARD.md has active CS rows. Syncing mid-CS may cause process-shape changes mid-flight." The warning is right (this is a process-shape change), but for a CS that explicitly *needs* mid-flight sync (template-touching CSs per LRN-070/074), the warning-on-every-call adds friction. Consider an opt-out flag (e.g. `--allow-active-cs-sync` or a CS-file frontmatter declaration) so legit cases don't have to grep past the noise. **Severity:** low; **Disposition candidate:** defer — file as planned CS or open LRN if it recurs in cs03d.
+
+2. **R1 surfaced a behavior gap that the plan's deliverables list described correctly but the rubber-duck on the planned CS file did NOT catch.** The original R3 GO on the plan PR didn't anticipate that the engine's "no `--allowed-ids` flag = no constraint" semantics would silently nullify the new "missing override = empty allowlist" rule. The plan-rubber-duck's job is to verify factual correctness against the codebase; behavior-gap detection requires a runtime check. **Severity:** moderate; **Disposition candidate:** add a checklist item to plan-PR rubber-duck briefings: "verify each new behavior is exercised by at least one new or updated test." Could be incorporated into REVIEWS.md or the rubber-duck briefing template.
+
+(Both above are candidates; orchestrator decides whether to elevate to LEARNINGS.md at close-out.)

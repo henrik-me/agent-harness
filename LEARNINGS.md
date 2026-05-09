@@ -1624,6 +1624,32 @@ claim_area: linter-design
 
 **Disposition:** Now mechanically enforced. Future YAML errors in `.github/workflows/` will fail at lint time before the workflow ever reaches GitHub Actions, eliminating the "silent run failure" class. The pattern generalizes: any tool that has both a "best-effort fallback" path and a "strict-mode" path should prefer strict-mode-by-default when the strict-path is reliably available. The fallback is for environment-degraded scenarios, not for accommodating broken inputs.
 
+### LRN-079
+
+```yaml
+id: LRN-079
+date: 2026-05-09
+category: process
+source_cs: CS02b
+status: applied
+tags: [rubber-duck, plan-review, behavior-coverage, factual-vs-runtime]
+claim_area: review-process
+```
+
+**Problem:** During CS02b, the GPT-5.5 rubber-duck on the planned CS file (PR #58, R3 GO) verified factual correctness (schema lines, file paths, ADR references, decision-internal contradictions) but did NOT detect a behavior gap that the deliverables list described correctly: "Files in `composed.files` without a matching `composed.overrides[file]` entry have an empty allowlist (no local blocks permitted)" (CS02b D2/D3). The plan was internally coherent. The implementation followed the plan literally — but `bin/harness.mjs cmdLint` already had a conditional `if (allowedIds.length) composedArgs.push('--allowed-ids', ...)` that meant an empty list silently became "no `--allowed-ids` flag" which `check-composed-blocks.mjs` interprets as "no constraint". Result: the new behavior was nullified at the engine boundary. The content-PR rubber-duck (R1) caught it as a high-severity blocker.
+
+**Finding:** Plan-PR rubber-duck (running against a planned CS file before it's claimed) verifies factual claims about the codebase but cannot anticipate behavior gaps that surface only when the new code runs against existing engine semantics. Content-PR rubber-duck (running against a real diff) catches these but is a later, more expensive feedback cycle. The gap is a missing checklist item in the plan-PR rubber-duck briefing: explicitly require the planner to identify "for each new behavior in the deliverables, name the test (or set of tests) that exercises that behavior end-to-end against the actual engine." Forces the planner to think about the runtime path, not just the artifact list. Could also be enforced by a check-clickstop rule on planned files (require a `## Test plan` H2 section), but that's heavier.
+
+**Evidence:** CS02b plan-PR (#58) R3 GO; content-PR (#60) R1 NEEDS-FIX 1 high-severity blocker (empty-allowlist enforcement gap); R2 fix in `bin/harness.mjs` cmdLint (always-pass `--allowed-ids`) + `scripts/check-composed-blocks.mjs` parser update + new `tests/cli.test.mjs` B2b regression test. Time cost: roughly 1 extra rubber-duck round + one R2 commit + one lock-fixup commit.
+
+**Disposition:** Update the rubber-duck briefing template (`template/composed/REVIEWS.md` § Rubber-duck reviewer or the planned-CS rubber-duck dispatch wording in the orchestrator's mental model) to explicitly require the reviewer to:
+
+1. For each new behavior listed in the plan's deliverables, identify the test that will exercise it end-to-end (not just unit-level).
+2. Cross-check against existing engine semantics: are there nearby code paths (linters, validators, fallbacks) that could silently nullify the new behavior?
+3. If any new behavior has no end-to-end test or no defense against silent-nullification, surface as a blocker — even if all factual claims in the plan are correct.
+
+This is a check-list addition to the existing rubber-duck process (REVIEWS.md), not a new mechanism. Consider folding into the next CS that touches REVIEWS.md.
+
 ## Obsolete
 
 (none yet)
