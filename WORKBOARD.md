@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T20:30Z (CS03e closed; pre-CS15a hygiene + CI fix complete)
+> **Last updated:** 2026-05-09T20:50Z (CS15a claimed — public-readiness preparation, GUARDRAIL)
 
 ## Orchestrators
 
@@ -10,14 +10,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T20:30Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T20:50Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-
-_(no active CS — CS15a is the next mainline gate and requires user check-in per HANDOFF.md.)_
+| CS15a | Public-readiness preparation (GUARDRAIL) | 🟢 Active | yoga-ah | cs15a/content (pending) | 2026-05-09T20:50Z | — |
 
 ## Recently Completed
 

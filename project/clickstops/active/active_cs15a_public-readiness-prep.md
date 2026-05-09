@@ -1,9 +1,9 @@
 # CS15a — Public-readiness preparation **[GUARDRAIL]**
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs15a/content (pending)
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** cs-plan §CS15a (Phase E mainline gate; user authorization 2026-05-09 via Q1/Q2/Q7/Q9/Q11 answers)
 **Depends on:** CS14 (v0.1.0 release tooling), CS02b/CS03d/CS03e (pre-CS15a hygiene)
