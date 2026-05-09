@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T18:30Z (CS02b closed; CS03d ready to claim)
+> **Last updated:** 2026-05-09T19:00Z (CS03d claimed)
 
 ## Orchestrators
 
@@ -10,14 +10,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T18:30Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T19:00Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-
-_(no active CS — CS03d ready to claim next.)_
+| CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 🟢 Active | yoga-ah | cs03d/content (pending) | 2026-05-09T19:00Z | — |
 
 ## Recently Completed
 
