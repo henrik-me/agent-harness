@@ -17,7 +17,8 @@
     },
     "regions": {
       "type": "array",
-      "description": "Ordered list of legacy region descriptors. The order does not affect correctness — `validateLegacyMapping` performs multiset accounting against the actual legacy regions detected in the consumer file. Each entry must describe a region by EXACT byte content (whitespace included); a whitespace-only mismatch raises EMERGE_LEGACY_BAD_MAPPING.",
+      "minItems": 1,
+      "description": "Ordered list of legacy region descriptors. The order does not affect correctness — `validateLegacyMapping` performs multiset accounting against the actual legacy regions detected in the consumer file. Each entry must describe a region by EXACT byte content (whitespace included); a whitespace-only mismatch raises EMERGE_LEGACY_BAD_MAPPING. The runtime enforces `minItems: 1` (an empty `regions` array still leaves all detected legacy content unmapped, so the engine raises EMERGE_LEGACY_UNMAPPED) — the schema mirrors that constraint here so authoring-time validation surfaces it without waiting for sync.",
       "items": {
         "$ref": "#/$defs/regionEntry"
       }
@@ -26,9 +27,8 @@
   "$defs": {
     "regionEntry": {
       "type": "object",
-      "additionalProperties": false,
       "required": ["action", "content"],
-      "description": "A single legacy region descriptor. The `action` field selects between `map_to_block` (preserve content, write it into the named local block) and `discard` (drop content, leave the block empty if no other source). `content` is the EXACT byte string (LF-normalised) from the consumer's file that this entry describes.",
+      "description": "A single legacy region descriptor. The `action` field selects between `map_to_block` (preserve content, write it into the named local block) and `discard` (drop content, leave the block empty if no other source). `content` is the EXACT byte string (LF-normalised) from the consumer's file that this entry describes. `additionalProperties` is intentionally NOT set to `false` here — the runtime validator in `lib/composed.mjs validateLegacyMapping` only inspects `action`, `block_id`, and `content`, so extra keys are tolerated for forward-compat (e.g. consumer annotations); the schema mirrors that leniency.",
       "properties": {
         "action": {
           "type": "string",

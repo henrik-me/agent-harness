@@ -98,6 +98,33 @@ describe('legacy-composed-mapping schema — invalid fixtures', () => {
       `Expected pattern error; got ${JSON.stringify(validate.errors)}`,
     );
   });
+
+  it('rejects invalid-empty-regions (regions: [] violates minItems:1, mirrors runtime EMERGE_LEGACY_UNMAPPED)', () => {
+    const ok = validate(loadFixture('invalid-empty-regions.json'));
+    assert.equal(ok, false);
+    assert.ok(
+      validate.errors.some(e => e.keyword === 'minItems'),
+      `Expected minItems error; got ${JSON.stringify(validate.errors)}`,
+    );
+  });
+
+  it('rejects invalid-region-missing-content (per-region content is required)', () => {
+    const ok = validate(loadFixture('invalid-region-missing-content.json'));
+    assert.equal(ok, false);
+    assert.ok(
+      validate.errors.some(e =>
+        e.keyword === 'required' && e.params?.missingProperty === 'content'
+      ),
+      `Expected required content error; got ${JSON.stringify(validate.errors)}`,
+    );
+  });
+});
+
+describe('legacy-composed-mapping schema — schema/runtime parity (CS03e R2)', () => {
+  it('accepts valid-region-with-extra-key (regionEntry has no additionalProperties:false; runtime tolerates extra keys)', () => {
+    const ok = validate(loadFixture('valid-region-with-extra-key.json'));
+    assert.equal(ok, true, JSON.stringify(validate.errors));
+  });
 });
 
 describe('legacy-composed-mapping schema — schema document itself', () => {

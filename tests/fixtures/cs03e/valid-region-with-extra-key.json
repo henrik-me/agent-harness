@@ -1,0 +1,10 @@
+{
+  "_comment": "Extra region keys (e.g. consumer annotations) are tolerated by both schema and runtime — no additionalProperties:false on regionEntry. Validates the schema↔runtime parity per CS03e R2 reviewer finding.",
+  "regions": [
+    {
+      "action": "discard",
+      "content": "x\n",
+      "_consumer_note": "this is from the legacy migration script v3"
+    }
+  ]
+}
