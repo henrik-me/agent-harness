@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T05:00Z (CS15d close-out — second umbrella done; CS15e queued next)
+> **Last updated:** 2026-05-10T05:30Z (CS15e claimed — third and final pre-CS16 umbrella in flight)
 
 ## Orchestrators
 
@@ -10,21 +10,20 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T05:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T05:30Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | (no active CS — CS15d closed 2026-05-10; CS15e is next to claim) | — | — | — | 2026-05-10T05:00Z | — |
+| CS15e | `harness init` private-tier detection (umbrella absorbing CS04a) | 🟢 Active | yoga-ah | cs15e/content (after claim) | 2026-05-10T05:30Z | — |
 
 ## Queued (planned, ready to claim in order)
 
 | Order | CS | Title | Notes |
 |---|---|---|---|
-| 1 | [CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md) | `harness init` private-tier detection (umbrella absorbing CS04a) | Reserves LRN-095..099 (advisory; re-check max LRN id at claim per LRN-086, current max is LRN-091). 5 sub-agents. CS04a Q1–Q5 user-resolved 2026-05-09. **Ready to claim now.** Last umbrella in pre-CS16 cleanup sequence. |
-| 2 | [CS06c](project/clickstops/planned/planned_cs06c_centralize-doc-schema-primitives.md) | Centralize remaining doc-schema primitives in `lib/doc-schema.mjs` | CS15d follow-up (GPT-5.5 R1 NB #1). Small refactor; can be claimed any time after CS15d. |
-| 3 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time after CS15d. |
+| 1 | [CS06c](project/clickstops/planned/planned_cs06c_centralize-doc-schema-primitives.md) | Centralize remaining doc-schema primitives in `lib/doc-schema.mjs` | CS15d follow-up (GPT-5.5 R1 NB #1). Small refactor; can be claimed any time after CS15d. |
+| 2 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time after CS15d. |
 | later | CS16 | Bootstrap Sub Invaders | First downstream consumer of CS15e constraint-detection flow. |
 
 The 1 remaining absorbed planned file (`planned_cs04a_*`) carries `**Superseded by:**` pointer and MUST NOT be claimed independently; it gets `git mv`'d to `done/` at CS15e close-out (mirrors CS04c "partially superseded by CS13" precedent).
