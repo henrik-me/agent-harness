@@ -31,38 +31,33 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 |---|---|---|
 | Plan PR (#72) | ✅ merged | `c287aab` on main |
 | Claim PR (#73) | ✅ merged | `4fd8abc` on main; rename planned→active |
-| `.github/workflows/workboard-auto-approve.yml` | ✅ committed | precondition #8 — full bot workflow with path-allowlist + label + branch-name + actor checks. **Action item: pin `actions/create-github-app-token@v1` to a 40-char SHA per LRN-075 before merge.** |
+| `.github/workflows/workboard-auto-approve.yml` | ✅ committed | precondition #8 — full bot workflow with path-allowlist + label + branch-name + actor checks; `actions/create-github-app-token@v1` pinned to a 40-char SHA per LRN-075. |
 | `docs/cs15a-app-install.md` | ✅ committed | step-by-step App registration for henrik-me (Q1) |
-| `docs/ruleset/` | ✅ dir exists | empty — JSON file pending |
+| `docs/ruleset/main-protection.json` | ✅ committed | Repository Rulesets API request body for CS15b |
+| `SECURITY.md` | ✅ committed | GHSA-only reporting policy + supported versions |
+| `CONTRIBUTING.md` | ✅ committed | fork→PR flow, no CLA/DCO, commit-trailer and local gate conventions |
 | Process-health audit (#1-5) | ✅ measured live | 5/5 CI green; sync=313ms (<5s); lint=1726ms (<10s); 4 CS12-CS14 LRNs applied (075/076/077/078); 0 open LRNs; CS03e closed cleanly per Q10. **Just needs writing into pre-flip-readiness.md.** |
 
 **What still needs to be done (in order):**
 
-1. **`docs/ruleset/main-protection.json`** — Repository Rulesets API request body. Shape:
-   - `name: "main-protection"`, `target: "branch"`, `enforcement: "active"`, `bypass_actors: []`
-   - `conditions.ref_name.include: ["refs/heads/main"]`
-   - `rules`: deletion, non_fast_forward, required_linear_history, required_signatures, pull_request (1 approving review, dismiss_stale_reviews_on_push, require_code_owner_review, required_review_thread_resolution, allowed_merge_methods=["squash"]), required_status_checks (9 contexts: validate, validate-schemas, smoke / harness-lint, secret-scan, npm-pack-dry-run, commit-trailers, pr-body, check-workflow-pins, check-public-artifact)
-2. **`docs/cs15a-repo-settings-checklist.md`** — one-pager for henrik-me to apply via GitHub UI: squash-merge only, auto-delete head branches, wikis off, Discussions off, vulnerability alerts on, auto-merge on, **enable Private Vulnerability Reporting (GHSA)**.
-3. **`SECURITY.md`** — GHSA-only reporting policy + supported-versions table (v0.1.0, v0.2.0 Unreleased).
-4. **`CONTRIBUTING.md`** — fork→PR, no CLA, commit-trailer convention, lint+test gate before PR.
-5. **`CODE_OF_CONDUCT.md`** — Contributor Covenant 2.1; enforcement contact = "via GitHub Security Advisory" (no email).
-6. **`.github/ISSUE_TEMPLATE/bug.yml`** — structured bug report.
-7. **`.github/ISSUE_TEMPLATE/feature.yml`** — feature request.
-8. **`.github/ISSUE_TEMPLATE/learning.yml`** — learning-candidate report.
-9. **`.github/ISSUE_TEMPLATE/config.yml`** — disable blank issues; route security to GHSA.
-10. **`.github/dependabot.yml`** — npm + GitHub Actions, weekly Monday cadence.
-11. **`.github/workflows/secret-scan.yml`** — gitleaks-action on PR + main; pin to 40-char SHA per LRN-075.
-12. **`.github/workflows/npm-pack-dry-run.yml`** — wraps `scripts/check-pack.mjs` as a standalone workflow.
-13. **Pin `actions/create-github-app-token@v1`** in `workboard-auto-approve.yml` to a 40-char SHA.
-14. **gitleaks scan**: install gitleaks v8+ from <https://github.com/gitleaks/gitleaks/releases>, run `gitleaks detect --source . --redact --report-path docs/gitleaks-history-results.json` (full history). If 0 findings → document. **If findings → STOP and check in with user before BFG** (Q7b authorization stands but history rewrite deserves a pause).
-15. **`docs/pre-flip-readiness.md`** — single source of truth. All 25 preconditions with checkbox status + evidence link/command. **"Action required from @henrik-me"** section listing the App install + repo settings checklist + sign-off line.
-16. **Verify**: `harness lint --quiet` clean, `node --test` clean, `sync --mode=check` no drift.
-17. **Open content PR** (do not auto-merge): title `CS15a content: public-readiness preparation (GUARDRAIL) — action required from @henrik-me`. Body: full action-required checklist front-and-center.
-18. **GPT-5.5 content rubber-duck** via `task` tool with `agent_type: code-review`, `model: gpt-5.5`, mode `sync`. Brief with the 25-precondition checklist; ask reviewer to verify each.
-19. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) + repo-settings flips (per `docs/cs15a-repo-settings-checklist.md`). User pings when done.
-20. **Bot dry-run + readiness update** — open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
-21. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
-22. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
+1. **`docs/cs15a-repo-settings-checklist.md`** — one-pager for henrik-me to apply via GitHub UI: squash-merge only, auto-delete head branches, wikis off, Discussions off, vulnerability alerts on, auto-merge on, **enable Private Vulnerability Reporting (GHSA)**.
+2. **`CODE_OF_CONDUCT.md`** — Contributor Covenant 2.1; enforcement contact = "via GitHub Security Advisory" (no email).
+3. **`.github/ISSUE_TEMPLATE/bug.yml`** — structured bug report.
+4. **`.github/ISSUE_TEMPLATE/feature.yml`** — feature request.
+5. **`.github/ISSUE_TEMPLATE/learning.yml`** — learning-candidate report.
+6. **`.github/ISSUE_TEMPLATE/config.yml`** — disable blank issues; route security to GHSA.
+7. **`.github/dependabot.yml`** — npm + GitHub Actions, weekly Monday cadence.
+8. **`.github/workflows/secret-scan.yml`** — gitleaks-action on PR + main; pin to 40-char SHA per LRN-075.
+9. **`.github/workflows/npm-pack-dry-run.yml`** — wraps `scripts/check-pack.mjs` as a standalone workflow.
+10. **gitleaks scan**: install gitleaks v8+ from <https://github.com/gitleaks/gitleaks/releases>, run `gitleaks detect --source . --redact --report-path docs/gitleaks-history-results.json` (full history). If 0 findings → document. **If findings → STOP and check in with user before BFG** (Q7b authorization stands but history rewrite deserves a pause).
+11. **`docs/pre-flip-readiness.md`** — single source of truth. All 25 preconditions with checkbox status + evidence link/command. **"Action required from @henrik-me"** section listing the App install + repo settings checklist + sign-off line.
+12. **Verify**: `harness lint --quiet` clean, `node --test` clean, `sync --mode=check` no drift.
+13. **Open content PR** (do not auto-merge): title `CS15a content: public-readiness preparation (GUARDRAIL) — action required from @henrik-me`. Body: full action-required checklist front-and-center.
+14. **GPT-5.5 content rubber-duck** via `task` tool with `agent_type: code-review`, `model: gpt-5.5`, mode `sync`. Brief with the 25-precondition checklist; ask reviewer to verify each.
+15. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) + repo-settings flips (per `docs/cs15a-repo-settings-checklist.md`). User pings when done.
+16. **Bot dry-run + readiness update** — open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
+17. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
+18. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
 
 **Why the previous instance stopped:** transient "Failed to get response from the AI model; retried 5 times" error during a `create` tool call. No state lost. The user-required GitHub UI work (steps 19) is the natural pause point regardless.
 
@@ -107,29 +102,29 @@ Per the user authorization (2026-05-09):
 - [ ] #5 Hot-fix stability counter ≥ 1: CS03e closed cleanly with no `lib/` or `bin/` changes — counts (per Q10 confirmation).
 
 ### Ruleset spec (#6-7)
-- [ ] `docs/ruleset/main-protection.json` — Repository Rulesets API JSON body for `POST /repos/:owner/:repo/rulesets`. Includes:
+- [x] `docs/ruleset/main-protection.json` — Repository Rulesets API JSON body for `POST /repos/:owner/:repo/rulesets`. Includes:
   - PR-required, ≥1 approving review, dismiss stale reviews on push
   - Squash-merge only, linear history, conversation resolution required
   - Signed-commits required (per Decision #18)
   - Status checks list (8 required checks per cs-plan): `harness-self-check`, `harness-lint`, `secret-scan`, `npm-pack-dry-run`, `commit-trailers`, `pr-body`, `check-workflow-pins`, `check-public-artifact`
   - No force pushes, no deletions, include administrators (no ad-hoc bypass)
   - Bot threat model: GitHub App with PR-review/write only; not a CODEOWNER for non-WORKBOARD paths
-- [ ] `.github/CODEOWNERS` — verify it already covers `template/managed/`, `template/composed/`, `schemas/`, `lib/`, `bin/`, `.github/workflows/` (per cs-plan #7). Edit if gaps found.
+- [x] `.github/CODEOWNERS` — verified default `* @henrik-me` plus `/lib/ @henrik-me` covers `template/managed/`, `template/composed/`, `schemas/`, `lib/`, `bin/`, and `.github/workflows/`.
 
 ### Bot workflow + dry-run prep (#8)
-- [ ] `.github/workflows/workboard-auto-approve.yml` — workflow that:
+- [x] `.github/workflows/workboard-auto-approve.yml` — workflow that:
   - Triggers on `pull_request` with label `workboard-only`.
   - Validates: changed paths are exclusively `WORKBOARD.md` + `project/clickstops/{planned,active,done}/**` (no `lib/`, `bin/`, `template/`, `.github/workflows/`, `schemas/`, `package.json`, etc.).
   - Validates: PR author is in an allowlist (orchestrator agent IDs).
   - Validates: branch name matches `workboard/cs<NN>-(claim|close)` or `cs<NN>/(claim|close-out)`.
   - On all checks pass → uses `actions/create-github-app-token@<sha>` + `gh pr review --approve` + `gh pr merge --squash --auto`.
   - Logs decisions clearly; rejects loudly on any validation failure.
-- [ ] `docs/cs15a-app-install.md` — step-by-step GitHub App registration + install + secrets-storage instructions for henrik-me.
+- [x] `docs/cs15a-app-install.md` — step-by-step GitHub App registration + install + secrets-storage instructions for henrik-me.
 - [ ] **Dry-run** (after user installs App): trigger workflow on a throwaway test PR; capture results in `pre-flip-readiness.md`.
 
 ### Public-facing files (#9-14)
-- [ ] `SECURITY.md` — GHSA-only reporting policy + supported-versions table (`v0.1.0`, `v0.2.0` (Unreleased)).
-- [ ] `CONTRIBUTING.md` — fork→PR flow, no CLA, commit-trailer convention, lint+test gate before PR.
+- [x] `SECURITY.md` — GHSA-only reporting policy + supported-versions table (`v0.1.0`, `v0.2.0` (Unreleased)).
+- [x] `CONTRIBUTING.md` — fork→PR flow, no CLA, commit-trailer convention, lint+test gate before PR.
 - [ ] `CODE_OF_CONDUCT.md` — Contributor Covenant 2.1; enforcement via GHSA.
 - [ ] `.github/ISSUE_TEMPLATE/bug.yml` — structured bug report.
 - [ ] `.github/ISSUE_TEMPLATE/feature.yml` — feature request.
@@ -190,9 +185,9 @@ Per the user authorization (2026-05-09):
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | Process-health audit (#1-5) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Ruleset spec (#6-7) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Bot workflow + manifest (#8) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Public-facing files (#9-14) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Ruleset spec (#6-7) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Bot workflow + manifest (#8) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (workflow + App docs done; dry-run waits on user App install) \| learnings=0 |
+| Public-facing files (#9-14) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (SECURITY + CONTRIBUTING done; CoC/issues/dependabot pending) \| learnings=0 |
 | Repo-settings checklist (#15-18) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
 | Secret/IP scan (#19-24) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
 | New workflows (#25) | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |

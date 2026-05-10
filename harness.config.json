@@ -52,7 +52,9 @@
     ".gitignore",
     ".editorconfig",
     "HANDOFF.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
   ],
   "templating": {
     "project_name": "agent-harness",
