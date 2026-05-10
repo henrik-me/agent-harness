@@ -6,15 +6,12 @@ user-action dependency with captured follow-up evidence.
 
 ## Action required from @henrik-me
 
-1. Create and install the GitHub App described in
-   [`docs/cs15a-app-install.md`](cs15a-app-install.md), then store the
-   `WORKBOARD_BOT_APP_ID` and `WORKBOARD_BOT_PRIVATE_KEY` repository secrets.
-2. Enable auto-merge and Private Vulnerability Reporting in the GitHub UI if
+1. Enable auto-merge and Private Vulnerability Reporting in the GitHub UI if
    those controls are available. The API accepted the other repository setting
    changes but still reports `allow_auto_merge=false`, and the private
    vulnerability reporting endpoint is unavailable for this repo state.
-3. Ping the orchestrator after both are done. The orchestrator will run the
-   workboard bot dry-run and record the evidence below.
+2. Re-check after the CS15b public flip if either control remains unavailable
+   while the repository is private.
 
 ## Current status
 
@@ -27,7 +24,7 @@ user-action dependency with captured follow-up evidence.
 | 5 | Hot-fix stability counter >= 1 | ✅ Done | CS03e closed cleanly with no `lib/` or `bin/` changes; recorded in `CONTEXT.md`. |
 | 6 | Main branch Ruleset spec authored | ✅ Done | [`docs/ruleset/main-protection.json`](ruleset/main-protection.json). |
 | 7 | CODEOWNERS covers protected paths | ✅ Done | `.github/CODEOWNERS` default `* @henrik-me` plus `/lib/ @henrik-me` covers templates, schemas, `lib/`, `bin/`, and workflows. The Ruleset does not require CODEOWNER review because the GitHub App bot cannot satisfy a human CODEOWNER requirement. |
-| 8 | Workboard bot workflow and App install path ready | ⚠️ Waiting on user + dry-run | `.github/workflows/workboard-auto-approve.yml` and [`docs/cs15a-app-install.md`](cs15a-app-install.md) are authored. Dry-run waits for App installation and secrets. |
+| 8 | Workboard bot workflow and App install path ready | ✅ Done | `.github/workflows/workboard-auto-approve.yml`, [`docs/cs15a-app-install.md`](cs15a-app-install.md), and `scripts/cs15a-workboard-app-helper.mjs` are authored. `WORKBOARD_BOT_APP_ID` and `WORKBOARD_BOT_PRIVATE_KEY` exist; dry-run PR #78 was approved and merged by the App. |
 | 9 | Security policy | ✅ Done | [`SECURITY.md`](../SECURITY.md) uses GHSA-only reporting and supported-version table. |
 | 10 | Contribution guide | ✅ Done | [`CONTRIBUTING.md`](../CONTRIBUTING.md) documents fork-to-PR, no CLA/DCO, trailer, lint/test gates. |
 | 11 | Code of Conduct | ✅ Done | [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md), Contributor Covenant 2.1 adapted with GHSA enforcement channel. |
@@ -61,17 +58,19 @@ required PR review/status checks remain enforced.
 
 ## Bot dry-run
 
-Pending. This requires the GitHub App and repository secrets from
-`docs/cs15a-app-install.md`.
+Done.
 
-Expected dry-run:
-
-1. Open a throwaway workboard-only PR on an allowed branch name.
-2. Add the `workboard-only` label.
-3. Confirm `workboard-auto-approve.yml` validates label, branch, actor, and
-   changed paths.
-4. Confirm the App approves the PR and enables squash auto-merge.
-5. Record run URL, PR URL, and conclusion here.
+- PR: <https://github.com/henrik-me/agent-harness/pull/78>
+- Branch: `workboard/cs15a-close`
+- Label: `workboard-only`
+- Merge commit: `e6b3502b1a533782be10ba44d2f180a34078f132`
+- Result: `workboard-auto-approve` validated the label, branch, author, and
+  path allowlists, minted the App token from `WORKBOARD_BOT_APP_ID` /
+  `WORKBOARD_BOT_PRIVATE_KEY`, approved the PR, and merged it.
+- Checks: all dry-run PR checks passed, including `validate`, `validate-schemas`,
+  `smoke / harness-lint`, `secret-scan`, `npm-pack-dry-run`, `commit-trailers`,
+  `pr-body`, `check-workflow-pins`, `check-public-artifact`, and
+  `workboard-auto-approve / validate-and-approve`.
 
 ## Secret scan summary
 
