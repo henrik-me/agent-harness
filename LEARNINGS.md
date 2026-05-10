@@ -1743,6 +1743,66 @@ claim_area: coordination
 
 **Disposition:** Applied by extending `scripts/check-workboard.mjs` with duplicate-section and stale-completed-row checks, adding regression fixtures/tests, and cleaning `WORKBOARD.md` into a single completed-work table.
 
+### LRN-084
+
+```yaml
+id: LRN-084
+date: 2026-05-09
+category: tooling
+source_cs: CS15c
+status: applied
+tags: [init, sync, drift, integration-test, cs09b]
+claim_area: cli
+```
+
+**Problem:** `harness init` populated the working tree from templates and config but never finalized via `sync --apply`, so any composed file declared in `harness.config.json` but not literally produced by the init scaffolding showed up as drift on the very first `sync --mode=check` after init. The CS15c CS09b fixture added `sync --mode=check` to the init test and immediately tripped on this gap (LRN-057 class). The original CS04 close-out had only added an exit-2 stop-gap when `--config` was passed; it did not address the drift root cause.
+
+**Finding:** Init must finalize by invoking the same code path that downstream `sync --apply` uses, so the working tree is in steady state when the user runs their first `harness check`. Treat init as `scaffold + sync --apply` rather than `scaffold only`. Integration tests for init must include a follow-up `sync --mode=check` step to guard this invariant.
+
+**Evidence:** New test `tests/cs09-init.test.mjs:228-250` initially failed by reporting drift on composed files. Fixed by appending the equivalent of `sync --apply` to `cmdInit` at `bin/harness.mjs:560-580`. Test now passes; root re-rendered and `.harness-lock.json:2-3` pinned.
+
+**Disposition:** Applied. `cmdInit` now runs sync-apply at the end of init. Documented in `template/composed/OPERATIONS.md:635-647` and `OPERATIONS.md:635-647`.
+
+### LRN-085
+
+```yaml
+id: LRN-085
+date: 2026-05-09
+category: tooling
+source_cs: CS15c
+status: applied
+tags: [config, error-messages, cli, --config, override-path]
+claim_area: cli
+```
+
+**Problem:** When `--config <path>` overrode the default config and validation failed (file not found / malformed JSON / schema-invalid), the error messages omitted the override path or still said `harness.config.json ...`. Users who passed an explicit `--config` were given misleading error context that pointed at the default config rather than the file they actually supplied. R1 review flagged this as a documented contract violation.
+
+**Finding:** Config-error messages must always surface the actually-used config path, especially under override. The simplest implementation is to wrap `validateConfig`/`validateConfigSchema` calls in try/catch when an override is in effect, and rethrow with the planned `--config file ...: ${configPath}` prefix. Tests must assert exact stderr substrings, not just nonzero exit code.
+
+**Evidence:** R1 review found 3 paths failing the contract: `lib/sync.mjs:609-625`, `lib/sync.mjs:354-382`, `lib/sync.mjs:420-423`. Fixed in commit `fa78147` at `lib/sync.mjs:604-624` and `lib/sync.mjs:634-676`. Tests at `tests/cli.test.mjs:990-1057` and `tests/sync-config-override.test.mjs:123-203` now pin the exact stderr contract.
+
+**Disposition:** Applied. R2 review confirmed all three error paths now include the override path.
+
+### LRN-086
+
+```yaml
+id: LRN-086
+date: 2026-05-09
+category: process
+source_cs: CS15c
+status: applied
+tags: [lrn-numbering, planning, claim-time, range-reservation]
+claim_area: planning
+```
+
+**Problem:** During CS15c/d/e umbrella planning, LRN ranges (LRN-082..086 for CS15c, 087..094 for CS15d, 095..099 for CS15e) were reserved in the planning notes. By the time CS15c entered close-out, LRN-082 and LRN-083 had already been filed by CS15a's restartability fixes. The planned reservation was stale and would have caused id collisions if used as-is.
+
+**Finding:** LRN range reservations made at *planning* time can be invalidated by other CSs that close out before the planning CS reaches its own close-out. Reserve LRN ranges at *claim* time (or at close-out time, just before filing) by re-reading the current max LRN id, not at upstream planning time. Treat any planning-time LRN-range reservation as advisory only.
+
+**Evidence:** CS15c plan reserved LRN-082..086. By close-out, LRN-082 (close-out task rows) and LRN-083 (workboard stale-history linting) were both filed against CS15a. CS15c close-out filed LRN-084..086 instead.
+
+**Disposition:** Applied procedurally at this close-out. Future planning docs should describe LRN ranges as "approximate" and the close-out checklist should include a "scan LEARNINGS.md for current max LRN id" step before filing.
+
 ## Obsolete
 
 (none yet)

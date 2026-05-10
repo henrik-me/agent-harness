@@ -160,15 +160,15 @@ Otherwise, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-
 - **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
 - **v0.2.0 unreleased** (CS02b + CS03d + CS03e cleared the pre-CS15a deferred-LRN backlog 2026-05-09; CHANGELOG `[Unreleased]` carries 1 BREAKING + 2 Added/Changed entries — see `CHANGELOG.md`).
 - **CS01 → CS15a complete.** CS15a absorbed the public visibility flip and Ruleset application.
-- **Pre-CS16 backlog cleanup planning PR open** (`cs15-cleanup-planning`, 2026-05-10): 3 umbrella CSs filed in `project/clickstops/planned/` to clear the 7 deferred planned CSs accumulated through CS01–CS15a, per user authorization 2026-05-09 ("umbrella seems good"):
-  - **CS15c** — CLI surface cleanup (CS04b + CS04d + CS09b). 4 sub-agents. LRN-082..086.
-  - **CS15d** — Linter expansion (CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents; adds 2 linters (15→17). LRN-087..094.
-  - **CS15e** — `harness init` private-tier detection (CS04a; Q1–Q5 user-resolved). 5 sub-agents. LRN-095..099.
-  - Order: CS15c → CS15d → CS15e (sequential single-orchestrator). Each umbrella has its own claim/content/close-out cycle (9 PRs total vs 21 separate). The 7 absorbed planned files carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out.
+- **Pre-CS16 backlog cleanup in progress.** 3 umbrella CSs (CS15c/d/e) filed 2026-05-10 to clear the 7 deferred planned CSs accumulated through CS01–CS15a, per user authorization 2026-05-09 ("umbrella seems good"):
+  - **CS15c** — CLI surface cleanup (CS04b + CS04d + CS09b). 4 sub-agents. **DONE 2026-05-09 @ `63c54b5` (PR #89).** R1 NEEDS-FIX → R2 GO. Filed LRN-084..086 (LRN-082/083 collided with CS15a close-out, see LRN-086). Init-drift bug fixed inline (cmdInit now finalizes via sync-apply). 3 absorbed planned files moved to `done/`.
+  - **CS15d** — Linter expansion (CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents; adds 2 linters (15→17). LRN-087..094 (advisory).
+  - **CS15e** — `harness init` private-tier detection (CS04a; Q1–Q5 user-resolved). 5 sub-agents. LRN-095..099 (advisory).
+  - Order: CS15c → CS15d → CS15e (sequential single-orchestrator). Each umbrella has its own claim/content/close-out cycle. The 4 remaining absorbed planned files carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out.
 - **Repo is public and mechanically protected.** Main Ruleset `main-protection` is active with required checks, squash-only/linear-history/non-fast-forward/deletion protection, one approving review by default, and an explicit repository-admin bypass for owner override (LRN-080). The workboard GitHub App bot is installed and dry-run proven for eligible `workboard-only` PRs.
 - **Security posture after public flip is green.** Secret scanning, Dependabot alerts/security updates, and Private Vulnerability Reporting are enabled; post-flip `fast-uri` alerts were fixed and alert readback was empty (LRN-081).
-- **Next work:** once the planning PR `cs15-cleanup-planning` merges, claim **CS15c** first (smallest fan-out; settles the bundling discipline before CS15d's 8-way wave). After CS15c → CS15d → CS15e all close, the next mainline slot is **CS16 (Bootstrap Sub Invaders)** — first downstream consumer of CS15e's constraint-detection flow.
-- 15 linters in `harness lint`; 538 tests passing; public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
+- **Next work:** claim **CS15d** next (Linter expansion; 8-way parallel wave + 1 sequential). After CS15d → CS15e close, the next mainline slot is **CS16 (Bootstrap Sub Invaders)** — first downstream consumer of CS15e's constraint-detection flow.
+- 15 linters in `harness lint`; 554 tests passing (post-CS15c); public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 

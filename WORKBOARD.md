@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-09T23:15Z (CS15c claim PR — first umbrella in flight)
+> **Last updated:** 2026-05-09T23:55Z (CS15c close-out — umbrella complete; advancing queue to CS15d)
 
 ## Orchestrators
 
@@ -10,28 +10,29 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T23:15Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-09T23:55Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS15c | CLI surface cleanup (umbrella: CS04b + CS04d + CS09b) | 🟢 Active | yoga-ah | cs15c/content (after claim) | 2026-05-09T23:15Z | — |
+| — | (no active CS) | — | — | — | 2026-05-09T23:55Z | — |
 
 ## Queued (planned, ready to claim in order)
 
 | Order | CS | Title | Notes |
 |---|---|---|---|
-| 1 | [CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md) | Linter expansion (umbrella absorbing CS06b + CS08b + CS10b) | Reserves LRN-087..094. 8 parallel + 1 sequential sub-agents. Claim after CS15c closes. |
-| 2 | [CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md) | `harness init` private-tier detection (umbrella absorbing CS04a) | Reserves LRN-095..099. 5 sub-agents. CS04a Q1–Q5 user-resolved 2026-05-09. Claim after CS15d closes. |
+| 1 | [CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md) | Linter expansion (umbrella absorbing CS06b + CS08b + CS10b) | Reserves LRN-087..094 (advisory; re-check at claim per LRN-086). 8 parallel + 1 sequential sub-agents. Ready to claim. |
+| 2 | [CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md) | `harness init` private-tier detection (umbrella absorbing CS04a) | Reserves LRN-095..099 (advisory). 5 sub-agents. CS04a Q1–Q5 user-resolved 2026-05-09. Claim after CS15d closes. |
 | later | CS16 | Bootstrap Sub Invaders | First downstream consumer of CS15e constraint-detection flow. |
 
-The 7 absorbed planned files (`planned_cs04a_*`, `planned_cs04b_*`, `planned_cs04d_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs09b_*`, `planned_cs10b_*`) carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent).
+The 4 remaining absorbed planned files (`planned_cs04a_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs10b_*`) carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent). The 3 CS15c-absorbed files (`planned_cs04b_*`, `planned_cs04d_*`, `planned_cs09b_*`) have already been moved to `done/` as part of this close-out.
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS15c | CLI surface cleanup (umbrella: CS04b + CS04d + CS09b) | 2026-05-09 | **Done.** Squash-merged as `63c54b5` (PR #89). Threads `--config` through `sync`/`check` (CS04b, 3 error paths surface override path); rejects `--ref` with documented message at exit 2 (CS04d); adds `sync --mode=check` step to init fixture (CS09b) which exposed an init-drift bug fixed inline by appending `sync --apply` to `cmdInit`. 4 sub-agents (α1=lib/sync.mjs, α2=bin/harness.mjs orchestrator-owned, α3=tests/cli.test.mjs, α4=tests/cs09-init.test.mjs+template/composed/OPERATIONS.md). R1 GPT-5.5 NEEDS-FIX (config-error contract + missing `check --config` test) → fixed in `fa78147` → R2 GO. 3 LRN filed (LRN-084..086). 3 absorbed planned files `git mv`'d to `done/`. **554 tests / 15-0-3 lint / no drift.** |
 | CS15a | Public-readiness preparation + public flip (GUARDRAIL) | 2026-05-10 | **Done.** Public readiness content, settings, scans, workflows, GitHub App workboard bot, bot dry-run, public visibility flip, and main Ruleset application completed. PRs #74/#76/#77/#78/#79/#80/#81 plus close-out. Main Ruleset `main-protection` active (`id=16185634`); repo public; auto-merge enabled; PVR returned 204; secret scanning enabled. |
 | CS03e | `legacy-composed-mapping.schema.json` (LRN-019) | 2026-05-09 | **Done.** Squash-merged as `ca637d1` (PR #69). NON-BREAKING (v0.2.0): formally defines the shape of `legacy_composed_mapping.json`. Mirrors runtime rules in `lib/composed.mjs validateLegacyMapping`. Wired into `validate-schemas.mjs`; new `tests/legacy-composed-mapping-schema.test.mjs` (14 tests across 10 fixtures); ADR 0001 pointer + CHANGELOG entry + LRN-019 → `applied`. R1 GPT-5.5 caught 2 schema/runtime drift blockers (empty `regions`; `additionalProperties: false` rejecting unknown keys runtime tolerates) → R2 + R3 GO with full schema↔runtime parity. **533 tests / 15-0-3 lint / no drift.** First PR after the CI fix → all 3 CI checks green. |
 | CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 2026-05-09 | **Done.** Squash-merged as `015ed87` (PR #63). NON-BREAKING (v0.2.0): adds optional `template_prose_hash` to lock `fileEntry`; `mergeComposed()` four-case state machine. R1 alleged blocker re-classified as pre-existing. R1 plan-vs-impl gate GO. **519 tests / 15-0-3 lint / no drift.** 0 sub-agent dispatches. |

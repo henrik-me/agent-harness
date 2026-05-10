@@ -1,12 +1,12 @@
 # CS09b — Sync fixture extension (`harness sync --mode=check` in init test)
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15c)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-09 (via CS15c)
+**Closed:** 2026-05-09 (via CS15c)
 **Filed by:** CS09 close-out ([LRN-057](../../../LEARNINGS.md#lrn-057) init/sync integration-testing gap).
-**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15c](./done_cs15c_cli-surface-cleanup.md) — absorbed and delivered as one of three deliverables in the CS15c umbrella. The new sync-check assertion exposed a real init-drift bug (composed files not materialized at init time); fixed inline by appending `sync --apply` to `cmdInit`. PR #89 merged 2026-05-09 @ `63c54b5`.
 **Depends on:** CS09
 
 ## Goal
@@ -54,4 +54,8 @@ The unit tests all passed; the integration bug required both (a) the seeded conf
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15c umbrella review](./done_cs15c_cli-surface-cleanup.md#plan-vs-implementation-review))
+**Date:** 2026-05-09
+**Outcome:** GO
+
+This CS was absorbed by the [CS15c umbrella](./done_cs15c_cli-surface-cleanup.md) before it was ever independently claimed. CS09b's deliverable (`harness sync --mode=check` step in init fixture test) was implemented and reviewed as part of CS15c. The new test exposed a real init-drift bug (LRN-057 class) that was fixed inline by appending `sync --apply` to `cmdInit`. See CS15c's R1 + R2 reviews for the full plan-vs-implementation analysis.
