@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const LINTER = path.join(REPO_ROOT, 'scripts', 'check-templates.mjs');
 const FIXTURES = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs15d', 'check-templates');
+const FIXTURES_CS08C = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs08c', 'check-templates');
 const NODE = process.execPath;
 
 function runLinter(args = []) {
@@ -24,6 +25,10 @@ function runLinter(args = []) {
 
 function fixture(...parts) {
   return path.join(FIXTURES, ...parts);
+}
+
+function fixture08c(...parts) {
+  return path.join(FIXTURES_CS08C, ...parts);
 }
 
 describe('check-templates linter', () => {
@@ -158,5 +163,53 @@ describe('check-templates linter', () => {
     assert.equal(failure.status, 1);
     assert.equal(failure.stdout, '');
     assert.match(failure.stderr, /LRN-049/);
+  });
+
+  // ---------------------------------------------------------------------------
+  // CS08c — extended markdown-context awareness:
+  //   - tilde-fenced code blocks (CommonMark §4.5)
+  //   - indented code blocks (CommonMark §4.4)
+  //   - N-backtick (double, triple) inline code spans (CommonMark §6.1)
+  // ---------------------------------------------------------------------------
+
+  it('CS08c: does not flag patterns inside tilde-fenced code blocks', () => {
+    const r = runLinter(['--file', fixture08c('valid', 'tilde-fenced-example.md'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /0 violations/);
+  });
+
+  it('CS08c: does not flag patterns inside 4-space-indented or tab-indented code blocks', () => {
+    const r = runLinter(['--file', fixture08c('valid', 'indented-code-example.md'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /0 violations/);
+  });
+
+  it('CS08c: does not flag patterns inside double-backtick or triple-backtick inline code spans', () => {
+    const r = runLinter(['--file', fixture08c('valid', 'double-backtick-span.md'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /0 violations/);
+  });
+
+  it('CS08c: still flags forbidden patterns OUTSIDE all code blocks (negative regression)', () => {
+    const r = runLinter(['--file', fixture08c('negative-regression-still-flags.md'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /dot-notation placeholder '\{\{project\.name\}\}'/);
+    assert.match(r.stderr, /relative '\.\.\/' path/);
+    assert.match(r.stderr, /2 violations/);
+  });
+
+  it('CS08c: a directory mixing valid + negative fixtures reports only the negative ones', () => {
+    const r = runLinter(['--dir', FIXTURES_CS08C, '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 1);
+    assert.equal((r.stderr.match(/dot-notation placeholder/g) ?? []).length, 2);
+    assert.equal((r.stderr.match(/relative '\.\.\/' path/g) ?? []).length, 1);
+    assert.match(r.stderr, /3 violations/);
+  });
+
+  it('CS08c: indented-code-block stripping is gated to .md files (YAML/non-md still flags indented placeholders)', () => {
+    const r = runLinter(['--file', fixture08c('indented-yaml-still-flags.yml'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /dot-notation placeholder '\{\{project\.name\}\}'/);
+    assert.match(r.stderr, /1 violation/);
   });
 });
