@@ -107,11 +107,27 @@ function walkFiles(root) {
 
 function stripMarkdownNonScannable(line, state) {
   if (state.inFencedCode) {
-    if (/^\s*```/.test(line)) state.inFencedCode = false;
+    const closer = state.fenceChar === '~' ? /^\s*~~~+\s*$/ : /^\s*```+\s*$/;
+    if (closer.test(line)) {
+      state.inFencedCode = false;
+      state.fenceChar = null;
+    }
     return '';
   }
-  if (/^\s*```/.test(line)) {
+  const backtickFence = /^\s*```/.exec(line);
+  const tildeFence = /^\s*~~~/.exec(line);
+  if (backtickFence) {
     state.inFencedCode = true;
+    state.fenceChar = '`';
+    return '';
+  }
+  if (tildeFence) {
+    state.inFencedCode = true;
+    state.fenceChar = '~';
+    return '';
+  }
+
+  if (/^( {4,}|\t)/.test(line) && line.trim().length > 0) {
     return '';
   }
 
@@ -133,7 +149,7 @@ function stripMarkdownNonScannable(line, state) {
     }
     scan = scan.slice(0, open) + scan.slice(close + 3);
   }
-  scan = scan.replace(/`[^`]*`/g, '');
+  scan = scan.replace(/(`+)([\s\S]*?)\1/g, '');
   return scan;
 }
 
@@ -144,7 +160,7 @@ function lintFile(filePath, cwd) {
   const lines = text.split('\n');
   const violations = [];
   const checkRule3 = isPrTemplatePath(relPath, basename);
-  const state = { inFencedCode: false, inHtmlComment: false };
+  const state = { inFencedCode: false, fenceChar: null, inHtmlComment: false };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
