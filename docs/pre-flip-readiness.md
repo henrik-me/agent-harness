@@ -6,12 +6,11 @@ user-action dependency with captured follow-up evidence.
 
 ## Action required from @henrik-me
 
-1. Enable auto-merge and Private Vulnerability Reporting in the GitHub UI if
-   those controls are available. The API accepted the other repository setting
-   changes but still reports `allow_auto_merge=false`, and the private
-   vulnerability reporting endpoint is unavailable for this repo state.
-2. Re-check after the CS15b public flip if either control remains unavailable
-   while the repository is private.
+1. Re-check auto-merge, branch protection/Rulesets, Private Vulnerability
+   Reporting, and secret scanning after the CS15b public flip or a GitHub Pro
+   plan upgrade. GitHub currently returns `403` for branch protection/Rulesets
+   on this private/free-tier repository, which prevents `allow_auto_merge` from
+   sticking.
 
 ## Current status
 
@@ -33,8 +32,8 @@ user-action dependency with captured follow-up evidence.
 | 14 | Dependabot config | ✅ Done | [`.github/dependabot.yml`](../.github/dependabot.yml), npm + GitHub Actions weekly Monday cadence, max 5 open PRs per ecosystem. |
 | 15 | Squash-only merge posture | ✅ Done | Repository API now reports squash merge enabled, merge commits disabled, and rebase merging disabled. |
 | 16 | Repo surface settings | ✅ Done | Repository API now reports wiki disabled, discussions disabled, auto-delete head branches enabled, and update-branch suggestions enabled. |
-| 17 | Security settings | ⚠️ Partially done; user action required | Dependabot alerts endpoint returns `204`; automated security fixes are enabled; `security_and_analysis.dependabot_security_updates` reports `enabled` in the update response. Private Vulnerability Reporting endpoint returns `404`, and secret scanning remains unavailable/disabled while private. |
-| 18 | Auto-merge enabled | ⚠️ User action required | `PATCH /repos/henrik-me/agent-harness` with `allow_auto_merge=true` succeeds but the repository API still reports `allow_auto_merge=false`; enable in the GitHub UI if available, or re-check after CS15b Ruleset setup. |
+| 17 | Security settings | ⚠️ Platform-gated until public/Pro | Dependabot alerts endpoint returns `204`; automated security fixes are enabled; `security_and_analysis.dependabot_security_updates` reports `enabled` in the update response. Private Vulnerability Reporting endpoint returns `404`, and secret scanning remains unavailable/disabled while private. Re-check after CS15b public flip or plan-tier change. |
+| 18 | Auto-merge enabled | ⚠️ Platform-gated until public/Pro | `PATCH /repos/henrik-me/agent-harness` with `allow_auto_merge=true` and `gh repo edit --enable-auto-merge` both return without enabling it; readback remains `allow_auto_merge=false`. Branch protection and Rulesets APIs return `403: Upgrade to GitHub Pro or make this repository public`, so re-check after CS15b public flip or plan-tier change. |
 | 19 | Full-history gitleaks scan | ✅ Done | gitleaks `8.30.1`; `gitleaks detect --source . --redact --report-format json --report-path docs/gitleaks-history-results.json` scanned 205 commits and found no leaks. |
 | 20 | License/IP grep sweep | ✅ Done | Tenant UUID, Microsoft/Azure URL, token, and GitHub URL sweeps found only documented placeholders, schema examples, test fixtures, and public/expected repository URLs. |
 | 21 | Fixture tokens are obvious placeholders | ✅ Done | Public-artifact PAT fixture now uses `ghp_FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE`; CS14 docs/workflows use `ghp_FAKE_DO_NOT_USE`. |

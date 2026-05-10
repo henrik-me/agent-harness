@@ -47,7 +47,7 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 **What still needs to be done (in order):**
 
 1. **Record bot dry-run evidence** — PR #78 succeeded and merged via the GitHub App bot.
-2. **Resolve remaining repo-setting evidence** — `allow_auto_merge` still reports `false`, and Private Vulnerability Reporting still returns `404`; keep these explicitly open unless GitHub UI/API state changes.
+2. **Resolve remaining repo-setting evidence** — `allow_auto_merge` still reports `false`; Private Vulnerability Reporting still returns `404`; branch protection and Rulesets APIs return `403: Upgrade to GitHub Pro or make this repository public`. Keep #17/#18 explicitly platform-gated until CS15b/public visibility or plan-tier changes.
 3. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out, but close-out remains blocked while #17/#18 in `docs/pre-flip-readiness.md` are not green or explicitly accepted as unavailable until CS15b.
 4. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
 
@@ -180,12 +180,12 @@ Per the user authorization (2026-05-09):
 | Ruleset spec (#6-7) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Bot workflow + manifest (#8) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (App secrets present; PR #78 dry-run approved and merged by bot) \| learnings=0 |
 | Public-facing files (#9-14) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| Repo-settings checklist (#15-18) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (#15-16 applied via API; #17 partial; #18 still reports disabled) \| learnings=0 |
+| Repo-settings checklist (#15-18) | blocked | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=blocked (#15-16 applied via API; #17/#18 platform-gated until public/Pro) \| learnings=0 |
 | Secret/IP scan (#19-24) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | New workflows (#25) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (all 9 required check contexts green on PR #74 at `8b9e839`) \| learnings=0 |
 | `pre-flip-readiness.md` artifact | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | GPT-5.5 content rubber-duck | done | yoga-ah | agent-id=yoga-ah \| role=reviewer \| report-status=complete (targeted workflow/security review outcome: GO after immutable-diff fix) \| learnings=0 |
-| User actions: App + repo settings | in_progress | henrik-me/yoga-ah | App/secrets done; UI/API-only settings #17/#18 remain not green |
+| User actions: App + repo settings | blocked | henrik-me/yoga-ah | App/secrets done; #17/#18 blocked by private/free-tier GitHub feature gates until public/Pro |
 | Bot dry-run + readiness update | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | GPT-5.5 plan-vs-impl review | done | gpt-5.5 | agent-id=cs15a-plan-review \| role=reviewer \| report-status=complete; outcome=BLOCKED on #17/#18 live GitHub setting readback \| learnings=0 |
 
@@ -195,7 +195,7 @@ Per the user authorization (2026-05-09):
 - **Risk:** Ruleset JSON spec wrong shape (Rulesets API is newer than Branch Protection). **Mitigation:** validate against GitHub's published JSON Schema for Rulesets if available; otherwise validate by dry-running `gh api -X POST` against a throwaway repo.
 - **Risk:** Bot workflow has security gap (e.g. accepts a PR with `.github/workflows/` modifications). **Mitigation:** explicit path allowlist; explicit denylist for sensitive paths; actor allowlist; label requirement; branch-name regex. Belt-and-suspenders. Audited by GPT-5.5 rubber-duck.
 - **Risk:** New required status checks listed in Ruleset spec haven't actually run yet. **Mitigation:** precondition #25 explicitly requires green-on-≥1-PR before CS15b — that's the gate.
-- **Risk:** Remaining GitHub settings are unavailable before the public flip. **Mitigation:** keep #17/#18 explicitly not green; re-check `allow_auto_merge`, Private Vulnerability Reporting, and secret scanning after CS15b/public visibility or plan-tier changes.
+- **Risk:** Remaining GitHub settings are unavailable before the public flip. **Mitigation:** keep #17/#18 explicitly not green; branch protection and Rulesets APIs currently return `403: Upgrade to GitHub Pro or make this repository public`; re-check `allow_auto_merge`, Private Vulnerability Reporting, and secret scanning after CS15b/public visibility or plan-tier changes.
 
 ## Plan-vs-implementation review
 
@@ -218,6 +218,10 @@ still not green in live GitHub readback:
 - `PUT /repos/henrik-me/agent-harness/private-vulnerability-reporting` returns
   `404`; `security_and_analysis` remains unavailable/null from normal readback
   while the repository is private/free-tier.
+- `GET /repos/henrik-me/agent-harness/branches/main/protection` and
+  `GET /repos/henrik-me/agent-harness/rulesets` return `403: Upgrade to GitHub
+  Pro or make this repository public`, confirming the blocker is the
+  private/free-tier feature gate rather than a missing repo edit command.
 
 Decision: keep #17/#18 explicitly blocked or CS15b recheck dependencies rather
 than marking them done. Re-check these controls after the public flip, Ruleset

@@ -15,8 +15,9 @@ Go to <https://github.com/henrik-me/agent-harness/settings>.
 - [x] **Pull Requests:** enable "Always suggest updating pull request
   branches".
 - [ ] **Pull Requests:** enable auto-merge. The API update succeeds but the
-  repository still reports this as disabled; enable in the UI if available or
-  re-check after CS15b Ruleset setup.
+  repository still reports this as disabled. Branch protection and Rulesets
+  currently return `403: Upgrade to GitHub Pro or make this repository public`,
+  so re-check after the CS15b public flip or plan-tier change.
 - [x] **Pull Requests:** enable "Automatically delete head branches".
 
 ## Security settings
@@ -28,7 +29,7 @@ Go to <https://github.com/henrik-me/agent-harness/settings/security_analysis>.
 - [x] Enable Dependabot security updates.
 - [ ] Enable Secret scanning if the control is available after the public flip.
 - [ ] Enable Private vulnerability reporting. The API endpoint currently returns
-  `404`; enable in the UI if available or re-check after the public flip.
+  `404`; re-check after the public flip or plan-tier change.
 
 ## Actions settings
 
