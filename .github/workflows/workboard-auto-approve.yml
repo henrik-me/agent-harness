@@ -31,9 +31,9 @@
 #     paths are protected by this workflow's path allowlist during this
 #     workflow run: the workflow does not mint or use the App token unless
 #     validation passes for the current PR head.
-#   - Path-restriction enforcement happens IN this workflow BEFORE the
-#     App's credentials are ever invoked, so a compromised App alone
-#     cannot approve a PR that touches sensitive paths.
+#   - Path-restriction enforcement happens IN this workflow before this
+#     workflow mints and uses the App token. It is not a general protection
+#     against direct misuse of a compromised App private key.
 
 name: workboard-auto-approve
 
@@ -211,4 +211,4 @@ jobs:
           if [ "$current_head" != "$VALIDATED_HEAD_SHA" ]; then
             fail "PR head changed after bot approval ($VALIDATED_HEAD_SHA -> $current_head); refusing auto-merge."
           fi
-          gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto --match-head-commit "$VALIDATED_HEAD_SHA"

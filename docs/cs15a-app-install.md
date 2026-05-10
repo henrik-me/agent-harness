@@ -70,7 +70,10 @@ operations. The workflow mints the App token only after the PR passes the
 workboard-only validation gate, then approves the validated commit SHA rather
 than the mutable PR number alone.
 
-The workflow itself enforces additional path/label/actor/branch-name validation BEFORE invoking the App's credentials. Even if the App were compromised, it could not approve a PR that touched `lib/`, `bin/`, `template/`, `.github/workflows/`, `schemas/`, or `package.json` — those paths fail the workflow's pre-checks before the bot is even contacted.
+The workflow enforces additional path/label/actor/branch-name/head-SHA
+validation before it mints and uses the App token. This protects the
+workflow-mediated bot path; it is not a substitute for revoking the App if the
+private key is compromised.
 
 ## Revocation
 
