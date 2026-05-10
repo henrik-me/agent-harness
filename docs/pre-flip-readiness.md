@@ -32,10 +32,10 @@ user-action dependency with captured follow-up evidence.
 | 12 | Issue templates | ✅ Done | `.github/ISSUE_TEMPLATE/{bug,feature,learning,config}.yml`. |
 | 13 | Pull request template public phrasing audit | ✅ Done | `.github/pull_request_template.md` reviewed; no private/internal wording found. |
 | 14 | Dependabot config | ✅ Done | [`.github/dependabot.yml`](../.github/dependabot.yml), npm + GitHub Actions weekly Monday cadence, max 5 open PRs per ecosystem. |
-| 15 | Squash-only merge posture | ⚠️ User action required | Current API: `allow_squash_merge=true`, `allow_merge_commit=true`, `allow_rebase_merge=true`; disable merge commits and rebase merging in repo settings. |
-| 16 | Repo surface settings | ⚠️ Partially done; user action required | Current API: `has_wiki=false`, `has_discussions=false`, `delete_branch_on_merge=false`; enable auto-delete head branches. |
+| 15 | Squash-only merge posture | ⚠️ User action required | Current repository API state reports squash, merge-commit, and rebase merge options enabled; disable merge commits and rebase merging in repo settings. |
+| 16 | Repo surface settings | ⚠️ Partially done; user action required | Current repository API state reports wiki and discussions disabled, with auto-delete head branches disabled; enable auto-delete head branches. |
 | 17 | Security settings | ⚠️ User action required | Enable Dependabot alerts/security updates and Private Vulnerability Reporting in GitHub UI; `security_and_analysis` not exposed for this private/free-tier state. |
-| 18 | Auto-merge enabled | ⚠️ User action required | Current API: `allow_auto_merge=false`; enable auto-merge in repo settings. |
+| 18 | Auto-merge enabled | ⚠️ User action required | Current repository API state reports auto-merge disabled; enable auto-merge in repo settings. |
 | 19 | Full-history gitleaks scan | ✅ Done | gitleaks `8.30.1`; `gitleaks detect --source . --redact --report-format json --report-path docs/gitleaks-history-results.json` scanned 205 commits and found no leaks. |
 | 20 | License/IP grep sweep | ✅ Done | Tenant UUID, Microsoft/Azure URL, token, and GitHub URL sweeps found only documented placeholders, schema examples, test fixtures, and public/expected repository URLs. |
 | 21 | Fixture tokens are obvious placeholders | ✅ Done | Public-artifact PAT fixture now uses `ghp_FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE`; CS14 docs/workflows use `ghp_FAKE_DO_NOT_USE`. |

@@ -51,7 +51,7 @@ jobs:
             echo "ERROR: invalid HEAD_SHA" >&2
             exit 2
           fi
-          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.\[\]-]+$'; then
+          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.-]+(\[bot\])?$'; then
             echo "ERROR: invalid PR_AUTHOR" >&2
             exit 2
           fi
@@ -97,7 +97,7 @@ jobs:
             echo "ERROR: invalid repository slug" >&2
             exit 2
           fi
-          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.\[\]-]+$'; then
+          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.-]+(\[bot\])?$'; then
             echo "ERROR: invalid PR_AUTHOR" >&2
             exit 2
           fi
@@ -127,11 +127,5 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
-      - name: Build and inspect package artifact
-        run: |
-          set -euo pipefail
-          mkdir -p .tmp/public-artifact
-          npm pack --json > .tmp/npm-pack.json
-          tgz="$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('.tmp/npm-pack.json','utf8')); console.log(data[0].filename)")"
-          tar -xzf "$tgz" -C .tmp/public-artifact --strip-components=1
-          node scripts/check-public-artifact.mjs --dir .tmp/public-artifact
+      - name: Check package public artifact
+        run: node scripts/check-pack.mjs --cwd . --quiet
