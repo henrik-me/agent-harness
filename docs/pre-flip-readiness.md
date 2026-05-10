@@ -9,8 +9,10 @@ user-action dependency with captured follow-up evidence.
 1. Create and install the GitHub App described in
    [`docs/cs15a-app-install.md`](cs15a-app-install.md), then store the
    `WORKBOARD_BOT_APP_ID` and `WORKBOARD_BOT_PRIVATE_KEY` repository secrets.
-2. Apply the repository settings in
-   [`docs/cs15a-repo-settings-checklist.md`](cs15a-repo-settings-checklist.md).
+2. Enable auto-merge and Private Vulnerability Reporting in the GitHub UI if
+   those controls are available. The API accepted the other repository setting
+   changes but still reports `allow_auto_merge=false`, and the private
+   vulnerability reporting endpoint is unavailable for this repo state.
 3. Ping the orchestrator after both are done. The orchestrator will run the
    workboard bot dry-run and record the evidence below.
 
@@ -32,10 +34,10 @@ user-action dependency with captured follow-up evidence.
 | 12 | Issue templates | ✅ Done | `.github/ISSUE_TEMPLATE/{bug,feature,learning,config}.yml`. |
 | 13 | Pull request template public phrasing audit | ✅ Done | `.github/pull_request_template.md` reviewed; no private/internal wording found. |
 | 14 | Dependabot config | ✅ Done | [`.github/dependabot.yml`](../.github/dependabot.yml), npm + GitHub Actions weekly Monday cadence, max 5 open PRs per ecosystem. |
-| 15 | Squash-only merge posture | ⚠️ User action required | Current repository API state reports squash, merge-commit, and rebase merge options enabled; disable merge commits and rebase merging in repo settings. |
-| 16 | Repo surface settings | ⚠️ Partially done; user action required | Current repository API state reports wiki and discussions disabled, with auto-delete head branches disabled; enable auto-delete head branches. |
-| 17 | Security settings | ⚠️ User action required | Enable Dependabot alerts/security updates and Private Vulnerability Reporting in GitHub UI; `security_and_analysis` not exposed for this private/free-tier state. |
-| 18 | Auto-merge enabled | ⚠️ User action required | Current repository API state reports auto-merge disabled; enable auto-merge in repo settings. |
+| 15 | Squash-only merge posture | ✅ Done | Repository API now reports squash merge enabled, merge commits disabled, and rebase merging disabled. |
+| 16 | Repo surface settings | ✅ Done | Repository API now reports wiki disabled, discussions disabled, auto-delete head branches enabled, and update-branch suggestions enabled. |
+| 17 | Security settings | ⚠️ Partially done; user action required | Dependabot alerts endpoint returns `204`; automated security fixes are enabled; `security_and_analysis.dependabot_security_updates` reports `enabled` in the update response. Private Vulnerability Reporting endpoint returns `404`, and secret scanning remains unavailable/disabled while private. |
+| 18 | Auto-merge enabled | ⚠️ User action required | `PATCH /repos/henrik-me/agent-harness` with `allow_auto_merge=true` succeeds but the repository API still reports `allow_auto_merge=false`; enable in the GitHub UI if available, or re-check after CS15b Ruleset setup. |
 | 19 | Full-history gitleaks scan | ✅ Done | gitleaks `8.30.1`; `gitleaks detect --source . --redact --report-format json --report-path docs/gitleaks-history-results.json` scanned 205 commits and found no leaks. |
 | 20 | License/IP grep sweep | ✅ Done | Tenant UUID, Microsoft/Azure URL, token, and GitHub URL sweeps found only documented placeholders, schema examples, test fixtures, and public/expected repository URLs. |
 | 21 | Fixture tokens are obvious placeholders | ✅ Done | Public-artifact PAT fixture now uses `ghp_FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE`; CS14 docs/workflows use `ghp_FAKE_DO_NOT_USE`. |
