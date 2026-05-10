@@ -10,7 +10,7 @@
 
 ## ⚠️ RESUME POINT — read this first if you're a fresh agent instance
 
-**This CS is DONE.** Content PR #95 merged 2026-05-10; close-out PR forthcoming on `cs15e/close-out`. The pre-CS16 backlog cleanup sequence (CS15c → CS15d → CS15e) is now COMPLETE. The next mainline CS is **CS16 (Bootstrap Sub Invaders)** — the first downstream consumer of CS15e's constraint-detection flow. See `WORKBOARD.md` and `HANDOFF.md` for the next CS to claim.
+**This CS is DONE.** Content PR #95 merged 2026-05-10; close-out PR forthcoming on `cs15e/close-out`. The pre-CS16 backlog cleanup sequence (CS15c → CS15d → CS15e) is now COMPLETE. The next mainline CS is **CS16 (Bootstrap Sub Invaders)** — the first downstream consumer of CS15e's constraint-detection flow. See `WORKBOARD.md` and `INSTRUCTIONS.md` for the next CS to claim.
 
 This is the **third and final** umbrella in the pre-CS16 backlog cleanup
 sequence: **CS15c → CS15d → CS15e**, executed sequentially.
