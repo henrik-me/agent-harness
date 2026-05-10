@@ -138,16 +138,16 @@ This is a **discipline-only** reservation (no mechanical infrastructure exists y
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | in_progress | yoga-ah | branch `cs15c/claim` |
-| Branch `cs15c/content` from main post-claim | pending | yoga-ah | — |
-| α1: `lib/sync.mjs` accept `opts.configPath`; 3 error paths exit 1 | pending | sub-agent α1 | CS04b deliverable |
-| α2 (orchestrator): `bin/harness.mjs` thread `--config`; reject `--ref`; SUBCOMMAND_HELP updates | pending | yoga-ah | CS04b + CS04d; orchestrator-owned bottleneck |
-| α3: `tests/cli.test.mjs` ≥6 CS04b tests + ≥2 CS04d tests | pending | sub-agent α3 | learnings=0 |
-| α4: `tests/cs09-init.test.mjs` sync-check assertion + `template/composed/OPERATIONS.md` integration-testing checklist subsection | pending | sub-agent α4 | CS09b deliverable; template-side edit only |
-| Orchestrator: stage all sub-agent output; full validation; single content commit | pending | yoga-ah | post Wave 1 |
-| Orchestrator: post-content lock-fixup re-render of root `OPERATIONS.md` via `--resolved-sha <content-sha>` | pending | yoga-ah | LRN-070/074 |
-| Plan-vs-implementation review (gpt-5.5 rubber-duck) | pending | yoga-ah | LRN-064 mandatory gate |
-| Open content PR; address review iterations; squash-merge | pending | yoga-ah | — |
+| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | done | yoga-ah | branch `cs15c/claim`; merged in PR #88 @ 8944a35 |
+| Branch `cs15c/content` from main post-claim | done | yoga-ah | branched from origin/main @ 8944a35 |
+| α1: `lib/sync.mjs` accept `opts.configPath`; 3 error paths exit 1 | done | sub-agent α1 | CS04b deliverable; +208 lines new test file (5/5 pass); learnings=0 |
+| α2 (orchestrator): `bin/harness.mjs` thread `--config`; reject `--ref`; SUBCOMMAND_HELP updates | done | yoga-ah | CS04b + CS04d; also fixed α4's init-drift escalation by appending sync --apply at end of cmdInit |
+| α3: `tests/cli.test.mjs` ≥6 CS04b tests + ≥2 CS04d tests | done | sub-agent α3 | 9 new tests in CS15c describe block; existing stop-gap tests removed; learnings=0 |
+| α4: `tests/cs09-init.test.mjs` sync-check assertion + `template/composed/OPERATIONS.md` integration-testing checklist subsection | done | sub-agent α4 | CS09b deliverable; surfaced real init-drift bug — orchestrator fixed via cmdInit sync-apply finalize; learnings=0 |
+| Orchestrator: stage all sub-agent output; full validation; single content commit | done | yoga-ah | content commit @ 0933e9c |
+| Orchestrator: post-content lock-fixup re-render of root `OPERATIONS.md` via `--resolved-sha <content-sha>` | done | yoga-ah | lock-fixup commit @ dc350b4 (LRN-070/074) |
+| Plan-vs-implementation review (gpt-5.5 rubber-duck) | done | yoga-ah | LRN-064 mandatory gate; R1 NEEDS-FIX (2 blockers) → R1 fixes in commit fa78147 → R2 GO; reviews recorded below |
+| Open content PR; address review iterations; squash-merge | in_progress | yoga-ah | — |
 | Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + RESUME POINT in this file; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15c" pointer) | pending | yoga-ah | required by check-clickstop close-out enforcement |
 | Close-out: learnings + follow-ups (LEARNINGS.md within LRN-082..086; document any deferred follow-ups as new planned CSs) | pending | yoga-ah | required by check-clickstop close-out enforcement |
 
@@ -157,4 +157,89 @@ This is a **discipline-only** reservation (no mechanical infrastructure exists y
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+# CS15c Plan-vs-Implementation Review (R1)
+
+**Reviewer:** GPT-5.5
+**Date:** 2026-05-09
+**Content commit:** 0933e9c197868595d44f1a0a6254cad39fac856c
+**Lock-fixup commit:** dc350b43734962129a58b34121287ae8743c60bf
+
+## Outcome
+
+**OUTCOME: NEEDS-FIX**
+
+## Plan coverage
+
+| Deliverable | Plan spec | Implementation | Test coverage | Verdict |
+|---|---|---|---|---|
+| CS04b: --config threading | Thread explicit config through sync/check; replace default config; exit 1 with documented config-error messages. | `bin/harness.mjs:588-664`, `lib/sync.mjs:604-625`; help at `bin/harness.mjs:83-121`. Error strings diverge at `lib/sync.mjs:609-625`, `lib/sync.mjs:354-382`, `lib/sync.mjs:420-423`. | `tests/sync-config-override.test.mjs:55-204`, `tests/cli.test.mjs:959-1055`; missing `check --config` coverage and exact error-message assertions. | ✗ |
+| CS04d: --ref reject (Option B) | Accept parse, reject in sync/check body with exit 2 and planned-flag message. | `bin/harness.mjs:643-649`, check delegation at `bin/harness.mjs:705-717`; help at `bin/harness.mjs:101-119`. | `tests/cli.test.mjs:1057-1095`. | ✓ |
+| CS09b: init→sync-check guard | Init-produced repo must pass sync check and remain unmutated; docs updated and root re-rendered. | Post-init apply at `bin/harness.mjs:560-580`; docs at `template/composed/OPERATIONS.md:635-647` and `OPERATIONS.md:635-647`; lock pin at `.harness-lock.json:2-3`. | `tests/cs09-init.test.mjs:228-250`. | ✓ |
+
+## Test coverage assessment (R1)
+
+The new tests exercise the main `sync --config` path, override precedence, missing/malformed/schema-invalid configs, relative paths, `--config=` form, `--ref` rejection, and init→sync-check mutation safety. Cleanup is handled with `finally`/`t.after`, and the structure looks stable. Gaps: no direct `check --config` regression despite the goal naming it, and the config-error tests are too loose to enforce the plan's documented stderr contract.
+
+## Gates verified locally (R1)
+
+- `harness lint --quiet`: pass — 15 passed, 0 failed, 3 skipped
+- `harness sync --mode=check --cwd .`: pass — exit 0, "No drift detected" (with active-CS warning)
+- `node --test tests/*.test.mjs`: pass — 552 tests, 552 pass, 0 fail
+- text-encoding: pass — exit 0
+- schemas: pass — 90 passed, 0 failed
+- clickstop: pass — 31 files checked, 0 errors
+
+## Findings (R1)
+
+### Blockers (NEEDS-FIX)
+
+- CS04b config-error message contract is not satisfied — `lib/sync.mjs:609-625`, `lib/sync.mjs:354-382`, `lib/sync.mjs:420-423`; plan requires `--config ...` messages with the override path for not-found, invalid JSON, and schema validation failures. Current JSON/schema failures omit the config path, and some schema failures still say `harness.config.json ...`. Suggested fix: when `configPathOverride` is set, rethrow validation failures with the planned `--config file ...: ${configPath}` prefix and add exact CLI/unit assertions.
+- Missing direct `check --config` regression — implementation likely works via `cmdCheck()` delegating to `cmdSync()`, but the CS goal explicitly covers `harness check --config alt.json`. Add one CLI test proving `check --config` uses the alternate config instead of `<cwd>/harness.config.json`.
+
+### Non-blocking (NB)
+
+(none)
+
+## Recommendation (R1)
+
+FIX-THEN-RE-REVIEW. The functional threading is mostly in place and all local gates pass, but CS04b's documented stderr contract and `check --config` regression coverage are incomplete enough to block close-out. After tightening those messages/tests, R2 should be straightforward.
+
+---
+
+# CS15c Plan-vs-Implementation Review (R2)
+
+**Reviewer:** GPT-5.5
+**Date:** 2026-05-09
+**Reviewed commit:** fa781477e08185205a37a1947b20e0258f606773
+**Prior review:** R1 (NEEDS-FIX, 2 blockers)
+
+## Outcome
+
+**OUTCOME: GO**
+
+## R1 blocker resolution
+
+| R1 Blocker | Status | Evidence |
+|---|---|---|
+| Config-error message contract | resolved | `lib/sync.mjs:604-624`, `lib/sync.mjs:634-676`; tests: `tests/cli.test.mjs:990-1057`, `tests/sync-config-override.test.mjs:123-203` |
+| check --config regression coverage | resolved | `tests/cli.test.mjs:1064-1080`; pipeline verified at `bin/harness.mjs:705-716` → `bin/harness.mjs:655-664` |
+
+## Gates verified locally (R2)
+
+- `harness lint --quiet`: pass — 15 passed, 0 failed, 3 skipped
+- `harness sync --mode=check --cwd .`: pass — No drift detected
+- `node --test tests/*.test.mjs`: pass — 554 tests, 554 pass, 0 fail
+
+## Findings (R2)
+
+### Blockers (NEEDS-FIX)
+
+(none)
+
+### Non-blocking (NB)
+
+(none)
+
+## Recommendation (R2)
+
+The R1 blockers are addressed. Override config paths are surfaced for not-found, malformed JSON, and schema-validation failures, while default-path behavior remains guarded by existing passing tests. Proceed with opening the CS15c content PR.

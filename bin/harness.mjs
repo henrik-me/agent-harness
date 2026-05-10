@@ -95,7 +95,11 @@ Options:
                                  (apply-mode only; see CS11b/LRN-070 for the
                                  post-commit-regenerate ordering trap this fixes).
   --cwd <path>                  Consumer repo path (default: cwd)
-  --config <path>               Path to harness.config.json
+  --config <path>               Path to harness.config.json (CS15c/CS04b: now
+                                wired through to the sync engine; replaces the
+                                default <cwd>/harness.config.json entirely).
+  --ref <ref>                   PLANNED — not yet implemented; set 'version' in
+                                harness.config.json to pin a harness version.
   --help                        Print this help
 
 Exit codes:
@@ -110,7 +114,9 @@ Alias for: harness sync --mode=check
 
 Options:
   --cwd <path>    Consumer repo path (default: cwd)
-  --config <path> Path to harness.config.json
+  --config <path> Path to harness.config.json (CS15c/CS04b: wired through).
+  --ref <ref>     PLANNED — not yet implemented (set 'version' in
+                  harness.config.json to pin).
   --help          Print this help
 `.trimStart(),
 
@@ -549,6 +555,30 @@ async function cmdInit(args, global) {
       );
     }
   }
+
+  // CS15c (CS09b, LRN-057 / α4 escalation): finalize init by running sync --apply
+  // so composed files (CONVENTIONS.md, OPERATIONS.md, REVIEWS.md per the seeded
+  // config) are materialized and the resulting repo is sync-check-clean. Without
+  // this step, `harness sync --mode=check` immediately after `harness init`
+  // reports drift (composed files in config but not on disk), which violates the
+  // intuitive expectation that init produces a usable, validated repo.
+  try {
+    const { sync: syncFn } = await import('../lib/sync.mjs');
+    const result = await syncFn({
+      consumerRepoPath: targetDir,
+      harnessRepoPath: REPO_ROOT,
+      mode: 'apply',
+    });
+    const applied = result.changes.filter((c) => c.action !== 'skipped').length;
+    if (applied > 0) {
+      process.stdout.write(`Sync complete (${applied} composed/managed files materialized).\n`);
+    }
+  } catch (err) {
+    process.stderr.write(
+      `Warning: post-init sync failed: ${err.message}\n` +
+      `Run \`harness sync --mode=apply\` manually to complete setup.\n`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -610,6 +640,15 @@ async function cmdSync(args, global, defaultMode = 'check') {
     die(`--resolved-sha is only valid with --mode=apply (got mode: "${mode}").\n\n${SUBCOMMAND_HELP['sync']}`, 2);
   }
 
+  // CS15c (CS04d, Option B): --ref is parsed at the global layer for forward-compat
+  // but explicitly rejected at the subcommand body until pinning is implemented.
+  if (ref !== null && ref !== undefined) {
+    die(
+      "--ref is not yet implemented. To pin a harness version, set 'version' in harness.config.json.",
+      2
+    );
+  }
+
   const { sync: syncFn } = await import('../lib/sync.mjs');
 
   try {
@@ -619,6 +658,9 @@ async function cmdSync(args, global, defaultMode = 'check') {
       mode,
       acceptMajor,
       resolvedShaOverride,
+      // CS15c (CS04b, LRN-027 closed): wire --config through to the sync engine.
+      // When set, the override replaces <cwd>/harness.config.json entirely.
+      configPath: configOverride ?? null,
     });
 
     if (result.warnings.length > 0) {
@@ -1165,10 +1207,10 @@ async function main() {
     process.exit(2);
   }
 
-  // Blocker 2: --config is not yet supported for sync/check (sync engine always reads <cwd>/harness.config.json)
-  if (global.config !== null && (subcommand === 'sync' || subcommand === 'check')) {
-    die('--config is not yet supported for sync/check; planned for a future CS. Use --cwd to point at the consumer repo.', 2);
-  }
+  // Blocker 2 historical (LRN-027): the --config flag was previously parsed but
+  // silently ignored, then rejected with a stop-gap exit-2 in CS04 close-out.
+  // CS15c (CS04b) closes the gap by threading --config through cmdSync. The
+  // stop-gap removed; cmdSync now passes global.config into syncFn as configPath.
 
   // If --help was a global flag but a subcommand is present, forward it to the subcommand.
   const subArgs = help ? ['--help', ...rest] : rest;

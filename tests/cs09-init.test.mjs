@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +31,29 @@ function runScript(scriptName, args, opts = {}) {
     cwd: opts.cwd ?? REPO_ROOT,
     ...opts,
   });
+}
+
+function sha256File(filePath) {
+  return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+function snapshotTree(rootDir) {
+  const files = [];
+
+  function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      const relPath = path.relative(rootDir, fullPath).split(path.sep).join('/');
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile()) {
+        files.push({ path: relPath, sha256: sha256File(fullPath), size: statSync(fullPath).size });
+      }
+    }
+  }
+
+  walk(rootDir);
+  return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 describe('CS09 — harness init seeds a fresh consumer repo', () => {
@@ -199,5 +223,30 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('10. init-produced repo passes sync --mode=check without mutations (LRN-057)', (t) => {
+    const dir = makeTmpDir();
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+    const init = runHarness(['--cwd', dir, 'init']);
+    assert.equal(init.status, 0, `Expected init exit 0; got ${init.status}
+stdout: ${init.stdout}
+stderr: ${init.stderr}`);
+
+    const before = snapshotTree(dir);
+    const syncCheck = runHarness(['--cwd', dir, 'sync', '--mode=check']);
+    assert.equal(
+      syncCheck.status,
+      0,
+      `Expected sync check exit 0; got ${syncCheck.status}
+stdout: ${syncCheck.stdout}
+stderr: ${syncCheck.stderr}`
+    );
+    assert.match(syncCheck.stdout, /No drift detected\./, `Expected no-drift stdout; got:
+${syncCheck.stdout}`);
+
+    const after = snapshotTree(dir);
+    assert.deepEqual(after, before, 'sync --mode=check must not mutate the init-produced repo');
   });
 });
