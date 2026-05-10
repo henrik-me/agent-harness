@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T05:30Z (CS15e claimed — third and final pre-CS16 umbrella in flight)
+> **Last updated:** 2026-05-10T07:00Z (CS15e DONE — pre-CS16 backlog cleanup complete; no active CS)
 
 ## Orchestrators
 
@@ -10,28 +10,29 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T05:30Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T07:00Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS15e | `harness init` private-tier detection (umbrella absorbing CS04a) | 🟢 Active | yoga-ah | cs15e/content (after claim) | 2026-05-10T05:30Z | — |
+| — | (no active CS — pre-CS16 backlog cleanup complete; CS15c/CS15d/CS15e all closed) | — | — | — | 2026-05-10T07:00Z | — |
 
 ## Queued (planned, ready to claim in order)
 
 | Order | CS | Title | Notes |
 |---|---|---|---|
-| 1 | [CS06c](project/clickstops/planned/planned_cs06c_centralize-doc-schema-primitives.md) | Centralize remaining doc-schema primitives in `lib/doc-schema.mjs` | CS15d follow-up (GPT-5.5 R1 NB #1). Small refactor; can be claimed any time after CS15d. |
-| 2 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time after CS15d. |
-| later | CS16 | Bootstrap Sub Invaders | First downstream consumer of CS15e constraint-detection flow. |
+| 1 | [CS06c](project/clickstops/planned/planned_cs06c_centralize-doc-schema-primitives.md) | Centralize remaining doc-schema primitives in `lib/doc-schema.mjs` | CS15d follow-up (GPT-5.5 R1 NB #1). Small refactor; can be claimed any time. |
+| 2 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time. |
+| 3 | CS16 | Bootstrap Sub Invaders | **Next mainline CS.** First downstream consumer of CS15e's constraint-detection flow. Claim once a planned file exists. |
 
-The 1 remaining absorbed planned file (`planned_cs04a_*`) carries `**Superseded by:**` pointer and MUST NOT be claimed independently; it gets `git mv`'d to `done/` at CS15e close-out (mirrors CS04c "partially superseded by CS13" precedent).
+All three pre-CS16 umbrella absorbed planned files (`planned_cs04a_*`, `planned_cs04b_*`, `planned_cs04d_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs09b_*`, `planned_cs10b_*`) have been `git mv`'d to `done/` with `**Superseded by:**` pointers.
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS15e | `harness init` private-tier detection (umbrella absorbing CS04a) | 2026-05-10 | **Done.** Squash-merged as `962c866` (PR #95). New `lib/get-github-token.mjs` + `lib/detect-repo-tier.mjs` (γ1: 15 tests, 6-tier classification public/private-{free,pro,team,enterprise}/unknown via REST API w/ token+anonymous paths); new `constraints` subschema in `harness.config.json` w/ `if/then/else` disposition rule (γ2: 6 fixtures + 6 tests + ADR-0003); new seeded `template/seeded/.harness-known-constraints.md` skeleton with substitution tokens (γ3); orchestrator-implemented init flow (γ4): `--constraint-disposition`/`--skip-constraint-detection` flags, detection block (read remote → fetch tier → write artifact + merge constraints + idempotent CONTEXT.md update), new `lib/config-reader.mjs::writeConfig` (schema-validated fail-closed per LRN-033), 14 cli tests; `template/managed/INSTRUCTIONS.md` re-eval subsection + seeded `CONTEXT.md` `## Constraints` anchor (γ5). 4-way Wave 1 fan-out + 1 orchestrator-owned. Race fix incidental: `tests/lib-github-detect.test.mjs` tempdir moved out of REPO_ROOT (recursive linter ENOENT during parallel runs). **643 tests pass** (was 609 pre-CS15e; +34 net). `harness lint --quiet`: **24/0/3** unchanged. `harness sync --mode=check`: no drift. R1 GPT-5.5 plan-vs-impl review: **NEEDS-FIX** (3 blocking gaps: skip-summary leak, missing disposition-options notice, broken `\Z` regex anchor) → fixed in `27f56ae` → R2 GO. 3 LRN filed (LRN-092..094). 1 absorbed planned file (`planned_cs04a_*`) `git mv`'d to `done/`. Cumulative dispatch count: ~70. **End of pre-CS16 backlog cleanup sequence (CS15c → CS15d → CS15e). Next mainline CS is CS16.** |
 | CS15d | Linter expansion (umbrella: CS06b + CS08b + CS10b) | 2026-05-10 | **Done.** Squash-merged as `8ad0871` (PR #92). Adds `lib/{config,lock}-reader.mjs` (β1+β2); refactors `check-{instructions,readme,clickstop}.mjs` to `lib/doc-schema.mjs` + cross-link validation in `check-instructions` (β3+β4+β5); new `scripts/check-templates.mjs` enforcing LRN-049/050/051 with markdown-context awareness + GH Actions negative-lookbehind (β6 + orchestrator); new `scripts/check-scaffold-readme.mjs` (β7); aggregator integration with self-host per-scaffold rows + `SHIPPED_SCAFFOLD_LINTERS` mapping table for consumer auto-dispatch (β8 test + β9 wiring). 8-way Wave 1 fan-out + 1 Wave 2 sequential aggregator owner. **609 tests pass** (was 553 pre-CS15d; +56 net). `harness lint --quiet`: **24/0/3** self-host (15 base + templates + 8 per-scaffold rows; non-self-host 17/0/3 — see exit criteria for explanation). `harness sync --mode=check`: no drift. R1 GPT-5.5 plan-vs-impl review: **GO** with 2 non-blocking concerns (centralize doc-schema primitives → CS06c; extend markdown-context to tilde fences/indented code/double-backtick spans → CS08c). 5 LRN filed (LRN-087..091). 3 absorbed planned files `git mv`'d to `done/`. Cumulative dispatch count: ~64. |
 | CS15c | CLI surface cleanup (umbrella: CS04b + CS04d + CS09b) | 2026-05-09 | **Done.** Squash-merged as `63c54b5` (PR #89). Threads `--config` through `sync`/`check` (CS04b, 3 error paths surface override path); rejects `--ref` with documented message at exit 2 (CS04d); adds `sync --mode=check` step to init fixture (CS09b) which exposed an init-drift bug fixed inline by appending `sync --apply` to `cmdInit`. 4 sub-agents (α1=lib/sync.mjs, α2=bin/harness.mjs orchestrator-owned, α3=tests/cli.test.mjs, α4=tests/cs09-init.test.mjs+template/composed/OPERATIONS.md). R1 GPT-5.5 NEEDS-FIX (config-error contract + missing `check --config` test) → fixed in `fa78147` → R2 GO. 3 LRN filed (LRN-084..086). 3 absorbed planned files `git mv`'d to `done/`. **554 tests / 15-0-3 lint / no drift.** |
 | CS15a | Public-readiness preparation + public flip (GUARDRAIL) | 2026-05-10 | **Done.** Public readiness content, settings, scans, workflows, GitHub App workboard bot, bot dry-run, public visibility flip, and main Ruleset application completed. PRs #74/#76/#77/#78/#79/#80/#81 plus close-out. Main Ruleset `main-protection` active (`id=16185634`); repo public; auto-merge enabled; PVR returned 204; secret scanning enabled. |

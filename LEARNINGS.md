@@ -1903,6 +1903,66 @@ claim_area: shell-ops
 
 **Disposition:** Applied procedurally at this close-out. Documented here for any future agent on Windows/PowerShell composing commit messages that reference Actions expressions, harness templating, or other `${{ }}` syntax.
 
+### LRN-092
+
+```yaml
+id: LRN-092
+date: 2026-05-10
+category: tooling
+source_cs: CS15e
+status: applied
+tags: [regex, javascript, multiline, idempotency, markdown]
+claim_area: cli-init
+```
+
+**Problem:** During CS15e γ4 implementation, the `cmdInit` constraint-detection code rewrote the `## Constraints` H2 block in seeded `CONTEXT.md` using a regex `/(^## Constraints\n)([\s\S]*?)(\n## |\Z)/m` to anchor the block. The R1 GPT-5.5 plan-vs-impl review flagged this as broken: JavaScript regex does NOT support the `\Z` anchor — `\Z` is interpreted as the literal character `Z`. The bug was masked at first because the seeded `CONTEXT.md` ships with several H2 sections after `## Constraints`, so the `\n## ` alternative always matched and the broken `\Z` arm was never exercised. A consumer who edited `CONTEXT.md` to leave `## Constraints` as the final H2 would have triggered the bug — the rewrite would silently no-op, breaking idempotency.
+
+**Finding:** JavaScript regex anchors are limited to `^` and `$` (with `m` flag for line anchors). For "end-of-string in multiline mode" use the lookahead `$(?![\s\S])` instead of `\Z`. The combined "next H2 OR true EOF" pattern is `(\n## |$(?![\s\S]))`.
+
+**Evidence:** [`bin/harness.mjs`](../bin/harness.mjs) `cmdInit` constraint-detection block (the EOF anchor path). [`tests/cli.test.mjs`](../tests/cli.test.mjs) gained a new "EOF idempotency" test that mutates `CONTEXT.md` to drop trailing H2s, then re-runs `harness init` twice and asserts `## Constraints` references stay at count=1. Pre-fix that test would have failed silently.
+
+**Disposition:** Applied. The fix shipped in CS15e content commit `27f56ae` (NEEDS-FIX response). Generalisable to any future markdown-section rewrite: prefer `$(?![\s\S])` over `\Z`, and include a "trailing-section" test fixture that exercises the EOF arm.
+
+### LRN-093
+
+```yaml
+id: LRN-093
+date: 2026-05-10
+category: anti-pattern
+source_cs: CS15e
+status: applied
+tags: [cli, summaries, error-messages, skip-paths, ux]
+claim_area: cli-init
+```
+
+**Problem:** When `harness init` ran with `--skip-constraint-detection` (or with `tier=unknown` because no remote was configured), the post-init summary still printed `See .harness-known-constraints.md for details` even though the file had been intentionally NOT written. Consumers following the message would `cat` a non-existent file. R1 GPT-5.5 flagged this as a UX regression.
+
+**Finding:** Skip-path code paths must emit summaries that describe what was actually done, not what the happy path would have done. The fix is a simple branch on `(owner && repo && !skipped)` — if any of those is false, print a different line such as `Constraints detection: tier=<X> (reason=<Y>). No constraints recorded.` and never reference the artifact.
+
+**Evidence:** [`bin/harness.mjs`](../bin/harness.mjs) `cmdInit` post-detection summary line (the `owner && repo` branch). [`tests/cli.test.mjs`](../tests/cli.test.mjs) tier=unknown test now asserts both presence of `No constraints recorded` AND absence of any `.harness-known-constraints.md` reference.
+
+**Disposition:** Applied. Generalisable: every "happy path emits an artifact path" message in any CLI command needs a sibling "skip path emits no-op confirmation" message; tests should assert both the presence of the no-op message AND the absence of the artifact-path string.
+
+### LRN-094
+
+```yaml
+id: LRN-094
+date: 2026-05-10
+category: operational
+source_cs: CS15e
+status: applied
+tags: [tests, parallelism, race, tempdirs, windows, linters, testing]
+claim_area: test-isolation
+```
+
+**Problem:** During CS15e content development, three tests (all in the `text-encoding` linter family) intermittently failed under parallel `node --test tests/*.test.mjs` runs on Windows with empty stdout and exit=1 — the symptom of `readdirSync` returning ENOENT mid-walk. Root cause: `tests/lib-github-detect.test.mjs` created scratch dirs via `fs.mkdtempSync(path.join(process.cwd(), '.lib-github-detect-'))` where `process.cwd()` was the repo root. The harness `check-text-encoding.mjs` linter (and several others) walk the repo root recursively. When the recursive walk crossed paths with a tempdir being unlinked by a sibling test, the readdir call ENOENT'd and the linter exited 1.
+
+**Finding:** Test scratch dirs MUST be created under `os.tmpdir()`, never inside the repo root, even with a `.dot-prefix` name. Linters that walk the repo recursively cannot defend against this race without skipping every dotfile (which would defeat their purpose). The convention is: any `mkdtempSync` / `mkdirSync` for ephemeral test state uses `os.tmpdir()` as its parent directory.
+
+**Evidence:** [`tests/lib-github-detect.test.mjs`](../tests/lib-github-detect.test.mjs) line 18 — `tempRoot = os.tmpdir()` (was `process.cwd()` pre-fix). After the fix, 643 tests pass parallel + serial with zero text-encoding flakes across 20+ consecutive runs. Same fix retroactively applied to `tests/render-deploy-summary.test.mjs` (LRN-094 sibling-fix during CS15e).
+
+**Disposition:** Applied. Future CSs that add new test files MUST use `os.tmpdir()` for scratch directories. Consider adding a `check-test-tempdirs.mjs` linter that greps test files for `mkdtempSync(path.join(process.cwd(), ...))` or `mkdtempSync(__dirname, ...)` patterns and fails the build — but defer until a third occurrence (per LRN-rule-of-three).
+
 ## Obsolete
 
 (none yet)

@@ -113,7 +113,7 @@ Fallback per [Decision #22](project/clickstops/done/done_cs01_bootstrap-repo/har
 
 ## Verification before declaring a CS done
 
-- `node --test tests/*.test.mjs` — all green (509+ at v0.1.0)
+- `node --test tests/*.test.mjs` — all green (643+ at CS15e close)
 - `node scripts/validate-schemas.mjs` — N/0
 - `node scripts/check-learnings.mjs` — exit 0
 - `node bin/harness.mjs lint --quiet` — `0 failed` (15 linters at v0.1.0; 3 skipped is normal: pr-body, commit-trailers, compose-v2 lack targets)
@@ -159,16 +159,15 @@ Otherwise, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-
 
 - **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
 - **v0.2.0 unreleased** (CS02b + CS03d + CS03e cleared the pre-CS15a deferred-LRN backlog 2026-05-09; CHANGELOG `[Unreleased]` carries 1 BREAKING + 2 Added/Changed entries — see `CHANGELOG.md`).
-- **CS01 → CS15a complete.** CS15a absorbed the public visibility flip and Ruleset application.
-- **Pre-CS16 backlog cleanup in progress.** 3 umbrella CSs (CS15c/d/e) filed 2026-05-10 to clear the 7 deferred planned CSs accumulated through CS01–CS15a, per user authorization 2026-05-09 ("umbrella seems good"):
-  - **CS15c** — CLI surface cleanup (CS04b + CS04d + CS09b). 4 sub-agents. **DONE 2026-05-09 @ `63c54b5` (PR #89).** R1 NEEDS-FIX → R2 GO. Filed LRN-084..086 (LRN-082/083 collided with CS15a close-out, see LRN-086). Init-drift bug fixed inline (cmdInit now finalizes via sync-apply). 3 absorbed planned files moved to `done/`.
-  - **CS15d** — Linter expansion (CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents; adds 2 linters (15→17 in non-self-host; 24 rows in self-host with per-scaffold scaffold-readme rows). **DONE 2026-05-10 @ `8ad0871` (PR #92).** R1 GPT-5.5 plan-vs-impl GO with 2 NB → CS06c + CS08c filed as follow-ups. Filed LRN-087..091 (5 LRNs; per LRN-086 re-checked max LRN id at filing). 3 absorbed planned files moved to `done/`. New `lib/{config,lock}-reader.mjs`, refactored 3 linters to `lib/doc-schema.mjs`, new `check-templates.mjs` + `check-scaffold-readme.mjs`, aggregator self-host per-scaffold rows + `SHIPPED_SCAFFOLD_LINTERS` consumer auto-dispatch.
-  - **CS15e** — `harness init` private-tier detection (CS04a; Q1–Q5 user-resolved). 5 sub-agents. LRN-095..099 (advisory; current max LRN id is LRN-091, re-check at claim).
-  - Order: CS15c → CS15d → CS15e (sequential single-orchestrator). Each umbrella has its own claim/content/close-out cycle. The 1 remaining absorbed planned file (`planned_cs04a_*`) carries `**Superseded by:**` pointer and MUST NOT be claimed independently; gets `git mv`'d to `done/` at CS15e close-out.
+- **CS01 → CS15e complete.** CS15a absorbed the public visibility flip and Ruleset application.
+- **Pre-CS16 backlog cleanup COMPLETE.** All three umbrella CSs (CS15c/d/e) filed 2026-05-10 to clear the 7 deferred planned CSs accumulated through CS01–CS15a, per user authorization 2026-05-09 ("umbrella seems good"), are now closed:
+  - **CS15c** — CLI surface cleanup (CS04b + CS04d + CS09b). 4 sub-agents. **DONE 2026-05-09 @ `63c54b5` (PR #89).** R1 NEEDS-FIX → R2 GO. Filed LRN-084..086. Init-drift bug fixed inline (cmdInit now finalizes via sync-apply). 3 absorbed planned files moved to `done/`.
+  - **CS15d** — Linter expansion (CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents; adds 2 linters (15→17 in non-self-host; 24 rows in self-host with per-scaffold scaffold-readme rows). **DONE 2026-05-10 @ `8ad0871` (PR #92).** R1 GPT-5.5 plan-vs-impl GO with 2 NB → CS06c + CS08c filed as follow-ups. Filed LRN-087..091 (5 LRNs). 3 absorbed planned files moved to `done/`. New `lib/{config,lock}-reader.mjs`, refactored 3 linters to `lib/doc-schema.mjs`, new `check-templates.mjs` + `check-scaffold-readme.mjs`, aggregator self-host per-scaffold rows + `SHIPPED_SCAFFOLD_LINTERS` consumer auto-dispatch.
+  - **CS15e** — `harness init` private-tier detection (CS04a; Q1–Q5 user-resolved). 4 parallel + 1 orchestrator-owned sub-agents. **DONE 2026-05-10 @ `962c866` (PR #95).** R1 NEEDS-FIX (3 blocking gaps: skip-summary leak, missing disposition-options notice, broken `\Z` JS regex) → fixed in `27f56ae` → R2 GO. Filed LRN-092..094. New `lib/{get-github-token,detect-repo-tier,config-reader::writeConfig}.mjs`, new `constraints` subschema with `if/then/else` disposition rule, `harness init --constraint-disposition` + `--skip-constraint-detection` flags, seeded `template/seeded/.harness-known-constraints.md` skeleton. 1 absorbed planned file moved to `done/`.
 - **Repo is public and mechanically protected.** Main Ruleset `main-protection` is active with required checks, squash-only/linear-history/non-fast-forward/deletion protection, one approving review by default, and an explicit repository-admin bypass for owner override (LRN-080). The workboard GitHub App bot is installed and dry-run proven for eligible `workboard-only` PRs.
 - **Security posture after public flip is green.** Secret scanning, Dependabot alerts/security updates, and Private Vulnerability Reporting are enabled; post-flip `fast-uri` alerts were fixed and alert readback was empty (LRN-081).
-- **Next work:** claim **CS15e** next (`harness init` private-tier detection; 5 sub-agents). 2 small CS15d follow-up planned CSs (CS06c, CS08c) are queued and can be claimed any time after CS15d. After CS15e closes, the next mainline slot is **CS16 (Bootstrap Sub Invaders)** — first downstream consumer of CS15e's constraint-detection flow.
-- 16 linters in `harness lint` (15 base + new `templates`; self-host also runs per-scaffold `scaffold-readme:<name>` rows); **609 tests passing** (post-CS15d, +56 net); public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
+- **Next work:** **CS16 (Bootstrap Sub Invaders)** is the next mainline CS — the first downstream consumer of CS15e's constraint-detection flow. Claim once a planned file is filed (no planned file currently exists; it must be authored before claim). Two small CS15d follow-up planned CSs (CS06c, CS08c) are queued and can be claimed any time as parallel-lane work.
+- 17 linters in `harness lint` non-self-host (15 base + `templates` + `scaffold-readme` skipped row); **24 rows in self-host** (15 base + templates + 8 per-scaffold rows); **643 tests passing** (post-CS15e, +34 net over CS15d); public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 
