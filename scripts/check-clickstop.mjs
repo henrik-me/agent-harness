@@ -2,8 +2,6 @@
 /**
  * scripts/check-clickstop.mjs — Clickstop document linter.
  *
- * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
- *
  * Checks all .md files (direct children) under:
  *   <dir>/active/
  *   <dir>/done/
@@ -27,6 +25,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { assertHeadings } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -55,15 +54,31 @@ const CLOSEOUT_TASK_ENFORCEMENT_DATE = '2026-05-10';
 let clickstopsDir = null;
 let quiet = false;
 
+/**
+ * Return the value for a value-taking CLI flag or exit with usage.
+ *
+ * @param {string[]} args
+ * @param {number} i
+ * @param {string} flagName
+ * @returns {string}
+ */
+function requireValue(args, i, flagName) {
+  if (!args[i + 1] || args[i + 1].startsWith('-')) {
+    process.stderr.write(
+      `check-clickstop: missing value for ${flagName}\n` +
+      'Usage: check-clickstop.mjs --dir <path> [--quiet]\n'
+    );
+    process.exit(2);
+  }
+  return args[i + 1];
+}
+
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--dir') {
-    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
-      process.stderr.write('check-clickstop: missing value for --dir\n');
-      process.exit(2);
-    }
-    clickstopsDir = argv[++i];
+    clickstopsDir = requireValue(argv, i, '--dir');
+    i++;
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
@@ -111,6 +126,17 @@ const allErrors = [];
 function logError(msg) {
   allErrors.push(msg);
   if (!quiet) process.stdout.write(`ERROR: ${msg}\n`);
+}
+
+/**
+ * Check whether a markdown heading with the given text exists at any level.
+ *
+ * @param {string} content
+ * @param {string} heading
+ * @returns {boolean}
+ */
+function hasMarkdownHeading(content, heading) {
+  return assertHeadings(content, [heading]).length === 0;
 }
 
 /**
@@ -168,7 +194,9 @@ function requiresCloseoutTasks(content, subdir) {
 function checkCloseoutTasks(content, subdir, basename) {
   if (!requiresCloseoutTasks(content, subdir)) return;
 
-  const tasksBody = h2Body(content, 'Tasks');
+  const tasksBody = hasMarkdownHeading(content, 'Tasks')
+    ? h2Body(content, 'Tasks')
+    : null;
   if (!tasksBody) {
     logError(
       `${subdir}/${basename}: missing required "## Tasks" section for close-out task enforcement`
@@ -263,8 +291,9 @@ function checkFile(filePath, subdir) {
   // in prose or fenced code must NOT satisfy the check.
   if (subdir === 'active' || subdir === 'done') {
     const GATE_H2_RE = /^## Plan-vs-implementation review\s*$/m;
+    const hasGateHeading = hasMarkdownHeading(content, 'Plan-vs-implementation review');
     const headingMatch = content.match(GATE_H2_RE);
-    if (!headingMatch) {
+    if (!hasGateHeading || !headingMatch) {
       logError(
         `${subdir}/${basename}: missing required H2 section ` +
         `"## Plan-vs-implementation review" (CS03b gate)`

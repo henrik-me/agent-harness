@@ -133,7 +133,7 @@ All four originate from CS06/CS08/CS10 close-out review findings.
 ## Exit criteria
 
 - 548+ tests still pass (CS-α adds ≥10 to bring baseline; CS-β adds ≥30 new: ≥12 CS06b + ≥12 CS08b + ≥6 CS10b).
-- `harness lint --quiet`: now **17/0/3** (15 + check-templates + check-scaffold-readme). Skipped count unchanged at 3.
+- `harness lint --quiet`: now **24/0/3** in self-host (15 base + `templates` + 8 per-scaffold `scaffold-readme:<name>` rows). The original plan estimated **17/0/3** assuming `scaffold-readme` would aggregate to a single row; the implementation chose the per-scaffold visibility pattern already used by `composed-blocks:` (one row per file). Non-self-host consumers see **17/0/3** (15 base + `templates` + a single skipped `scaffold-readme` row), matching the plan's spirit. Skipped count unchanged at 3 in both.
 - `harness sync --mode=check --cwd .`: "No drift detected".
 - `validate-schemas.mjs`: still passes (4 schemas).
 - New cross-link validation in `check-instructions.mjs` rejects fixture with dead `LEARNINGS.md#lrn-999`.
@@ -150,15 +150,15 @@ LRN-087..094 reserved for CS15d. Expected ~4-6 LRNs (likely: shared-library refa
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | done | yoga-ah | branch `workboard/cs15d-claim`; this PR |
-| β1: `lib/config-reader.mjs` + `tests/lib-config-reader.test.mjs` (≥4 tests) | pending | sub-agent β1 | CS06b shared config helper; consistent with CS15c `--config` semantics; sub-agent does NOT commit (LRN-021) |
-| β2: `lib/lock-reader.mjs` + `tests/lib-lock-reader.test.mjs` (≥4 tests) | pending | sub-agent β2 | CS06b shared lock helper; LRN-042 anti-pattern fix |
-| β3: refactor `scripts/check-instructions.mjs` to `lib/doc-schema.mjs` + add cross-link validation; update `tests/check-instructions.test.mjs` | pending | sub-agent β3 | CS06b refactor + new LRN/ADR cross-link validation |
-| β4: refactor `scripts/check-readme.mjs` to `lib/doc-schema.mjs`; update `tests/check-readme.test.mjs` | pending | sub-agent β4 | CS06b refactor |
-| β5: refactor `scripts/check-clickstop.mjs` to `lib/doc-schema.mjs`; update `tests/check-clickstop.test.mjs`; **preserve LRN-064 H2 detection** | pending | sub-agent β5 | CS06b refactor; verify Plan-vs-impl gate regex still matches exactly |
-| β6: `scripts/check-templates.mjs` (3 rules) + `tests/check-templates.test.mjs` (≥12) + `tests/fixtures/cs15d/check-templates/` | pending | sub-agent β6 | CS08b new linter (LRN-049/050/051) |
-| β7: `scripts/check-scaffold-readme.mjs` + `tests/check-scaffold-readme.test.mjs` (≥6) | pending | sub-agent β7 | CS10b part 1 new linter; must pass cleanly against all 8 in-tree scaffold READMEs |
-| β8: `tests/cs15d-aggregator.test.mjs` | pending | sub-agent β8 | CS10b part 2 aggregator test (Wave 1; rebases against β9 once Wave 2 lands) |
-| β9 (orchestrator): wire β6+β7 linters into `bin/harness.mjs cmdLint`; aggregator extension for β8; update `template/managed/INSTRUCTIONS.md` linter count + `template/composed/OPERATIONS.md` preamble | pending | yoga-ah | Wave 2 sequential after Wave 1 returns |
+| β1: `lib/config-reader.mjs` + `tests/lib-config-reader.test.mjs` (≥4 tests) | done | sub-agent β1 | 6/6 tests; Ajv2020 schema validator; LRN-039 compliant |
+| β2: `lib/lock-reader.mjs` + `tests/lib-lock-reader.test.mjs` (≥4 tests) | done | sub-agent β2 | 8/8 tests; canonical files[].target lookup w/ object-map fallback |
+| β3: refactor `scripts/check-instructions.mjs` to `lib/doc-schema.mjs` + add cross-link validation; update `tests/check-instructions.test.mjs` | done | sub-agent β3 | 8 → 12 tests; doc-schema integration; LRN/ADR cross-link validation; CS06b TODO removed |
+| β4: refactor `scripts/check-readme.mjs` to `lib/doc-schema.mjs`; update `tests/check-readme.test.mjs` | done | sub-agent β4 | 11/11 tests; doc-schema integration; both CS06b TODOs removed |
+| β5: refactor `scripts/check-clickstop.mjs` to `lib/doc-schema.mjs`; update `tests/check-clickstop.test.mjs`; **preserve LRN-064 H2 detection** | done | sub-agent β5 | 17 → 19 tests; LRN-064 body-extraction inline (doc-schema lacks H2-until-H1/H2 primitive); +2 regression tests for the gate |
+| β6: `scripts/check-templates.mjs` (3 rules) + `tests/check-templates.test.mjs` (≥12) + `tests/fixtures/cs15d/check-templates/` | done | sub-agent β6 + orchestrator | 18 tests; orchestrator added negative-lookbehind for `${{ ... }}` GitHub Actions expressions and markdown-context awareness (skips backticks, fenced blocks, HTML comments) |
+| β7: `scripts/check-scaffold-readme.mjs` + `tests/check-scaffold-readme.test.mjs` (≥6) | done | sub-agent β7 | 11 tests; passes cleanly against all 8 in-tree scaffold READMEs |
+| β8: `tests/cs15d-aggregator.test.mjs` | done | sub-agent β8 + orchestrator | 6 tests; β8 used `t.skip` feature-detect; all 6 now pass after β9 wired aggregator (no skips remaining) |
+| β9 (orchestrator): wire β6+β7 linters into `bin/harness.mjs cmdLint`; aggregator extension for β8; update `template/managed/INSTRUCTIONS.md` linter count + `template/composed/OPERATIONS.md` preamble | done | yoga-ah | `templates` row added; self-host scaffold-readme walk emits per-scaffold rows (skipped row in non-self-host); shipped scaffold-policy mapping `migrations`→`migration-policy`, `feature-flags`→`feature-flag-policy` (intentional plural→singular); SUBCOMMAND_HELP['lint'] updated; OPERATIONS.md preamble item 6 added |
 | Re-render root `INSTRUCTIONS.md` + `OPERATIONS.md` via `harness sync --mode=apply --resolved-sha <content-sha>` | pending | yoga-ah | per LRN-070/074 |
 | Plan-vs-implementation review (GPT-5.5) | pending | yoga-ah | per LRN-064 mandatory close-out gate |
 | Open content PR (label none / standard); CI green; admin merge if bot rejects (per user standing authorization) | pending | yoga-ah | — |
@@ -171,4 +171,60 @@ LRN-087..094 reserved for CS15d. Expected ~4-6 LRNs (likely: shared-library refa
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via Copilot CLI background agent)
+**Date:** 2026-05-10
+**Outcome:** GO
+
+Implementation covers the planned CS15d deliverables, wiring, docs, tests,
+and schema constraints. The concerns are residual robustness/cleanup items,
+not close-out blockers. Validation: `node --test tests/*.test.mjs` exited 0
+(609/609); `node bin/harness.mjs lint --quiet` reported 24 passed / 0 failed
+/ 3 skipped; schema validation passed.
+
+### Goal coverage
+
+- [PASS] CS06b shared config/lock readers exist and validate schemas — `lib/config-reader.mjs:16,57-68`; `lib/lock-reader.mjs:19-24,62-68`; tests at `tests/lib-config-reader.test.mjs:41-137`, `tests/lib-lock-reader.test.mjs:59-147`.
+- [CONCERN] Refactored linters use `lib/doc-schema.mjs`, but not "exclusively" — imports present in `scripts/check-instructions.mjs:24-29`, `scripts/check-readme.mjs:35`, `scripts/check-clickstop.mjs:28`; inline markdown parsers remain at `scripts/check-instructions.mjs:150-190` and `scripts/check-readme.mjs:165-172`. No live CS06b TODO markers outside plans.
+- [PASS] LRN-064 gate preserved functionally — anchored H2 regex/body extraction remains at `scripts/check-clickstop.mjs:293-307`; regression tests at `tests/check-clickstop.test.mjs:353-382`.
+- [PASS] CS08b template linter enforces three rules — rules at `scripts/check-templates.mjs:155-172`; GH Actions negative-lookbehind at `:155`; markdown skipping at `:108-137`.
+- [PASS] CS10b scaffold README linter exists with required `--name` — `scripts/check-scaffold-readme.mjs:17,51-53,85-87`.
+- [PASS] CS10b aggregator walks self-host scaffold READMEs and auto-dispatches shipped policies — `bin/harness.mjs:921-958,959-994`.
+
+### Aggregator wiring
+
+- [PASS] `templates` row added — `bin/harness.mjs:890-898`.
+- [PASS] Self-host per-scaffold rows / non-self-host single skipped row — `bin/harness.mjs:921-958`.
+- [PASS] `SHIPPED_SCAFFOLD_LINTERS` map present and documented — `bin/harness.mjs:959-972`.
+- [PASS] Absolute script paths allowed in linter table — `bin/harness.mjs:1046-1049`.
+- [PASS] `SUBCOMMAND_HELP['lint']` documents new linters and dispatch contract — `bin/harness.mjs:138-152`.
+
+### Process compliance
+
+- [PASS] Both commits include the canonical `Co-authored-by: Copilot` trailer.
+- [PASS] Lock-fixup commit follows content commit and points to content SHA (LRN-070/074) — `.harness-lock.json:3` = `c40fa8926a043533b45c8f321042a4e183ad7775`.
+- [PASS] β1-β9 task ledger marked done — `## Tasks` table.
+- [PASS] No scaffold edits; only owned `lib/config-reader.mjs` and `lib/lock-reader.mjs` under `lib/` changed.
+- [PASS] All commits are on `cs15d/content`; no edits to `main`.
+
+### Test coverage
+
+- [PASS] New lib module tests present — `tests/lib-config-reader.test.mjs` (6 tests), `tests/lib-lock-reader.test.mjs` (8 tests).
+- [PASS] New linter tests present — `tests/check-templates.test.mjs` (18 tests), `tests/check-scaffold-readme.test.mjs` (11 tests).
+- [PASS] Aggregator integration test now runs with 0 skips — `tests/cs15d-aggregator.test.mjs:74-142` (6/6 pass).
+- [PASS] Refactored linters have same-or-more tests plus regression coverage — `check-instructions` 12, `check-readme` 11, `check-clickstop` 19.
+
+### Schema/contract integrity
+
+- [PASS] Config reader validates against `harness.config.schema.json` — `lib/config-reader.mjs:16,57-68`.
+- [PASS] Lock reader validates against `harness-lock.schema.json` — `lib/lock-reader.mjs:19-24,62-68`.
+- [PASS] No schema files changed — `git diff --name-only main..HEAD -- schemas/*` returned empty.
+
+### Surprises and red flags
+
+- Markdown-context stripping in `check-templates` only handles triple-backtick fences and single-backtick spans; CommonMark tilde fences (`~~~`), indented code blocks, and double-backtick spans (`` ``…`` ``) can still false-positive (`scripts/check-templates.mjs:108-137`). Mitigation: log as a follow-up below; current template/ subtree passes the linter.
+- The "exclusive" doc-schema refactor scope was softened — three refactored linters retain some inline markdown parsing because `lib/doc-schema.mjs` lacks the requisite primitives (H2-only collector, anchor enumerator, body-until-H1/H2 extractor). Mitigation: log as a follow-up below.
+
+### Close-out follow-ups (filed as new planned CSs at close-out)
+
+1. **Centralize heading/link extraction in `lib/doc-schema.mjs`** so `check-instructions`, `check-readme`, `check-clickstop` can drop their remaining inline parsers. Concrete primitives needed: case-insensitive H2 enumerator, anchor enumerator, H2-until-next-H1/H2 body extractor.
+2. **Extend `check-templates` markdown-context awareness** to CommonMark tilde fences (`~~~`), indented code blocks (≥4 leading spaces), and double-backtick spans. Add fixtures covering each.

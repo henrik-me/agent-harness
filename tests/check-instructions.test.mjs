@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const LINTER = path.join(REPO_ROOT, 'scripts', 'check-instructions.mjs');
 const FIXTURES = path.join(__dirname, 'fixtures', 'cs06', 'instructions');
+const CS15D_FIXTURES = path.join(__dirname, 'fixtures', 'cs15d', 'check-instructions');
 const NODE = process.execPath;
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,10 @@ function runLinter(args = []) {
  */
 function fixture(name) {
   return path.join(FIXTURES, name);
+}
+
+function cs15dFixture(...parts) {
+  return path.join(CS15D_FIXTURES, ...parts);
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +179,46 @@ describe('check-instructions linter', () => {
     assert.equal(
       validAnchorErrors.length, 0,
       `Expected no errors for valid anchor #per-cs-loop; got:\n${validAnchorErrors.join('\n')}`
+    );
+  });
+
+  it('9. valid LRN anchor and ADR reference exits 0', () => {
+    const r = runLinter(['--file', cs15dFixture('valid', 'INSTRUCTIONS.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+  });
+
+  it('10. dead LRN anchor exits non-zero with expected stderr', () => {
+    const r = runLinter(['--file', cs15dFixture('dead-lrn', 'INSTRUCTIONS.md')]);
+    assert.notEqual(
+      r.status, 0,
+      `Expected non-zero exit for dead LRN anchor\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stderr.includes('INSTRUCTIONS.md: dead LRN anchor "LEARNINGS.md#lrn-999" (no matching heading in LEARNINGS.md)'),
+      `Expected dead LRN message in stderr; got:\n${r.stderr}`
+    );
+  });
+
+  it('11. dead ADR file reference exits non-zero with expected stderr', () => {
+    const r = runLinter(['--file', cs15dFixture('dead-adr', 'INSTRUCTIONS.md')]);
+    assert.notEqual(
+      r.status, 0,
+      `Expected non-zero exit for dead ADR reference\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stderr.includes('INSTRUCTIONS.md: dead ADR reference "docs/adr/9999-nonexistent.md" (file does not exist at '),
+      `Expected dead ADR message in stderr; got:\n${r.stderr}`
+    );
+  });
+
+  it('12. ADR anchors are out of scope when the ADR file exists', () => {
+    const r = runLinter(['--file', cs15dFixture('adr-anchor-out-of-scope', 'INSTRUCTIONS.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 because ADR anchors are out of scope; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
   });
 });

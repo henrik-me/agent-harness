@@ -10,6 +10,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,6 +62,38 @@ function fixtureDir(name) {
  */
 function fixtureDirCs03b(name) {
   return path.join(FIXTURES_CS03B, name);
+}
+
+/**
+ * Create a generated single-file done/ clickstop fixture for gate tests.
+ *
+ * @param {string} name
+ * @param {string} gateSection
+ * @returns {string}
+ */
+function writeGeneratedDoneFixture(name, gateSection) {
+  const root = path.join(REPO_ROOT, '.test-output', 'check-clickstop', name);
+  const doneDir = path.join(root, 'done');
+  fs.rmSync(root, { recursive: true, force: true });
+  fs.mkdirSync(doneDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(doneDir, 'done_cs99_generated-gate.md'),
+    [
+      '# Generated gate fixture',
+      '',
+      '**Status:** done',
+      '**Owner:** test',
+      '**Branch:** test',
+      '**Started:** 2026-05-09',
+      '**Closed:** 2026-05-09',
+      '**Depends on:** —',
+      '',
+      gateSection,
+      '',
+    ].join('\n'),
+    'utf8'
+  );
+  return root;
 }
 
 // ---------------------------------------------------------------------------
@@ -314,6 +347,63 @@ describe('check-clickstop linter', () => {
       `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
+  });
+
+  // 18. done/ file with only H1-subsection gate fields → exit 1
+  it('18. done file with Reviewer/Date/Outcome only under H1 subsection exits 1', () => {
+    const root = writeGeneratedDoneFixture(
+      'gate-fields-under-h1',
+      [
+        '## Plan-vs-implementation review',
+        '',
+        '# Nested review record',
+        '',
+        '**Reviewer:** GPT-5.5',
+        '**Date:** 2026-05-09',
+        '**Outcome:** GO',
+      ].join('\n')
+    );
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(
+        r.status, 1,
+        `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(
+        r.stdout.includes('Reviewer/Date/Outcome') || r.stdout.includes('grandfathering'),
+        `Expected gate body-content error; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 19. done/ file with top-level gate fields before H3 subsection → exit 0
+  it('19. done file with Reviewer/Date/Outcome before H3 subsection exits 0', () => {
+    const root = writeGeneratedDoneFixture(
+      'gate-fields-before-h3',
+      [
+        '## Plan-vs-implementation review',
+        '',
+        '**Reviewer:** GPT-5.5',
+        '**Date:** 2026-05-09',
+        '**Outcome:** GO',
+        '',
+        '### Supporting detail',
+        '',
+        'Details below the required fields should not prevent satisfaction.',
+      ].join('\n')
+    );
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      );
+      assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 
 });

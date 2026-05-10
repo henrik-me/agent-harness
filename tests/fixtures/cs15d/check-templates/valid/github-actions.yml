@@ -1,0 +1,13 @@
+name: example
+on: [push]
+jobs:
+  one:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - run: echo "${{ github.repository }}"
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUT: ${{ steps.derive-ref.outputs.ref }}
