@@ -9,6 +9,7 @@ import addFormats from 'ajv-formats';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
+const CONSTRAINT_FIXTURES_DIR = path.join(__dirname, 'fixtures', 'cs15e', 'schema');
 
 function readJson(relPath) {
   const content = readFileSync(path.join(REPO_ROOT, relPath), 'utf8')
@@ -23,14 +24,25 @@ function readText(relPath) {
     .replace(/\r\n/g, '\n');
 }
 
+function compileHarnessConfigSchema() {
+  const schema = readJson('schemas/harness.config.schema.json');
+  const ajv = new Ajv2020({ strict: false, validateSchema: false });
+  addFormats(ajv);
+  return ajv.compile(schema);
+}
+
+function readConstraintFixture(name) {
+  const content = readFileSync(path.join(CONSTRAINT_FIXTURES_DIR, name), 'utf8')
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n');
+  return JSON.parse(content);
+}
+
 describe('CS11 — self-host harness.config.json', () => {
   it('1. harness.config.json validates against harness.config.schema.json', () => {
-    const schema = readJson('schemas/harness.config.schema.json');
     const config = readJson('harness.config.json');
 
-    const ajv = new Ajv2020({ strict: false, validateSchema: false });
-    addFormats(ajv);
-    const validate = ajv.compile(schema);
+    const validate = compileHarnessConfigSchema();
     const valid = validate(config);
     assert.ok(
       valid,
@@ -140,6 +152,60 @@ describe('CS11 — self-host harness.config.json', () => {
       t.agent_suffix,
       /^[a-z][a-z0-9-]*$/,
       `templating.agent_suffix "${t.agent_suffix}" does not match ^[a-z][a-z0-9-]*$`
+    );
+  });
+});
+
+describe('CS15e — harness.config constraints schema', () => {
+  it('accepts private-free constraints with a disposition', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('valid-private-free.json'));
+    assert.equal(valid, true, JSON.stringify(validate.errors));
+  });
+
+  it('accepts public constraints without a disposition', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('valid-public.json'));
+    assert.equal(valid, true, JSON.stringify(validate.errors));
+  });
+
+  it('rejects private-free constraints without a disposition', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('invalid-private-free-no-disposition.json'));
+    assert.equal(valid, false);
+    assert.ok(
+      validate.errors.some(e => e.keyword === 'required' && e.params?.missingProperty === 'disposition'),
+      `Expected missing disposition error; got ${JSON.stringify(validate.errors)}`
+    );
+  });
+
+  it('rejects public constraints with a disposition', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('invalid-public-with-disposition.json'));
+    assert.equal(valid, false);
+    assert.ok(
+      validate.errors.some(e => e.keyword === 'not' || e.instancePath === '/constraints/disposition'),
+      `Expected disposition not-allowed error; got ${JSON.stringify(validate.errors)}`
+    );
+  });
+
+  it('rejects null disposition at the type level', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('invalid-null-disposition.json'));
+    assert.equal(valid, false);
+    assert.ok(
+      validate.errors.some(e => e.keyword === 'type' && e.instancePath === '/constraints/disposition'),
+      `Expected disposition type error; got ${JSON.stringify(validate.errors)}`
+    );
+  });
+
+  it('rejects unknown tier enum values', () => {
+    const validate = compileHarnessConfigSchema();
+    const valid = validate(readConstraintFixture('invalid-tier-enum.json'));
+    assert.equal(valid, false);
+    assert.ok(
+      validate.errors.some(e => e.keyword === 'enum' && e.instancePath === '/constraints/tier'),
+      `Expected tier enum error; got ${JSON.stringify(validate.errors)}`
     );
   });
 });

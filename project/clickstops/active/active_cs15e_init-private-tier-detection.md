@@ -71,7 +71,7 @@ Autonomous design decisions:
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| `constraints` schema field | New optional `constraints: { tier, disposition, detected_at, owner, repo }` object on root `harness.config.json` | Additive (non-breaking → SemVer minor / v0.2.0). New ADR `0002-constraints-field.md` documents semantics. |
+| `constraints` schema field | New optional `constraints: { tier, disposition, detected_at, owner, repo }` object on root `harness.config.json` | Additive (non-breaking → SemVer minor / v0.2.0). New ADR `0003-constraints-field.md` documents semantics. |
 | `tier` enum values | `public \| private-free \| private-pro \| private-team \| private-enterprise \| unknown` | Covers all GitHub plan tiers + a fallback for missing token / API failure. |
 | Anonymous fetch | Public repos use anonymous fetch (60/hr unauth limit; init makes 2 calls). Private repos without a token resolve to `tier: unknown` with a warning + the seeded artifact still written. | Avoids forcing token setup as a prerequisite. |
 | `disposition` representation | When the disposition isn't applicable (any tier other than `private-free`), the `disposition` key is **omitted entirely** from `constraints` (not set to `null`). Schema enforces this via `if/then/else`. | Schemas with mixed `null`/omit are confusing; omit-when-N/A is the cleaner JSON Schema pattern and aligns with Ajv's strictness defaults. |
@@ -95,7 +95,7 @@ Autonomous design decisions:
 ### Schema + ADR (γ2)
 
 - [ ] `schemas/harness.config.schema.json`: add optional `constraints` object property to root with subfields `tier` (enum: `public | private-free | private-pro | private-team | private-enterprise | unknown`), `disposition` (enum: `discipline-only | upgrade-pro | flip-public-when-ready` — `null` is **not** an enum value; `disposition` is **omitted entirely** when not applicable), `detected_at` (string, date-time format), `owner` (string), `repo` (string). `additionalProperties: false`. Conditional rule via `if/then/else`: when `constraints.tier === 'private-free'`, `disposition` is required; otherwise it must be omitted.
-- [ ] `docs/adr/0002-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics (omitted when not applicable, never null), when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
+- [ ] `docs/adr/0003-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics (omitted when not applicable, never null), when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
 
 ### Seeded template (γ3)
 
@@ -137,7 +137,7 @@ Autonomous design decisions:
 | Agent | Owns (write-allowed) | Deliverables |
 |---|---|---|
 | γ1 | `lib/get-github-token.mjs` + `lib/detect-repo-tier.mjs` + `tests/lib-github-detect.test.mjs` | Detection helpers + tests |
-| γ2 | `schemas/harness.config.schema.json` + `docs/adr/0002-constraints-field.md` + harness self-host `harness.config.json` (constraints block as smoke test) | Schema + ADR + smoke-test self-host |
+| γ2 | `schemas/harness.config.schema.json` + `docs/adr/0003-constraints-field.md` + harness self-host `harness.config.json` (constraints block as smoke test) | Schema + ADR + smoke-test self-host |
 | γ3 | `template/seeded/.harness-known-constraints.md` + `template/seeded/harness.config.json` (constraints placeholder addition) | Seeded artifacts |
 | γ4 (orchestrator) | `bin/harness.mjs` `cmdInit` (only — restrict scope to function body of `cmdInit` and SUBCOMMAND_HELP['init']) + `tests/cli.test.mjs` (init tests appendix) | Init flow + CLI tests |
 | γ5 | `template/managed/INSTRUCTIONS.md` (template-side edit only) + new `template/seeded/CONTEXT.md` placeholder for the new "Constraints" H2 (so init can reliably append into it) | Doc updates and template-side edit only |
@@ -181,4 +181,43 @@ LRN-095..099 reserved for CS15e. Expected ~3-5 LRNs (likely: getGitHubToken-help
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+### Initial review (NEEDS-FIX)
+
+**Reviewer:** GPT-5.5 (sub-agent dispatch via Sonnet orchestrator)
+**Date:** 2026-05-10
+**Branch:** cs15e/content
+**Content commit:** b9aeba4
+**Lock-fixup commit:** d0211d0
+**Verdict:** NEEDS-FIX
+
+Three blocking gaps surfaced, all in `bin/harness.mjs cmdInit`:
+
+1. Skip-path summary still printed `See .harness-known-constraints.md for details` even when the file was deliberately not written (no-remote / tier=unknown path) — user-misleading.
+2. The CS plan (line 110) required a 3-option disposition notice at init time when tier=private-free; the implementation only wrote the chosen disposition into the artifact and a one-line summary.
+3. The `CONTEXT.md ## Constraints` section-replacement regex used `\Z` as the EOF anchor; JS regex does not recognise `\Z` (it is interpreted as a literal `Z`), so the regex would have failed to match when `## Constraints` was the LAST H2 in `CONTEXT.md`, producing duplicate headings on re-run. The seeded `CONTEXT.md` ships with H2s after `## Constraints`, which masked the bug; the test only checked heading-count, not reference-line-count.
+
+Recommendations (non-blocking):
+- Add explicit `private-team` / `private-enterprise` / anonymous-against-private (404 → repo-not-found) tests to the γ1 test matrix.
+- Strengthen idempotency assertions to count reference lines, not just headings.
+
+### Re-review after NEEDS-FIX (GO)
+
+**Reviewer:** GPT-5.5 (re-review)
+**Date:** 2026-05-10
+**Branch:** cs15e/content
+**Fix commit:** 27f56ae
+**Prior verdict:** NEEDS-FIX (3 gaps)
+**This verdict:** GO
+
+**Gap re-checks:**
+- Gap 1 (skip-path summary): RESOLVED — `bin/harness.mjs:764-769` now prints `Constraints detection: tier=${tier}${reasonText}. No constraints recorded.` on the no-`owner && repo` path, with `reasonText` from `detection.reason`, and no `.harness-known-constraints.md` reference. `tests/cli.test.mjs:1250-1275` exercises `tier=unknown` / `reason=no-remote` and asserts no `See .harness-known-constraints.md for details`, plus `No constraints recorded` and `reason=no-remote`.
+- Gap 2 (disposition notice): RESOLVED — `bin/harness.mjs:649-663` unconditionally emits a multi-line stdout notice for `tier === 'private-free'` listing all 3 dispositions (`discipline-only`, `upgrade-pro`, `flip-public-when-ready`) and the selected disposition. `tests/cli.test.mjs:1198-1215` asserts stdout includes `Disposition options` and all 3 choices.
+- Gap 3 (regex EOF anchor + idempotency test): RESOLVED — `bin/harness.mjs:724-739` uses `const headingRe = /^## Constraints[ \t]*\r?\n[\s\S]*?(?=^## |$(?![\s\S]))/m;`, so `\Z` is gone and JS-native EOF handling is in place. `tests/cli.test.mjs:1295-1312` strengthens idempotency by asserting both heading-count and ref-line-count are 1, and `tests/cli.test.mjs:1318-1351` adds the explicit “LAST H2 in CONTEXT.md” mutation/re-run test with both counts asserted as 1.
+
+**Recommendation follow-up (landed in 27f56ae):**
+- private-team / private-enterprise tests landed: YES — `tests/lib-github-detect.test.mjs:207-244`
+- anonymous-against-private test landed: YES — `tests/lib-github-detect.test.mjs:246-273`
+
+**New gaps introduced by the fix commit:** none.
+
+**Final verdict:** GO. Cleared for content-PR + close-out.

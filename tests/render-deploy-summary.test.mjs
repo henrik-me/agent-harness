@@ -12,6 +12,7 @@ import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,7 +22,10 @@ const SCRIPT = path.join(REPO_ROOT, 'scripts', 'render-deploy-summary.mjs');
 const FIXTURES = path.join(__dirname, 'fixtures', 'cs07', 'render-deploy-summary');
 const NODE = process.execPath;
 
-// Temp files created during tests — cleaned up in after()
+// Temp files created during tests — cleaned up in after().
+// Written to os.tmpdir() (NOT REPO_ROOT) so concurrent harness-lint /
+// check-text-encoding tests that walk REPO_ROOT do not see them mid-flight.
+const TMP_OUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'render-deploy-summary-test-'));
 const tempFiles = [];
 
 // ---------------------------------------------------------------------------
@@ -63,7 +67,7 @@ function fixture(name) {
  * @returns {string}
  */
 function tempOut(suffix) {
-  const p = path.join(REPO_ROOT, `render-deploy-summary-test-${suffix}-${Date.now()}.md`);
+  const p = path.join(TMP_OUT_DIR, `render-deploy-summary-test-${suffix}-${Date.now()}.md`);
   tempFiles.push(p);
   return p;
 }
@@ -76,6 +80,7 @@ after(() => {
   for (const p of tempFiles) {
     try { fs.unlinkSync(p); } catch { /* already gone */ }
   }
+  try { fs.rmdirSync(TMP_OUT_DIR); } catch { /* not empty / already gone */ }
 });
 
 // ---------------------------------------------------------------------------

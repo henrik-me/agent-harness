@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../../schemas/harness.config.schema.json",
+  "version": "self",
+  "project": {
+    "name": "constraints-fixture",
+    "agent_suffix": "cf"
+  },
+  "constraints": {
+    "tier": "private-free",
+    "detected_at": "2026-05-10T00:00:00Z",
+    "owner": "henrik-me",
+    "repo": "agent-harness"
+  }
+}
