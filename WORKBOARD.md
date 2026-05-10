@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T09:30Z (CS08c CLOSED; no active CS — pre-CS16 backlog cleanup fully complete)
+> **Last updated:** 2026-05-10T09:45Z (CS15f CLAIMED — retire HANDOFF.md and consolidate into INSTRUCTIONS / OPERATIONS / README)
 
 ## Orchestrators
 
@@ -10,12 +10,13 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T09:30Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T09:45Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS15f | Retire HANDOFF.md and consolidate into INSTRUCTIONS / OPERATIONS / README | active | yoga-ah | cs15f/retire-handoff-doc | 2026-05-10T09:45Z | — |
 
 ## Queued (planned, ready to claim in order)
 
