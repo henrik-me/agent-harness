@@ -12,7 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseFrontmatterBlocks, resolveLinks } from '../lib/doc-schema.mjs';
+import { collectH2Headings, collectHeadings, extractSectionBody, headingAnchor, parseFrontmatterBlocks, resolveLinks } from '../lib/doc-schema.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -170,6 +170,179 @@ describe('parseFrontmatterBlocks', () => {
 // ---------------------------------------------------------------------------
 // resolveLinks — NB-6: returns ONLY broken links
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// headingAnchor — GitHub-flavoured slug (CS06c)
+// ---------------------------------------------------------------------------
+
+describe('headingAnchor', () => {
+  it('lowercases and converts spaces to hyphens', () => {
+    assert.equal(headingAnchor('Plan-vs-implementation review'), 'plan-vs-implementation-review');
+    assert.equal(headingAnchor('Quick Reference Checklist'), 'quick-reference-checklist');
+  });
+
+  it('strips characters that are not letters, digits, hyphen, underscore, or whitespace', () => {
+    assert.equal(headingAnchor('Hello, World!'), 'hello-world');
+    assert.equal(headingAnchor('A.B.C'), 'abc');
+    assert.equal(headingAnchor('foo (bar) [baz]'), 'foo-bar-baz');
+  });
+
+  it('converts underscores to hyphens', () => {
+    assert.equal(headingAnchor('with_underscore_word'), 'with-underscore-word');
+  });
+
+  it('collapses runs of hyphens and trims leading/trailing hyphens', () => {
+    assert.equal(headingAnchor('--leading-and-trailing--'), 'leading-and-trailing');
+    assert.equal(headingAnchor('a---b'), 'a-b');
+    assert.equal(headingAnchor('  spaces  around  '), 'spaces-around');
+  });
+
+  it('is idempotent on already-slugged input', () => {
+    const once = headingAnchor('Plan-vs-implementation review');
+    assert.equal(headingAnchor(once), once);
+  });
+
+  it('returns empty string for purely-stripped input', () => {
+    assert.equal(headingAnchor('!!!'), '');
+    assert.equal(headingAnchor(''), '');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// collectHeadings — all-levels primitive (CS06c)
+// ---------------------------------------------------------------------------
+
+describe('collectHeadings', () => {
+  it('returns empty array for documents without ATX headings', () => {
+    assert.deepEqual(collectHeadings(''), []);
+    assert.deepEqual(collectHeadings('paragraph only\n\nsecond paragraph'), []);
+  });
+
+  it('captures every heading level in document order with 1-indexed line numbers', () => {
+    const md = '# H1\n\n## H2a\n\n### H3\n\n## H2b\n\n#### H4\n';
+    const headings = collectHeadings(md);
+    assert.deepEqual(headings.map((h) => [h.level, h.text, h.line]), [
+      [1, 'H1', 1],
+      [2, 'H2a', 3],
+      [3, 'H3', 5],
+      [2, 'H2b', 7],
+      [4, 'H4', 9],
+    ]);
+  });
+
+  it('attaches a GitHub-flavoured anchor to every heading', () => {
+    const headings = collectHeadings('## Plan-vs-implementation review\n');
+    assert.equal(headings.length, 1);
+    assert.equal(headings[0].anchor, 'plan-vs-implementation-review');
+    assert.equal(headings[0].anchor, headingAnchor(headings[0].text));
+  });
+
+  it('normalizes BOM and CRLF before scanning', () => {
+    const md = '\uFEFF# H1\r\n\r\n## H2\r\n';
+    const headings = collectHeadings(md);
+    assert.deepEqual(headings.map((h) => [h.level, h.text]), [
+      [1, 'H1'],
+      [2, 'H2'],
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// collectH2Headings — H2-only filter (CS06c)
+// ---------------------------------------------------------------------------
+
+describe('collectH2Headings', () => {
+  it('omits H1, H3..H6 and preserves order', () => {
+    const md = '# H1\n\n## A\n\n### A1\n\n## B\n\n#### deep\n\n## C\n';
+    const h2 = collectH2Headings(md);
+    assert.deepEqual(h2.map((h) => h.text), ['A', 'B', 'C']);
+  });
+
+  it('returns objects without a level field', () => {
+    const h2 = collectH2Headings('## Tasks\n');
+    assert.equal(h2.length, 1);
+    assert.equal(h2[0].text, 'Tasks');
+    assert.equal(h2[0].anchor, 'tasks');
+    assert.equal(typeof h2[0].line, 'number');
+    assert.equal(Object.prototype.hasOwnProperty.call(h2[0], 'level'), false);
+  });
+
+  it('returns empty array for documents with no H2', () => {
+    assert.deepEqual(collectH2Headings('# only h1\n\n### only h3\n'), []);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractSectionBody — H2 body until next H1/H2 (CS06c, LRN-064 preservation)
+// ---------------------------------------------------------------------------
+
+describe('extractSectionBody', () => {
+  it('returns empty string when the anchor is not found', () => {
+    assert.equal(extractSectionBody('## Other\nbody\n', 'tasks'), '');
+    assert.equal(extractSectionBody('', 'tasks'), '');
+  });
+
+  it('returns body up to (but excluding) the next H2', () => {
+    const md = '## Tasks\n\nrow1\nrow2\n\n## Notes\nfoo\n';
+    const body = extractSectionBody(md, 'tasks');
+    assert.ok(body.includes('row1'));
+    assert.ok(body.includes('row2'));
+    assert.ok(!body.includes('Notes'));
+    assert.ok(!body.includes('foo'));
+  });
+
+  it('returns body up to (but excluding) the next H1', () => {
+    const md = '## Tasks\n\nrow1\n\n# NextDoc\nignored\n';
+    const body = extractSectionBody(md, 'tasks');
+    assert.ok(body.includes('row1'));
+    assert.ok(!body.includes('NextDoc'));
+    assert.ok(!body.includes('ignored'));
+  });
+
+  it('returns body to EOF when no following H1 or H2 exists', () => {
+    const md = '## Tasks\n\nrow1\nrow2\n';
+    const body = extractSectionBody(md, 'tasks');
+    assert.ok(body.includes('row1'));
+    assert.ok(body.includes('row2'));
+  });
+
+  it('does NOT terminate on H3..H6 nested inside the section', () => {
+    const md = '## Tasks\n\n### subsection\nrow1\n\n#### deeper\nrow2\n\n## Notes\nignored\n';
+    const body = extractSectionBody(md, 'tasks');
+    assert.ok(body.includes('subsection'));
+    assert.ok(body.includes('deeper'));
+    assert.ok(body.includes('row1'));
+    assert.ok(body.includes('row2'));
+    assert.ok(!body.includes('ignored'));
+  });
+
+  it('returns the FIRST occurrence when the same anchor appears twice', () => {
+    const md = '## Plan\n\nfirst\n\n## Other\n\n## Plan\n\nsecond\n';
+    const body = extractSectionBody(md, 'plan');
+    assert.ok(body.includes('first'));
+    assert.ok(!body.includes('second'));
+  });
+
+  it('preserves LRN-064 close-out gate semantics on a realistic done-CS body', () => {
+    const md = [
+      '## Plan-vs-implementation review',
+      '',
+      '**Reviewer:** GPT-5.5',
+      '**Date:** 2026-05-10',
+      '**Outcome:** GO',
+      '',
+      '## Notes / Learnings',
+      '',
+      'next-section',
+      '',
+    ].join('\n');
+    const body = extractSectionBody(md, 'plan-vs-implementation-review');
+    assert.match(body, /^\*\*Reviewer:\*\*/m);
+    assert.match(body, /^\*\*Date:\*\*/m);
+    assert.match(body, /^\*\*Outcome:\*\*/m);
+    assert.ok(!body.includes('next-section'));
+  });
+});
 
 describe('resolveLinks', () => {
   it('9. returns only broken links, not ok links', () => {

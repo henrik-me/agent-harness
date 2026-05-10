@@ -24,6 +24,7 @@ import path from 'node:path';
 import {
   DocSchemaError,
   assertHeadings,
+  collectHeadings,
   parseFrontmatterBlocks,
   resolveLinks,
 } from '../lib/doc-schema.mjs';
@@ -130,41 +131,6 @@ function logWarning(msg) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Convert a heading text to a GitHub-flavoured anchor slug.
- * Algorithm: lowercase → remove chars not in [a-z0-9 \-] → spaces to hyphens.
- *
- * @param {string} text
- * @returns {string}
- */
-function slugify(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')   // strip non-word, non-space, non-hyphen
-    .replace(/\s+/g, '-')       // spaces → hyphens
-    .replace(/_/g, '-')         // underscores → hyphens (rare in headings)
-    .replace(/-+/g, '-')        // collapse consecutive hyphens
-    .replace(/^-|-$/g, '');     // trim leading/trailing hyphens
-}
-
-function parseHeadings(text) {
-  const parsed = [];
-  const docLines = text.split('\n');
-  for (let i = 0; i < docLines.length; i++) {
-    const m = docLines[i].match(/^(#{1,6})\s+(.+)$/);
-    if (m) {
-      const headingText = m[2].trim();
-      parsed.push({
-        level: m[1].length,
-        text: headingText,
-        slug: slugify(headingText),
-        lineIndex: i,
-      });
-    }
-  }
-  return parsed;
-}
-
 function findFileUp(startDir, filename) {
   let current = path.resolve(startDir);
   while (true) {
@@ -261,14 +227,14 @@ function validateAdrReferences(text, docDir) {
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {{ level: number, text: string, slug: string, lineIndex: number }} Heading
+ * @typedef {{ level: number, text: string, anchor: string, line: number }} Heading
  */
 
 /** @type {Heading[]} */
-const headings = parseHeadings(normalized);
+const headings = collectHeadings(normalized);
 
-// Set of all slugs present in the document (for anchor validation).
-const existingSlugs = new Set(headings.map((h) => h.slug));
+// Set of all anchors present in the document (for anchor validation).
+const existingSlugs = new Set(headings.map((h) => h.anchor));
 
 // ---------------------------------------------------------------------------
 // Check 1 — Required H2 headings
@@ -315,8 +281,8 @@ for (let i = 0; i < lines.length; i++) {
 
 for (let h = 0; h < headings.length; h++) {
   const heading = headings[h];
-  const startLine = heading.lineIndex + 1;
-  const endLine = h + 1 < headings.length ? headings[h + 1].lineIndex : lines.length;
+  const startLine = heading.line; // line is 1-indexed; lines[] is 0-indexed, so this skips the heading line
+  const endLine = h + 1 < headings.length ? headings[h + 1].line - 1 : lines.length;
 
   let hasContent = false;
   for (let l = startLine; l < endLine; l++) {
@@ -328,7 +294,7 @@ for (let h = 0; h < headings.length; h++) {
 
   if (!hasContent) {
     logWarning(
-      `Line ${heading.lineIndex + 1}: heading "${'#'.repeat(heading.level)} ${heading.text}" has no content (dead section)`
+      `Line ${heading.line}: heading "${'#'.repeat(heading.level)} ${heading.text}" has no content (dead section)`
     );
   }
 }

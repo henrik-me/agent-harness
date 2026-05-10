@@ -32,7 +32,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { assertHeadings, resolveLinks } from '../lib/doc-schema.mjs';
+import { assertHeadings, collectH2Headings, resolveLinks } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
@@ -162,14 +162,7 @@ if (firstH1Index !== -1) {
 // Helpers for H2 + full-text pattern matching
 // ---------------------------------------------------------------------------
 
-// kept inline; see CS06b ESCALATION: doc-schema currently has no primitive for
-// collecting only H2 headings while preserving this linter's case-insensitive
-// regex semantics.
-const h2Headings = [];
-for (const line of lines) {
-  const m = line.match(/^##\s+(.+)$/);
-  if (m) h2Headings.push(m[1].trim());
-}
+const h2Headings = collectH2Headings(text).map((h) => h.text);
 
 const fullTextLower = text.toLowerCase();
 const brokenRelativeLinkHrefs = new Set(resolveLinks(text, fileDir).map((f) => f.href));

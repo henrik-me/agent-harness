@@ -25,7 +25,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { assertHeadings } from '../lib/doc-schema.mjs';
+import { assertHeadings, extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -140,22 +140,6 @@ function hasMarkdownHeading(content, heading) {
 }
 
 /**
- * Extract the body beneath an H2 until the next H1/H2 or EOF.
- *
- * @param {string} content
- * @param {string} heading
- * @returns {string | null}
- */
-function h2Body(content, heading) {
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const headingMatch = content.match(new RegExp(`^## ${escaped}\\s*$`, 'm'));
-  if (!headingMatch) return null;
-  const afterH2 = content.slice(headingMatch.index + headingMatch[0].length);
-  const nextHeadingMatch = afterH2.match(/\n#{1,2} /);
-  return nextHeadingMatch ? afterH2.slice(0, nextHeadingMatch.index) : afterH2;
-}
-
-/**
  * Parse markdown table rows from a section body.
  *
  * @param {string} sectionBody
@@ -195,7 +179,7 @@ function checkCloseoutTasks(content, subdir, basename) {
   if (!requiresCloseoutTasks(content, subdir)) return;
 
   const tasksBody = hasMarkdownHeading(content, 'Tasks')
-    ? h2Body(content, 'Tasks')
+    ? extractSectionBody(content, headingAnchor('Tasks'))
     : null;
   if (!tasksBody) {
     logError(
@@ -299,12 +283,7 @@ function checkFile(filePath, subdir) {
         `"## Plan-vs-implementation review" (CS03b gate)`
       );
     } else if (subdir === 'done') {
-      // Extract body: text after the H2 line until the next H1/H2 or EOF
-      const afterH2 = content.slice(headingMatch.index + headingMatch[0].length);
-      const nextHeadingMatch = afterH2.match(/\n#{1,2} /);
-      const body = nextHeadingMatch
-        ? afterH2.slice(0, nextHeadingMatch.index)
-        : afterH2;
+      const body = extractSectionBody(content, headingAnchor('Plan-vs-implementation review'));
 
       const GRANDFATHERING = '> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).';
       const hasGrandfathering = body.includes(GRANDFATHERING);
