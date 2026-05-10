@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** [LRN-027](../../../LEARNINGS.md#lrn-027) at CS04 close-out (`--config` parsed but silently ignored; rejected with exit 2 as a stop-gap).
+**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
 **Depends on:** CS04
 
 ## Goal

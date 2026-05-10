@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-10 (CS15a close-out — public readiness and visibility flip complete)
+> **Last updated:** 2026-05-10 (Pre-CS16 backlog cleanup planning PR `cs15-cleanup-planning`: 3 umbrella CSs filed (CS15c/d/e) absorbing 7 deferred planned CSs)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -53,13 +53,21 @@
 
 - **CS15a complete** (closed 2026-05-10). **Public-readiness preparation + visibility flip guardrail.** Delivered public-facing docs (`SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates), Dependabot config, `secret-scan` and `npm-pack-dry-run` workflows, public readiness evidence, full-history gitleaks report, repo settings checklist, GitHub App-backed `workboard-auto-approve` workflow, helper script, and main Ruleset spec/application. Repository is now public; main Ruleset `main-protection` is active (`id=16185634`); squash-only posture and auto-merge are enabled; Private Vulnerability Reporting returned 204; secret scanning is enabled; PR #78 proved the workboard bot can approve and merge a validated `workboard-only` PR. Post-flip Dependabot alerts for `fast-uri` are resolved by the close-out lockfile update to `3.1.2` (`npm audit --audit-level=high` reports 0 vulnerabilities). Mainline validation green after the flip. CS15b's visibility flip work was absorbed by explicit user authorization during CS15a close-out.
 
+- **Pre-CS16 backlog cleanup planning** (planning PR `cs15-cleanup-planning` open 2026-05-10). 3 umbrella CSs filed in `project/clickstops/planned/` to clear 7 deferred planned CSs accumulated across CS01–CS15a, per user authorization 2026-05-09 ("you can add the CS structure needed to optimize for parralelism. you can add the CS structure needed... umbrella seems good"):
+  - **[CS15c](project/clickstops/planned/planned_cs15c_cli-surface-cleanup.md)** — CLI surface cleanup (absorbs CS04b + CS04d + CS09b). 4 sub-agents, 1 wave. Reserves LRN-082..086.
+  - **[CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md)** — Linter expansion (absorbs CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents. Adds 2 new linters (15→17). Reserves LRN-087..094.
+  - **[CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md)** — `harness init` private-tier detection (absorbs CS04a; user-resolved Q1–Q5 captured in the umbrella file). 5 sub-agents. Reserves LRN-095..099.
+  - **Order:** CS15c → CS15d → CS15e (sequential, single-orchestrator discipline). Each umbrella has its own claim/content/close-out cycle (9 PRs total vs 21 for separate CSs).
+  - **7 absorbed planned files** stay in `planned/` with `**Superseded by:**` pointers and explicit "MUST NOT be claimed independently" language; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent).
+  - **Next mainline slot after CS15e closes:** CS16 (Bootstrap Sub Invaders) — first downstream consumer of CS15e's constraint-detection flow.
+
 ## Architecture pointer
 
 See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS15a public-readiness preparation and the public visibility flip are complete. LRN-014 remains `deferred` (CS19-bound).
+- None. CS15a public-readiness preparation and the public visibility flip are complete. Pre-CS16 backlog cleanup umbrellas (CS15c/d/e) are filed and ready to claim once the planning PR `cs15-cleanup-planning` merges. LRN-014 remains `deferred` (CS19-bound).
 
 ## Parallelism (single-orchestrator default)
 
@@ -71,8 +79,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 - **LEARNINGS.md ID numbering.** LRN-NNN entries are appended sequentially — concurrent close-outs from different orchestrators would race on the next ID.
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). Today this works with care via:
-1. **Lane split.** One orchestrator on mainline (CS10 → CS11 → ...), another on the deferred backlog (CS03b, CS04a/b/c/d, CS06b, CS08b, CS09b). Backlog CSs target narrow disjoint areas — low race risk.
-2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
+1. **Lane split.** One orchestrator on the next selected mainline/planned CS, another on a separate planned CS that targets disjoint areas. As of 2026-05-10, the deferred-backlog CSs (CS04a/b/d, CS06b, CS08b, CS09b, CS10b) are bundled into the **CS15c/d/e umbrellas** for sequential execution on the mainline; the originals carry `**Superseded by:**` pointers and MUST NOT be claimed independently. The CS22b future CS remains the parallel-orchestration candidate.
+2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. CS15c reserves LRN-082..086, CS15d reserves LRN-087..094, CS15e reserves LRN-095..099). Document the reservation in the umbrella's planned file and in WORKBOARD.
 
 **Missing infrastructure for true safe parallel orchestration** (would itself be a future CS — `CS22b: multi-orchestrator coordination`):
 - WORKBOARD multi-row Active Work with cross-orchestrator visibility

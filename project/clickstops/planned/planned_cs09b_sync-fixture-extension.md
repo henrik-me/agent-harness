@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS09 close-out ([LRN-057](../../../LEARNINGS.md#lrn-057) init/sync integration-testing gap).
+**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
 **Depends on:** CS09
 
 ## Goal
