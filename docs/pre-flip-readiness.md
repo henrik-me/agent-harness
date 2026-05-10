@@ -45,14 +45,15 @@ readback.
 `docs/ruleset/main-protection.json` was applied after the public flip as Ruleset
 `main-protection` (`id=16185634`). It targets `refs/heads/main`, enforces
 deletion and non-fast-forward protection, linear history, PR-only squash
-merges, review-thread resolution, and the required status checks listed in the
-CS15a plan. It does not require an approving review because GitHub does not
-allow PR authors to approve their own PRs.
+merges, one approving review, review-thread resolution, and the required status
+checks listed in the CS15a plan. Repository admins have an explicit Ruleset
+bypass so @henrik-me can override the review requirement when needed; GitHub
+does not allow PR authors to approve their own PRs.
 CODEOWNER review is intentionally not required in the Ruleset because the
 workboard GitHub App cannot satisfy a human CODEOWNER requirement.
 Signed-commit enforcement is also intentionally not required because it can
-block GitHub App squash auto-merge for workboard-only PRs; linear history plus
-required PR review/status checks remain enforced.
+block GitHub App squash auto-merge for workboard-only PRs; linear history,
+required PR review/status checks, and the explicit admin bypass remain enforced.
 
 ## Bot dry-run
 
