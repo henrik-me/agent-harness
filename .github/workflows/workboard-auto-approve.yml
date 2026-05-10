@@ -138,10 +138,11 @@ jobs:
 
       - name: Mint App installation token
         id: app-token
-        # Pin to a specific SHA per LRN-075 (third-party action). actions/create-github-app-token@v1
-        # head SHA at time of authoring — orchestrator should refresh this pin via
-        # `gh api repos/actions/create-github-app-token/git/refs/tags/v1` before merge.
-        uses: actions/create-github-app-token@v1
+        # Pin to a specific SHA per LRN-075 (third-party action).
+        # SHA = head of actions/create-github-app-token@v1 at CS15a authoring
+        # time (2026-05-09). Refresh via:
+        #   gh api repos/actions/create-github-app-token/git/refs/tags/v1
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547  # v1
         with:
           app-id: ${{ secrets.WORKBOARD_BOT_APP_ID }}
           private-key: ${{ secrets.WORKBOARD_BOT_PRIVATE_KEY }}
