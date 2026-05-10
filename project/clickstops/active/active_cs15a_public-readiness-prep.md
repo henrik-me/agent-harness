@@ -187,7 +187,7 @@ Per the user authorization (2026-05-09):
 | GPT-5.5 content rubber-duck | done | yoga-ah | agent-id=yoga-ah \| role=reviewer \| report-status=complete (targeted workflow/security review outcome: GO after immutable-diff fix) \| learnings=0 |
 | User actions: App + repo settings | in_progress | henrik-me/yoga-ah | App/secrets done; UI/API-only settings #17/#18 remain not green |
 | Bot dry-run + readiness update | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| GPT-5.5 plan-vs-impl review | planned | — | agent-id=— \| role=reviewer \| report-status=pending \| learnings=0 |
+| GPT-5.5 plan-vs-impl review | done | gpt-5.5 | agent-id=cs15a-plan-review \| role=reviewer \| report-status=complete; outcome=BLOCKED on #17/#18 live GitHub setting readback \| learnings=0 |
 
 ## Risks + mitigations
 
@@ -195,8 +195,30 @@ Per the user authorization (2026-05-09):
 - **Risk:** Ruleset JSON spec wrong shape (Rulesets API is newer than Branch Protection). **Mitigation:** validate against GitHub's published JSON Schema for Rulesets if available; otherwise validate by dry-running `gh api -X POST` against a throwaway repo.
 - **Risk:** Bot workflow has security gap (e.g. accepts a PR with `.github/workflows/` modifications). **Mitigation:** explicit path allowlist; explicit denylist for sensitive paths; actor allowlist; label requirement; branch-name regex. Belt-and-suspenders. Audited by GPT-5.5 rubber-duck.
 - **Risk:** New required status checks listed in Ruleset spec haven't actually run yet. **Mitigation:** precondition #25 explicitly requires green-on-≥1-PR before CS15b — that's the gate.
-- **Risk:** User actions (App install, repo settings) take longer than expected, leaving the cs15a/content PR sitting open. **Mitigation:** PR is fine sitting open; nothing in main moves until close-out.
+- **Risk:** Remaining GitHub settings are unavailable before the public flip. **Mitigation:** keep #17/#18 explicitly not green; re-check `allow_auto_merge`, Private Vulnerability Reporting, and secret scanning after CS15b/public visibility or plan-tier changes.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Model:** GPT-5.5  
+**Timestamp:** 2026-05-10T03:40Z  
+**Outcome:** BLOCKED
+
+CS15a implementation matches the authored content, workflow, scan, and bot
+dry-run plan for completed preconditions. PRs #74, #76, #77, #78, and #79 are
+merged; the workboard GitHub App secrets are present; PR #78 proved the App can
+approve and merge a validated `workboard-only` PR; and mainline validation
+checks are green.
+
+Close-out must not proceed as `GO` yet because preconditions #17 and #18 are
+still not green in live GitHub readback:
+
+- `allow_auto_merge` remains `false` after both `gh repo edit
+  --enable-auto-merge` and `PATCH /repos/henrik-me/agent-harness` with
+  `allow_auto_merge=true`.
+- `PUT /repos/henrik-me/agent-harness/private-vulnerability-reporting` returns
+  `404`; `security_and_analysis` remains unavailable/null from normal readback
+  while the repository is private/free-tier.
+
+Decision: keep #17/#18 explicitly blocked or CS15b recheck dependencies rather
+than marking them done. Re-check these controls after the public flip, Ruleset
+setup, or plan-tier changes. No further code fix is required for the bot path.
