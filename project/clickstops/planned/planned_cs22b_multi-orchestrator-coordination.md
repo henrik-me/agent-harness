@@ -5,7 +5,7 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** Docs/handoff PR (alongside HANDOFF.md). Captures the parallel-orchestrator model discussed in [`HANDOFF.md`](../../../HANDOFF.md) § Parallelism and [`CONTEXT.md`](../../../CONTEXT.md) § Parallelism.
+**Filed by:** Pre-CS16 doc-state audit. Captures the parallel-orchestrator model discussed in [`CONTEXT.md`](../../../CONTEXT.md) § Parallelism and [`OPERATIONS.md`](../../../OPERATIONS.md).
 **Depends on:** CS22 (or after CS15b public flip — TBD)
 
 ## Goal
@@ -47,7 +47,7 @@ Enable safe true-parallel orchestration: multiple agent IDs working on different
 ### Documentation
 
 - Update `template/composed/OPERATIONS.md` § Sub-agent dispatch with cross-orchestrator coordination patterns.
-- Update `HANDOFF.md` to remove the "single orchestrator default" caveat once this CS lands.
+- Update `CONTEXT.md` § Parallelism to remove the "single orchestrator default" caveat once this CS lands.
 - Add `template/composed/OPERATIONS.md` § Multi-orchestrator section with worked examples (lane split, parallel backlog CSs).
 
 ### Tests
@@ -61,7 +61,7 @@ Enable safe true-parallel orchestration: multiple agent IDs working on different
 
 - All new linters and CLI subcommands pass `harness lint`.
 - Multi-orchestrator end-to-end test green.
-- HANDOFF.md / CONTEXT.md / OPERATIONS.md updated to reflect parallel-default mode.
+- CONTEXT.md / OPERATIONS.md updated to reflect parallel-default mode.
 - Cumulative LRN dispatch count maintained (zero violations from the new flow).
 
 ## Sub-agent fan-out
@@ -74,7 +74,7 @@ Enable safe true-parallel orchestration: multiple agent IDs working on different
 | 2 | `cs22b-locks-lib` | `lib/area-locks.mjs` (parse/serialize WORKBOARD `## Area locks` table; lock acquire/release/expiry logic), `tests/area-locks.test.mjs`, `tests/fixtures/cs22b/area-locks/*` |
 | 3 | `cs22b-checkers` | `scripts/check-lrn-ranges.mjs` + tests + fixtures (validates `LEARNINGS.md` entries fall in reserved ranges); UPDATES to `scripts/check-workboard.mjs` + its tests (multi-row Active Work; duplicate CS-Task ID detection; overlapping branch detection) |
 | 4 | `cs22b-cli` | UPDATES to `bin/harness.mjs` only: 4 new subcommands (`reserve-lrn`, `lock`, `release`, `pre-claim`) — calls into `lib/lrn-ranges.mjs` and `lib/area-locks.mjs` from sub-agents 1 and 2; `tests/cli.test.mjs` additions for the new subcommands |
-| 5 | `cs22b-docs` | UPDATES to `template/composed/OPERATIONS.md` (§ Multi-orchestrator section; § Claim updated for new pre-claim flow), `HANDOFF.md` (remove single-orchestrator caveat), `CONTEXT.md` (update parallelism section), `template/managed/INSTRUCTIONS.md` (add multi-orchestrator quick-ref) |
+| 5 | `cs22b-docs` | UPDATES to `template/composed/OPERATIONS.md` (§ Multi-orchestrator section; § Claim updated for new pre-claim flow), `CONTEXT.md` (update parallelism section to remove single-orchestrator caveat), `template/managed/INSTRUCTIONS.md` (add multi-orchestrator quick-ref) |
 
 **Dispatch order:** Sub-agents 1 and 2 in **wave A** (independent libs). Sub-agents 3, 4, 5 in **wave B** (after wave A completes — they read the wave-A APIs). Per [LRN-016](../../../LEARNINGS.md#lrn-016), wave-B sub-agents must NOT modify wave-A files; only consume their exports.
 

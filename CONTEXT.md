@@ -2,7 +2,7 @@
 
 > **Last updated:** 2026-05-10 (CS15f ACTIVE — retire HANDOFF.md and consolidate into INSTRUCTIONS / OPERATIONS / README; pre-CS16 doc cleanup)
 
-> **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
+> **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. This file (CONTEXT.md) covers current state only.
 
 ## Codebase state
 
@@ -87,7 +87,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 - LRN-range allocation as a first-class WORKBOARD construct
 - File-ownership locks (`harness lock <area>` / `harness release <area>` CLI)
 
-Until that CS lands, **single orchestrator at a time on the mainline** is the safe default. See [`HANDOFF.md`](HANDOFF.md) § Parallelism for the full discussion.
+Until that CS lands, **single orchestrator at a time on the mainline** is the safe default.
 
 ## CS plan
 
