@@ -171,4 +171,60 @@ LRN-087..094 reserved for CS15d. Expected ~4-6 LRNs (likely: shared-library refa
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via Copilot CLI background agent)
+**Date:** 2026-05-10
+**Outcome:** GO
+
+Implementation covers the planned CS15d deliverables, wiring, docs, tests,
+and schema constraints. The concerns are residual robustness/cleanup items,
+not close-out blockers. Validation: `node --test tests/*.test.mjs` exited 0
+(609/609); `node bin/harness.mjs lint --quiet` reported 24 passed / 0 failed
+/ 3 skipped; schema validation passed.
+
+### Goal coverage
+
+- [PASS] CS06b shared config/lock readers exist and validate schemas — `lib/config-reader.mjs:16,57-68`; `lib/lock-reader.mjs:19-24,62-68`; tests at `tests/lib-config-reader.test.mjs:41-137`, `tests/lib-lock-reader.test.mjs:59-147`.
+- [CONCERN] Refactored linters use `lib/doc-schema.mjs`, but not "exclusively" — imports present in `scripts/check-instructions.mjs:24-29`, `scripts/check-readme.mjs:35`, `scripts/check-clickstop.mjs:28`; inline markdown parsers remain at `scripts/check-instructions.mjs:150-190` and `scripts/check-readme.mjs:165-172`. No live CS06b TODO markers outside plans.
+- [PASS] LRN-064 gate preserved functionally — anchored H2 regex/body extraction remains at `scripts/check-clickstop.mjs:293-307`; regression tests at `tests/check-clickstop.test.mjs:353-382`.
+- [PASS] CS08b template linter enforces three rules — rules at `scripts/check-templates.mjs:155-172`; GH Actions negative-lookbehind at `:155`; markdown skipping at `:108-137`.
+- [PASS] CS10b scaffold README linter exists with required `--name` — `scripts/check-scaffold-readme.mjs:17,51-53,85-87`.
+- [PASS] CS10b aggregator walks self-host scaffold READMEs and auto-dispatches shipped policies — `bin/harness.mjs:921-958,959-994`.
+
+### Aggregator wiring
+
+- [PASS] `templates` row added — `bin/harness.mjs:890-898`.
+- [PASS] Self-host per-scaffold rows / non-self-host single skipped row — `bin/harness.mjs:921-958`.
+- [PASS] `SHIPPED_SCAFFOLD_LINTERS` map present and documented — `bin/harness.mjs:959-972`.
+- [PASS] Absolute script paths allowed in linter table — `bin/harness.mjs:1046-1049`.
+- [PASS] `SUBCOMMAND_HELP['lint']` documents new linters and dispatch contract — `bin/harness.mjs:138-152`.
+
+### Process compliance
+
+- [PASS] Both commits include the canonical `Co-authored-by: Copilot` trailer.
+- [PASS] Lock-fixup commit follows content commit and points to content SHA (LRN-070/074) — `.harness-lock.json:3` = `c40fa8926a043533b45c8f321042a4e183ad7775`.
+- [PASS] β1-β9 task ledger marked done — `## Tasks` table.
+- [PASS] No scaffold edits; only owned `lib/config-reader.mjs` and `lib/lock-reader.mjs` under `lib/` changed.
+- [PASS] All commits are on `cs15d/content`; no edits to `main`.
+
+### Test coverage
+
+- [PASS] New lib module tests present — `tests/lib-config-reader.test.mjs` (6 tests), `tests/lib-lock-reader.test.mjs` (8 tests).
+- [PASS] New linter tests present — `tests/check-templates.test.mjs` (18 tests), `tests/check-scaffold-readme.test.mjs` (11 tests).
+- [PASS] Aggregator integration test now runs with 0 skips — `tests/cs15d-aggregator.test.mjs:74-142` (6/6 pass).
+- [PASS] Refactored linters have same-or-more tests plus regression coverage — `check-instructions` 12, `check-readme` 11, `check-clickstop` 19.
+
+### Schema/contract integrity
+
+- [PASS] Config reader validates against `harness.config.schema.json` — `lib/config-reader.mjs:16,57-68`.
+- [PASS] Lock reader validates against `harness-lock.schema.json` — `lib/lock-reader.mjs:19-24,62-68`.
+- [PASS] No schema files changed — `git diff --name-only main..HEAD -- schemas/*` returned empty.
+
+### Surprises and red flags
+
+- Markdown-context stripping in `check-templates` only handles triple-backtick fences and single-backtick spans; CommonMark tilde fences (`~~~`), indented code blocks, and double-backtick spans (`` ``…`` ``) can still false-positive (`scripts/check-templates.mjs:108-137`). Mitigation: log as a follow-up below; current template/ subtree passes the linter.
+- The "exclusive" doc-schema refactor scope was softened — three refactored linters retain some inline markdown parsing because `lib/doc-schema.mjs` lacks the requisite primitives (H2-only collector, anchor enumerator, body-until-H1/H2 extractor). Mitigation: log as a follow-up below.
+
+### Close-out follow-ups (filed as new planned CSs at close-out)
+
+1. **Centralize heading/link extraction in `lib/doc-schema.mjs`** so `check-instructions`, `check-readme`, `check-clickstop` can drop their remaining inline parsers. Concrete primitives needed: case-insensitive H2 enumerator, anchor enumerator, H2-until-next-H1/H2 body extractor.
+2. **Extend `check-templates` markdown-context awareness** to CommonMark tilde fences (`~~~`), indented code blocks (≥4 leading spaces), and double-backtick spans. Add fixtures covering each.
