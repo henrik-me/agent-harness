@@ -84,7 +84,13 @@ jobs:
 
           echo "Branch + author checks: OK."
 
-      - name: Fetch PR metadata and file list (no checkout needed)
+      - name: Checkout base repository (never PR head)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+
+      - name: Fetch PR metadata
         id: files
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -99,29 +105,34 @@ jobs:
           if ! printf '%s' "$REPO" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
             fail "invalid repository slug."
           fi
-          pr_meta="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '[.head.sha, .changed_files] | @tsv')"
-          IFS=$'\t' read -r head_sha changed_files <<< "$pr_meta"
+          pr_meta="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '[.base.sha, .head.sha, .head.repo.full_name, .changed_files] | @tsv')"
+          IFS=$'\t' read -r base_sha head_sha head_repo changed_files <<< "$pr_meta"
+          if ! printf '%s' "$base_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            fail "invalid PR base SHA."
+          fi
           if ! printf '%s' "$head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
             fail "invalid PR head SHA."
+          fi
+          if [ "$head_repo" != "$REPO" ]; then
+            fail "workboard bot only supports same-repository PRs; got head repo '$head_repo'."
           fi
           if ! printf '%s' "$changed_files" | grep -Eq '^[0-9]+$'; then
             fail "invalid changed_files count."
           fi
-          if [ "$changed_files" -ge 3000 ]; then
-            fail "PR changes $changed_files files; GitHub file-list API is capped at 3000, so bot validation cannot prove completeness."
-          fi
+          echo "Validated PR base: $base_sha"
           echo "Validated PR head: $head_sha"
           echo "Expected changed files: $changed_files"
+          echo "base-sha=$base_sha" >> "$GITHUB_OUTPUT"
           echo "head-sha=$head_sha" >> "$GITHUB_OUTPUT"
           echo "changed-files=$changed_files" >> "$GITHUB_OUTPUT"
-          # Paginate through all files; GitHub caps this endpoint at 3000 files.
-          gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
-            --jq '.[] | [.filename, .status, (.previous_filename // "")] | @tsv' > pr-files.tsv
-          echo "Files in PR (filename/status/previous_filename):"
+
+          git fetch --no-tags --depth=1 origin "$base_sha" "$head_sha"
+          git diff --name-status -M "$base_sha" "$head_sha" > pr-files.tsv
+          echo "Files in PR from immutable git diff (status/path[/previous path]):"
           cat pr-files.tsv
           files_count="$(wc -l < pr-files.tsv | tr -d ' ')"
           if [ "$files_count" -ne "$changed_files" ]; then
-            fail "file-list API returned $files_count files but PR reports $changed_files changed files; refusing incomplete validation."
+            fail "immutable git diff returned $files_count files but PR reports $changed_files changed files; refusing inconsistent validation."
           fi
           echo "files-count=$files_count" >> "$GITHUB_OUTPUT"
 
@@ -164,23 +175,26 @@ jobs:
           }
 
           violations=0
-          while IFS=$'\t' read -r f status previous; do
-            [ -z "$f" ] && continue
-            is_allowed "$f" || violations=$((violations + 1))
-            if [ "$status" = "renamed" ]; then
-              if [ -z "$previous" ]; then
-                echo "::error ::renamed file '$f' is missing previous_filename."
+          while IFS=$'\t' read -r status path1 path2; do
+            [ -z "$status" ] && continue
+            if [[ "$status" == R* || "$status" == C* ]]; then
+              if [ -z "$path1" ] || [ -z "$path2" ]; then
+                echo "::error ::rename/copy entry '$status' is missing source or destination path."
                 violations=$((violations + 1))
               else
-                is_allowed "$previous" || violations=$((violations + 1))
+                is_allowed "$path1" || violations=$((violations + 1))
+                is_allowed "$path2" || violations=$((violations + 1))
               fi
+            else
+              [ -z "$path1" ] && continue
+              is_allowed "$path1" || violations=$((violations + 1))
             fi
           done < pr-files.tsv
 
           if [ "$violations" -gt 0 ]; then
             fail "$violations file path(s) outside allowlist; bot will NOT approve."
           fi
-          echo "Path-allowlist check: OK ($(wc -l < pr-files.tsv | tr -d ' ') file(s) all in allowlist, including rename sources)."
+          echo "Path-allowlist check: OK ($(wc -l < pr-files.tsv | tr -d ' ') file(s) all in allowlist, including rename/copy sources)."
 
       - name: Mint App installation token
         id: app-token
