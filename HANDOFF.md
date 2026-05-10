@@ -10,9 +10,9 @@ Copy-paste this into a fresh Copilot CLI session (or equivalent) at the start:
 cd C:\src\agent-harness, then read HANDOFF.md carefully and follow its
 bootstrap reading order. After that, continue from where the prior session
 left off (check CONTEXT.md and WORKBOARD.md for the current state).
-Operate autonomously per the directive — only check in with me at CS15a
-(public-flip) or for substantive design decisions not derivable from the
-cs-plan + LRNs.
+Operate autonomously from the current repo state. Check in only for
+substantive design decisions not derivable from the cs-plan + LRNs, or for
+changes that would materially alter the public repo/security posture.
 ```
 
 That's all you need to type. HANDOFF.md (this file) pulls in everything else in the right order.
@@ -43,8 +43,8 @@ If any of these fail, **stop and investigate** before claiming new work. The rep
 
 ## Stop rules (when to halt and check in with the human)
 
-- **CS15a (public-readiness preparation) is the next mainline gate.** Per the cs-plan and the user's directive, **do NOT auto-claim CS15a.** When the bootstrap shows the next mainline CS is CS15a, **post a check-in question to the user** with the CS15a pre-conditions audit results (see § Current mainline state below for the audit list).
 - Any "substantive design decision not derivable from the cs-plan + LRNs" — defer to the user.
+- Any change that materially alters public repo/security posture (Ruleset, GitHub App permissions, secrets, visibility, vulnerability reporting) — check in unless an existing CS plan or LRN explicitly authorizes it.
 - Any post-merge CI failure on main that you can't trivially explain.
 
 ## TL;DR
@@ -132,9 +132,10 @@ Fallback per [Decision #22](project/clickstops/done/done_cs01_bootstrap-repo/har
 - **Don't push a tag without checking the tag-allowlist regex first.** `release.yml` validates the tag against `^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$`. Tags outside this pattern fail the release workflow with exit 2 (per LRN-075).
 - **Don't put unquoted `:` in YAML step names** (LRN-078). YAML treats them as mapping separators and the GH Actions parser silently fails the run with "This run likely failed because of a workflow file issue". `check-workflow-pins.mjs` will catch this at lint time, but only when `js-yaml` is installed (`npm ci` first).
 
-## Open-LRN audit (CS15a pre-condition)
+## Open-LRN audit
 
-CS15a requires "All `open` LRNs dispositioned". To enumerate:
+The public flip required all `open` LRNs to be dispositioned, and that invariant
+is currently satisfied. To enumerate future drift:
 
 ```bash
 # All entries by status
@@ -144,24 +145,25 @@ grep -E '^status: ' LEARNINGS.md | sort | uniq -c
 grep -B 4 '^status: open' LEARNINGS.md | grep '^id: '
 ```
 
-Each `open` entry needs a status flip to `applied` / `obsolete` / `deferred` (with `deferred_until: <date>` for the last) before CS15a can claim.
+Each `open` entry needs a status flip to `applied` / `obsolete` / `deferred` (with `deferred_until: <date>`) before any future public-facing release gate.
 
 ## Where to ask the human
 
-The human owner is `henrik-me` (GitHub user). Per the directive in CS01, the human is checked-in only at:
-- `CS15a` (public-readiness hardening — explicit approval before public flip)
+The human owner is `henrik-me` (GitHub user). Check in for:
 - Anything that would require a substantive design decision not derivable from the cs-plan + LRNs (e.g. cost trade-offs, naming for new things not already locked, scope changes)
+- Material changes to public repo/security posture (Ruleset, GitHub App permissions, secrets, visibility, vulnerability reporting)
 
-Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-dispatch confidence: ~51 sub-agent dispatches across CS01–CS14 with zero commit-discipline violations means the model works at scale.
+Otherwise, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-dispatch confidence: ~51 sub-agent dispatches across CS01–CS14 with zero commit-discipline violations means the model works at scale.
 
 ## Current mainline state (as of last update)
 
 - **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
 - **v0.2.0 unreleased** (CS02b + CS03d + CS03e cleared the pre-CS15a deferred-LRN backlog 2026-05-09; CHANGELOG `[Unreleased]` carries 1 BREAKING + 2 Added/Changed entries — see `CHANGELOG.md`).
-- **CS01 → CS14 + CS02b + CS03d + CS03e complete.** No active CS. WORKBOARD `## Active Work` row is empty.
-- **PR-side `smoke / harness-lint` red is fixed** (PR #66, 2026-05-09) — all 3 CI checks now green on PRs.
-- **Next gate: CS15a** (public-readiness preparation) — REQUIRES USER CHECK-IN per the directive. Do not auto-claim CS15a.
-- 15 linters in `harness lint`; 533 tests passing; private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
+- **CS01 → CS15a complete.** CS15a absorbed the public visibility flip and Ruleset application. No active CS. WORKBOARD `## Active Work` row is empty.
+- **Repo is public and mechanically protected.** Main Ruleset `main-protection` is active with required checks, squash-only/linear-history/non-fast-forward/deletion protection, one approving review by default, and an explicit repository-admin bypass for owner override (LRN-080). The workboard GitHub App bot is installed and dry-run proven for eligible `workboard-only` PRs.
+- **Security posture after public flip is green.** Secret scanning, Dependabot alerts/security updates, and Private Vulnerability Reporting are enabled; post-flip `fast-uri` alerts were fixed and alert readback was empty (LRN-081).
+- **Next work:** no CS is active. Choose from the planned backlog in `project/clickstops/planned/` (for example CS04a/b/d, CS06b, CS08b, CS09b, CS10b, CS22b) or file a new planned CS if the cs-plan needs a post-CS15a follow-up.
+- 15 linters in `harness lint`; 533 tests passing; public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 
@@ -174,7 +176,7 @@ Until then, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). What works today with care:
 
-1. **Lane split.** One orchestrator on mainline (post-v0.1.0: CS15a gate, then CS15b–CS22), another on the deferred backlog (CS04a/b/d, CS06b, CS08b, CS09b, CS10b). Backlog CSs target narrow disjoint areas — low race risk.
+1. **Lane split.** One orchestrator on the next selected mainline/planned CS, another on the deferred backlog (CS04a/b/d, CS06b, CS08b, CS09b, CS10b). Backlog CSs target narrow disjoint areas — low race risk.
 2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
 
 **What's missing for safe true-parallel orchestration** (would itself be a future CS — call it `CS22b: multi-orchestrator coordination`):

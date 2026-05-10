@@ -1,8 +1,8 @@
 # .github/workflows/workboard-auto-approve.yml — CS15a § precondition #8.
 #
-# Bot workflow that auto-approves + auto-merges WORKBOARD-only PRs once the
-# Ruleset (authored at CS15a, applied at CS15b) makes ≥1 approving review
-# mandatory on every PR. The bot supplies the approval ONLY for PRs that
+# Bot workflow that auto-approves + auto-merges WORKBOARD-only PRs now that the
+# Ruleset (authored and applied during CS15a) makes ≥1 approving review
+# mandatory on every PR by default. The bot supplies the approval ONLY for PRs that
 # pass a strict pre-check enforcing:
 #
 #   1. PR has the `workboard-only` label.
@@ -26,7 +26,7 @@
 #     admin / workflow / secrets permissions. Contents write is required for
 #     `gh pr merge --squash --auto` and the token is minted only after the
 #     validation gate passes.
-#   - The CS15b Ruleset requires an approving review but not CODEOWNER review:
+#   - The main Ruleset requires an approving review but not CODEOWNER review:
 #     GitHub Apps cannot satisfy a human CODEOWNER requirement. Non-WORKBOARD
 #     paths are protected by this workflow's path allowlist during this
 #     workflow run: the workflow does not mint or use the App token unless
@@ -223,7 +223,7 @@ jobs:
           gh api -X POST "repos/${REPO}/pulls/${PR_NUMBER}/reviews" \
             -f commit_id="$VALIDATED_HEAD_SHA" \
             -f event='APPROVE' \
-            -f body='workboard-auto-approve: validated path/label/branch/actor allowlists for this commit and approved per CS15b bot wiring (CS15a-authored, CS15b-applied).'
+            -f body='workboard-auto-approve: validated path/label/branch/actor allowlists for this commit and approved per CS15a bot wiring.'
 
       - name: Enable auto-merge (squash)
         env:

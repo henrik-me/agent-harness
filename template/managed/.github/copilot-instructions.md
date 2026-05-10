@@ -155,7 +155,7 @@ node scripts/check-pr-body.mjs --file <path-to-pr-body>
   WORKBOARD-only PRs.
 - Every commit must include the trailer:
   `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`
-- Squash-merge only; linear history required from CS15b onward.
+- Squash-merge only; linear history required on protected `main`.
 
 ---
 

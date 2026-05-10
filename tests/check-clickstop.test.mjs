@@ -292,4 +292,28 @@ describe('check-clickstop linter', () => {
     assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
   });
 
+  // 16. done/ file after close-out task enforcement missing task rows → exit 1
+  it('16. done file missing close-out task rows exits 1', () => {
+    const r = runLinter(['--dir', fixtureDirCs03b('closeout-tasks-missing')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('close-out docs/restart-state task') &&
+      r.stdout.includes('close-out learnings/follow-up task'),
+      `Expected close-out task errors; got:\n${r.stdout}`
+    );
+  });
+
+  // 17. done/ file after close-out task enforcement with task rows → exit 0
+  it('17. done file with close-out task rows exits 0', () => {
+    const r = runLinter(['--dir', fixtureDirCs03b('closeout-tasks-present')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
+  });
+
 });

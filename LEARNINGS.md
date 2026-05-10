@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-10 (CS15a close-out: LRN-080..081 added)
+> **Last updated:** 2026-05-10 (CS15a restart review: LRN-080..083 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -1702,6 +1702,46 @@ claim_area: release-security
 **Evidence:** During CS15a close-out, GitHub push output reported two high vulnerabilities. `gh api repos/henrik-me/agent-harness/dependabot/alerts` showed two open `fast-uri` alerts (`GHSA-v39h-62p7-jpjc`, `GHSA-q3j6-qgpj-74h6`) against `package-lock.json`; `npm update fast-uri --package-lock-only` moved `fast-uri` from `3.1.0` to `3.1.2`; `npm audit --audit-level=high` then reported `found 0 vulnerabilities`; final Dependabot alert readback returned `[]`.
 
 **Disposition:** Applied in CS15a PR #82 by updating `package-lock.json` and recording evidence in `docs/pre-flip-readiness.md`. Future public-flip close-outs should add two explicit checks before final completion: `gh api repos/:owner/:repo/dependabot/alerts` for open alerts and the relevant package-manager audit command for the repository ecosystem.
+
+### LRN-082
+
+```yaml
+id: LRN-082
+date: 2026-05-10
+category: process
+source_cs: CS15a
+status: applied
+tags: [close-out, restartability, documentation, learnings, check-clickstop]
+claim_area: close-out
+```
+
+**Problem:** CS15a close-out updated the CS status and core evidence, but a follow-up restartability review found stale bootstrap/process docs that still described CS15a/CS15b as future gates. The close-out procedure said to update docs and file learnings, but the active CS task list did not require those as explicit task rows, so the omission was not mechanically visible.
+
+**Finding:** Every active CS should carry explicit close-out task rows for "docs + restart state" and "learnings + follow-ups". This turns close-out hygiene from prose guidance into task-level work that the orchestrator must mark done, while still allowing the detailed process to live in `OPERATIONS.md` and `RETROSPECTIVES.md`.
+
+**Evidence:** The Opus 4.7 high review requested after CS15a reported `RESTARTABILITY VERDICT: NEEDS-FIX` because `HANDOFF.md` and related process docs retained pre-CS15a wording. The existing `check-clickstop` linter passed because it only enforced the plan-vs-implementation review section, not close-out task rows.
+
+**Disposition:** Applied by extending `scripts/check-clickstop.mjs` to require explicit close-out docs/restart-state and learnings/follow-up rows for active CS files and done CS files closed on or after CS15a's enforcement date. Added regression fixtures/tests and updated CS15a's done file plus process docs to include the required rows.
+
+### LRN-083
+
+```yaml
+id: LRN-083
+date: 2026-05-10
+category: tooling
+source_cs: CS15a
+status: applied
+tags: [workboard, stale-docs, linter, restartability, duplicate-sections]
+claim_area: coordination
+```
+
+**Problem:** `WORKBOARD.md` accumulated repeated `## Recently Completed` sections with stale phrases such as "close-out PR pending" and "TBD elevated". The top section said no active CS, but the duplicated historical sections could send a fresh agent into unnecessary recovery work.
+
+**Finding:** Coordination docs need stale-history linting, not just required headings/table-shape validation. In particular, `WORKBOARD.md` should have exactly one `## Recently Completed` section and completed rows should not contain in-flight language (`pending`, `TBD`, `in progress`).
+
+**Evidence:** The Opus 4.7 high restartability review flagged duplicate `Recently Completed` sections despite `node bin/harness.mjs lint --quiet` passing. Manual inspection confirmed duplicate completed tables with pending/TBD close-out notes for already-completed CSs.
+
+**Disposition:** Applied by extending `scripts/check-workboard.mjs` with duplicate-section and stale-completed-row checks, adding regression fixtures/tests, and cleaning `WORKBOARD.md` into a single completed-work table.
 
 ## Obsolete
 

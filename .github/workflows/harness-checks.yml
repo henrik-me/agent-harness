@@ -52,13 +52,12 @@ jobs:
         run: npm install -g npm@10.9.2
       - name: 'Configure git url-rewrite for github: protocol (uses GITHUB_TOKEN)'
         # `npx -y "github:owner/repo#<ref>"` does an underlying `git clone`.
-        # When the harness repo is private (pre-CS15 public flip) AND the
-        # caller is the harness repo itself OR a private consumer, the clone
+        # When the caller is the harness repo itself OR a private consumer, the clone
         # needs an authenticated url. We rewrite `github:` / `https://github.com/`
         # to use the workflow's GITHUB_TOKEN. Same pattern as the standalone
         # private-smoke.yml workflow.
         #
-        # Safe for the post-public-flip world too: the rewrite is a no-op when
+        # Safe for the public harness repo too: the rewrite is a no-op when
         # the underlying ref is public-readable; the token is only used if
         # auth is actually required.
         #

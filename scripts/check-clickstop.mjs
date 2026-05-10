@@ -45,6 +45,9 @@ const FILENAME_RE = {
   planned: /^planned_cs\d+[a-z]*_.*\.md$/,
 };
 
+/** Close-out task enforcement applies from CS15a close-out onward. */
+const CLOSEOUT_TASK_ENFORCEMENT_DATE = '2026-05-10';
+
 // ---------------------------------------------------------------------------
 // CLI argument parsing
 // ---------------------------------------------------------------------------
@@ -108,6 +111,95 @@ const allErrors = [];
 function logError(msg) {
   allErrors.push(msg);
   if (!quiet) process.stdout.write(`ERROR: ${msg}\n`);
+}
+
+/**
+ * Extract the body beneath an H2 until the next H1/H2 or EOF.
+ *
+ * @param {string} content
+ * @param {string} heading
+ * @returns {string | null}
+ */
+function h2Body(content, heading) {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const headingMatch = content.match(new RegExp(`^## ${escaped}\\s*$`, 'm'));
+  if (!headingMatch) return null;
+  const afterH2 = content.slice(headingMatch.index + headingMatch[0].length);
+  const nextHeadingMatch = afterH2.match(/\n#{1,2} /);
+  return nextHeadingMatch ? afterH2.slice(0, nextHeadingMatch.index) : afterH2;
+}
+
+/**
+ * Parse markdown table rows from a section body.
+ *
+ * @param {string} sectionBody
+ * @returns {string[]}
+ */
+function tableRows(sectionBody) {
+  return sectionBody
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('|'))
+    .filter((line) => !/^\|[\s\-:|]+\|?$/.test(line))
+    .filter((line) => !/^\|\s*Task\s*\|/i.test(line));
+}
+
+/**
+ * Determine whether close-out task rows are required for this file.
+ *
+ * @param {string} content
+ * @param {string} subdir
+ * @returns {boolean}
+ */
+function requiresCloseoutTasks(content, subdir) {
+  if (subdir === 'active') return true;
+  if (subdir !== 'done') return false;
+  const closedMatch = content.match(/\*\*Closed:\*\*\s*(\d{4}-\d{2}-\d{2})/);
+  return Boolean(closedMatch && closedMatch[1] >= CLOSEOUT_TASK_ENFORCEMENT_DATE);
+}
+
+/**
+ * Check that the Tasks table includes explicit close-out hygiene rows.
+ *
+ * @param {string} content
+ * @param {string} subdir
+ * @param {string} basename
+ */
+function checkCloseoutTasks(content, subdir, basename) {
+  if (!requiresCloseoutTasks(content, subdir)) return;
+
+  const tasksBody = h2Body(content, 'Tasks');
+  if (!tasksBody) {
+    logError(
+      `${subdir}/${basename}: missing required "## Tasks" section for close-out task enforcement`
+    );
+    return;
+  }
+
+  const rows = tableRows(tasksBody)
+    .map((row) => row.replace(/\blearnings=\d+\b/gi, '').toLowerCase());
+
+  const hasDocsTask = rows.some((row) =>
+    /(close-?out|restart|docs?|documentation)/.test(row) &&
+    /(workboard|context|handoff|instructions|relevant docs|restart|docs?|documentation)/.test(row)
+  );
+  const hasLearningsTask = rows.some((row) =>
+    /(close-?out|learnings?|lrn|follow-?ups?|planned cs)/.test(row) &&
+    /(learnings?|lrn|follow-?ups?|planned cs)/.test(row)
+  );
+
+  if (!hasDocsTask) {
+    logError(
+      `${subdir}/${basename}: ## Tasks must include an explicit close-out docs/restart-state task ` +
+      `(see OPERATIONS.md close-out procedure)`
+    );
+  }
+  if (!hasLearningsTask) {
+    logError(
+      `${subdir}/${basename}: ## Tasks must include an explicit close-out learnings/follow-up task ` +
+      `(see RETROSPECTIVES.md and OPERATIONS.md close-out procedure)`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -200,6 +292,9 @@ function checkFile(filePath, subdir) {
       }
     }
   }
+
+  // 5. Close-out hygiene tasks (introduced after CS15a close-out)
+  checkCloseoutTasks(content, subdir, basename);
 }
 
 // ---------------------------------------------------------------------------

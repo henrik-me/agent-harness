@@ -31,8 +31,10 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - **CS01–CS14 (discipline-enforced):** GitHub branch protection is not available on
   private free-tier repos (see [LRN-001](LEARNINGS.md#lrn-001)). Discipline + GPT-5.5 + user review enforce
   the policy during this phase.
-- **CS15b+ (mechanically enforced):** Ruleset applied on `main`; the
-  `workboard-auto-approve.yml` bot handles WORKBOARD-only PRs automatically.
+- **Public protected phase (current):** Ruleset applied on `main`; one
+  approving review is required by default, repository admins have an explicit
+  bypass for owner override, and `workboard-auto-approve.yml` handles eligible
+  WORKBOARD-only PRs automatically.
 - **Pre-claim gate:** before claiming, review `LEARNINGS.md` for stale `open` items
   tagged `process` or `architectural`, or items whose `claim_area` matches the area
   you are about to claim. Disposition all relevant items before proceeding.
@@ -48,8 +50,13 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   `project/clickstops/done/`. Use the directory form if the CS carries artifacts.
 - Remove the row from `WORKBOARD.md`.
 - Update `CONTEXT.md` if the codebase state changed.
+- Ensure the active/done CS file's `## Tasks` table includes explicit
+  **Close-out: docs + restart state** and **Close-out: learnings + follow-ups**
+  rows. `check-clickstop.mjs` enforces these rows; see
+  [OPERATIONS.md § Claim](OPERATIONS.md#claim) for the exact scope.
 - File any new learnings in `LEARNINGS.md` (see [RETROSPECTIVES.md](RETROSPECTIVES.md)
-  for entry shape and categories).
+  for entry shape and categories) and planned follow-up CSs for unresolved
+  issues.
 
 ### Every CS
 
@@ -106,8 +113,9 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 
 2. **Claim.** Rename `planned_cs<NN>_*.md` → `active_cs<NN>_*.md`. Update
    `WORKBOARD.md` with your row: CS-Task ID, agent ID, branch, state, last-updated.
-   Commit via a `workboard/cs<NN>-claim` PR (user-reviewed until CS15b; bot-merged
-   from CS15b onward). WORKBOARD task states:
+   Commit via a `workboard/cs<NN>-claim` PR. In the public protected phase,
+   eligible workboard-only PRs are bot-approved and auto-merged after the
+   workflow validation gate passes. WORKBOARD task states:
    - `planned` — filed, not yet started
    - `active` — claimed and in flight (you own it; no other orchestrator may claim it)
    - `blocked` — cannot proceed; document the blocker and set a `reclaimable` threshold
@@ -150,9 +158,11 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
    never merge a red CI.
 
 9. **Review.**
-   - Private phase (CS01–CS15a): GPT-5.5 + user review. Copilot review optional.
-   - Public phase (CS15b+): GPT-5.5 + Copilot review + user review on
-     CODEOWNERS-protected paths.
+   - Private phase (CS01–CS14): GPT-5.5 + user review. Copilot review optional.
+   - Public protected phase (current): GPT-5.5 + required PR checks + one
+     approving review by default. Repository admins may use the explicit
+     Ruleset bypass for owner override; workboard-only PRs use the validated
+     bot path.
 
 10. **Resolve all threads**, then **squash-merge**. Never merge with unresolved
     suggestions or blocking review threads.
