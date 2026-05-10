@@ -10,7 +10,7 @@
 
 ## ⚠️ RESUME POINT (2026-05-09T18:07Z) — read this first if you're a fresh agent instance
 
-CS15a content PR #74, settings-evidence PR #76, helper PR #77, bot dry-run PR #78, dry-run evidence PR #79, blocked-review PR #80, platform-gate PR #81, and the close-out PR have all merged to `main`. The repository is public and protected by Ruleset `main-protection` (`id=16185634`).
+CS15a content PR #74, settings-evidence PR #76, helper PR #77, bot dry-run PR #78, dry-run evidence PR #79, blocked-review PR #80, platform-gate PR #81, and the close-out PR have all merged to `main`. The repository is public and protected by Ruleset `main-protection` (`id=16185634`); the close-out also updates `fast-uri` to `3.1.2` in `package-lock.json` to clear the post-flip Dependabot alerts.
 
 **Bootstrap for resume:**
 
@@ -209,7 +209,8 @@ green in `docs/pre-flip-readiness.md`: public-facing docs exist, scan evidence
 is recorded, required status-check workflows are green, the workboard GitHub App
 bot is installed and dry-run proven, the repository is public, the main Ruleset
 is active, auto-merge is enabled, Private Vulnerability Reporting returned 204,
-and secret scanning is enabled.
+secret scanning is enabled, and the post-flip `fast-uri` Dependabot alerts are
+addressed by the close-out lockfile update.
 
 Decision: CS15a can close out. CS15b's originally planned visibility-flip work
 has been absorbed into this close-out per user authorization; the next mainline
