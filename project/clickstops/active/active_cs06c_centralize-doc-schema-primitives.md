@@ -1,9 +1,9 @@
 # CS06c — Centralize remaining doc-schema primitives in lib/doc-schema.mjs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs06c/centralize-doc-schema-primitives
+**Started:** 2026-05-10
 **Closed:** —
 **Filed by:** CS15d close-out (GPT-5.5 plan-vs-implementation review GO with non-blocking concern #1: refactored linters retain inline H2-only / anchor-enumeration / H2-until-next-H1/H2 body-extraction parsers).
 **Depends on:** CS06b (delivered via [CS15d](../done/done_cs15d_linter-expansion.md))
@@ -45,7 +45,14 @@ Single-CS scope; can be done by a single agent without fan-out, OR fan out as 1 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Add `collectHeadings`, `collectH2Headings`, `headingAnchor`, `extractSectionBody` to `lib/doc-schema.mjs` + tests | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Refactor `scripts/check-instructions.mjs` (drop `slugify` + `parseHeadings`) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Refactor `scripts/check-readme.mjs` (drop inline H2 collector) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Refactor `scripts/check-clickstop.mjs` (drop `h2Body` + inline gate body slice; preserve LRN-064 gate exactly) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Local review (GPT-5.5) | pending | yoga-ah | agent-id=yoga-ah \| role=local-reviewer \| report-status=pending \| learnings=0 |
+| Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | agent-id=yoga-ah \| role=close-out-reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD active→done row, CONTEXT.md if changed) | pending | yoga-ah | agent-id=yoga-ah \| role=closeout \| report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md entries, planned CSs filed if any) | pending | yoga-ah | agent-id=yoga-ah \| role=closeout \| report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 

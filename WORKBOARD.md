@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T07:31Z (yoga-ah session housekeeping — last-seen bump; no active CS)
+> **Last updated:** 2026-05-10T07:46Z (CS06c CLAIMED by yoga-ah)
 
 ## Orchestrators
 
@@ -10,21 +10,20 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T07:31Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T07:46Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | (no active CS — pre-CS16 backlog cleanup complete; CS15c/CS15d/CS15e all closed) | — | — | — | 2026-05-10T07:00Z | — |
+| CS06c | [Centralize remaining doc-schema primitives in `lib/doc-schema.mjs`](project/clickstops/active/active_cs06c_centralize-doc-schema-primitives.md) | active | yoga-ah | cs06c/centralize-doc-schema-primitives | 2026-05-10T07:46Z | — |
 
 ## Queued (planned, ready to claim in order)
 
 | Order | CS | Title | Notes |
 |---|---|---|---|
-| 1 | [CS06c](project/clickstops/planned/planned_cs06c_centralize-doc-schema-primitives.md) | Centralize remaining doc-schema primitives in `lib/doc-schema.mjs` | CS15d follow-up (GPT-5.5 R1 NB #1). Small refactor; can be claimed any time. |
-| 2 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time. |
-| 3 | CS16 | Bootstrap Sub Invaders | **Next mainline CS.** First downstream consumer of CS15e's constraint-detection flow. Claim once a planned file exists. |
+| 1 | [CS08c](project/clickstops/planned/planned_cs08c_extend-check-templates-markdown-context.md) | Extend `check-templates` markdown-context awareness | CS15d follow-up (GPT-5.5 R1 NB #2). Small extension; can be claimed any time. |
+| 2 | CS16 | Bootstrap Sub Invaders | **Next mainline CS.** First downstream consumer of CS15e's constraint-detection flow. Claim once a planned file exists. |
 
 All three pre-CS16 umbrella absorbed planned files (`planned_cs04a_*`, `planned_cs04b_*`, `planned_cs04d_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs09b_*`, `planned_cs10b_*`) have been `git mv`'d to `done/` with `**Superseded by:**` pointers.
 
