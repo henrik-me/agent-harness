@@ -105,14 +105,14 @@ flipped to `done` and a one-line "absorbed by CS15c" note in their bodies.
 | α1 | `lib/sync.mjs` | CS04b: accept `opts.configPath`; 3 error paths to exit 1 with clear messages. |
 | α2 (orchestrator) | `bin/harness.mjs` | CS04b threading + remove stop-gap. CS04d: explicit `--ref` reject in cmdSync/cmdCheck. Update SUBCOMMAND_HELP for both. |
 | α3 | `tests/cli.test.mjs` | CS04b: ≥6 new tests (happy + 3 error paths + cwd-relative + `--config=` form). CS04d: ≥2 new tests (rejection + help text). |
-| α4 | `tests/cs09-init.test.mjs` + `template/composed/OPERATIONS.md` + root `OPERATIONS.md` re-render | CS09b: sync-check assertion + integration-testing-checklist doc + lock-fixup commit. |
+| α4 | `tests/cs09-init.test.mjs` + `template/composed/OPERATIONS.md` (template-side edit only) | CS09b: sync-check assertion + integration-testing-checklist doc edit (template-side). |
 
 **File ownership disjointness:** ✅ — no two agents share a file.
 
 **Sequencing within the CS:**
 - Wave 1: α1, α3, α4 dispatch in parallel.
 - α2 starts once α1's `opts.configPath` shape is settled (orchestrator can stub the interface ahead of time so α3 can author tests against the planned API).
-- α4 runs OPERATIONS.md re-render LAST (after content commit; uses `--resolved-sha` flag).
+- **Sub-agents do NOT commit** ([OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch); [LRN-021](../../../LEARNINGS.md#lrn-021) no-commit preflight). Agents stage edits and report back. The orchestrator stages all sub-agent output, runs full validation, makes a single content commit, and then does the post-commit lock-fixup re-render of root `OPERATIONS.md` via `node bin/harness.mjs sync --mode=apply --resolved-sha <content-commit-sha> --cwd .` per [LRN-070/074](../../../LEARNINGS.md#lrn-070) (CS11b's `--resolved-sha` flag).
 
 ## Exit criteria
 

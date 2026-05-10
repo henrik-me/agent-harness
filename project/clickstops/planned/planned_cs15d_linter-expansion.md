@@ -124,9 +124,11 @@ All four originate from CS06/CS08/CS10 close-out review findings.
 
 | Agent | Owns | Deliverables |
 |---|---|---|
-| β9 (orchestrator) | `bin/harness.mjs` `cmdLint` + `template/managed/INSTRUCTIONS.md` (linter count update) + `template/composed/OPERATIONS.md` (preamble update) + root re-renders | Wire β6 + β7 linters; aggregator extension for β8's auto-dispatch; doc updates; lock-fixup commit |
+| β9 (orchestrator) | `bin/harness.mjs` `cmdLint` + `template/managed/INSTRUCTIONS.md` (linter count update; template-side edit only) + `template/composed/OPERATIONS.md` (preamble update; template-side edit only) | Wire β6 + β7 linters; aggregator extension for β8's auto-dispatch; doc updates (template-side only) |
 
 **File ownership disjointness:** ✅ — β1–β8 disjoint; β9 sequential after Wave 1.
+
+**Sub-agent commit discipline.** Per [OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch) and [LRN-021](../../../LEARNINGS.md#lrn-021), **sub-agents do not commit**. β1–β8 (and β9 if dispatched as a sub-agent) stage edits and report back. The orchestrator stages all output, runs full validation, makes a single content commit, and then does the post-commit lock-fixup re-render of root `INSTRUCTIONS.md` + `OPERATIONS.md` via `node bin/harness.mjs sync --mode=apply --resolved-sha <content-commit-sha> --cwd .` per [LRN-070/074](../../../LEARNINGS.md#lrn-070).
 
 ## Exit criteria
 

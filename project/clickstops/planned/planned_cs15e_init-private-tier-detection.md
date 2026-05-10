@@ -74,8 +74,9 @@ Autonomous design decisions:
 | `constraints` schema field | New optional `constraints: { tier, disposition, detected_at, owner, repo }` object on root `harness.config.json` | Additive (non-breaking → SemVer minor / v0.2.0). New ADR `0002-constraints-field.md` documents semantics. |
 | `tier` enum values | `public \| private-free \| private-pro \| private-team \| private-enterprise \| unknown` | Covers all GitHub plan tiers + a fallback for missing token / API failure. |
 | Anonymous fetch | Public repos use anonymous fetch (60/hr unauth limit; init makes 2 calls). Private repos without a token resolve to `tier: unknown` with a warning + the seeded artifact still written. | Avoids forcing token setup as a prerequisite. |
-| `disposition` default in `discipline-only` | Default applies only when `tier === "private-free"`. Public repos record `disposition: null` (or omit) since the constraint doesn't apply. | Disposition is meaningful only for private+free. |
+| `disposition` representation | When the disposition isn't applicable (any tier other than `private-free`), the `disposition` key is **omitted entirely** from `constraints` (not set to `null`). Schema enforces this via `if/then/else`. | Schemas with mixed `null`/omit are confusing; omit-when-N/A is the cleaner JSON Schema pattern and aligns with Ajv's strictness defaults. |
 | New CLI flags | `--constraint-disposition <enum>` and `--skip-constraint-detection` (boolean) | Both have `requireValue` guards per LRN-040 where applicable. |
+| **CS15d helper integration (γ4)** | γ4's init flow MUST use `loadConfig({cwd, configPath})` from `lib/config-reader.mjs` (delivered by CS15d β1) to read the consumer `harness.config.json` before merging in the new `constraints` block, then write back via the same module's `writeConfig({cwd, config})` writer (γ4 to add the writer if β1 didn't ship one). This is the operational evidence of the CS15d → CS15e dependency. | Otherwise the dependency is declarative-only and risks drift between init's read path and sync's read path (LRN-039 schema-first discipline). |
 
 ## Deliverables
 
@@ -86,15 +87,15 @@ Autonomous design decisions:
   1. Read `git remote get-url origin` from cwd; parse owner/repo.
   2. If no remote, return `{tier: 'unknown', reason: 'no-remote'}`.
   3. If unable to parse, return `{tier: 'unknown', reason: 'unparseable-remote', remoteUrl}`.
-  4. `fetch('https://api.github.com/repos/{owner}/{repo}')` (with token if available); on 404 → `{tier: 'unknown', reason: 'repo-not-found'}`; on 200 read `.visibility`.
-  5. If visibility === 'private', `fetch('https://api.github.com/users/{owner}')` and read `.plan.name` → map `free|pro|team|enterprise` to `private-{name}`. Default `private-free` if `.plan` absent.
+  4. `fetch('https://api.github.com/repos/{owner}/{repo}')` (with token if available); on 404 → `{tier: 'unknown', reason: 'repo-not-found'}`; on 200 read `.visibility` AND `.owner.type` (`User` or `Organization` — record verbatim in result).
+  5. If visibility === 'private', `fetch('https://api.github.com/{users|orgs}/{owner}')` (route on `.owner.type` from step 4) and read `.plan.name` → map `free|pro|team|enterprise` to `private-{name}`. **If `.plan` is absent or `.plan.name` is unrecognized:** return `{tier: 'unknown', reason: 'plan-data-unavailable'}` (do NOT default to `private-free` — that would be a misleading over-warn).
   6. If visibility === 'public', return `{tier: 'public', owner, repo}`.
-- [ ] `tests/lib-github-detect.test.mjs` (NEW; ≥10 tests) covering: env-var token present/absent, no-remote, unparseable-remote, public-anonymous, public-with-token, private-with-token (free/pro/team/enterprise), private-without-token (unknown), 404, network error.
+- [ ] `tests/lib-github-detect.test.mjs` (NEW; ≥10 tests) covering: env-var token present/absent, no-remote, unparseable-remote, public-anonymous, public-with-token, private-with-token (free/pro/team/enterprise — both User-owner and Org-owner code paths), private-without-token (unknown), private-with-token-but-plan-absent (unknown), 404, network error.
 
 ### Schema + ADR (γ2)
 
-- [ ] `schemas/harness.config.schema.json`: add optional `constraints` object property to root with subfields `tier` (enum), `disposition` (enum), `detected_at` (string, date-time format), `owner` (string), `repo` (string). `additionalProperties: false`. Required-fields rule: if `constraints` is present, `tier` is required; `disposition` required only when `tier === 'private-free'`.
-- [ ] `docs/adr/0002-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics, when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
+- [ ] `schemas/harness.config.schema.json`: add optional `constraints` object property to root with subfields `tier` (enum: `public | private-free | private-pro | private-team | private-enterprise | unknown`), `disposition` (enum: `discipline-only | upgrade-pro | flip-public-when-ready` — `null` is **not** an enum value; `disposition` is **omitted entirely** when not applicable), `detected_at` (string, date-time format), `owner` (string), `repo` (string). `additionalProperties: false`. Conditional rule via `if/then/else`: when `constraints.tier === 'private-free'`, `disposition` is required; otherwise it must be omitted.
+- [ ] `docs/adr/0002-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics (omitted when not applicable, never null), when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
 
 ### Seeded template (γ3)
 
@@ -105,12 +106,13 @@ Autonomous design decisions:
 
 - [ ] `bin/harness.mjs cmdInit` — new flow:
   1. Parse `--constraint-disposition` and `--skip-constraint-detection` flags (with help text).
-  2. Unless `--skip-constraint-detection`, run `detectRepoTier({cwd: targetDir})` → `{tier, owner, repo, reason}`.
+  2. Unless `--skip-constraint-detection`, run `detectRepoTier({cwd: targetDir})` → `{tier, owner, repo, reason, ownerType?}`.
   3. If `tier === 'private-free'`: pick disposition from flag, default `discipline-only`. Print disposition options notice always.
   4. Write `.harness-known-constraints.md` to targetDir from `template/seeded/` with substituted values.
-  5. Write `constraints: {tier, disposition, detected_at: <iso>, owner, repo}` into the consumer's `harness.config.json` (after init's existing config writes).
-  6. Print summary line: `"Constraints detected: tier=X, disposition=Y. See .harness-known-constraints.md for details."`
-- [ ] `tests/cli.test.mjs` extension (≥8 new tests):
+  5. **Use `lib/config-reader.mjs::loadConfig({cwd: targetDir})` (delivered by CS15d β1)** to read the consumer's `harness.config.json`, merge in `constraints: {tier, [disposition,] detected_at: <iso>, owner, repo}` (omit `disposition` when not applicable), and write the merged config back via `lib/config-reader.mjs::writeConfig({cwd, config})` (γ4 adds the writer if β1 didn't include one — see § Resolved decisions).
+  6. **Append a one-line reference to `.harness-known-constraints.md` into the consumer's `CONTEXT.md`** under a new H2 (or extend an existing "Constraints" H2 if present), using the same flat-key + consumer-root-relative-path discipline as managed templates ([LRN-049](../../../LEARNINGS.md#lrn-049), [LRN-050](../../../LEARNINGS.md#lrn-050)). This is a CS04a-original exit criterion (`planned_cs04a_*.md` line 27) carried forward into CS15e.
+  7. Print summary line: `"Constraints detected: tier=X, disposition=Y. See .harness-known-constraints.md for details."`
+- [ ] `tests/cli.test.mjs` extension (≥10 new tests):
   - `init` against a fixture with mocked `git remote` returning github URL → fetch is mocked → assertion: constraints written.
   - All 3 dispositions → asserted writes.
   - `--skip-constraint-detection` skips the flow.
@@ -118,7 +120,10 @@ Autonomous design decisions:
   - `init` against a fixture with a non-github remote (e.g. gitlab) → tier: unknown.
   - Anonymous fetch path (no token, public repo) → assertion: works.
   - Private repo + no token → tier: unknown + warning.
+  - Private repo + token but `.plan` data absent → tier: unknown (NOT `private-free`).
   - `--constraint-disposition <invalid>` → exit 2 with documented enum values.
+  - `init` writes a CONTEXT.md `.harness-known-constraints.md` reference exactly once even on re-runs (idempotent).
+  - `init`'s read of `harness.config.json` goes through `lib/config-reader.mjs::loadConfig` (assert via spy/mock or by introducing a tracer in the helper module).
 
 ### Doc updates (γ5)
 
@@ -135,23 +140,27 @@ Autonomous design decisions:
 | γ2 | `schemas/harness.config.schema.json` + `docs/adr/0002-constraints-field.md` + harness self-host `harness.config.json` (constraints block as smoke test) | Schema + ADR + smoke-test self-host |
 | γ3 | `template/seeded/.harness-known-constraints.md` + `template/seeded/harness.config.json` (constraints placeholder addition) | Seeded artifacts |
 | γ4 (orchestrator) | `bin/harness.mjs` `cmdInit` (only — restrict scope to function body of `cmdInit` and SUBCOMMAND_HELP['init']) + `tests/cli.test.mjs` (init tests appendix) | Init flow + CLI tests |
-| γ5 | `template/managed/INSTRUCTIONS.md` + root re-render via `--resolved-sha` | Doc updates + lock-fixup |
+| γ5 | `template/managed/INSTRUCTIONS.md` (template-side edit only) + new `template/seeded/CONTEXT.md` placeholder for the new "Constraints" H2 (so init can reliably append into it) | Doc updates and template-side edit only |
 
 **File ownership disjointness:** ✅ — note γ4's `bin/harness.mjs` scope is restricted to `cmdInit` (no overlap with γ2's schema or γ3's templates).
 
 **Sequencing within the CS:**
 - γ1, γ2, γ3, γ5 dispatch in parallel; γ4 runs once γ1's API signature and γ3's template body are stable. Orchestrator can stub the helper signature ahead of time.
+- **Sub-agents do NOT commit** ([OPERATIONS.md § Sub-agent dispatch](../../../OPERATIONS.md#sub-agent-dispatch); [LRN-021](../../../LEARNINGS.md#lrn-021) no-commit preflight). Agents stage edits and report back. The orchestrator stages all sub-agent output, runs full validation, makes a single content commit, and then does the post-commit lock-fixup re-render of root `INSTRUCTIONS.md` via `node bin/harness.mjs sync --mode=apply --resolved-sha <content-commit-sha> --cwd .` per [LRN-070/074](../../../LEARNINGS.md#lrn-070) (CS11b's `--resolved-sha` flag).
 
 ## Exit criteria
 
-- 578+ tests still pass (CS-α + CS-β cumulative; CS-γ adds ≥18 new: ≥10 detect helper + ≥8 init flow).
+- 578+ tests still pass (CS-α + CS-β cumulative; CS-γ adds ≥20 new: ≥10 detect helper + ≥10 init flow).
 - `harness lint --quiet`: 17/0/3 unchanged (CS-γ adds no new linters).
 - `harness sync --mode=check --cwd .`: "No drift detected".
-- `validate-schemas.mjs`: 4 schemas still pass; new `constraints` field validates correctly against test inputs.
-- New consumer init in tempdir with a mocked git remote produces a valid `.harness-known-constraints.md` and the `constraints` block in `harness.config.json`.
+- `validate-schemas.mjs`: 4 schemas still pass; new `constraints` field validates correctly against test inputs (positive: `private-free` requires `disposition`; positive: `public` rejects `disposition`; negative: `disposition: null` rejected).
+- New consumer init in tempdir with a mocked git remote produces a valid `.harness-known-constraints.md` and the `constraints` block in `harness.config.json` written via `lib/config-reader.mjs::writeConfig` (asserted by spy/mock).
+- **Consumer's `CONTEXT.md` post-init contains a one-line reference to `.harness-known-constraints.md`** (this is a CS04a-original exit criterion carried forward — `planned_cs04a_*.md` line 27).
 - `harness init --constraint-disposition discipline-only` records the disposition.
 - `harness init` against a repo with no remote prints "skipped detection" notice and proceeds without error.
 - `harness init --skip-constraint-detection` skips the flow entirely.
+- Private repo with a token but no `.plan` data → tier resolves to `unknown` (NOT `private-free`).
+- Re-running `init` is idempotent w.r.t. the CONTEXT.md reference (no duplicate lines).
 - One superseded planned file moved to `done/` with `**Status:** done` and "absorbed by CS15e" note.
 
 ## LRN range reservation

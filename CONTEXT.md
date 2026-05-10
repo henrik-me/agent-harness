@@ -79,8 +79,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 - **LEARNINGS.md ID numbering.** LRN-NNN entries are appended sequentially — concurrent close-outs from different orchestrators would race on the next ID.
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). Today this works with care via:
-1. **Lane split.** One orchestrator on mainline (CS10 → CS11 → ...), another on the deferred backlog (CS03b, CS04a/b/c/d, CS06b, CS08b, CS09b). Backlog CSs target narrow disjoint areas — low race risk.
-2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
+1. **Lane split.** One orchestrator on the next selected mainline/planned CS, another on a separate planned CS that targets disjoint areas. As of 2026-05-10, the deferred-backlog CSs (CS04a/b/d, CS06b, CS08b, CS09b, CS10b) are bundled into the **CS15c/d/e umbrellas** for sequential execution on the mainline; the originals carry `**Superseded by:**` pointers and MUST NOT be claimed independently. The CS22b future CS remains the parallel-orchestration candidate.
+2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. CS15c reserves LRN-082..086, CS15d reserves LRN-087..094, CS15e reserves LRN-095..099). Document the reservation in the umbrella's planned file and in WORKBOARD.
 
 **Missing infrastructure for true safe parallel orchestration** (would itself be a future CS — `CS22b: multi-orchestrator coordination`):
 - WORKBOARD multi-row Active Work with cross-orchestrator visibility
