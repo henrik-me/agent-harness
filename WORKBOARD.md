@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T07:00Z (CS15e DONE — pre-CS16 backlog cleanup complete; no active CS)
+> **Last updated:** 2026-05-10T07:31Z (yoga-ah session housekeeping — last-seen bump; no active CS)
 
 ## Orchestrators
 
@@ -10,7 +10,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T07:00Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T07:31Z |
 
 ## Active Work
 
