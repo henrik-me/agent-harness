@@ -108,7 +108,7 @@ Per the user authorization (2026-05-09):
 
 ### Bot workflow + dry-run prep (#8)
 - [x] `.github/workflows/workboard-auto-approve.yml` — workflow that:
-  - Triggers on `pull_request` with label `workboard-only`.
+  - Triggers on `pull_request_target` with label `workboard-only` so App secrets are only used from base-controlled workflow code.
   - Validates: changed paths are exclusively `WORKBOARD.md` + `project/clickstops/{planned,active,done}/**` (no `lib/`, `bin/`, `template/`, `.github/workflows/`, `schemas/`, `package.json`, etc.).
   - Validates: PR author is in an allowlist (orchestrator agent IDs).
   - Validates: branch name matches `workboard/cs<NN>-(claim|close)` or `cs<NN>/(claim|close-out)`.
