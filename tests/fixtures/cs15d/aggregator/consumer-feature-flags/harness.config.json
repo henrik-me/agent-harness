@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/harness.config.schema.json",
+  "version": "self",
+  "project": {
+    "name": "consumer-feature-flags",
+    "agent_suffix": "tst"
+  },
+  "managed": {
+    "files": []
+  },
+  "composed": {
+    "files": []
+  },
+  "seeded": {
+    "files": []
+  },
+  "excluded": [],
+  "scaffolds": [
+    "feature-flags"
+  ]
+}

@@ -266,8 +266,8 @@ describe('harness lint', () => {
   it('lint --skip workflow-pins,readme excludes those linters', () => {
     const r = run(['lint', '--skip', 'workflow-pins,readme', '--quiet']);
     assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}`);
-    assert.ok(!r.stdout.includes('workflow-pins:'), `Expected workflow-pins skipped; got:\n${r.stdout}`);
-    assert.ok(!r.stdout.includes('readme:'), `Expected readme skipped; got:\n${r.stdout}`);
+    assert.ok(!/\b workflow-pins:/.test(r.stdout), `Expected workflow-pins skipped; got:\n${r.stdout}`);
+    assert.ok(!/[^-]readme:/.test(r.stdout), `Expected readme skipped; got:\n${r.stdout}`);
     assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings to still run; got:\n${r.stdout}`);
   });
 

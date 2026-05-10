@@ -2,12 +2,11 @@
 /**
  * scripts/check-instructions.mjs — Linter for INSTRUCTIONS.md.
  *
- * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
- *
  * Validates:
  *   1. Required top-level (H2) headings are present.
  *   2. In-doc anchor links ([text](#anchor)) resolve to an existing heading.
  *   3. Headings with no content body emit a WARNING (dead-section detection).
+ *   4. Scoped cross-file references resolve (LRN anchors and ADR files).
  *
  * Usage:
  *   node scripts/check-instructions.mjs --file <path> [--quiet]
@@ -22,10 +21,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {
+  DocSchemaError,
+  assertHeadings,
+  parseFrontmatterBlocks,
+  resolveLinks,
+} from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
@@ -35,14 +36,20 @@ let filePath = null;
 let quiet = false;
 
 const argv = process.argv.slice(2);
+
+function requireValue(args, i, flagName) {
+  if (!args[i + 1] || args[i + 1].startsWith('-')) {
+    process.stderr.write(`check-instructions: missing value for ${flagName}\n`);
+    process.exit(2);
+  }
+  return args[i + 1];
+}
+
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--file') {
-    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
-      process.stderr.write('check-instructions: missing value for --file\n');
-      process.exit(2);
-    }
-    filePath = argv[++i];
+    filePath = requireValue(argv, i, '--file');
+    i++;
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
@@ -105,9 +112,13 @@ const lines = normalized.split('\n');
 const errors = [];
 const warnings = [];
 
-function logError(msg) {
+function logError(msg, { stream = 'stdout' } = {}) {
   errors.push(msg);
-  if (!quiet) process.stdout.write(`ERROR: ${msg}\n`);
+  if (stream === 'stderr') {
+    process.stderr.write(`${msg}\n`);
+  } else if (!quiet) {
+    process.stdout.write(`ERROR: ${msg}\n`);
+  }
 }
 
 function logWarning(msg) {
@@ -136,6 +147,115 @@ function slugify(text) {
     .replace(/^-|-$/g, '');     // trim leading/trailing hyphens
 }
 
+function parseHeadings(text) {
+  const parsed = [];
+  const docLines = text.split('\n');
+  for (let i = 0; i < docLines.length; i++) {
+    const m = docLines[i].match(/^(#{1,6})\s+(.+)$/);
+    if (m) {
+      const headingText = m[2].trim();
+      parsed.push({
+        level: m[1].length,
+        text: headingText,
+        slug: slugify(headingText),
+        lineIndex: i,
+      });
+    }
+  }
+  return parsed;
+}
+
+function findFileUp(startDir, filename) {
+  let current = path.resolve(startDir);
+  while (true) {
+    const candidate = path.join(current, filename);
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(current);
+    if (parent === current) return null;
+    current = parent;
+  }
+}
+
+function extractMarkdownHrefs(text) {
+  const hrefs = [];
+  const linkRegex = /\[(?:[^\]]*)\]\(([^)]+)\)/g;
+  for (const line of text.split('\n')) {
+    linkRegex.lastIndex = 0;
+    let m;
+    while ((m = linkRegex.exec(line)) !== null) {
+      hrefs.push(m[1]);
+    }
+  }
+  return hrefs;
+}
+
+function validateLearningReferences(hrefs, docDir) {
+  const lrnRefs = hrefs
+    .filter((href) => /^LEARNINGS\.md#lrn-\d+$/i.test(href))
+    .map((href) => ({
+      href,
+      id: `LRN-${href.match(/#lrn-(\d+)$/i)[1]}`,
+    }));
+
+  if (lrnRefs.length === 0) return;
+
+  const learningsPath = findFileUp(docDir, 'LEARNINGS.md');
+  if (!learningsPath) {
+    for (const ref of lrnRefs) {
+      logError(
+        `INSTRUCTIONS.md: dead LRN anchor "${ref.href}" (no matching heading in LEARNINGS.md)`,
+        { stream: 'stderr' }
+      );
+    }
+    return;
+  }
+
+  let learningsText;
+  try {
+    learningsText = fs.readFileSync(learningsPath, 'utf8');
+  } catch (err) {
+    throw new DocSchemaError(`cannot read LEARNINGS.md: ${err.message}`, 'READ_ERROR');
+  }
+
+  const blocks = parseFrontmatterBlocks(learningsText);
+  const malformed = blocks.find((block) => block.parseError);
+  if (malformed) {
+    throw new DocSchemaError(
+      `LEARNINGS.md malformed YAML near line ${malformed.lineNumber}: ${malformed.parseError.message}`,
+      'PARSE_ERROR'
+    );
+  }
+
+  for (const ref of lrnRefs) {
+    const missing = assertHeadings(learningsText, [ref.id]);
+    if (missing.length > 0) {
+      logError(
+        `INSTRUCTIONS.md: dead LRN anchor "${ref.href}" (no matching heading in LEARNINGS.md)`,
+        { stream: 'stderr' }
+      );
+    }
+  }
+}
+
+function isAdrMarkdownReference(href) {
+  const filePart = href.split('#')[0].split('?')[0];
+  return filePart.startsWith('docs/adr/') && filePart.endsWith('.md');
+}
+
+function validateAdrReferences(text, docDir) {
+  const brokenLinks = resolveLinks(text, docDir)
+    .filter((finding) => isAdrMarkdownReference(finding.href));
+
+  for (const finding of brokenLinks) {
+    const filePart = finding.href.split('#')[0].split('?')[0];
+    const resolved = path.resolve(docDir, filePart);
+    logError(
+      `INSTRUCTIONS.md: dead ADR reference "${filePart}" (file does not exist at ${resolved})`,
+      { stream: 'stderr' }
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Parse headings from the document
 // ---------------------------------------------------------------------------
@@ -145,35 +265,24 @@ function slugify(text) {
  */
 
 /** @type {Heading[]} */
-const headings = [];
-
-for (let i = 0; i < lines.length; i++) {
-  const m = lines[i].match(/^(#{1,6})\s+(.+)$/);
-  if (m) {
-    const text = m[2].trim();
-    headings.push({
-      level: m[1].length,
-      text,
-      slug: slugify(text),
-      lineIndex: i,
-    });
-  }
-}
+const headings = parseHeadings(normalized);
 
 // Set of all slugs present in the document (for anchor validation).
 const existingSlugs = new Set(headings.map((h) => h.slug));
-
-// Set of H2 heading texts present in the document.
-const existingH2Texts = new Set(
-  headings.filter((h) => h.level === 2).map((h) => h.text)
-);
 
 // ---------------------------------------------------------------------------
 // Check 1 — Required H2 headings
 // ---------------------------------------------------------------------------
 
+const existingH2Texts = new Set(
+  headings.filter((h) => h.level === 2).map((h) => h.text)
+);
+const missingRequiredHeadings = new Set(
+  assertHeadings(normalized, REQUIRED_HEADINGS).map((finding) => finding.heading)
+);
+
 for (const required of REQUIRED_HEADINGS) {
-  if (!existingH2Texts.has(required)) {
+  if (missingRequiredHeadings.has(required) || !existingH2Texts.has(required)) {
     logError(`Missing required heading: "## ${required}"`);
   }
 }
@@ -222,6 +331,23 @@ for (let h = 0; h < headings.length; h++) {
       `Line ${heading.lineIndex + 1}: heading "${'#'.repeat(heading.level)} ${heading.text}" has no content (dead section)`
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Check 4 — Scoped cross-file link validation
+// ---------------------------------------------------------------------------
+
+try {
+  const docDir = path.dirname(path.resolve(filePath));
+  const hrefs = extractMarkdownHrefs(normalized);
+  validateLearningReferences(hrefs, docDir);
+  validateAdrReferences(normalized, docDir);
+} catch (err) {
+  if (err instanceof DocSchemaError) {
+    process.stderr.write(`check-instructions: ${err.message}\n`);
+    process.exit(1);
+  }
+  throw err;
 }
 
 // ---------------------------------------------------------------------------

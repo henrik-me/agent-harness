@@ -2,12 +2,8 @@
 /**
  * scripts/check-readme.mjs — Linter for README.md (v0 baseline).
  *
- * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
- *
  * Validates README.md structural requirements against the eventual READMEGUIDE
  * (CS08 will canonicalize; this script enforces a v0 baseline).
- *
- * TODO(CS06b): migrate to lib/doc-schema.mjs primitives where applicable
  *
  * DECISIONS:
  *   - "## Architecture" OR link to ARCHITECTURE.md: ERROR per CS06 spec.
@@ -36,10 +32,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { assertHeadings, resolveLinks } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
@@ -48,15 +41,28 @@ const __dirname = path.dirname(__filename);
 let filePath = null;
 let quiet = false;
 
+/**
+ * Require a value-taking flag to have a non-flag value.
+ * @param {string[]} args
+ * @param {number} i
+ * @param {string} flagName
+ * @returns {string}
+ */
+function requireValue(args, i, flagName) {
+  const next = args[i + 1];
+  if (!next || next.startsWith('-')) {
+    process.stderr.write(`check-readme: missing value for ${flagName}\n`);
+    process.exit(2);
+  }
+  return next;
+}
+
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--file') {
-    if (!argv[i + 1] || argv[i + 1].startsWith('-')) {
-      process.stderr.write('check-readme: missing value for --file\n');
-      process.exit(2);
-    }
-    filePath = argv[++i];
+    filePath = requireValue(argv, i, '--file');
+    i++;
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
@@ -95,6 +101,7 @@ try {
 // Normalize: strip UTF-8 BOM, convert CRLF/CR → LF.
 const text = rawText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 const lines = text.split('\n');
+const fileDir = path.dirname(path.resolve(filePath));
 
 // ---------------------------------------------------------------------------
 // Finding collectors
@@ -155,19 +162,34 @@ if (firstH1Index !== -1) {
 // Helpers for H2 + full-text pattern matching
 // ---------------------------------------------------------------------------
 
-/** Lower-cased H2 heading text from the document. */
-const h2Headings = lines
-  .filter((l) => /^##\s/.test(l))
-  .map((l) => l.replace(/^##\s+/, '').trim().toLowerCase());
+// kept inline; see CS06b ESCALATION: doc-schema currently has no primitive for
+// collecting only H2 headings while preserving this linter's case-insensitive
+// regex semantics.
+const h2Headings = [];
+for (const line of lines) {
+  const m = line.match(/^##\s+(.+)$/);
+  if (m) h2Headings.push(m[1].trim());
+}
 
 const fullTextLower = text.toLowerCase();
+const brokenRelativeLinkHrefs = new Set(resolveLinks(text, fileDir).map((f) => f.href));
+
+/**
+ * Preserve the legacy "mention anywhere" semantics while routing markdown link
+ * collection through doc-schema.
+ * @param {string} target
+ */
+function mentionsRequiredLinkTarget(target) {
+  return text.includes(target) || brokenRelativeLinkHrefs.has(target);
+}
 
 /**
  * Return true if any H2 heading matches the given pattern.
  * @param {RegExp} pattern
  */
 function hasH2Matching(pattern) {
-  return h2Headings.some((h) => pattern.test(h));
+  const match = h2Headings.find((h) => pattern.test(h.toLowerCase()));
+  return match ? assertHeadings(text, [match]).length === 0 : false;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +212,7 @@ if (!hasH2Matching(/license/) && !fullTextLower.includes('mit')) {
 // Check 3c — Architecture / ARCHITECTURE.md link (ERROR)
 // ---------------------------------------------------------------------------
 
-if (!hasH2Matching(/architecture/) && !text.includes('ARCHITECTURE.md')) {
+if (!hasH2Matching(/architecture/) && !mentionsRequiredLinkTarget('ARCHITECTURE.md')) {
   logError(
     'Missing required "## Architecture" section or a link to ARCHITECTURE.md'
   );
@@ -200,7 +222,7 @@ if (!hasH2Matching(/architecture/) && !text.includes('ARCHITECTURE.md')) {
 // Check 3d — Status / CONTEXT.md link (ERROR)
 // ---------------------------------------------------------------------------
 
-if (!hasH2Matching(/status/) && !text.includes('CONTEXT.md')) {
+if (!hasH2Matching(/status/) && !mentionsRequiredLinkTarget('CONTEXT.md')) {
   logError(
     'Missing required "## Status" section or a link to CONTEXT.md'
   );

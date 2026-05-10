@@ -460,6 +460,10 @@ Run all of the following and include each result in SELF-CHECKS RUN:
 4. If tests were added/modified: `node --test` — report count delta
    (e.g. "23 → 27 tests; all pass").
 5. For any .mjs files authored: `node -c <file>` exits 0.
+6. If template files were modified (anything under `template/`): run the
+   templates linter — `node scripts/check-templates.mjs --dir template --cwd .`
+   must exit 0 (LRN-049/050/051: no dot-notation placeholders, no relative-up
+   paths, no self-referencing TODO/FIXME tokens in PR-template files).
 
 ## Mandatory report shape
 

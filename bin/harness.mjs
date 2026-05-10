@@ -135,10 +135,21 @@ Run all harness linters against the repo. Aggregates results from:
   - check-workflow-pins.mjs (.github/workflows/)
   - check-text-encoding.mjs (BOM + line endings; walks --cwd recursively)
   - check-fixtures.mjs    (tests/fixtures/ — gitignored fixture paths; LRN-076)
+  - check-templates.mjs   (template/ subtree — LRN-049/050/051 template-authoring rules)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
   - check-compose-v2.mjs  (compose.yaml or docker-compose.yml if present)
+
+Self-host-only (when package.json.name === '@henrik-me/agent-harness'):
+  - check-pack.mjs        (package whitelist)
+  - check-scaffold-readme.mjs (one invocation per scaffolds/<name>/README.md; LRN-077)
+
+Auto-dispatched scaffold policy linters (when harness.config.json declares
+the scaffold AND the consumer ships the corresponding script in scripts/):
+  - scaffolds: ["migrations"]    → migration-policy    (scripts/check-migration-policy.mjs)
+  - scaffolds: ["feature-flags"] → feature-flag-policy (scripts/check-feature-flag-policy.mjs)
+  Missing scripts are graceful-skipped (matches pr-body/compose-v2 pattern).
 
 Linters whose target does not exist are skipped (and noted in the summary).
 
@@ -875,6 +886,16 @@ async function cmdLint(args, _global) {
       args: ['--dir', path.join(cwd, 'tests', 'fixtures')],
       target: path.join(cwd, 'tests', 'fixtures'),
     },
+    {
+      // CS15d (CS08b): templates linter. Enforces LRN-049 (no dot-notation
+      // placeholders), LRN-050 (no relative-up paths), LRN-051 (no
+      // self-referencing TODO/FIXME tokens in PR-template files). Skipped if
+      // there is no template/ directory at the consumer cwd.
+      name: 'templates',
+      script: 'check-templates.mjs',
+      args: ['--dir', path.join(cwd, 'template'), '--cwd', cwd],
+      target: path.join(cwd, 'template'),
+    },
     // CS13: pack linter. Self-host-guarded: only runs when the consumer's
     // package.json `name` matches `@henrik-me/agent-harness` (i.e. when the
     // harness repo is linting itself or a vendored copy). Other consumers
@@ -896,6 +917,80 @@ async function cmdLint(args, _global) {
         args: isSelfHost ? ['--cwd', cwd] : null,
         target: isSelfHost ? path.join(cwd, 'package.json') : null,
       };
+    })(),
+    // CS15d (CS10b): scaffold-readme self-host walk. One linter entry per
+    // scaffolds/<name>/README.md in the harness repo itself. Self-host-guarded
+    // (LRN-077) — consumer repos do not ship a scaffolds/ tree at the harness
+    // root. For non-self-host consumers, emit a single skipped row to keep
+    // the lint summary shape stable.
+    ...(() => {
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft */ }
+      if (!isSelfHost) {
+        return [{
+          name: 'scaffold-readme',
+          script: 'check-scaffold-readme.mjs',
+          args: null,
+          target: null,
+        }];
+      }
+      const scaffoldsDir = path.join(cwd, 'scaffolds');
+      if (!existsSync(scaffoldsDir)) return [];
+      const out = [];
+      for (const entry of readdirSync(scaffoldsDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const readmePath = path.join(scaffoldsDir, entry.name, 'README.md');
+        if (!existsSync(readmePath)) continue;
+        out.push({
+          name: `scaffold-readme:${entry.name}`,
+          script: 'check-scaffold-readme.mjs',
+          args: ['--file', readmePath, '--name', entry.name],
+          target: readmePath,
+        });
+      }
+      return out;
+    })(),
+    // CS15d (CS10b part 2): scaffold-policy auto-dispatch. For each scaffold
+    // declared in harness.config.json `scaffolds[]`, look up the deterministic
+    // shipped-linter mapping and dispatch the linter from the consumer's
+    // scripts/ dir. Mapping is intentional: scaffold names are plural
+    // (categorical), shipped linter names are singular (per-item). Row names
+    // mirror the linter basename (without `check-` prefix and `.mjs` suffix)
+    // to make the dispatch source visible in the summary. New shipped scaffold
+    // linters must be added to SHIPPED_SCAFFOLD_LINTERS below. Missing scripts
+    // graceful-skip (matches pr-body/compose-v2 pattern).
+    ...(() => {
+      const SHIPPED_SCAFFOLD_LINTERS = {
+        migrations: 'check-migration-policy.mjs',
+        'feature-flags': 'check-feature-flag-policy.mjs',
+      };
+      let scaffolds = [];
+      try {
+        if (existsSync(effectiveConfigPath)) {
+          const cfg = JSON.parse(readFileSync(effectiveConfigPath, 'utf8'));
+          if (Array.isArray(cfg.scaffolds)) scaffolds = cfg.scaffolds;
+        }
+      } catch { /* ignore — surfaced by other linters */ }
+      const out = [];
+      for (const scaffoldName of scaffolds) {
+        const linterScript = SHIPPED_SCAFFOLD_LINTERS[scaffoldName];
+        if (!linterScript) continue;
+        const consumerScriptPath = path.join(cwd, 'scripts', linterScript);
+        const rowName = linterScript.replace(/^check-/, '').replace(/\.mjs$/, '');
+        out.push({
+          name: rowName,
+          script: consumerScriptPath,
+          args: ['--cwd', cwd],
+          target: consumerScriptPath,
+        });
+      }
+      return out;
     })(),
     {
       name: 'public-artifact',
@@ -948,7 +1043,9 @@ async function cmdLint(args, _global) {
     if (!quiet) {
       process.stdout.write(`\n[${linter.name}]\n`);
     }
-    const linterScript = path.join(REPO_ROOT, 'scripts', linter.script);
+    const linterScript = path.isAbsolute(linter.script)
+      ? linter.script
+      : path.join(REPO_ROOT, 'scripts', linter.script);
     const fullArgs = [linterScript, ...linter.args];
     if (quiet) fullArgs.push('--quiet');
     const result = spawnSync(process.execPath, fullArgs, {
