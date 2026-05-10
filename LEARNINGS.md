@@ -2006,6 +2006,31 @@ claim_area: testing
 
 **Disposition:** Applied. No code change required — the existing convention works and renaming is out of scope for CS06c. Future CS plan authors should `ls tests/<expected-path>` before naming an "existing file to extend"; future implementers who find a mismatch should document the deviation in close-out Notes rather than silently rename or create. Optional follow-up: a tiny cleanup CS could rename `tests/doc-schema.test.mjs` → `tests/lib-doc-schema.test.mjs` and `tests/sync.test.mjs` → `tests/lib-sync.test.mjs` for naming consistency, but this is purely cosmetic and not worth a dedicated CS unless bundled with another testing-area change.
 
+### LRN-097
+
+```yaml
+id: LRN-097
+date: 2026-05-10
+category: architectural
+source_cs: CS08c
+status: applied
+tags: [check-templates, markdown-context, file-type-gating, false-negative, lrn-049, lrn-050, lrn-051]
+claim_area: lint-rules
+```
+
+**Problem:** When a multi-format linter (one that scans `.md`, `.yml`, `.json`, `.mjs`, etc. all together) gains "markdown-context awareness" — i.e. logic that strips fenced code blocks, indented code blocks, inline code spans, HTML comments, etc. before applying its real checks — the markdown-only constructs MUST be gated by file type. Otherwise the stripping silently masks real violations in non-markdown files. CS08c R1 shipped `stripMarkdownNonScannable` with indented-code-block stripping (`/^( {4,}|\t)/`) applied to every scanned file. A YAML template line like `      - run: echo {{project.name}}` (8-space indent) would be emptied before the LRN-049 dot-notation check ran, masking a real violation. The R1 GPT-5.5 content reviewer caught this with a dry-run example; the R2 fix (`36d6dc5`) introduced an `isMarkdown` flag derived from `path.extname(filePath).toLowerCase() === '.md'` and gated the indented-line stripping behind it.
+
+**Finding:** **For multi-format linters with markdown-context awareness, classify each context-stripping rule as either (a) markdown-only — must be gated to `.md` files, or (b) safe-everywhere — applies to all file types.** The criterion is whether the construct's syntax could appear naturally and meaningfully in non-markdown files:
+
+- **Markdown-only (must gate):** indented code blocks (≥4 spaces / tab) — YAML, JSON, JS routinely use deep indentation as part of normal structure.
+- **Safe-everywhere (no gating needed):** triple-backtick fences (`` ``` ``), tilde fences (`~~~`), HTML comments (`<!-- -->`), N-backtick inline spans — these constructs are no-ops in YAML/JSON/JS in practice; a YAML file with literal `` ``` `` inside it is bizarre and not worth optimising for.
+
+When in doubt, gate. False-negatives in linter rules are far worse than the small cost of a file-extension check. The check itself is `path.extname(filePath).toLowerCase() === '.md'`; if a future linter wants to scan `.markdown` too, generalise to a small `isMarkdownPath()` helper.
+
+**Evidence:** [`scripts/check-templates.mjs:108-128`](scripts/check-templates.mjs) (`stripMarkdownNonScannable(line, state, isMarkdown)` post-R2 — `isMarkdown` parameter required); [`scripts/check-templates.mjs:163`](scripts/check-templates.mjs) (`lintFile` derives `isMarkdown = path.extname(filePath).toLowerCase() === '.md'`); [`tests/fixtures/cs08c/check-templates/indented-yaml-still-flags.yml`](tests/fixtures/cs08c/check-templates/indented-yaml-still-flags.yml) + [`tests/check-templates.test.mjs`](tests/check-templates.test.mjs) (the YAML regression test that locks the gating in place); [`project/clickstops/done/done_cs08c_extend-check-templates-markdown-context.md`](project/clickstops/done/done_cs08c_extend-check-templates-markdown-context.md) § Notes / Learnings (records the R1 NEEDS-FIX → R2 GO loop).
+
+**Disposition:** Applied. The fix is in place in `scripts/check-templates.mjs`. The principle generalises beyond CS08c: any future linter that gains markdown-context awareness must inventory its rules against the markdown-only-vs-safe-everywhere classification, with file-type gating as the default. Consider adding a brief checklist to OPERATIONS.md § Linter authoring (or wherever linter-design guidance lives) — but defer the documentation change until a second occurrence confirms the cue is needed (per LRN-rule-of-three; CS08c is occurrence #1, complementary to LRN-089's general markdown-context awareness pattern).
+
 ## Obsolete
 
 (none yet)
