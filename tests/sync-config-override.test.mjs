@@ -169,7 +169,8 @@ test('sync({ configPath }) reports ESYNC_INVALID_CONFIG with override-specific J
     (err) => {
       assert(err instanceof SyncError);
       assert.equal(err.code, 'ESYNC_INVALID_CONFIG');
-      assert.match(err.message, /^Config file is not valid JSON: /);
+      assert.match(err.message, /^Config file .* is not valid JSON: /);
+      assert.ok(err.message.includes(malformedPath), `message must include override path: ${err.message}`);
       return true;
     }
   );
@@ -198,6 +199,8 @@ test('sync({ configPath }) reports ESYNC_INVALID_CONFIG for schema-invalid overr
       assert(err instanceof SyncError);
       assert.equal(err.code, 'ESYNC_INVALID_CONFIG');
       assert.match(err.message, /failed schema validation/);
+      // R1 reviewer fix: schema-validation errors must surface the override path.
+      assert.ok(err.message.includes(invalidPath), `message must include override path: ${err.message}`);
       return true;
     }
   );

@@ -1011,7 +1011,7 @@ describe('CS15c — CS04b --config threading + CS04d --ref reject', () => {
       const r = run(['sync', '--config', malformedConfigPath, '--cwd', repoDir]);
       assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
       assert.ok(
-        r.stderr.includes('Config file is not valid JSON'),
+        r.stderr.includes('is not valid JSON'),
         `stderr missing JSON parse message; got: ${r.stderr}`,
       );
     } finally {
@@ -1020,7 +1020,7 @@ describe('CS15c — CS04b --config threading + CS04d --ref reject', () => {
     }
   });
 
-  it('sync --config <schema-invalid-json> exits 1 with schema-related stderr', () => {
+  it('sync --config <schema-invalid-json> exits 1 with schema-related stderr (R1: includes override path)', () => {
     const repoDir = makeRepoWithConfig();
     const invalidConfigPath = path.join(makeTmpDir('harness-cs15c-invalid-schema-'), 'invalid.harness.config.json');
     try {
@@ -1032,8 +1032,54 @@ describe('CS15c — CS04b --config threading + CS04d --ref reject', () => {
         /schema|validation|invalid|missing required field/i,
         `stderr should be schema-related; got: ${r.stderr}`,
       );
+      // R1 reviewer (GPT-5.5) blocker: schema-validation error stderr must include
+      // the override path so users see WHICH file failed, not just "harness.config.json".
+      assert.ok(
+        r.stderr.includes(invalidConfigPath),
+        `stderr must include the override path (got: ${r.stderr})`,
+      );
     } finally {
       rmSync(path.dirname(invalidConfigPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config <malformed-path> stderr includes the override path (R1)', () => {
+    const repoDir = makeRepoWithConfig();
+    const malformedPath = path.join(makeTmpDir('harness-cs15c-malformed-path-'), 'broken.harness.config.json');
+    try {
+      writeText(malformedPath, '{ this is not json\n');
+      const r = run(['sync', '--config', malformedPath, '--cwd', repoDir]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(
+        r.stderr.includes(malformedPath),
+        `stderr must include the override path (got: ${r.stderr})`,
+      );
+    } finally {
+      rmSync(path.dirname(malformedPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('check --config <path> uses the alternate config (R1: explicit check-side regression)', () => {
+    const repoDir = makeRepoWithConfig('cwd-config-project', 'cwd');
+    const altConfigPath = path.join(makeTmpDir('harness-cs15c-check-config-'), 'alt.harness.config.json');
+    try {
+      // Write an override config whose schema-invalid shape forces a clear,
+      // identifiable failure path that proves the override is the file being read.
+      writeJSON(altConfigPath, { project: { name: 'x', agent_suffix: 'x' } });
+      const r = run(['check', '--config', altConfigPath, '--cwd', repoDir]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(
+        r.stderr.includes(altConfigPath),
+        `stderr must include the override path proving check used it (got: ${r.stderr})`,
+      );
+      assert.ok(
+        !r.stderr.includes('--config is not yet supported'),
+        `stop-gap message must be gone (got: ${r.stderr})`,
+      );
+    } finally {
+      rmSync(path.dirname(altConfigPath), { recursive: true, force: true });
       rmSync(repoDir, { recursive: true, force: true });
     }
   });

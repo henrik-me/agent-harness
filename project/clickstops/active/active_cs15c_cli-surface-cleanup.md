@@ -138,15 +138,15 @@ This is a **discipline-only** reservation (no mechanical infrastructure exists y
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | in_progress | yoga-ah | branch `cs15c/claim` |
-| Branch `cs15c/content` from main post-claim | pending | yoga-ah | — |
-| α1: `lib/sync.mjs` accept `opts.configPath`; 3 error paths exit 1 | pending | sub-agent α1 | CS04b deliverable |
-| α2 (orchestrator): `bin/harness.mjs` thread `--config`; reject `--ref`; SUBCOMMAND_HELP updates | pending | yoga-ah | CS04b + CS04d; orchestrator-owned bottleneck |
-| α3: `tests/cli.test.mjs` ≥6 CS04b tests + ≥2 CS04d tests | pending | sub-agent α3 | learnings=0 |
-| α4: `tests/cs09-init.test.mjs` sync-check assertion + `template/composed/OPERATIONS.md` integration-testing checklist subsection | pending | sub-agent α4 | CS09b deliverable; template-side edit only |
-| Orchestrator: stage all sub-agent output; full validation; single content commit | pending | yoga-ah | post Wave 1 |
-| Orchestrator: post-content lock-fixup re-render of root `OPERATIONS.md` via `--resolved-sha <content-sha>` | pending | yoga-ah | LRN-070/074 |
-| Plan-vs-implementation review (gpt-5.5 rubber-duck) | pending | yoga-ah | LRN-064 mandatory gate |
+| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | done | yoga-ah | branch `cs15c/claim`; merged in PR #88 @ 8944a35 |
+| Branch `cs15c/content` from main post-claim | done | yoga-ah | branched from origin/main @ 8944a35 |
+| α1: `lib/sync.mjs` accept `opts.configPath`; 3 error paths exit 1 | done | sub-agent α1 | CS04b deliverable; +208 lines new test file (5/5 pass); learnings=0 |
+| α2 (orchestrator): `bin/harness.mjs` thread `--config`; reject `--ref`; SUBCOMMAND_HELP updates | done | yoga-ah | CS04b + CS04d; also fixed α4's init-drift escalation by appending sync --apply at end of cmdInit |
+| α3: `tests/cli.test.mjs` ≥6 CS04b tests + ≥2 CS04d tests | done | sub-agent α3 | 9 new tests in CS15c describe block; existing stop-gap tests removed; learnings=0 |
+| α4: `tests/cs09-init.test.mjs` sync-check assertion + `template/composed/OPERATIONS.md` integration-testing checklist subsection | done | sub-agent α4 | CS09b deliverable; surfaced real init-drift bug — orchestrator fixed via cmdInit sync-apply finalize; learnings=0 |
+| Orchestrator: stage all sub-agent output; full validation; single content commit | done | yoga-ah | content commit @ 0933e9c |
+| Orchestrator: post-content lock-fixup re-render of root `OPERATIONS.md` via `--resolved-sha <content-sha>` | done | yoga-ah | lock-fixup commit @ dc350b4 (LRN-070/074) |
+| Plan-vs-implementation review (gpt-5.5 rubber-duck) | in_progress | yoga-ah | LRN-064 mandatory gate; R1 dispatched 2026-05-09 |
 | Open content PR; address review iterations; squash-merge | pending | yoga-ah | — |
 | Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + RESUME POINT in this file; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15c" pointer) | pending | yoga-ah | required by check-clickstop close-out enforcement |
 | Close-out: learnings + follow-ups (LEARNINGS.md within LRN-082..086; document any deferred follow-ups as new planned CSs) | pending | yoga-ah | required by check-clickstop close-out enforcement |
