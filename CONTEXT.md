@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-09 (CS03e close-out — pre-CS15a hygiene + CI fix complete)
+> **Last updated:** 2026-05-10 (CS15a close-out — public readiness and visibility flip complete)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -51,7 +51,7 @@
 
 - **CS03e complete** (closed 2026-05-09). **Pre-CS15a hygiene CS** addressing [LRN-019](LEARNINGS.md#lrn-019) per user directive 2026-05-09 ("I like those gates to be in place"). Adds `schemas/legacy-composed-mapping.schema.json` (Draft-2020-12) formally defining the shape of `legacy_composed_mapping.json` — the file consumers author when `mergeComposed()` raises `EMERGE_LEGACY_UNMAPPED` (cases (b) consumer-edited-prose + (d) no-prior-lock per CS03d's four-case state machine). Mirrors runtime rules in `lib/composed.mjs validateLegacyMapping`. **NON-BREAKING** (v0.2.0 / Added). Wired into `scripts/validate-schemas.mjs` (now 4 schemas validated). Shipped `examples/legacy-composed-mapping.example.json` with `$schema` self-reference for IDE autocomplete. New `tests/legacy-composed-mapping-schema.test.mjs` with 14 tests across 10 fixtures (4 valid + 6 invalid). ADR 0001 grew a one-paragraph pointer; CHANGELOG Added entry; LRN-019 flipped to `applied`. R1 GPT-5.5 caught 2 schema/runtime drift blockers (empty `regions` accepted by schema but rejected by runtime; `additionalProperties: false` on regionEntry rejected unknown keys runtime tolerates) → R2 fix; R2 caught residual root-level `additionalProperties: false` drift → R3 GO with full schema↔runtime parity (proven by 2 explicit "extra-key tolerated" tests). R1 plan-vs-impl gate GO. **533 tests / 15-0-3 lint / no drift.** First PR (#69) merged after the CI fix — all 3 CI checks green.
 
-**Pre-CS15a hygiene + CI fix complete.** Three deferred LRNs (009, 020, 019) and the long-standing PR-side smoke red are all addressed. **Next mainline gate is CS15a** (public-readiness preparation) which requires user check-in per HANDOFF.md.
+- **CS15a complete** (closed 2026-05-10). **Public-readiness preparation + visibility flip guardrail.** Delivered public-facing docs (`SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates), Dependabot config, `secret-scan` and `npm-pack-dry-run` workflows, public readiness evidence, full-history gitleaks report, repo settings checklist, GitHub App-backed `workboard-auto-approve` workflow, helper script, and main Ruleset spec/application. Repository is now public; main Ruleset `main-protection` is active (`id=16185634`); squash-only posture and auto-merge are enabled; Private Vulnerability Reporting returned 204; secret scanning is enabled; PR #78 proved the workboard bot can approve and merge a validated `workboard-only` PR. Post-flip Dependabot alerts for `fast-uri` are resolved by the close-out lockfile update to `3.1.2` (`npm audit --audit-level=high` reports 0 vulnerabilities). Mainline validation green after the flip. CS15b's visibility flip work was absorbed by explicit user authorization during CS15a close-out.
 
 ## Architecture pointer
 
@@ -59,7 +59,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS02b + CS03d + CS03e + CI fix all merged; LRN-009/011/019/020/079 = `applied`. Only LRN-014 remains `deferred` (CS19-bound). CS15a (public-readiness preparation) remains the next user-check-in gate per HANDOFF.md.
+- None. CS15a public-readiness preparation and the public visibility flip are complete. LRN-014 remains `deferred` (CS19-bound).
 
 ## Parallelism (single-orchestrator default)
 

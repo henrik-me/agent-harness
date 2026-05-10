@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T03:33Z (CS15a workboard bot dry-run)
+> **Last updated:** 2026-05-10T04:08Z (CS15a close-out)
 
 ## Orchestrators
 
@@ -10,18 +10,19 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T03:33Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T04:08Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS15a | Public-readiness preparation (GUARDRAIL) | 🟢 Active | yoga-ah | cs15a/content (pending) | 2026-05-09T20:50Z | — |
+| — | No active CS | — | — | — | 2026-05-10T04:08Z | — |
 
 ## Recently Completed
 
 | CS | Title | Closed | Notes |
 |---|---|---|---|
+| CS15a | Public-readiness preparation + public flip (GUARDRAIL) | 2026-05-10 | **Done.** Public readiness content, settings, scans, workflows, GitHub App workboard bot, bot dry-run, public visibility flip, and main Ruleset application completed. PRs #74/#76/#77/#78/#79/#80/#81 plus close-out. Main Ruleset `main-protection` active (`id=16185634`); repo public; auto-merge enabled; PVR returned 204; secret scanning enabled. |
 | CS03e | `legacy-composed-mapping.schema.json` (LRN-019) | 2026-05-09 | **Done.** Squash-merged as `ca637d1` (PR #69). NON-BREAKING (v0.2.0): formally defines the shape of `legacy_composed_mapping.json`. Mirrors runtime rules in `lib/composed.mjs validateLegacyMapping`. Wired into `validate-schemas.mjs`; new `tests/legacy-composed-mapping-schema.test.mjs` (14 tests across 10 fixtures); ADR 0001 pointer + CHANGELOG entry + LRN-019 → `applied`. R1 GPT-5.5 caught 2 schema/runtime drift blockers (empty `regions`; `additionalProperties: false` rejecting unknown keys runtime tolerates) → R2 + R3 GO with full schema↔runtime parity. **533 tests / 15-0-3 lint / no drift.** First PR after the CI fix → all 3 CI checks green. |
 | CS03d | Template prose-hash for composed-merge evolution (LRN-020) | 2026-05-09 | **Done.** Squash-merged as `015ed87` (PR #63). NON-BREAKING (v0.2.0): adds optional `template_prose_hash` to lock `fileEntry`; `mergeComposed()` four-case state machine. R1 alleged blocker re-classified as pre-existing. R1 plan-vs-impl gate GO. **519 tests / 15-0-3 lint / no drift.** 0 sub-agent dispatches. |
 | CS02b | Drop redundant top-level `local_blocks` (LRN-009 option b) | 2026-05-09 | **Done.** Squash-merged as `90b04db` (PR #60). BREAKING (v0.2.0): `composed.overrides[<file>].local_blocks` is now the single source of truth. R1 caught a high-severity blocker → R2 GO. R1 plan-vs-impl gate GO. **508 tests / 15-0-3 lint / no drift.** LRN-079 elevated. |
