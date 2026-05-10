@@ -6,11 +6,14 @@
 |---|---|
 | Audit date | 2026-05-10 |
 | `v0.1.0` SHA | `c6a619ac95111eda8098c4700bdb6766bc1ad40f` |
-| `main` HEAD SHA | `a5d23146aad9f2af9ecb92d73c6464188e93f158` |
+| `main` HEAD SHA at audit time | `a5d23146aad9f2af9ecb92d73c6464188e93f158` |
+| `v0.2.0` tag SHA (post-content-merge) | `1484de7536d062461bfde8abe1779864fe5c2c7d` |
 | Branch | `cs22/cut-v0.2.0` |
-| Commit count `v0.1.0..main` (no-merges) | 56 |
-| Commit count `v0.1.0..main` (incl-merges) | 56 |
+| Commit count `v0.1.0..main` (no-merges, at audit time) | 56 |
+| Commit count `v0.1.0..main` (incl-merges, at audit time) | 56 |
+| Final commit count `v0.1.0..v0.2.0` (post-content-merge, includes squash) | 57 |
 | Auditor | `cs22-changelog-auditor` |
+| Reconciliation note | Row 57 below was added during close-out (CS22 plan-vs-impl gate finding); it represents the CS22 content-PR squash itself, which is intrinsically Process-only (the act of cutting the release). |
 
 ## Commit-by-commit classification
 
@@ -72,6 +75,7 @@
 | 54 | e8f3e4a | Plan: CS22 (Cut harness v0.2.0) + CS16 (Bootstrap Sub Invaders) + CS21 (gwn process catch-up) (#110) | Process-only (no entry) | — |  |
 | 55 | 364ad8b | LRN-100: pr-body workflow doesn't re-trigger on body edits (#111) | Process-only (no entry) | — |  |
 | 56 | a5d2314 | CS22 claim: cut harness v0.2.0 (#112) | Process-only (no entry) | — |  |
+| 57 | 1484de7 | CS22 — Cut harness v0.2.0 (content PR) (#113) | Process-only (no entry) | — | The CS22 content-PR squash itself: bundles all of this CS's work (audit-report creation, CHANGELOG `[0.2.0]` transform, pin sweep). The CHANGELOG entries it introduces are themselves the deliverable, not separate user-visible bullets. Row added during close-out to reconcile the audit table with the final `v0.1.0..v0.2.0` 57-commit range. |
 
 ## Gap analysis vs. existing `[Unreleased]`
 
