@@ -7,25 +7,28 @@
 
 Go to <https://github.com/henrik-me/agent-harness/settings>.
 
-- [ ] **Features:** disable Wikis.
-- [ ] **Features:** leave Discussions disabled.
-- [ ] **Pull Requests:** allow squash merging.
-- [ ] **Pull Requests:** disable merge commits.
-- [ ] **Pull Requests:** disable rebase merging.
-- [ ] **Pull Requests:** enable "Always suggest updating pull request
+- [x] **Features:** disable Wikis.
+- [x] **Features:** leave Discussions disabled.
+- [x] **Pull Requests:** allow squash merging.
+- [x] **Pull Requests:** disable merge commits.
+- [x] **Pull Requests:** disable rebase merging.
+- [x] **Pull Requests:** enable "Always suggest updating pull request
   branches".
-- [ ] **Pull Requests:** enable auto-merge.
-- [ ] **Pull Requests:** enable "Automatically delete head branches".
+- [ ] **Pull Requests:** enable auto-merge. The API update succeeds but the
+  repository still reports this as disabled; enable in the UI if available or
+  re-check after CS15b Ruleset setup.
+- [x] **Pull Requests:** enable "Automatically delete head branches".
 
 ## Security settings
 
 Go to <https://github.com/henrik-me/agent-harness/settings/security_analysis>.
 
-- [ ] Enable Dependency graph.
-- [ ] Enable Dependabot alerts.
-- [ ] Enable Dependabot security updates.
+- [x] Enable Dependency graph.
+- [x] Enable Dependabot alerts.
+- [x] Enable Dependabot security updates.
 - [ ] Enable Secret scanning if the control is available after the public flip.
-- [ ] Enable Private vulnerability reporting.
+- [ ] Enable Private vulnerability reporting. The API endpoint currently returns
+  `404`; enable in the UI if available or re-check after the public flip.
 
 ## Actions settings
 

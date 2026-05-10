@@ -10,7 +10,7 @@
 
 ## ⚠️ RESUME POINT (2026-05-09T18:07Z) — read this first if you're a fresh agent instance
 
-The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** Current content-PR progress is committed at `8b9e839` on `origin/cs15a/content`.
+The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** The CS15a content PR (#74) was squash-merged to `main` at `69fcee3`; a follow-up settings-evidence update is on `cs15a/settings-evidence`.
 
 **Bootstrap for resume:**
 
@@ -46,9 +46,9 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 
 **What still needs to be done (in order):**
 
-1. **Review/merge PR #74** — content PR is open, mergeable, and all 9 required check contexts are green at `8b9e839`.
-2. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) + repo-settings flips (per `docs/cs15a-repo-settings-checklist.md`). User pings when done.
-3. **Bot dry-run + readiness update** — after PR #74 lands and the App/settings exist, open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
+1. **Merge settings-evidence update** — records repository settings that were applied via API after PR #74 merged.
+2. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) plus any UI-only settings still unavailable via API: auto-merge and Private Vulnerability Reporting if the controls are present.
+3. **Bot dry-run + readiness update** — after the App/settings exist, open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
 4. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
 5. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
 
@@ -181,7 +181,7 @@ Per the user authorization (2026-05-09):
 | Ruleset spec (#6-7) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Bot workflow + manifest (#8) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (workflow + App docs done; dry-run waits on user App install) \| learnings=0 |
 | Public-facing files (#9-14) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| Repo-settings checklist (#15-18) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (user settings changes still external) \| learnings=0 |
+| Repo-settings checklist (#15-18) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (#15-16 applied via API; #17 partial; #18 still reports disabled) \| learnings=0 |
 | Secret/IP scan (#19-24) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | New workflows (#25) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (all 9 required check contexts green on PR #74 at `8b9e839`) \| learnings=0 |
 | `pre-flip-readiness.md` artifact | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
