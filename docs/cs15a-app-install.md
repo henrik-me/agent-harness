@@ -60,13 +60,15 @@ After steps 1-4, ping the orchestrator (yoga-ah). The orchestrator will:
 
 **Can:** approve PRs, merge verified workboard-only PRs, read PR file lists.
 
-**Cannot:** modify branch protection, modify Ruleset, rotate secrets, modify
-other workflows, manage repo settings, manage Actions configuration, access
-organization data, or bypass the workflow's path/label/actor/branch checks.
+**This workflow will not use the App token to:** modify branch protection,
+modify Ruleset, rotate secrets, modify other workflows, manage repo settings,
+manage Actions configuration, access organization data, or approve/merge a PR
+that fails the workflow's path/label/actor/branch/head-SHA checks.
 
 The App has Contents write only because GitHub requires it for merge/auto-merge
 operations. The workflow mints the App token only after the PR passes the
-workboard-only validation gate.
+workboard-only validation gate, then approves the validated commit SHA rather
+than the mutable PR number alone.
 
 The workflow itself enforces additional path/label/actor/branch-name validation BEFORE invoking the App's credentials. Even if the App were compromised, it could not approve a PR that touched `lib/`, `bin/`, `template/`, `.github/workflows/`, `schemas/`, or `package.json` — those paths fail the workflow's pre-checks before the bot is even contacted.
 

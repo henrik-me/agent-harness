@@ -28,8 +28,9 @@
 #     validation gate passes.
 #   - The CS15b Ruleset requires an approving review but not CODEOWNER review:
 #     GitHub Apps cannot satisfy a human CODEOWNER requirement. Non-WORKBOARD
-#     paths are protected by this workflow's path allowlist because the App is
-#     never invoked for those PRs.
+#     paths are protected by this workflow's path allowlist during this
+#     workflow run: the workflow does not mint or use the App token unless
+#     validation passes for the current PR head.
 #   - Path-restriction enforcement happens IN this workflow BEFORE the
 #     App's credentials are ever invoked, so a compromised App alone
 #     cannot approve a PR that touches sensitive paths.
@@ -83,19 +84,33 @@ jobs:
 
           echo "Branch + author checks: OK."
 
-      - name: Fetch PR file list (no checkout needed)
+      - name: Fetch PR metadata and file list (no checkout needed)
         id: files
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+          if ! printf '%s' "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
+            fail "invalid PR number."
+          fi
+          if ! printf '%s' "$REPO" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+            fail "invalid repository slug."
+          fi
+          head_sha="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          if ! printf '%s' "$head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            fail "invalid PR head SHA."
+          fi
+          echo "Validated PR head: $head_sha"
+          echo "head-sha=$head_sha" >> "$GITHUB_OUTPUT"
           # Paginate through all files; cap at 1000 (PR file lists rarely exceed 100 for workboard PRs).
-          gh api --paginate "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" \
-            --jq '.[].filename' > pr-files.txt
-          echo "Files in PR:"
-          cat pr-files.txt
-          echo "files-count=$(wc -l < pr-files.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+            --jq '.[] | [.filename, .status, (.previous_filename // "")] | @tsv' > pr-files.tsv
+          echo "Files in PR (filename/status/previous_filename):"
+          cat pr-files.tsv
+          echo "files-count=$(wc -l < pr-files.tsv | tr -d ' ')" >> "$GITHUB_OUTPUT"
 
       - name: Enforce path-allowlist (NO files outside WORKBOARD/CONTEXT/LEARNINGS/clickstops)
         run: |
@@ -112,10 +127,10 @@ jobs:
           project/clickstops/done/
           EOF
 
-          violations=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            ok=0
+          is_allowed() {
+            local f="$1"
+            [ -z "$f" ] && return 0
+            local ok=0
             while IFS= read -r p; do
               [ -z "$p" ] && continue
               if [ "${p%/}" != "$p" ]; then
@@ -130,14 +145,29 @@ jobs:
             done < allowed-paths.txt
             if [ "$ok" -ne 1 ]; then
               echo "::error ::file '$f' is OUTSIDE the workboard-only allowlist."
-              violations=$((violations + 1))
+              return 1
             fi
-          done < pr-files.txt
+            return 0
+          }
+
+          violations=0
+          while IFS=$'\t' read -r f status previous; do
+            [ -z "$f" ] && continue
+            is_allowed "$f" || violations=$((violations + 1))
+            if [ "$status" = "renamed" ]; then
+              if [ -z "$previous" ]; then
+                echo "::error ::renamed file '$f' is missing previous_filename."
+                violations=$((violations + 1))
+              else
+                is_allowed "$previous" || violations=$((violations + 1))
+              fi
+            fi
+          done < pr-files.tsv
 
           if [ "$violations" -gt 0 ]; then
-            fail "$violations file(s) outside allowlist; bot will NOT approve."
+            fail "$violations file path(s) outside allowlist; bot will NOT approve."
           fi
-          echo "Path-allowlist check: OK ($(wc -l < pr-files.txt | tr -d ' ') file(s) all in allowlist)."
+          echo "Path-allowlist check: OK ($(wc -l < pr-files.tsv | tr -d ' ') file(s) all in allowlist, including rename sources)."
 
       - name: Mint App installation token
         id: app-token
@@ -154,12 +184,31 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          VALIDATED_HEAD_SHA: ${{ steps.files.outputs.head-sha }}
         run: |
-          gh pr review "$PR_NUMBER" --repo "${{ github.repository }}" --approve --body 'workboard-auto-approve: validated path/label/branch/actor allowlists and approved per CS15b bot wiring (CS15a-authored, CS15b-applied).'
+          set -euo pipefail
+          fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+          current_head="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          if [ "$current_head" != "$VALIDATED_HEAD_SHA" ]; then
+            fail "PR head changed after validation ($VALIDATED_HEAD_SHA -> $current_head); refusing approval."
+          fi
+          gh api -X POST "repos/${REPO}/pulls/${PR_NUMBER}/reviews" \
+            -f commit_id="$VALIDATED_HEAD_SHA" \
+            -f event='APPROVE' \
+            -f body='workboard-auto-approve: validated path/label/branch/actor allowlists for this commit and approved per CS15b bot wiring (CS15a-authored, CS15b-applied).'
 
       - name: Enable auto-merge (squash)
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          VALIDATED_HEAD_SHA: ${{ steps.files.outputs.head-sha }}
         run: |
-          gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash --auto
+          set -euo pipefail
+          fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+          current_head="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          if [ "$current_head" != "$VALIDATED_HEAD_SHA" ]; then
+            fail "PR head changed after bot approval ($VALIDATED_HEAD_SHA -> $current_head); refusing auto-merge."
+          fi
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto
