@@ -181,4 +181,43 @@ LRN-095..099 reserved for CS15e. Expected ~3-5 LRNs (likely: getGitHubToken-help
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+### Initial review (NEEDS-FIX)
+
+**Reviewer:** GPT-5.5 (sub-agent dispatch via Sonnet orchestrator)
+**Date:** 2026-05-10
+**Branch:** cs15e/content
+**Content commit:** b9aeba4
+**Lock-fixup commit:** d0211d0
+**Verdict:** NEEDS-FIX
+
+Three blocking gaps surfaced, all in `bin/harness.mjs cmdInit`:
+
+1. Skip-path summary still printed `See .harness-known-constraints.md for details` even when the file was deliberately not written (no-remote / tier=unknown path) — user-misleading.
+2. The CS plan (line 110) required a 3-option disposition notice at init time when tier=private-free; the implementation only wrote the chosen disposition into the artifact and a one-line summary.
+3. The `CONTEXT.md ## Constraints` section-replacement regex used `\Z` as the EOF anchor; JS regex does not recognise `\Z` (it is interpreted as a literal `Z`), so the regex would have failed to match when `## Constraints` was the LAST H2 in `CONTEXT.md`, producing duplicate headings on re-run. The seeded `CONTEXT.md` ships with H2s after `## Constraints`, which masked the bug; the test only checked heading-count, not reference-line-count.
+
+Recommendations (non-blocking):
+- Add explicit `private-team` / `private-enterprise` / anonymous-against-private (404 → repo-not-found) tests to the γ1 test matrix.
+- Strengthen idempotency assertions to count reference lines, not just headings.
+
+### Re-review after NEEDS-FIX (GO)
+
+**Reviewer:** GPT-5.5 (re-review)
+**Date:** 2026-05-10
+**Branch:** cs15e/content
+**Fix commit:** 27f56ae
+**Prior verdict:** NEEDS-FIX (3 gaps)
+**This verdict:** GO
+
+**Gap re-checks:**
+- Gap 1 (skip-path summary): RESOLVED — `bin/harness.mjs:764-769` now prints `Constraints detection: tier=${tier}${reasonText}. No constraints recorded.` on the no-`owner && repo` path, with `reasonText` from `detection.reason`, and no `.harness-known-constraints.md` reference. `tests/cli.test.mjs:1250-1275` exercises `tier=unknown` / `reason=no-remote` and asserts no `See .harness-known-constraints.md for details`, plus `No constraints recorded` and `reason=no-remote`.
+- Gap 2 (disposition notice): RESOLVED — `bin/harness.mjs:649-663` unconditionally emits a multi-line stdout notice for `tier === 'private-free'` listing all 3 dispositions (`discipline-only`, `upgrade-pro`, `flip-public-when-ready`) and the selected disposition. `tests/cli.test.mjs:1198-1215` asserts stdout includes `Disposition options` and all 3 choices.
+- Gap 3 (regex EOF anchor + idempotency test): RESOLVED — `bin/harness.mjs:724-739` uses `const headingRe = /^## Constraints[ \t]*\r?\n[\s\S]*?(?=^## |$(?![\s\S]))/m;`, so `\Z` is gone and JS-native EOF handling is in place. `tests/cli.test.mjs:1295-1312` strengthens idempotency by asserting both heading-count and ref-line-count are 1, and `tests/cli.test.mjs:1318-1351` adds the explicit “LAST H2 in CONTEXT.md” mutation/re-run test with both counts asserted as 1.
+
+**Recommendation follow-up (landed in 27f56ae):**
+- private-team / private-enterprise tests landed: YES — `tests/lib-github-detect.test.mjs:207-244`
+- anonymous-against-private test landed: YES — `tests/lib-github-detect.test.mjs:246-273`
+
+**New gaps introduced by the fix commit:** none.
+
+**Final verdict:** GO. Cleared for content-PR + close-out.
