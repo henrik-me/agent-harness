@@ -1,9 +1,9 @@
 # CS22 — Cut harness v0.2.0 (refresh pin target before CS16 bootstrap)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah (HENRIKM-YOGA)
+**Branch:** `cs22/cut-v0.2.0`
+**Started:** 2026-05-10
 **Closed:** —
 **Filed by:** Authored 2026-05-10 per user direction. The user observed that CS16's plan currently pins `v0.1.0`, but a substantial commit set has landed on main since CS14 cut `v0.1.0` on 2026-05-04 — including **one BREAKING change** (CS02b dropped top-level `local_blocks`) plus the entire CS15-series (a–f), CS06c, CS08c, CS03d, CS03e. (The audit step in this CS captures the actual count from `git rev-list --count v0.1.0..main` rather than hard-coding it — see C22-2.) Bootstrapping `henrik-me/sub-invaders` on `v0.1.0` would commit it to a stale shape and waste SI-CS03's pin-bump exercise on a single-step jump. CS22 cuts `v0.2.0` so CS16 bootstraps on the latest published harness tag.
 **Depends on:** Nothing in flight. CS22 is small + standalone + must close BEFORE CS16 claims (CS16 references the v0.2.0 tag at `harness init` time).
@@ -120,7 +120,21 @@ Single-agent briefing must include the standard guards: no-commit preflight per 
 
 ## Tasks
 
-_(Populated when CS22 is claimed. Standard task shape: `[ ] Claim → branch → audit → CHANGELOG → docs sweep → lint + test → content PR → review → merge → tag → release verify → smoke verify → close-out PR → done.`)_
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| Workboard claim PR (rename planned→active, update WORKBOARD active/queued tables) | done | yoga-ah | this PR (`workboard/cs22-claim`) |
+| Branch `cs22/cut-v0.2.0` from main | pending | yoga-ah | after claim PR merges |
+| Phase 1: dispatch `cs22-changelog-auditor` sub-agent — produce `audit-report.md` (per C22-2 + C22-7) capturing actual `git rev-list --count v0.1.0..main` count, full commit list with subject + classification, gap-analysis vs `[Unreleased]`, pin-sweep target list | pending | yoga-ah | sub-agent owns audit; orchestrator reviews |
+| Phase 2: write CHANGELOG.md `[0.2.0]` section + sweep doc-pin references from v0.1.0 → v0.2.0 (README + docs/private-consumption.md + examples/sub-invaders.harness.config.json + package.json) per audit pin-sweep list | pending | yoga-ah | orchestrator-owned (small surface) |
+| Phase 2: run `harness lint --quiet` + `node --test tests/*.test.mjs` + `harness sync --mode=check` — must all exit 0 | pending | yoga-ah | baseline 24/0/3 lint, 669/669 tests |
+| Phase 2: open content PR `cs22/cut-v0.2.0`; address GPT-5.5 local-review findings; squash-merge | pending | yoga-ah | capture content-PR `MERGE_SHA` via `gh pr view <pr> --json mergeCommit --jq .mergeCommit.oid` |
+| Phase 3: pre-tag verification — `gh workflow run private-smoke.yml --ref main` succeeds; review `release.yml` for any post-CS14 SHA changes | pending | yoga-ah | per R1+R2 mitigations |
+| Phase 3: tag content-PR merge SHA — `git tag v0.2.0 <MERGE_SHA>` then `git push origin v0.2.0`. **NOT** `HEAD`; **NOT** the close-out merge SHA. Per C22-3 + C22-8 + R5. | pending | yoga-ah | tag-after-content-merge-before-close-out discipline (CS14 precedent) |
+| Phase 3: verify `release.yml` fired and produced a draft GitHub Release for v0.2.0; verify `private-smoke.yml` against the new tag green | pending | yoga-ah | per exit criterion 7 |
+| Local review (GPT-5.5) of content PR | pending | yoga-ah | mandatory per OPERATIONS.md § Local review |
+| Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | mandatory per OPERATIONS.md § Plan-vs-implementation review (close-out gate) |
+| Close-out: docs + restart state (rename active→done; update WORKBOARD active row → Recently Completed; CONTEXT.md current-state prose) | pending | yoga-ah | close-out PR `cs22/close-out` |
+| Close-out: learnings + follow-ups (LRN entries reserved 100..103 per C22-5; file what's actually surfaced; reconcile LRN-100 if the workflow-trigger fix is folded in) | pending | yoga-ah | close-out PR; reservation may underflow — only file what surfaces |
 
 ## Plan-vs-implementation review
 
