@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-03 (CS09 close-out: LRN-054..058 added)
+> **Last updated:** 2026-05-10 (CS15a close-out: LRN-080..081 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -1663,10 +1663,50 @@ claim_area: review-process
 
 This is a check-list addition to the existing rubber-duck process (REVIEWS.md), not a new mechanism. Consider folding into the next CS that touches REVIEWS.md.
 
+### LRN-080
+
+```yaml
+id: LRN-080
+date: 2026-05-10
+category: operational
+source_cs: CS15a
+status: applied
+tags: [github-rulesets, pull-request-review, admin-bypass, self-approval, repo-policy]
+claim_area: repo-policy
+```
+
+**Problem:** CS15a initially configured the live `main-protection` Ruleset with one required approving review and no bypass actors. PR #82 had all required checks green and auto-merge enabled, but GitHub still blocked the merge because the PR author cannot approve their own PR. `gh pr review --approve` failed with `Can not approve your own pull request`; `gh pr merge --admin --squash` also failed because the Ruleset still required one approving review.
+
+**Finding:** GitHub does not provide a "self-approval" setting for PR authors. If the desired policy is "normally require one approving review, but allow the repository owner/admin to override when needed", the Ruleset must keep `required_approving_review_count: 1` and add an explicit bypass actor for the admin repository role (`actor_type: RepositoryRole`, `actor_id: 5`, `bypass_mode: always`). Temporarily lowering the review count to `0` unblocks a merge but weakens the default policy and should not be the final state.
+
+**Evidence:** CS15a close-out PR #82 was green but blocked with `reviewDecision=REVIEW_REQUIRED`. Self-approval via `gh pr review 82 --approve` failed with GitHub's own-policy error. Admin merge failed until PR #83 restored the Ruleset to one required review plus admin bypass; PR #83 then merged via `gh pr merge --admin --squash`, proving the intended override path. Live Ruleset readback after PR #83: `required_approving_review_count=1`, `bypass_actors=[{ actor_type: RepositoryRole, actor_id: 5, bypass_mode: always }]`.
+
+**Disposition:** Applied in `docs/ruleset/main-protection.json` and live Ruleset `main-protection` (`id=16185634`) during PR #83. Future Ruleset specs that need owner override must model it as an explicit bypass actor, not as self-approval or a permanent review-count reduction. Close-out procedures should verify both the intended default requirement and any intended bypass with `gh api repos/:owner/:repo/rulesets/:id`.
+
+### LRN-081
+
+```yaml
+id: LRN-081
+date: 2026-05-10
+category: tooling
+source_cs: CS15a
+status: applied
+tags: [dependabot, public-flip, npm-audit, security-alerts, close-out]
+claim_area: release-security
+```
+
+**Problem:** After the repository was flipped public, GitHub reported two high Dependabot alerts for `fast-uri` on the default branch. Earlier CS15a checks had enabled Dependabot/security settings and verified the public-readiness scan posture, but the alerts only became visible as live repository security state after the public flip and before the close-out PR merged.
+
+**Finding:** Public-visibility flips can expose default-branch dependency alerts that are not fully represented by the pre-flip checklist or by non-default-branch PR state. Close-out for a public flip should include a live Dependabot-alert readback plus an ecosystem-native audit (`npm audit --audit-level=high` here). If alerts are actionable via lockfile updates, fix them before declaring the public-readiness CS complete.
+
+**Evidence:** During CS15a close-out, GitHub push output reported two high vulnerabilities. `gh api repos/henrik-me/agent-harness/dependabot/alerts` showed two open `fast-uri` alerts (`GHSA-v39h-62p7-jpjc`, `GHSA-q3j6-qgpj-74h6`) against `package-lock.json`; `npm update fast-uri --package-lock-only` moved `fast-uri` from `3.1.0` to `3.1.2`; `npm audit --audit-level=high` then reported `found 0 vulnerabilities`; final Dependabot alert readback returned `[]`.
+
+**Disposition:** Applied in CS15a PR #82 by updating `package-lock.json` and recording evidence in `docs/pre-flip-readiness.md`. Future public-flip close-outs should add two explicit checks before final completion: `gh api repos/:owner/:repo/dependabot/alerts` for open alerts and the relevant package-manager audit command for the repository ecosystem.
+
 ## Obsolete
 
 (none yet)
 
 ## Deferred
 
-> **Note:** Section headers (Open / Applied / Obsolete / Deferred) are organizational hints. The authoritative status for each entry is its YAML frontmatter status field. Entries with status: deferred (LRN-009, LRN-011, LRN-014, LRN-019, LRN-020 in this file) appear under § Applied above for chronological readability — check-learnings.mjs (CS06) validates the status field, not the section placement.
+> **Note:** Section headers (Open / Applied / Obsolete / Deferred) are organizational hints. The authoritative status for each entry is its YAML frontmatter status field. The only current deferred entry is LRN-014; check-learnings.mjs (CS06) validates the status field, not the section placement.
