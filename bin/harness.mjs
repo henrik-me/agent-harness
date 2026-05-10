@@ -648,6 +648,19 @@ async function cmdInit(args, global) {
     let disposition = null;
     if (tier === 'private-free') {
       disposition = constraintDisposition ?? 'discipline-only';
+      // CS15e plan line 110 + LRN-064 review gap fix: surface the disposition
+      // option set at init time so consumers see the choices without having to
+      // open the artifact. Always printed for private-free, regardless of
+      // whether the user passed --constraint-disposition.
+      process.stdout.write(
+        'Repository tier is private-free (free plan + private repo). ' +
+        'GitHub-side branch protection is unavailable on this tier.\n' +
+        'Disposition options:\n' +
+        '  - discipline-only      (default — operate without GitHub-side enforcement)\n' +
+        '  - upgrade-pro          (upgrade plan to enable branch protection)\n' +
+        '  - flip-public-when-ready (defer; plan to make the repo public)\n' +
+        `Selected disposition: ${disposition}\n`
+      );
     } else if (constraintDisposition !== null) {
       // Override on a non-private-free tier: warn but record nothing in
       // constraints (the schema rejects disposition + non-private-free).
@@ -711,13 +724,16 @@ async function cmdInit(args, global) {
     // (3) Update CONTEXT.md `## Constraints` body with a one-line reference.
     //     Idempotent: replaces the existing body (whether placeholder or prior
     //     init output) under the heading; appends the heading if missing.
+    //     LRN-064 review gap fix: JS regex has no `\Z` anchor (was being
+    //     interpreted as literal "Z"). Use `$(?![\s\S])` for true EOF or the
+    //     next H2 boundary, whichever comes first.
     if (owner && repo) {
       try {
         const ctxPath = path.join(targetDir, 'CONTEXT.md');
         if (existsSync(ctxPath)) {
           const original = stripBOM(readFileSync(ctxPath, 'utf8'));
           const refLine = `See \`.harness-known-constraints.md\` for repository tier and disposition (detected ${detectedAt}).`;
-          const headingRe = /^## Constraints[ \t]*\r?\n[\s\S]*?(?=^## |\Z)/m;
+          const headingRe = /^## Constraints[ \t]*\r?\n[\s\S]*?(?=^## |$(?![\s\S]))/m;
           let updated;
           if (headingRe.test(original)) {
             updated = original.replace(headingRe, `## Constraints\n\n${refLine}\n\n`);
@@ -737,12 +753,21 @@ async function cmdInit(args, global) {
       }
     }
 
-    // Summary line.
+    // Summary line. LRN-064 review gap fix: do NOT reference
+    // .harness-known-constraints.md when we did not write it (skipped path).
     const dispText = disposition ? `, disposition=${disposition}` : '';
-    process.stdout.write(
-      `Constraints detected: tier=${tier}${dispText}. ` +
-      `See .harness-known-constraints.md for details.\n`
-    );
+    if (owner && repo) {
+      process.stdout.write(
+        `Constraints detected: tier=${tier}${dispText}. ` +
+        `See .harness-known-constraints.md for details.\n`
+      );
+    } else {
+      const reasonText = detection.reason ? ` (reason=${detection.reason})` : '';
+      process.stdout.write(
+        `Constraints detection: tier=${tier}${reasonText}. ` +
+        `No constraints recorded.\n`
+      );
+    }
   }
 
   // CS15c (CS09b, LRN-057 / α4 escalation): finalize init by running sync --apply

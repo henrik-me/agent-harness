@@ -204,6 +204,74 @@ test('detectRepoTier maps first fetch throws to network-error', async () => {
   });
 });
 
+// CS15e LRN-064 review recommendation: explicit coverage for the
+// private-team and private-enterprise tiers (the schema accepts them; the
+// detector must produce them given a matching plan name).
+test('detectRepoTier maps private Organization owner with team plan to private-team', async () => {
+  process.env.GITHUB_TOKEN = 'ghp_private_token';
+  const cwd = makeGitRepoWithOrigin('https://github.com/octo-org/example.git');
+  mockFetch([
+    response(200, { visibility: 'private', owner: { type: 'Organization' } }),
+    response(200, { plan: { name: 'team' } }),
+  ]);
+
+  const result = await detectRepoTier({ cwd });
+
+  assert.deepEqual(result, {
+    tier: 'private-team',
+    owner: 'octo-org',
+    repo: 'example',
+    ownerType: 'Organization',
+  });
+});
+
+test('detectRepoTier maps private Organization owner with enterprise plan to private-enterprise', async () => {
+  process.env.GITHUB_TOKEN = 'ghp_private_token';
+  const cwd = makeGitRepoWithOrigin('https://github.com/octo-org/example.git');
+  mockFetch([
+    response(200, { visibility: 'private', owner: { type: 'Organization' } }),
+    response(200, { plan: { name: 'enterprise' } }),
+  ]);
+
+  const result = await detectRepoTier({ cwd });
+
+  assert.deepEqual(result, {
+    tier: 'private-enterprise',
+    owner: 'octo-org',
+    repo: 'example',
+    ownerType: 'Organization',
+  });
+});
+
+// CS15e LRN-064 review recommendation: explicit anonymous-against-private
+// path. With no token, GitHub returns 404 for a private repo (it's
+// indistinguishable from a non-existent repo at the API surface), and the
+// detector surfaces this as `repo-not-found` — NOT as a misleading
+// `private-free` default.
+test('detectRepoTier with no token against a private repo returns repo-not-found (anonymous cannot see private)', async () => {
+  delete process.env.GITHUB_TOKEN;
+  const cwd = makeGitRepoWithOrigin('https://github.com/octo/secret.git');
+  const calls = mockFetch([
+    response(404, { message: 'Not Found' }),
+  ]);
+
+  const result = await detectRepoTier({ cwd });
+
+  assert.deepEqual(result, {
+    tier: 'unknown',
+    reason: 'repo-not-found',
+    owner: 'octo',
+    repo: 'secret',
+  });
+  // Verify no Authorization header was sent on the anonymous call.
+  assert.ok(
+    !('Authorization' in (calls[0].options?.headers ?? {})),
+    'no Authorization header expected when token is absent',
+  );
+  // Negative assertion: must NOT default to private-free.
+  assert.notEqual(result.tier, 'private-free');
+});
+
 function makeTempDir() {
   const dir = mkdtempSync(path.join(tempRoot, '.lib-github-detect-'));
   tempDirs.add(dir);

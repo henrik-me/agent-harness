@@ -1206,6 +1206,13 @@ describe('CS15e — harness init constraint detection', () => {
       assert.equal(cfg.constraints?.disposition, 'discipline-only', 'default disposition for private-free is discipline-only');
       const hkc = readFileSync(path.join(dir, '.harness-known-constraints.md'), 'utf8');
       assert.ok(hkc.includes('Disposition: `discipline-only`'), 'private-free must emit Disposition line');
+      // CS15e plan line 110 + LRN-064 review gap fix: private-free init must
+      // print the 3-option disposition notice at runtime, not just record the
+      // chosen disposition silently.
+      assert.ok(r.stdout.includes('Disposition options'), `Expected disposition options notice; stdout: ${r.stdout}`);
+      assert.ok(r.stdout.includes('discipline-only'), 'options notice must mention discipline-only');
+      assert.ok(r.stdout.includes('upgrade-pro'), 'options notice must mention upgrade-pro');
+      assert.ok(r.stdout.includes('flip-public-when-ready'), 'options notice must mention flip-public-when-ready');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1250,6 +1257,22 @@ describe('CS15e — harness init constraint detection', () => {
       const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
       assert.equal(cfg.constraints, undefined, 'no constraints block when tier=unknown without owner/repo');
       assert.ok(!existsSync(path.join(dir, '.harness-known-constraints.md')), '.harness-known-constraints.md should NOT exist');
+      // CS15e plan + LRN-064 review gap fix: the summary line on the skip
+      // path must NOT reference .harness-known-constraints.md (it was not
+      // written). It must surface the detection reason instead so the user
+      // understands why no constraints were recorded.
+      assert.ok(
+        !r.stdout.includes('See .harness-known-constraints.md for details'),
+        `summary must not point at an unwritten artifact; stdout: ${r.stdout}`
+      );
+      assert.ok(
+        r.stdout.includes('No constraints recorded'),
+        `summary must announce that no constraints were recorded; stdout: ${r.stdout}`
+      );
+      assert.ok(
+        r.stdout.includes('reason=no-remote'),
+        `summary must surface the detection reason; stdout: ${r.stdout}`
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1278,8 +1301,54 @@ describe('CS15e — harness init constraint detection', () => {
       const r2 = run(['init', dir], { env });
       assert.equal(r2.status, 0, `Run 2 stderr: ${r2.stderr}`);
       const ctx = readFileSync(path.join(dir, 'CONTEXT.md'), 'utf8');
-      const matches = ctx.match(/^## Constraints/gm) ?? [];
-      assert.equal(matches.length, 1, `Expected exactly one ## Constraints heading; got ${matches.length}; CONTEXT.md: ${ctx.slice(0, 800)}`);
+      const headingMatches = ctx.match(/^## Constraints/gm) ?? [];
+      assert.equal(headingMatches.length, 1, `Expected exactly one ## Constraints heading; got ${headingMatches.length}; CONTEXT.md: ${ctx.slice(0, 800)}`);
+      // CS15e plan + LRN-064 review gap fix: stronger idempotency guard —
+      // also assert that the `.harness-known-constraints.md` reference line
+      // (not just the heading) appears exactly once. Catches the case where
+      // the section-replacement regex fails (e.g. broken `\Z` anchor) and
+      // appends a new heading + body alongside the existing one.
+      const refMatches = ctx.match(/See `\.harness-known-constraints\.md` for repository tier and disposition/g) ?? [];
+      assert.equal(refMatches.length, 1, `Expected exactly one constraints reference line; got ${refMatches.length}; CONTEXT.md: ${ctx.slice(0, 800)}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init re-evaluation is idempotent even when `## Constraints` is the LAST H2 in CONTEXT.md (JS regex EOF anchor)', () => {
+    // CS15e LRN-064 review gap fix: JS regex has no `\Z` anchor. The
+    // section-replacement regex must use `$(?![\s\S])` (or equivalent) so
+    // that re-running init against a CONTEXT.md whose `## Constraints` is
+    // the trailing H2 still replaces the body rather than appending a
+    // duplicate heading. This test guards against regression to the broken
+    // `\Z` form.
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'public', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+    try {
+      // Run init once to lay down a valid CONTEXT.md.
+      const r1 = run(['init', dir], { env });
+      assert.equal(r1.status, 0, `Run 1 stderr: ${r1.stderr}`);
+      // Mutate CONTEXT.md so `## Constraints` is the LAST H2 in the file.
+      // The seeded template ships with `## Constraints` followed by other
+      // H2s, so we strip the trailing H2s to exercise the EOF code path.
+      const ctxPath = path.join(dir, 'CONTEXT.md');
+      const original = readFileSync(ctxPath, 'utf8');
+      const cutAt = original.indexOf('\n## ', original.indexOf('## Constraints') + 1);
+      assert.ok(cutAt > 0, 'precondition: seeded CONTEXT.md must have at least one H2 after ## Constraints');
+      writeFileSync(ctxPath, original.slice(0, cutAt) + '\n', 'utf8');
+      const beforeRerun = readFileSync(ctxPath, 'utf8');
+      const beforeHeadings = (beforeRerun.match(/^## Constraints/gm) ?? []).length;
+      const beforeRefs = (beforeRerun.match(/See `\.harness-known-constraints\.md`/g) ?? []).length;
+      assert.equal(beforeHeadings, 1, 'precondition: exactly one heading after mutation');
+      assert.equal(beforeRefs, 1, 'precondition: exactly one ref line after mutation');
+      // Re-run init; the section replacement must still be idempotent.
+      const r2 = run(['init', dir], { env });
+      assert.equal(r2.status, 0, `Run 2 stderr: ${r2.stderr}`);
+      const after = readFileSync(ctxPath, 'utf8');
+      const afterHeadings = (after.match(/^## Constraints/gm) ?? []).length;
+      const afterRefs = (after.match(/See `\.harness-known-constraints\.md`/g) ?? []).length;
+      assert.equal(afterHeadings, 1, `Expected exactly one ## Constraints heading after EOF re-run; got ${afterHeadings}; CONTEXT.md: ${after}`);
+      assert.equal(afterRefs, 1, `Expected exactly one constraints reference line after EOF re-run; got ${afterRefs}; CONTEXT.md: ${after}`);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
