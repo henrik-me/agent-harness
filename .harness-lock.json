@@ -1,15 +1,15 @@
 {
   "harness_ref": "cs15a/restart-docs",
-  "resolved_sha": "4ba8d9406a547100173e481d8fac10707fb56625",
+  "resolved_sha": "dfee1dbe934327b209e0cea054ab4e1245ed6e55",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-10T04:42:29.499Z",
+  "synced_at": "2026-05-10T04:44:53.327Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
       "source_template": "template/managed/INSTRUCTIONS.md",
       "class": "managed",
       "rendered_hash": "a9601d961473d7284e059e5cf49f6820df896f35018bd5a1bfa6b7e240c8ccbf",
-      "action": "updated"
+      "action": "skipped"
     },
     {
       "target": "TRACKING.md",
@@ -85,7 +85,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "50859a506317efcad71b47140554fb76c5c6a9f0343ba7bf92bdf55f8477aefa",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
