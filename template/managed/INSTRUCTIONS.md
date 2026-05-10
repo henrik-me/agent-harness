@@ -21,6 +21,20 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - **State your identity:** in your **first response** write your derived agent ID and
   "INSTRUCTIONS.md re-read complete @ \<SHA\>". Treat session resume as session start
   for this rule — no exceptions.
+- **Bootstrap sanity check:** before claiming any CS, run the following from
+  the repo root and confirm each command exits clean. The repo's invariant is
+  "main is always green" — if any of these fail, **stop and investigate**
+  before claiming new work.
+
+  ```bash
+  git pull --ff-only origin main
+  git status --short                                    # expect: clean
+  git log -3 --oneline                                  # last 3 commits on main
+  git tag --list 'v*' | tail -5                         # latest release tags (if applicable)
+  node --test tests/*.test.mjs                          # expect: all pass
+  node bin/harness.mjs lint --quiet                     # expect: 0 failed
+  node bin/harness.mjs sync --mode=check --cwd .        # expect: "No drift detected"
+  ```
 
 ### Claiming a CS
 

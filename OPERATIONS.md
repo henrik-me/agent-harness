@@ -41,7 +41,7 @@ Every CS produces exactly three PRs in sequence:
 Every active/done CS file must include explicit `## Tasks` rows for:
 
 - **Close-out: docs + restart state** — update `WORKBOARD.md`, `CONTEXT.md`,
-  `HANDOFF.md`, managed/composed process templates and rendered roots, plus any
+  managed/composed process templates and rendered roots, plus any
   relevant feature docs so a fresh agent can restart from the actual state.
 - **Close-out: learnings + follow-ups** — file or disposition learnings in
   `LEARNINGS.md` and create planned follow-up CSs for unresolved issues.
@@ -777,6 +777,23 @@ Learning candidates are surfaced in sub-agent reports under
 candidate to a full LRN entry in `LEARNINGS.md`. Every candidate must be
 surfaced — no silent decisions. The category `<problem>: <finding>:
 <evidence>` format in the report directly maps to the LRN body sections.
+
+### Open-LRN audit
+
+To enumerate `LEARNINGS.md` entries by status (e.g. before a release gate or
+during a harvest cadence):
+
+```bash
+# All entries by status
+grep -E '^status: ' LEARNINGS.md | sort | uniq -c
+
+# Just the open ones (with their IDs)
+grep -B 4 '^status: open' LEARNINGS.md | grep '^id: '
+```
+
+Each `open` entry needs a status flip to `applied` / `obsolete` / `deferred`
+(with `deferred_until: <date>`) before any future public-facing release gate
+per the bounded-before-claim invariant above.
 
 ---
 

@@ -55,6 +55,40 @@ npx -y github:henrik-me/agent-harness#v0.1.0 sync
 └── project/clickstops/  # the harness's own CS lifecycle (planned / active / done)
 ```
 
+The repo IS the persistent memory between sessions. There is no other state.
+Per-path purpose:
+
+| Path | Purpose |
+|---|---|
+| `INSTRUCTIONS.md` | Orchestrator workflow — bootstrap reading order, Session Start checklist (incl. sanity-check commands), Per-CS Loop, "When to Add X" recipes |
+| `OPERATIONS.md` | Lifecycle procedures — Claim / Dispatch / Sync / Harvest / SemVer / Conventions; canonical sub-agent briefing preamble |
+| `CONTEXT.md` | Current state, recently completed CSs with commit refs, active CS pointer, blockers, parallelism posture |
+| `WORKBOARD.md` | Live coordination — Orchestrators table, Active Work (single-row by discipline), Recently Completed, Queued |
+| `LEARNINGS.md` | Process learnings (LRN-001..N), schema-validated, sectioned by status |
+| `ARCHITECTURE.md` | Architecture overview — Components, Data model, Decision log |
+| `REVIEWS.md` | Independent-reviewer model, taxonomy, HIGH-RISK CS list, GPT-5.5 fallback rules |
+| `project/clickstops/active/` | Currently in-flight CS spec (one file when active, empty when stable) |
+| `project/clickstops/planned/` | Queued CSs in priority order (`planned_cs<NN>_<short-name>.md`) |
+| `project/clickstops/done/` | Completed CS files with full actuals (sub-agent ledger, GPT-5.5 review log, learnings filed, follow-up planned CSs) |
+
+## Starting an agent session
+
+Open a fresh Copilot CLI (or equivalent) at the repo root and use a starter
+prompt like:
+
+```
+cd <repo>, then read INSTRUCTIONS.md carefully and follow the Quick Reference
+Checklist (especially the Session Start bootstrap sanity check). After that,
+continue from where the prior session left off (check CONTEXT.md and
+WORKBOARD.md for the current state). Operate autonomously from the current
+repo state. Check in only for substantive design decisions not derivable from
+the cs-plan + LRNs, or for changes that would materially alter the public
+repo/security posture.
+```
+
+That's all you need to type. `INSTRUCTIONS.md` pulls in everything else in
+the right order via its Pointers section.
+
 ## How this repo governs itself
 
 This repo follows the harness from CS01. Bootstrap proto docs (INSTRUCTIONS, CONVENTIONS, OPERATIONS, REVIEWS, TRACKING, RETROSPECTIVES) are hand-authored; from CS11 onward they are produced by `harness sync` against the canonical `template/managed/` + `template/composed/` (with local blocks preserved) and a CI gate prevents drift. Seeded project-state docs (CONTEXT, ARCHITECTURE, LEARNINGS, WORKBOARD) are preserved as-is. Project-owned files (this README, LICENSE, package.json, .gitignore, .editorconfig) are excluded from sync entirely. See [INSTRUCTIONS.md](INSTRUCTIONS.md) and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md).
