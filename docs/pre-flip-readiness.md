@@ -1,8 +1,8 @@
 # CS15a — Pre-flip readiness
 
-This is the single source of truth for the CS15b public visibility flip. CS15b
-must not claim until every precondition below is green or explicitly marked as a
-user-action dependency with captured follow-up evidence.
+This is the completed CS15a public-readiness and visibility-flip evidence
+record. The repository is now public; every precondition below is green with
+captured follow-up evidence where user or platform actions were required.
 
 ## Action required from @henrik-me
 

@@ -11,6 +11,13 @@
 
 Fixture file for check-clickstop.mjs tests — valid active clickstop.
 
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| Close-out: docs + restart state | pending | fixture-owner | Update WORKBOARD, CONTEXT, HANDOFF, instructions, and relevant docs. |
+| Close-out: learnings + follow-ups | pending | fixture-owner | File learnings and follow-up planned CSs as needed. |
+
 ## Plan-vs-implementation review
 
 _(filled at close-out per the gate)_

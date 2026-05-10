@@ -25,7 +25,8 @@ Every CS produces exactly three PRs in sequence:
 1. **Workboard-claim PR** — branch `cs<NN>/claim`; touches only
    `WORKBOARD.md` and the clickstop file rename (`planned → active`).
    Label: `workboard-only`. *(CS01–CS14: user-reviewed small PR.
-   CS15b+: bot auto-approved via Decision #23.)*
+   Public protected phase: bot auto-approved via Decision #23 when the PR
+   passes the workboard-only validation gate.)*
 
 2. **Content PR** — branch `cs<NN>/content`; all implementation work lives
    here. Standard review loop (GPT-5.5 + user). Squash-merge only.
@@ -36,6 +37,17 @@ Every CS produces exactly three PRs in sequence:
    `LEARNINGS.md`. Label: `workboard-only`. Same auto-merge rules as the
    claim PR. **Must be preceded by the plan-vs-implementation review gate
    (see [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
+
+Every active/done CS file must include explicit `## Tasks` rows for:
+
+- **Close-out: docs + restart state** — update `WORKBOARD.md`, `CONTEXT.md`,
+  `HANDOFF.md`, managed/composed process templates and rendered roots, plus any
+  relevant feature docs so a fresh agent can restart from the actual state.
+- **Close-out: learnings + follow-ups** — file or disposition learnings in
+  `LEARNINGS.md` and create planned follow-up CSs for unresolved issues.
+
+`check-clickstop.mjs` enforces these rows for active CS files and for done CS
+files closed on or after CS15a's close-out enforcement date.
 
 ### Claim steps
 
@@ -119,13 +131,15 @@ requires GitHub Pro on private repos (see [LRN-001](LEARNINGS.md#lrn-001)).
 All PRs are opened, reviewed, and squash-merged through the normal review
 loop. The discipline replaces the missing mechanical enforcement.
 
-**CS15b+ (public repo, mechanical enforcement):** The Ruleset authored at
-CS15a and applied at CS15b enforces PR-required, ≥1 approving review,
-squash-only, linear history, signed commits, and conversation resolution.
-Decision #23 activates the `workboard-auto-approve.yml` bot: it verifies
-path-restriction + `workboard-only` label + actor allowlist, submits the
-approval, and auto-merges. The global review-required rule stays in force;
-the bot's review satisfies it.
+**Public protected phase (CS15a+ in this repo):** The Ruleset authored and
+applied during CS15a enforces PR-required, ≥1 approving review, squash-only,
+linear history, deletion/non-fast-forward protection, required status checks,
+and conversation resolution. Repository admins have an explicit bypass actor
+for owner override (LRN-080). Decision #23 activates the
+`workboard-auto-approve.yml` bot: it verifies path-restriction +
+`workboard-only` label + actor allowlist, submits the approval, and
+auto-merges. The global review-required rule stays in force; the bot's review
+satisfies it for eligible workboard-only PRs.
 
 ---
 
@@ -713,10 +727,10 @@ harness package is not published to npm. Always use
 
 ### Bounded-before-claim invariant
 
-All `open` learnings must be dispositioned (status `applied`, `obsolete`, or
-`deferred` with an explicit `deferred_until` date) before the CS15b
-public-flip. This is the pre-CS15b harvest invariant enforced by the CS15a
-precondition checklist. See `LEARNINGS.md` header for the current status.
+All `open` learnings had to be dispositioned (status `applied`, `obsolete`, or
+`deferred` with an explicit `deferred_until` date) before the CS15a public flip.
+That invariant is now satisfied in this repository; keep it true before future
+public-facing release gates. See `LEARNINGS.md` header for the current status.
 
 ### LRN entry format
 

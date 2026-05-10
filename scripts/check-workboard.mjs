@@ -101,6 +101,14 @@ for (const f of headingFindings) {
   logError(`Missing required heading: "${f.heading}"`);
 }
 
+const normalizedMarkdown = markdownText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+const recentlyCompletedHeadingCount = (normalizedMarkdown.match(/^## Recently Completed\s*$/gm) ?? []).length;
+if (recentlyCompletedHeadingCount > 1) {
+  logError(
+    `WORKBOARD.md must contain exactly one "## Recently Completed" section; found ${recentlyCompletedHeadingCount}`
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Check 2 — Orchestrators table shape
 // ---------------------------------------------------------------------------
@@ -223,6 +231,22 @@ for (const row of activeRows) {
     if (!/^CS\d{2,}[a-z]?$/.test(csId)) {
       logError(
         `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d{2,}(a-z)? format`
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Check 5 — Recently Completed rows must not contain stale in-flight language
+  // ---------------------------------------------------------------------------
+
+  const completedRows = parseTableRows(markdownText, 'Recently Completed');
+  for (const row of completedRows) {
+    const cs = (row['CS'] ?? '').trim();
+    const rowText = Object.values(row).join(' ');
+    if (/\b(pending|tbd|in progress)\b/i.test(rowText)) {
+      logError(
+        `Recently Completed row${cs ? ` ${cs}` : ''} contains stale in-flight language ` +
+        `("pending", "TBD", or "in progress")`
       );
     }
   }

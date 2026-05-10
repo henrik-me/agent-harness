@@ -121,8 +121,34 @@ describe('check-workboard linter', () => {
     );
   });
 
-  // 5. Real-file regression: actual WORKBOARD.md → exit 0
-  it('5. real WORKBOARD.md passes (regression)', () => {
+  // 5. Duplicate Recently Completed sections → exit 1
+  it('5. duplicate Recently Completed sections exit 1', () => {
+    const r = runLinter(['--file', fixture('duplicate-recently-completed.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('exactly one') && r.stdout.includes('Recently Completed'),
+      `Expected duplicate Recently Completed error; got:\n${r.stdout}`
+    );
+  });
+
+  // 6. Recently Completed rows with stale in-flight language → exit 1
+  it('6. stale Recently Completed row exits 1', () => {
+    const r = runLinter(['--file', fixture('stale-completed.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('stale in-flight language'),
+      `Expected stale language error; got:\n${r.stdout}`
+    );
+  });
+
+  // 7. Real-file regression: actual WORKBOARD.md → exit 0
+  it('7. real WORKBOARD.md passes (regression)', () => {
     const workboard = path.join(REPO_ROOT, 'WORKBOARD.md');
     const r = runLinter(['--file', workboard]);
     assert.equal(
@@ -131,8 +157,8 @@ describe('check-workboard linter', () => {
     );
   });
 
-  // 6. Missing --file → exit 2
-  it('6. missing --file exits 2', () => {
+  // 8. Missing --file → exit 2
+  it('8. missing --file exits 2', () => {
     const r = runLinter([]);
     assert.equal(
       r.status, 2,

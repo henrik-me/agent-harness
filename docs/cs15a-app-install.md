@@ -4,7 +4,7 @@
 
 ## What this App is for
 
-The `agent-harness-workboard-bot` GitHub App backs `.github/workflows/workboard-auto-approve.yml`. From CS15b onward, when the global Ruleset requires `≥1 approving review` on every PR, this bot supplies the approval **only for verified WORKBOARD-only PRs** (path-restricted, label-restricted, branch-name-restricted, actor-allowlisted). Per cs-plan §CS15a #8 + Decision #23 + bot threat model.
+The `agent-harness-workboard-bot` GitHub App backs `.github/workflows/workboard-auto-approve.yml`. The main Ruleset now requires `≥1 approving review` on every PR by default; this bot supplies the approval **only for verified WORKBOARD-only PRs** (path-restricted, label-restricted, branch-name-restricted, actor-allowlisted). Per cs-plan §CS15a #8 + Decision #23 + bot threat model.
 
 Why an App and not a PAT? Least-privilege scoped permissions, dedicated
 identity, no PAT rotation, no human-account credential leak surface.

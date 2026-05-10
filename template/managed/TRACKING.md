@@ -137,8 +137,9 @@ planned  ──(claim)──►  claimed  ──(start work)──►  active  �
 1. Rename the clickstop file from `planned/` to `active/` on a claim branch.
 2. Open a small PR tagged `workboard-only` that updates `WORKBOARD.md` only
    (Active Work row: set `State = claimed`, fill in `Owner` and `Branch`).
-3. From CS15b onward this PR is auto-merged via the workboard bot workflow.
-   Until CS15b it is a user-reviewed small PR.
+3. In the public protected phase, eligible workboard-only PRs are auto-merged
+   via the workboard bot workflow after its validation gate passes. Before the
+   Ruleset/bot path existed, these were user-reviewed small PRs.
 
 ### Closing a CS
 

@@ -77,8 +77,7 @@ fallback regardless of independence:
 
 - CS03 (sync engine)
 - CS11 (self-host)
-- CS15a (branch-protection hardening)
-- CS15b (public flip)
+- CS15a (public-readiness, visibility flip, and Ruleset activation)
 - CS18b (PILOT-A baseline)
 - CS19 (migration)
 

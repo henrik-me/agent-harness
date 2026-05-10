@@ -1,5 +1,5 @@
 {
-  "$schema-note": "Body shape for POST /repos/{owner}/{repo}/rulesets (Repository Rulesets API). Authored at CS15a, applied at CS15b after public flip. See https://docs.github.com/en/rest/repos/rules. Decision #18 + #23 in harness-cs-plan.md.",
+  "$schema-note": "Body shape for PUT /repos/{owner}/{repo}/rulesets/{ruleset_id} (Repository Rulesets API). Authored and applied during CS15a public flip. See https://docs.github.com/en/rest/repos/rules. Decision #18 + #23 in harness-cs-plan.md.",
   "name": "main-protection",
   "target": "branch",
   "enforcement": "active",

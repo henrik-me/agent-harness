@@ -1,7 +1,7 @@
 # harness-self-check.yml
 #
 # CS11 Stage B.4: full drift gate active. CS15a adds standalone policy
-# jobs so the CS15b Ruleset can require their exact check contexts.
+# jobs so the main Ruleset can require their exact check contexts.
 
 name: harness-self-check
 

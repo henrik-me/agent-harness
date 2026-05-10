@@ -188,6 +188,8 @@ Per the user authorization (2026-05-09):
 | User actions: App + repo settings | done | henrik-me/yoga-ah | App/secrets done; public flip done; #17/#18 validated after public flip |
 | Bot dry-run + readiness update | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | GPT-5.5 plan-vs-impl review | done | gpt-5.5 | agent-id=cs15a-plan-review \| role=reviewer \| report-status=complete; outcome=GO after public flip + Ruleset/settings validation \| learnings=0 |
+| Close-out: docs + restart state | done | yoga-ah | Updated WORKBOARD, CONTEXT, HANDOFF, INSTRUCTIONS/OPERATIONS/TRACKING templates and rendered roots, Ruleset/readiness docs, App docs, and private-consumption docs so a fresh agent can restart from current public state. |
+| Close-out: learnings + follow-ups | done | yoga-ah | Filed LRN-080/LRN-081 and the follow-up LRN entries from the CS15a restart review; converted actionable review findings into linter/doc changes in this follow-up PR. |
 
 ## Risks + mitigations
 
