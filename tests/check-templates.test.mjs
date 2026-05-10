@@ -201,8 +201,15 @@ describe('check-templates linter', () => {
   it('CS08c: a directory mixing valid + negative fixtures reports only the negative ones', () => {
     const r = runLinter(['--dir', FIXTURES_CS08C, '--cwd', REPO_ROOT]);
     assert.equal(r.status, 1);
-    assert.equal((r.stderr.match(/dot-notation placeholder/g) ?? []).length, 1);
+    assert.equal((r.stderr.match(/dot-notation placeholder/g) ?? []).length, 2);
     assert.equal((r.stderr.match(/relative '\.\.\/' path/g) ?? []).length, 1);
-    assert.match(r.stderr, /2 violations/);
+    assert.match(r.stderr, /3 violations/);
+  });
+
+  it('CS08c: indented-code-block stripping is gated to .md files (YAML/non-md still flags indented placeholders)', () => {
+    const r = runLinter(['--file', fixture08c('indented-yaml-still-flags.yml'), '--cwd', REPO_ROOT]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /dot-notation placeholder '\{\{project\.name\}\}'/);
+    assert.match(r.stderr, /1 violation/);
   });
 });

@@ -1,0 +1,13 @@
+name: example workflow
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: bad-placeholder
+        run: echo {{project.name}}

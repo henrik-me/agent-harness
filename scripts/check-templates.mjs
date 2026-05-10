@@ -105,7 +105,7 @@ function walkFiles(root) {
   return out.sort((a, b) => slashPath(a).localeCompare(slashPath(b)));
 }
 
-function stripMarkdownNonScannable(line, state) {
+function stripMarkdownNonScannable(line, state, isMarkdown) {
   if (state.inFencedCode) {
     const closer = state.fenceChar === '~' ? /^\s*~~~+\s*$/ : /^\s*```+\s*$/;
     if (closer.test(line)) {
@@ -127,7 +127,7 @@ function stripMarkdownNonScannable(line, state) {
     return '';
   }
 
-  if (/^( {4,}|\t)/.test(line) && line.trim().length > 0) {
+  if (isMarkdown && /^( {4,}|\t)/.test(line) && line.trim().length > 0) {
     return '';
   }
 
@@ -160,12 +160,13 @@ function lintFile(filePath, cwd) {
   const lines = text.split('\n');
   const violations = [];
   const checkRule3 = isPrTemplatePath(relPath, basename);
+  const isMarkdown = path.extname(filePath).toLowerCase() === '.md';
   const state = { inFencedCode: false, fenceChar: null, inHtmlComment: false };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNumber = i + 1;
-    const scan = stripMarkdownNonScannable(line, state);
+    const scan = stripMarkdownNonScannable(line, state, isMarkdown);
     if (!scan) continue;
 
     for (const match of scan.matchAll(/(?<!\$)\{\{[^}]+\.[^}]+\}\}/g)) {
