@@ -1,9 +1,9 @@
 # CS08c — Extend check-templates markdown-context awareness
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs08c/extend-check-templates-markdown-context
+**Started:** 2026-05-10
 **Closed:** —
 **Filed by:** CS15d close-out (GPT-5.5 plan-vs-implementation review GO with non-blocking concern #2: `check-templates.mjs` markdown-context awareness only handles triple-backtick fences and single-backtick spans).
 **Depends on:** CS08b (delivered via [CS15d](../done/done_cs15d_linter-expansion.md))
@@ -50,7 +50,15 @@ Single-CS scope; small enough for a single agent without fan-out. Owns `scripts/
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Refactor `stripMarkdownNonScannable` to track fence-character (tilde + backtick) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Add indented-code-block recognition (≥4 leading spaces / 1 tab) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Add N-backtick balanced span stripping | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| New fixtures under `tests/fixtures/cs08c/check-templates/` (≥4) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| New tests in `tests/check-templates.test.mjs` (≥4; target 5-6) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator-impl \| report-status=pending \| learnings=0 |
+| Local review (GPT-5.5) | pending | yoga-ah | agent-id=yoga-ah \| role=local-reviewer \| report-status=pending \| learnings=0 |
+| Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | agent-id=yoga-ah \| role=close-out-reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD active→done row) | pending | yoga-ah | agent-id=yoga-ah \| role=closeout \| report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md, planned CSs if any) | pending | yoga-ah | agent-id=yoga-ah \| role=closeout \| report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
