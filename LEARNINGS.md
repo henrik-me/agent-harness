@@ -2031,6 +2031,63 @@ When in doubt, gate. False-negatives in linter rules are far worse than the smal
 
 **Disposition:** Applied. The fix is in place in `scripts/check-templates.mjs`. The principle generalises beyond CS08c: any future linter that gains markdown-context awareness must inventory its rules against the markdown-only-vs-safe-everywhere classification, with file-type gating as the default. Consider adding a brief checklist to OPERATIONS.md § Linter authoring (or wherever linter-design guidance lives) — but defer the documentation change until a second occurrence confirms the cue is needed (per LRN-rule-of-three; CS08c is occurrence #1, complementary to LRN-089's general markdown-context awareness pattern).
 
+### LRN-098
+
+```yaml
+id: LRN-098
+date: 2026-05-10
+category: anti-pattern
+source_cs: CS15f
+status: applied
+tags: [process, anti-pattern, duplication, single-source-of-truth, bootstrap-docs, status-doc, churn]
+claim_area: process-docs
+```
+
+**Problem:** Orchestrator-facing process docs (HANDOFF / INSTRUCTIONS / OPERATIONS / CONTEXT / README) accumulate duplicated content over time when one of them is positioned as a "bootstrap / restart guide" that re-summarises what the others say. The duplication looks helpful (one-stop shop) but creates two failure modes: (a) every CS close-out has a chance of leaving the duplicate stale, because the human/agent updates one canonical home but forgets the duplicate; (b) when both are updated, the updates compete (PR #105 was a HANDOFF.md `Current mainline state` refresh that was almost merged before the orchestrator realised the same content was already in CONTEXT.md `## Codebase state` — and was being maintained there independently). The duplication anti-pattern is corrosive precisely because the duplicates LOOK current — staleness is gradual and hard to detect without a structured audit. Detection only happened during a pre-CS16 doc-state audit when the orchestrator manually section-by-section compared HANDOFF.md against the canonical docs and found ~95% duplication.
+
+**Finding:** **For orchestrator-facing process docs, enforce single source of truth: each piece of content lives in exactly one canonical home, and other docs cross-link to it rather than re-summarise it.** The canonical homes are:
+
+- **Bootstrap reading order, Quick Reference Checklist, Session Start, Per-CS Loop:** `INSTRUCTIONS.md` (managed) — the agent's first-read entry door.
+- **Lifecycle procedures (Claim / Dispatch / Sync / Harvest / SemVer / Conventions; sub-agent briefing preamble):** `OPERATIONS.md` (composed).
+- **Current state (recently completed CSs, active CS pointer, blockers, parallelism posture):** `CONTEXT.md` (project-owned).
+- **Live coordination (Orchestrators table, Active Work, Recently Completed, Queued):** `WORKBOARD.md`.
+- **Repo-onboarding / human starter prompt / per-path map:** `README.md`.
+- **Process learnings:** `LEARNINGS.md`.
+- **Reviewer model / taxonomy / HIGH-RISK CS list:** `REVIEWS.md`.
+
+The presence of a separate "bootstrap" or "handoff" or "restart" doc that re-summarises items from this list is the smell. If a fresh agent can't bootstrap from `INSTRUCTIONS.md` alone (after the agent's system prompt at `.github/copilot-instructions.md` points them there), the fix is to harden `INSTRUCTIONS.md`, not to spawn a new bootstrap doc.
+
+**Pre-CS check:** before claiming any CS that adds a new orchestrator-facing process doc, audit whether the proposed content actually has a canonical home elsewhere; if it does, extend that home instead of creating a new doc.
+
+**Evidence:** [`project/clickstops/done/done_cs15f_retire-handoff-doc.md`](project/clickstops/done/done_cs15f_retire-handoff-doc.md) § Background contains the section-by-section duplication audit (~13 sections, only 2 with no canonical home elsewhere); the deleted [HANDOFF.md @ pre-CS15f](https://github.com/henrik-me/agent-harness/blob/95083df^/HANDOFF.md) was 19237 bytes of which ~95% duplicated INSTRUCTIONS / OPERATIONS / CONTEXT / README; the smoking gun was [PR #105](https://github.com/henrik-me/agent-harness/pull/105) — opened to refresh `Current mainline state` in HANDOFF.md after CS06c+CS08c closed, then closed unmerged after the orchestrator realised the section was already maintained in CONTEXT.md.
+
+**Disposition:** Applied. CS15f deleted HANDOFF.md, migrated the 2 unique pieces of content (starter prompt → README; Open-LRN audit recipes → OPERATIONS.md § Harvest), and retargeted all live cross-links. The `.github/copilot-instructions.md` agent system prompt already points at `INSTRUCTIONS.md` as the entry door, so no consumer-facing change was needed. **Going forward:** if a future CS proposes adding a new orchestrator-facing process doc, this LRN should be cited in pre-claim review as a reason to push back and find the canonical home first.
+
+### LRN-099
+
+```yaml
+id: LRN-099
+date: 2026-05-10
+category: tooling
+source_cs: CS15f
+status: applied
+tags: [linter, fileclass, scratch-files, repo-root, pr-body, cleanup]
+claim_area: housekeeping
+```
+
+**Problem:** The CS11 file-class linter (`scripts/check-fileclass-membership.mjs`, exercised by `tests/cs11-self-host-config.test.mjs` test 2) requires every root `.md` file to be classified exactly once in `harness.config.json` (managed / composed / seeded / excluded). Temporary scratch files written to the repo root during orchestrator work — for example a `pr-body-cs15f.md` written via `Out-File` to feed `gh pr edit --body-file` — break that test. The failure mode is non-obvious because the test passes when run after the scratch file is deleted, so it shows up as a transient red in the test sweep that disappears on the next run. Encountered in CS15f when `pr-body-cs15f.md` was left in the repo root after `gh pr edit 107 --body-file pr-body-cs15f.md`; the post-fixup test sweep showed `Orphaned root .md files (not classified): pr-body-cs15f.md`.
+
+**Finding:** **Write throwaway PR-body fragments (and any other root-scope scratch `.md` files) to a path the file-class linter will not see.** Two reliable patterns:
+
+- Use `$env:TEMP` (Windows) or `/tmp` (POSIX): `Out-File -Encoding utf8 -NoNewline $env:TEMP\pr-body-csNN.md` then `gh pr edit NN --body-file $env:TEMP\pr-body-csNN.md`. The file is outside the repo entirely, so no linter sees it.
+- If the file must be in the repo for some reason, put it under a `.gitignore`d path like `.scratch/` or `tmp/` — but TEMP is simpler.
+
+Either way, the discipline is "never leave an unclassified `.md` in the repo root, even briefly". If you DO write one, delete it the moment `gh pr ...` returns success.
+
+**Evidence:** Observed during CS15f plan-vs-impl-fixup work: `pr-body-cs15f.md` was created in repo root via `... | Out-File -Encoding utf8 -NoNewline pr-body-cs15f.md` and left there after `gh pr edit 107 --body-file pr-body-cs15f.md`; subsequent `node --test tests/*.test.mjs` reported `# fail 1` with the orphan-root-md assertion failing on `pr-body-cs15f.md` ([`tests/cs11-self-host-config.test.mjs` test 2 at line ~53](tests/cs11-self-host-config.test.mjs)). Removing the file restored 669/669 green. The fix for the follow-up PR (#108) was to use `$env:TEMP\pr-body-cs15f-fixup.md`.
+
+**Disposition:** Applied. Established the convention "PR-body scratch goes to `$env:TEMP` (or `/tmp`)". Future orchestrators should follow the same pattern. Optional follow-up: a tiny harness CS could codify a `.gitignore` entry for `pr-body-*.md` at repo root as a belt-and-suspenders backstop, but the TEMP-path discipline is sufficient on its own.
+
 ## Obsolete
 
 (none yet)
