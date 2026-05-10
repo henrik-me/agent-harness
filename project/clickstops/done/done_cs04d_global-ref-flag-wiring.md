@@ -1,12 +1,12 @@
 # CS04d — Global `--ref` flag wiring
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15c)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-09 (via CS15c)
+**Closed:** 2026-05-09 (via CS15c)
 **Filed by:** CS04 close-out (GPT-5.5 R1 non-blocking #2: "`--ref` is parsed globally but never used — pin semantics unspecified").
-**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). Option B (explicit reject) chosen per the planned file's own recommendation. This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15c](./done_cs15c_cli-surface-cleanup.md) — absorbed and delivered as one of three deliverables in the CS15c umbrella using Option B (explicit reject). PR #89 merged 2026-05-09 @ `63c54b5`.
 **Depends on:** CS04
 
 ## Goal
@@ -55,4 +55,8 @@ Recommend Option B for the near term (cleaner semantics deferred to a CS where t
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15c umbrella review](./done_cs15c_cli-surface-cleanup.md#plan-vs-implementation-review))
+**Date:** 2026-05-09
+**Outcome:** GO
+
+This CS was absorbed by the [CS15c umbrella](./done_cs15c_cli-surface-cleanup.md) before it was ever independently claimed. CS04d's deliverable (`--ref` Option B reject + help-text update) was implemented and reviewed as part of CS15c. See CS15c's R1 + R2 reviews for the full plan-vs-implementation analysis.

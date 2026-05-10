@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-10 (Pre-CS16 backlog cleanup planning PR `cs15-cleanup-planning`: 3 umbrella CSs filed (CS15c/d/e) absorbing 7 deferred planned CSs)
+> **Last updated:** 2026-05-09 (CS15c CLI surface cleanup umbrella complete; PR #89 @ `63c54b5`; CS15d/CS15e remain queued)
 
 > **🆕 New orchestrator picking this up?** Read [`HANDOFF.md`](HANDOFF.md) first — it has the deterministic bootstrap reading order, lifecycle steps, critical conventions, and verification gates. This file (CONTEXT.md) covers current state only.
 
@@ -53,12 +53,13 @@
 
 - **CS15a complete** (closed 2026-05-10). **Public-readiness preparation + visibility flip guardrail.** Delivered public-facing docs (`SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates), Dependabot config, `secret-scan` and `npm-pack-dry-run` workflows, public readiness evidence, full-history gitleaks report, repo settings checklist, GitHub App-backed `workboard-auto-approve` workflow, helper script, and main Ruleset spec/application. Repository is now public; main Ruleset `main-protection` is active (`id=16185634`); squash-only posture and auto-merge are enabled; Private Vulnerability Reporting returned 204; secret scanning is enabled; PR #78 proved the workboard bot can approve and merge a validated `workboard-only` PR. Post-flip Dependabot alerts for `fast-uri` are resolved by the close-out lockfile update to `3.1.2` (`npm audit --audit-level=high` reports 0 vulnerabilities). Mainline validation green after the flip. CS15b's visibility flip work was absorbed by explicit user authorization during CS15a close-out.
 
-- **Pre-CS16 backlog cleanup planning** (planning PR `cs15-cleanup-planning` open 2026-05-10). 3 umbrella CSs filed in `project/clickstops/planned/` to clear 7 deferred planned CSs accumulated across CS01–CS15a, per user authorization 2026-05-09 ("you can add the CS structure needed to optimize for parralelism. you can add the CS structure needed... umbrella seems good"):
-  - **[CS15c](project/clickstops/planned/planned_cs15c_cli-surface-cleanup.md)** — CLI surface cleanup (absorbs CS04b + CS04d + CS09b). 4 sub-agents, 1 wave. Reserves LRN-082..086.
-  - **[CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md)** — Linter expansion (absorbs CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents. Adds 2 new linters (15→17). Reserves LRN-087..094.
-  - **[CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md)** — `harness init` private-tier detection (absorbs CS04a; user-resolved Q1–Q5 captured in the umbrella file). 5 sub-agents. Reserves LRN-095..099.
-  - **Order:** CS15c → CS15d → CS15e (sequential, single-orchestrator discipline). Each umbrella has its own claim/content/close-out cycle (9 PRs total vs 21 for separate CSs).
-  - **7 absorbed planned files** stay in `planned/` with `**Superseded by:**` pointers and explicit "MUST NOT be claimed independently" language; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent).
+- **CS15c complete** (closed 2026-05-09). **First pre-CS16 backlog cleanup umbrella.** Absorbed CS04b (`--config` threading through `sync`/`check`), CS04d (`--ref` Option B reject with documented exit-2 message), and CS09b (`sync --mode=check` step in init fixture test). Delivered: `lib/sync.mjs` `opts.configPath` plumbing with override-aware error messages on 3 paths (file-not-found, malformed JSON, schema-invalid) — all 3 surface the `--config <path>` value in stderr per CS04b plan contract; `bin/harness.mjs` wires `--config` to `syncFn`, rejects `--ref` at exit 2 with planned-flag message, and `cmdInit` finalizes via `sync --apply` so init-produced repos pass `sync --mode=check` immediately (LRN-057 / LRN-084); 11 new CLI contract tests in `tests/cli.test.mjs` plus 5 unit tests in `tests/sync-config-override.test.mjs`; init-drift fixture in `tests/cs09-init.test.mjs`; `template/composed/OPERATIONS.md` integration-testing checklist subsection. **554 tests pass total** (was 538; +16 net). `harness lint --quiet`: **15/0/3**. `harness sync --mode=check`: no drift. R1 GPT-5.5 NEEDS-FIX (config-error message contract; missing `check --config` regression test) → 2 fixes in commit `fa78147` → R2 GO. 4 sub-agents: α1 (`lib/sync.mjs` config-override plumbing), α2 (`bin/harness.mjs` orchestrator-owned wiring + init-drift fix), α3 (CLI contract tests), α4 (init-fixture + template doc — surfaced the init-drift bug as escalation, orchestrator addressed inline). 3 LRN filed: LRN-084 (init must finalize with sync-apply), LRN-085 (override-config error messages must surface override path), LRN-086 (LRN range reservations made at planning time are advisory; collide with mid-flight close-outs — re-check before filing). 3 absorbed planned files (`planned_cs04b_*`, `planned_cs04d_*`, `planned_cs09b_*`) `git mv`'d to `done/` with umbrella-redirect plan-vs-impl entries. Plan PR #87, claim PR #88, content PR #89 @ `63c54b5`. Cumulative dispatch count: ~55.
+
+- **Pre-CS16 backlog cleanup remaining.** 2 umbrella CSs still queued (CS15c is now done):
+  - **[CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md)** — Linter expansion (absorbs CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents. Adds 2 new linters (15→17). Reserves LRN-087..094 (advisory per LRN-086).
+  - **[CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md)** — `harness init` private-tier detection (absorbs CS04a; user-resolved Q1–Q5 captured in the umbrella file). 5 sub-agents. Reserves LRN-095..099 (advisory).
+  - **Order:** CS15d → CS15e (sequential, single-orchestrator discipline). Each umbrella has its own claim/content/close-out cycle.
+  - **4 absorbed planned files remaining** (`planned_cs04a_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs10b_*`) stay in `planned/` with `**Superseded by:**` pointers and explicit "MUST NOT be claimed independently" language; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent).
   - **Next mainline slot after CS15e closes:** CS16 (Bootstrap Sub Invaders) — first downstream consumer of CS15e's constraint-detection flow.
 
 ## Architecture pointer
@@ -67,7 +68,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. CS15a public-readiness preparation and the public visibility flip are complete. Pre-CS16 backlog cleanup umbrellas (CS15c/d/e) are filed and ready to claim once the planning PR `cs15-cleanup-planning` merges. LRN-014 remains `deferred` (CS19-bound).
+- None. CS15a public-readiness preparation and the public visibility flip are complete. CS15c (CLI surface cleanup umbrella) closed 2026-05-09. CS15d/CS15e remain queued and ready to claim. LRN-014 remains `deferred` (CS19-bound).
 
 ## Parallelism (single-orchestrator default)
 

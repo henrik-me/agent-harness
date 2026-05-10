@@ -1,12 +1,12 @@
 # CS04b — Thread `--config` flag through `lib/sync.mjs`
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15c)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-09 (via CS15c)
+**Closed:** 2026-05-09 (via CS15c)
 **Filed by:** [LRN-027](../../../LEARNINGS.md#lrn-027) at CS04 close-out (`--config` parsed but silently ignored; rejected with exit 2 as a stop-gap).
-**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15c](./done_cs15c_cli-surface-cleanup.md) — absorbed and delivered as one of three deliverables in the CS15c umbrella; PR #89 merged 2026-05-09 @ `63c54b5`.
 **Depends on:** CS04
 
 ## Goal
@@ -56,4 +56,8 @@ Single sub-agent (one file pair: `lib/sync.mjs` + `bin/harness.mjs`). Per [LRN-0
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15c umbrella review](./done_cs15c_cli-surface-cleanup.md#plan-vs-implementation-review))
+**Date:** 2026-05-09
+**Outcome:** GO
+
+This CS was absorbed by the [CS15c umbrella](./done_cs15c_cli-surface-cleanup.md) before it was ever independently claimed. CS04b's deliverables (`--config` threading + 3 error paths) were implemented and reviewed as part of CS15c. See CS15c's R1 (NEEDS-FIX, addressed in commit fa78147) and R2 (GO) reviews for the full plan-vs-implementation analysis.
