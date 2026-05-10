@@ -1963,6 +1963,29 @@ claim_area: test-isolation
 
 **Disposition:** Applied. Future CSs that add new test files MUST use `os.tmpdir()` for scratch directories. Consider adding a `check-test-tempdirs.mjs` linter that greps test files for `mkdtempSync(path.join(process.cwd(), ...))` or `mkdtempSync(__dirname, ...)` patterns and fails the build — but defer until a third occurrence (per LRN-rule-of-three).
 
+### LRN-095
+
+```yaml
+id: LRN-095
+date: 2026-05-10
+category: process
+source_cs: CS15
+status: applied
+tags: [model-selection, context-bloat, fallback, gpt-5.5, opus-4.7, clean-session, orchestrator]
+claim_area: orchestrator-runtime
+```
+
+**Problem:** During the CS15c → CS15d → CS15e umbrella sequence (all run in a single long-lived orchestrator session under Claude Opus 4.7 1M-context), the orchestrator began exhibiting multi-symptom degradation as the conversation depth grew across umbrellas. Observed symptoms (in aggregate, not all at once on every step): repeated tool-call retries on previously-working operations, drift away from the cs-plan / OPERATIONS.md procedure (notably the canonical sub-agent briefing preamble per LRN-068 and the no-commit preflight per LRN-021), shallower fix-round responses that a follow-up GPT-5.5 plan-vs-impl review then caught (e.g. CS15e's three NEEDS-FIX gaps — broken `\Z` JS regex, missing disposition-options notice, skip-path artifact-leak — all delivered with passing tests on the first content commit and only surfaced by independent review). The user mitigated by **switching to GPT-5.5 in a fresh clean session**, which immediately recovered cs-plan adherence and produced the diagnoses + fixes that closed CS15e.
+
+**Finding:** Long-running orchestrator sessions on deep context (especially under 1M-context model variants spanning multiple umbrella CSs back-to-back) are a process risk, not a model defect. The mitigation is twofold and additive:
+
+1. **Independent reviewer is doing real work.** The GPT-5.5 plan-vs-impl review gate (LRN-064) is the safety net that catches degraded-implementer output. CS15e validated this concretely: three blocking gaps shipped with green tests; only the independent review caught them. The gate is mandatory, but its value is highest exactly when the implementer is degraded — which is the hardest moment for the implementer to self-detect. Do not skip or shortcut the gate, ever, even when "everything looks fine."
+2. **Treat session-restart as a first-class orchestrator action.** When you (the orchestrator) notice any of: (a) repeated tool-call retries on previously-working operations, (b) drift from the canonical preamble or briefing checklists, (c) "I forgot to do X" mid-step, (d) the user explicitly intervenes to correct procedure — **stop, summarise to a checkpoint, and start a fresh session.** Optionally swap to a different model family (Opus → GPT-5.5 or vice versa); per Decision #22 in the cs-plan and LRN-064, model independence between implementer and reviewer is already a design invariant, so a model swap also strengthens the next review gate.
+
+**Evidence:** CS15e content PR #95 — initial GPT-5.5 plan-vs-impl review verdict was NEEDS-FIX with 3 blocking gaps (recorded verbatim in `done_cs15e_init-private-tier-detection.md` § Plan-vs-implementation review § Initial review), all of which had passing tests on commit `b9aeba4` before the review. Fixes landed in `27f56ae` after the user-initiated model + session swap; re-review verdict GO. The same pattern (orchestrator misses; reviewer catches) was visible at smaller scale earlier in CS15c (R1 NEEDS-FIX → R2 GO after fix `fa78147`) and CS15d (R1 GO with 2 non-blockers that became CS06c + CS08c). CS15e was the first instance large enough to warrant a model + session reset rather than an inline fix-round.
+
+**Disposition:** Applied. Generalises Decision #22 (GPT-5.5 unavailable >30min → fall back to Sonnet 4.6 for review) into a broader **session-hygiene rule** for the implementer side: when degradation symptoms appear, the orchestrator's correct response is to **summarise + restart in a clean session** rather than push through. Consider adding a "session-depth checkpoint" cue to OPERATIONS.md § Per-CS loop — e.g. "after each umbrella close-out, prefer a fresh orchestrator session for the next claim" — but defer the documentation change until a second occurrence confirms the cue is needed (per LRN-rule-of-three; CS15e is occurrence #1).
+
 ## Obsolete
 
 (none yet)
