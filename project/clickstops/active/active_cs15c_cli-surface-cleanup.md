@@ -1,9 +1,9 @@
 # CS15c — CLI surface cleanup (umbrella: CS04b + CS04d + CS09b)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs15c/content
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** Pre-CS16 backlog cleanup (planning PR for cs15-cleanup-planning, 2026-05-09); user authorization for Option C umbrella bundling 2026-05-09 ("you can add the CS structure needed to optimize for parralelism").
 **Depends on:** CS04 (CLI dispatcher), CS09 (init/sync fixture)
@@ -138,9 +138,18 @@ This is a **discipline-only** reservation (no mechanical infrastructure exists y
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
-| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT) | planned | — | — |
-| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-082..086 + supersede 3 planned files) | planned | — | — |
+| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | in_progress | yoga-ah | branch `cs15c/claim` |
+| Branch `cs15c/content` from main post-claim | pending | yoga-ah | — |
+| α1: `lib/sync.mjs` accept `opts.configPath`; 3 error paths exit 1 | pending | sub-agent α1 | CS04b deliverable |
+| α2 (orchestrator): `bin/harness.mjs` thread `--config`; reject `--ref`; SUBCOMMAND_HELP updates | pending | yoga-ah | CS04b + CS04d; orchestrator-owned bottleneck |
+| α3: `tests/cli.test.mjs` ≥6 CS04b tests + ≥2 CS04d tests | pending | sub-agent α3 | learnings=0 |
+| α4: `tests/cs09-init.test.mjs` sync-check assertion + `template/composed/OPERATIONS.md` integration-testing checklist subsection | pending | sub-agent α4 | CS09b deliverable; template-side edit only |
+| Orchestrator: stage all sub-agent output; full validation; single content commit | pending | yoga-ah | post Wave 1 |
+| Orchestrator: post-content lock-fixup re-render of root `OPERATIONS.md` via `--resolved-sha <content-sha>` | pending | yoga-ah | LRN-070/074 |
+| Plan-vs-implementation review (gpt-5.5 rubber-duck) | pending | yoga-ah | LRN-064 mandatory gate |
+| Open content PR; address review iterations; squash-merge | pending | yoga-ah | — |
+| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + RESUME POINT in this file; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15c" pointer) | pending | yoga-ah | required by check-clickstop close-out enforcement |
+| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-082..086; document any deferred follow-ups as new planned CSs) | pending | yoga-ah | required by check-clickstop close-out enforcement |
 
 ## Notes / Learnings
 
