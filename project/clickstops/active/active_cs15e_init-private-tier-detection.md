@@ -1,9 +1,9 @@
 # CS15e — `harness init` private-tier detection (umbrella: CS04a)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs15e/content (after claim)
+**Started:** 2026-05-10
 **Closed:** —
 **Filed by:** Pre-CS16 backlog cleanup (planning PR for cs15-cleanup-planning, 2026-05-09); user authorization for Option C umbrella bundling 2026-05-09 ("you can add the CS structure needed to optimize for parralelism"); CS04a Q1–Q5 resolved by user via Q&A 2026-05-09.
 **Depends on:** CS04 (CLI dispatcher), CS09 (init flow), CS15c (uses `--config` threading), CS15d (uses `lib/config-reader.mjs`)
