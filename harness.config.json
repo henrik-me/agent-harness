@@ -6,6 +6,12 @@
     "agent_suffix": "ah",
     "repo": "henrik-me/agent-harness"
   },
+  "constraints": {
+    "tier": "public",
+    "detected_at": "2026-05-10T00:00:00Z",
+    "owner": "henrik-me",
+    "repo": "agent-harness"
+  },
   "managed": {
     "files": [
       "INSTRUCTIONS.md",

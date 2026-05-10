@@ -1140,3 +1140,174 @@ describe('CS15c — CS04b --config threading + CS04d --ref reject', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// CS15e — `harness init` GitHub-tier detection (constraints block)
+// ---------------------------------------------------------------------------
+
+describe('CS15e — harness init constraint detection', () => {
+  /**
+   * The detection helper makes live GitHub API calls. To keep these CLI tests
+   * deterministic + offline-safe, cmdInit honors the test-only env var
+   * HARNESS_DETECT_TIER_OVERRIDE: when set, its value is parsed as JSON and
+   * used verbatim as the detection result (bypassing the live helper). γ1's
+   * lib/github-detect tests already cover the live algorithm thoroughly.
+   */
+
+  it('init --skip-constraint-detection skips detection and writes no constraints block', () => {
+    const dir = makeTmpDir();
+    try {
+      const r = run(['init', '--skip-constraint-detection', dir]);
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      assert.ok(r.stdout.includes('Skipped tier detection'), `Expected skip notice; stdout: ${r.stdout}`);
+      assert.ok(!existsSync(path.join(dir, '.harness-known-constraints.md')), '.harness-known-constraints.md should NOT exist');
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.equal(cfg.constraints, undefined, 'constraints block should NOT be written');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init writes constraints block + .harness-known-constraints.md + CONTEXT.md ref for tier=public', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'public', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+    try {
+      const r = run(['init', dir], { env });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      assert.ok(r.stdout.includes('tier=public'), `Expected summary; stdout: ${r.stdout}`);
+
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.equal(cfg.constraints?.tier, 'public');
+      assert.equal(cfg.constraints?.owner, 'acme');
+      assert.equal(cfg.constraints?.repo, 'widget');
+      assert.equal(cfg.constraints?.disposition, undefined, 'public tier must omit disposition');
+      assert.match(cfg.constraints?.detected_at ?? '', /^\d{4}-\d{2}-\d{2}T/, 'detected_at must be ISO 8601');
+
+      const hkc = readFileSync(path.join(dir, '.harness-known-constraints.md'), 'utf8');
+      assert.ok(hkc.includes('Tier: `public`'), 'known-constraints body should reflect tier');
+      assert.ok(!hkc.includes('<!--'), 'leading editor comment should be stripped');
+      assert.ok(!hkc.includes('Disposition:'), 'public tier must omit Disposition line');
+
+      const ctx = readFileSync(path.join(dir, 'CONTEXT.md'), 'utf8');
+      assert.ok(/^## Constraints[ \t]*\r?\n\r?\nSee `\.harness-known-constraints\.md`/m.test(ctx), `CONTEXT.md should have one-line ref under ## Constraints; got: ${ctx.slice(0, 600)}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init writes disposition for tier=private-free with default discipline-only', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'private-free', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+    try {
+      const r = run(['init', dir], { env });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.equal(cfg.constraints?.tier, 'private-free');
+      assert.equal(cfg.constraints?.disposition, 'discipline-only', 'default disposition for private-free is discipline-only');
+      const hkc = readFileSync(path.join(dir, '.harness-known-constraints.md'), 'utf8');
+      assert.ok(hkc.includes('Disposition: `discipline-only`'), 'private-free must emit Disposition line');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  for (const disp of ['discipline-only', 'upgrade-pro', 'flip-public-when-ready']) {
+    it(`init --constraint-disposition ${disp} records the chosen disposition for private-free`, () => {
+      const dir = makeTmpDir();
+      const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'private-free', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+      try {
+        const r = run(['init', '--constraint-disposition', disp, dir], { env });
+        assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+        const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+        assert.equal(cfg.constraints?.disposition, disp);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  }
+
+  it('init --constraint-disposition <invalid> exits 2 with documented enum values in stderr', () => {
+    const dir = makeTmpDir();
+    try {
+      const r = run(['init', '--constraint-disposition', 'made-up-value', dir]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes('made-up-value'), `stderr should include the bad value; got: ${r.stderr}`);
+      assert.ok(r.stderr.includes('discipline-only'), `stderr should list valid values; got: ${r.stderr}`);
+      assert.ok(r.stderr.includes('upgrade-pro'));
+      assert.ok(r.stderr.includes('flip-public-when-ready'));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init with tier=unknown (e.g. no remote) skips constraints block silently', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'unknown', reason: 'no-remote' }) };
+    try {
+      const r = run(['init', dir], { env });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      assert.ok(r.stdout.includes('Skipped .harness-known-constraints.md'), `Expected skip notice; stdout: ${r.stdout}`);
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.equal(cfg.constraints, undefined, 'no constraints block when tier=unknown without owner/repo');
+      assert.ok(!existsSync(path.join(dir, '.harness-known-constraints.md')), '.harness-known-constraints.md should NOT exist');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init --constraint-disposition on non-private-free tier prints warning and omits disposition', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'public', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+    try {
+      const r = run(['init', '--constraint-disposition', 'upgrade-pro', dir], { env });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes('ignored'), `Expected warning that --constraint-disposition was ignored; stderr: ${r.stderr}`);
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.equal(cfg.constraints?.disposition, undefined, 'disposition must be omitted for non-private-free tier');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init is idempotent: re-runs do not duplicate the CONTEXT.md `## Constraints` heading', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'public', owner: 'acme', repo: 'widget', ownerType: 'User' }) };
+    try {
+      const r1 = run(['init', dir], { env });
+      assert.equal(r1.status, 0, `Run 1 stderr: ${r1.stderr}`);
+      const r2 = run(['init', dir], { env });
+      assert.equal(r2.status, 0, `Run 2 stderr: ${r2.stderr}`);
+      const ctx = readFileSync(path.join(dir, 'CONTEXT.md'), 'utf8');
+      const matches = ctx.match(/^## Constraints/gm) ?? [];
+      assert.equal(matches.length, 1, `Expected exactly one ## Constraints heading; got ${matches.length}; CONTEXT.md: ${ctx.slice(0, 800)}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init writes a constraints block that validates against the schema (lib/config-reader.mjs::writeConfig path)', () => {
+    const dir = makeTmpDir();
+    const env = { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'private-pro', owner: 'acme', repo: 'widget', ownerType: 'Organization' }) };
+    try {
+      const r = run(['init', dir], { env });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+      // Re-run sync --check; if writeConfig wrote a schema-invalid config the
+      // sync engine will fail because it shares the same loadConfig path.
+      const r2 = run(['sync', '--mode=check', '--cwd', dir]);
+      assert.equal(r2.status, 0, `sync --check should succeed against init-written config; stderr: ${r2.stderr}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('init --help mentions the new flags and ADR pointer', () => {
+    const r = run(['init', '--help']);
+    assert.equal(r.status, 0);
+    assert.ok(r.stdout.includes('--constraint-disposition'), 'init --help must document --constraint-disposition');
+    assert.ok(r.stdout.includes('--skip-constraint-detection'), 'init --help must document --skip-constraint-detection');
+    assert.ok(r.stdout.includes('discipline-only'));
+    assert.ok(r.stdout.includes('upgrade-pro'));
+    assert.ok(r.stdout.includes('flip-public-when-ready'));
+    assert.ok(/0003-constraints-field\.md/.test(r.stdout), 'init --help should reference the ADR');
+  });
+});

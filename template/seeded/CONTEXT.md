@@ -14,6 +14,10 @@ Example entries:
 - **CS01 complete** — bootstrap: README, LICENSE, package.json, base directory layout.
 - **CS02 active** — schema definitions in progress.
 
+## Constraints
+
+(populated by `harness init` — see `.harness-known-constraints.md` after init completes)
+
 ## Architecture pointer
 
 See [ARCHITECTURE.md](ARCHITECTURE.md).

@@ -71,7 +71,7 @@ Autonomous design decisions:
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| `constraints` schema field | New optional `constraints: { tier, disposition, detected_at, owner, repo }` object on root `harness.config.json` | Additive (non-breaking → SemVer minor / v0.2.0). New ADR `0002-constraints-field.md` documents semantics. |
+| `constraints` schema field | New optional `constraints: { tier, disposition, detected_at, owner, repo }` object on root `harness.config.json` | Additive (non-breaking → SemVer minor / v0.2.0). New ADR `0003-constraints-field.md` documents semantics. |
 | `tier` enum values | `public \| private-free \| private-pro \| private-team \| private-enterprise \| unknown` | Covers all GitHub plan tiers + a fallback for missing token / API failure. |
 | Anonymous fetch | Public repos use anonymous fetch (60/hr unauth limit; init makes 2 calls). Private repos without a token resolve to `tier: unknown` with a warning + the seeded artifact still written. | Avoids forcing token setup as a prerequisite. |
 | `disposition` representation | When the disposition isn't applicable (any tier other than `private-free`), the `disposition` key is **omitted entirely** from `constraints` (not set to `null`). Schema enforces this via `if/then/else`. | Schemas with mixed `null`/omit are confusing; omit-when-N/A is the cleaner JSON Schema pattern and aligns with Ajv's strictness defaults. |
@@ -95,7 +95,7 @@ Autonomous design decisions:
 ### Schema + ADR (γ2)
 
 - [ ] `schemas/harness.config.schema.json`: add optional `constraints` object property to root with subfields `tier` (enum: `public | private-free | private-pro | private-team | private-enterprise | unknown`), `disposition` (enum: `discipline-only | upgrade-pro | flip-public-when-ready` — `null` is **not** an enum value; `disposition` is **omitted entirely** when not applicable), `detected_at` (string, date-time format), `owner` (string), `repo` (string). `additionalProperties: false`. Conditional rule via `if/then/else`: when `constraints.tier === 'private-free'`, `disposition` is required; otherwise it must be omitted.
-- [ ] `docs/adr/0002-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics (omitted when not applicable, never null), when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
+- [ ] `docs/adr/0003-constraints-field.md` (NEW) — ADR documenting: rationale (LRN-001/002 lineage), Path B fetch decision, Path D upgrade path, `tier` enum semantics, `disposition` semantics (omitted when not applicable, never null), when consumers should re-evaluate, interaction with `harness sync` and `harness lint` (both should adapt: e.g., don't suggest Ruleset checks if `disposition === 'discipline-only'`). Self-host `harness.config.json` may add a `constraints: { tier: "public", ... }` block as a smoke test of the new schema field.
 
 ### Seeded template (γ3)
 
@@ -137,7 +137,7 @@ Autonomous design decisions:
 | Agent | Owns (write-allowed) | Deliverables |
 |---|---|---|
 | γ1 | `lib/get-github-token.mjs` + `lib/detect-repo-tier.mjs` + `tests/lib-github-detect.test.mjs` | Detection helpers + tests |
-| γ2 | `schemas/harness.config.schema.json` + `docs/adr/0002-constraints-field.md` + harness self-host `harness.config.json` (constraints block as smoke test) | Schema + ADR + smoke-test self-host |
+| γ2 | `schemas/harness.config.schema.json` + `docs/adr/0003-constraints-field.md` + harness self-host `harness.config.json` (constraints block as smoke test) | Schema + ADR + smoke-test self-host |
 | γ3 | `template/seeded/.harness-known-constraints.md` + `template/seeded/harness.config.json` (constraints placeholder addition) | Seeded artifacts |
 | γ4 (orchestrator) | `bin/harness.mjs` `cmdInit` (only — restrict scope to function body of `cmdInit` and SUBCOMMAND_HELP['init']) + `tests/cli.test.mjs` (init tests appendix) | Init flow + CLI tests |
 | γ5 | `template/managed/INSTRUCTIONS.md` (template-side edit only) + new `template/seeded/CONTEXT.md` placeholder for the new "Constraints" H2 (so init can reliably append into it) | Doc updates and template-side edit only |

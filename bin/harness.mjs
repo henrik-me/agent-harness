@@ -74,10 +74,21 @@ Optionally drops one or more named scaffolds from scaffolds/<name>/files/
 (create-if-missing). Drops do not overwrite existing files. After successful
 drop, the scaffold name is appended to harness.config.json scaffolds[].
 
+Detects the GitHub repository tier (CS15e: visibility + plan from
+api.github.com) and records the result in a new \`constraints\` block on
+harness.config.json plus a seeded \`.harness-known-constraints.md\` file.
+For private-free repos, the disposition (default: discipline-only) is
+also recorded. See docs/adr/0003-constraints-field.md for details.
+
 Options:
-  --from-example=<gwn|si|self>   Use a bundled example config as the initial config
-  --with-scaffold <name>         Drop the named scaffold (repeatable; also accepts --with-scaffold=<name>)
-  --help                         Print this help
+  --from-example=<gwn|si|self>          Use a bundled example config as the initial config
+  --with-scaffold <name>                Drop the named scaffold (repeatable; also accepts --with-scaffold=<name>)
+  --constraint-disposition <name>       Force the disposition for private-free repos:
+                                          discipline-only | upgrade-pro | flip-public-when-ready
+                                          (default: discipline-only)
+  --skip-constraint-detection           Skip the GitHub-tier detection step entirely
+                                          (no constraints block written; useful in CI without network)
+  --help                                Print this help
 `.trimStart(),
 
   sync: `
@@ -377,6 +388,9 @@ async function cmdInit(args, global) {
   let targetDir = cwd;
   let fromExample = null;
   const withScaffolds = [];
+  let constraintDisposition = null;
+  let skipConstraintDetection = false;
+  const VALID_DISPOSITIONS = ['discipline-only', 'upgrade-pro', 'flip-public-when-ready'];
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -394,11 +408,29 @@ async function cmdInit(args, global) {
       const v = a.slice('--with-scaffold='.length);
       if (!v) die(`--with-scaffold= requires a value\n\n${SUBCOMMAND_HELP['init']}`, 2);
       withScaffolds.push(v);
+    } else if (a === '--constraint-disposition') {
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        die(`--constraint-disposition requires a value (one of: ${VALID_DISPOSITIONS.join(', ')})\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      }
+      constraintDisposition = args[++i];
+    } else if (a.startsWith('--constraint-disposition=')) {
+      const v = a.slice('--constraint-disposition='.length);
+      if (!v) die(`--constraint-disposition= requires a value (one of: ${VALID_DISPOSITIONS.join(', ')})\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      constraintDisposition = v;
+    } else if (a === '--skip-constraint-detection') {
+      skipConstraintDetection = true;
     } else if (!a.startsWith('-')) {
       targetDir = path.resolve(cwd, a);
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['init']}`, 2);
     }
+  }
+
+  if (constraintDisposition !== null && !VALID_DISPOSITIONS.includes(constraintDisposition)) {
+    die(
+      `Invalid --constraint-disposition value: "${constraintDisposition}". Valid: ${VALID_DISPOSITIONS.join(', ')}`,
+      2
+    );
   }
 
   // Compute config destination eagerly (used by both pre-validation and the
@@ -499,6 +531,9 @@ async function cmdInit(args, global) {
     const seededFiles = readdirSync(seededDir, { recursive: true, withFileTypes: true });
     for (const entry of seededFiles) {
       if (!entry.isFile()) continue;
+      // .harness-known-constraints.md is written by the constraint-detection
+      // block below (with substituted tokens). Skip the verbatim seeded copy.
+      if (entry.name === '.harness-known-constraints.md') continue;
       const rel = entry.parentPath
         ? path.join(path.relative(seededDir, entry.parentPath), entry.name)
         : entry.name;
@@ -565,6 +600,149 @@ async function cmdInit(args, global) {
         `Warning: could not update harness.config.json scaffolds[]: ${err.message}\n`
       );
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // CS15e: GitHub-tier detection + constraints recording
+  // ---------------------------------------------------------------------------
+  // Detects repo visibility + plan via api.github.com (γ1 helper), records the
+  // result in three places:
+  //   1. .harness-known-constraints.md (seeded skeleton with substituted tokens)
+  //   2. harness.config.json constraints block (via lib/config-reader.mjs)
+  //   3. CONTEXT.md `## Constraints` body (idempotent one-line reference)
+  // The flow is skippable via --skip-constraint-detection (no GitHub API calls,
+  // no constraints written). The disposition (private-free only) is configurable
+  // via --constraint-disposition; defaults to discipline-only.
+  if (skipConstraintDetection) {
+    process.stdout.write('Skipped tier detection (--skip-constraint-detection)\n');
+  } else if (!existsSync(configDest)) {
+    process.stderr.write(
+      'Warning: harness.config.json not present; skipping constraint detection.\n'
+    );
+  } else {
+    let detection;
+    // Test-only escape hatch (γ4): allows CLI tests to inject deterministic
+    // detection results without making real GitHub API calls. Live invocations
+    // never set this; documented as test-only in tests/cli.test.mjs.
+    if (process.env.HARNESS_DETECT_TIER_OVERRIDE) {
+      try {
+        detection = JSON.parse(process.env.HARNESS_DETECT_TIER_OVERRIDE);
+      } catch (err) {
+        die(
+          `HARNESS_DETECT_TIER_OVERRIDE is not valid JSON: ${err.message}`,
+          1
+        );
+      }
+    } else {
+      const { detectRepoTier } = await import('../lib/detect-repo-tier.mjs');
+      detection = await detectRepoTier({ cwd: targetDir });
+    }
+
+    const detectedAt = new Date().toISOString();
+    const tier = detection.tier;
+    const owner = detection.owner ?? null;
+    const repo = detection.repo ?? null;
+
+    // Resolve disposition: only meaningful for private-free; explicit override
+    // wins; default discipline-only for private-free; null/omit otherwise.
+    let disposition = null;
+    if (tier === 'private-free') {
+      disposition = constraintDisposition ?? 'discipline-only';
+    } else if (constraintDisposition !== null) {
+      // Override on a non-private-free tier: warn but record nothing in
+      // constraints (the schema rejects disposition + non-private-free).
+      process.stderr.write(
+        `Warning: --constraint-disposition=${constraintDisposition} ignored ` +
+        `(tier is "${tier}", not "private-free").\n`
+      );
+    }
+
+    // (1) Write .harness-known-constraints.md from the seeded template with
+    //     token substitution. Always overwritten on re-runs (idempotent).
+    if (owner && repo) {
+      try {
+        const tplPath = path.join(REPO_ROOT, 'template', 'seeded', '.harness-known-constraints.md');
+        let body = stripBOM(readFileSync(tplPath, 'utf8'));
+        // Strip the leading HTML comment that documents substitution tokens
+        // (it's editor-facing metadata, not for the runtime artifact).
+        body = body.replace(/^<!--[\s\S]*?-->\s*\n/, '');
+        body = body
+          .replaceAll('<TIER>', tier)
+          .replaceAll('<DETECTED_AT>', detectedAt)
+          .replaceAll('<OWNER>', owner)
+          .replaceAll('<REPO>', repo);
+        if (disposition) {
+          body = body.replaceAll('<DISPOSITION>', disposition);
+        } else {
+          // Strip any line containing the <DISPOSITION> token entirely.
+          body = body.split('\n').filter((line) => !line.includes('<DISPOSITION>')).join('\n');
+        }
+        const dest = path.join(targetDir, '.harness-known-constraints.md');
+        writeFileSync(dest, body, 'utf8');
+        process.stdout.write(`Created .harness-known-constraints.md\n`);
+      } catch (err) {
+        process.stderr.write(
+          `Warning: could not write .harness-known-constraints.md: ${err.message}\n`
+        );
+      }
+    } else {
+      process.stdout.write(
+        `Skipped .harness-known-constraints.md (tier=${tier}, reason=${detection.reason ?? 'no-repo-data'})\n`
+      );
+    }
+
+    // (2) Merge constraints into harness.config.json via lib/config-reader.mjs.
+    if (owner && repo) {
+      try {
+        const { loadConfig: lcfg, writeConfig: wcfg } = await import('../lib/config-reader.mjs');
+        const { config: existingCfg } = await lcfg({ cwd: targetDir });
+        const constraints = { tier, detected_at: detectedAt, owner, repo };
+        if (disposition) constraints.disposition = disposition;
+        existingCfg.constraints = constraints;
+        await wcfg({ cwd: targetDir, config: existingCfg });
+        process.stdout.write(`Recorded constraints in harness.config.json\n`);
+      } catch (err) {
+        process.stderr.write(
+          `Warning: could not merge constraints into harness.config.json: ${err.message}\n`
+        );
+      }
+    }
+
+    // (3) Update CONTEXT.md `## Constraints` body with a one-line reference.
+    //     Idempotent: replaces the existing body (whether placeholder or prior
+    //     init output) under the heading; appends the heading if missing.
+    if (owner && repo) {
+      try {
+        const ctxPath = path.join(targetDir, 'CONTEXT.md');
+        if (existsSync(ctxPath)) {
+          const original = stripBOM(readFileSync(ctxPath, 'utf8'));
+          const refLine = `See \`.harness-known-constraints.md\` for repository tier and disposition (detected ${detectedAt}).`;
+          const headingRe = /^## Constraints[ \t]*\r?\n[\s\S]*?(?=^## |\Z)/m;
+          let updated;
+          if (headingRe.test(original)) {
+            updated = original.replace(headingRe, `## Constraints\n\n${refLine}\n\n`);
+          } else {
+            const trimmed = original.replace(/\s+$/u, '');
+            updated = trimmed + `\n\n## Constraints\n\n${refLine}\n`;
+          }
+          if (updated !== original) {
+            writeFileSync(ctxPath, updated, 'utf8');
+            process.stdout.write(`Updated CONTEXT.md \`## Constraints\` reference\n`);
+          }
+        }
+      } catch (err) {
+        process.stderr.write(
+          `Warning: could not update CONTEXT.md: ${err.message}\n`
+        );
+      }
+    }
+
+    // Summary line.
+    const dispText = disposition ? `, disposition=${disposition}` : '';
+    process.stdout.write(
+      `Constraints detected: tier=${tier}${dispText}. ` +
+      `See .harness-known-constraints.md for details.\n`
+    );
   }
 
   // CS15c (CS09b, LRN-057 / α4 escalation): finalize init by running sync --apply

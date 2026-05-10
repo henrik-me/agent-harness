@@ -57,6 +57,53 @@
         }
       }
     },
+    "constraints": {
+      "type": "object",
+      "description": "Optional repository constraint detection result recorded by 'harness init'. Captures GitHub visibility/plan tier, the repo identity that was checked, and the chosen disposition when private-free branch-protection limits apply.",
+      "required": ["tier", "detected_at", "owner", "repo"],
+      "additionalProperties": false,
+      "properties": {
+        "tier": {
+          "type": "string",
+          "description": "Detected GitHub repository tier. 'unknown' is used when repo identity or plan data cannot be determined reliably.",
+          "enum": ["public", "private-free", "private-pro", "private-team", "private-enterprise", "unknown"]
+        },
+        "disposition": {
+          "type": "string",
+          "description": "Operator decision for private-free repos where GitHub-side branch protection is unavailable. Omitted for every tier other than 'private-free'.",
+          "enum": ["discipline-only", "upgrade-pro", "flip-public-when-ready"]
+        },
+        "detected_at": {
+          "type": "string",
+          "description": "UTC timestamp when the constraint detection result was recorded.",
+          "format": "date-time"
+        },
+        "owner": {
+          "type": "string",
+          "description": "GitHub repository owner parsed from origin.",
+          "minLength": 1
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository name parsed from origin.",
+          "minLength": 1
+        }
+      },
+      "if": {
+        "properties": {
+          "tier": { "const": "private-free" }
+        },
+        "required": ["tier"]
+      },
+      "then": {
+        "required": ["disposition"]
+      },
+      "else": {
+        "not": {
+          "required": ["disposition"]
+        }
+      }
+    },
     "managed": {
       "$ref": "#/$defs/fileClass",
       "description": "Managed file class: the harness owns these files entirely and overwrites them on every 'harness sync'. No local edits survive a sync. Use 'composed' instead if a file needs local extension blocks."

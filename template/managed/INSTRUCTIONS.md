@@ -40,6 +40,53 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   you are about to claim. Disposition all relevant items before proceeding.
   `harness harvest` (CS04+) runs this check automatically as part of `claim`.
 
+### Re-evaluating private-tier disposition
+
+Re-evaluate the private-tier disposition whenever the constraint assumptions change:
+
+- Repo visibility flips (`private` → `public` or `public` → `private`).
+- The GitHub plan changes (`Free` → `Pro`, `Pro` → `Team`, etc.).
+- The chosen disposition changes (for example, from `discipline-only` to `upgrade-pro`).
+
+Recommended path: re-run `harness init` from the repo root. Init is idempotent for
+constraint records: it updates the `constraints` block in `harness.config.json`, rewrites
+`.harness-known-constraints.md`, and keeps the `CONTEXT.md` reference under
+`## Constraints` to a single line with no duplicates or orphan keys.
+
+Manual path: edit the `constraints` block in `harness.config.json` directly, following the
+schema fields:
+
+- `tier`
+- `disposition` (only when `tier` is `private-free`)
+- `detected_at`
+- `owner`
+- `repo`
+
+Then update `.harness-known-constraints.md` so the written disposition matches the config.
+The schema validator catches shape errors such as an invalid enum value or a `disposition`
+key on a non-`private-free` tier.
+
+Override path: pass `--constraint-disposition <value>` to `harness init` to force one of
+`discipline-only`, `upgrade-pro`, or `flip-public-when-ready`. The default for
+`private-free` is `discipline-only`.
+
+Skip path: pass `--skip-constraint-detection` to `harness init` to avoid GitHub API calls
+entirely. Use this in CI or other network-restricted environments; init proceeds without
+populating `constraints`.
+
+A re-run touches only the constraint surfaces:
+
+- `harness.config.json` — inserts or updates the `constraints` block.
+- `.harness-known-constraints.md` — rewrites the recorded values and disposition guidance.
+- `CONTEXT.md` — adds or refreshes one root-relative reference to
+  `.harness-known-constraints.md` under `## Constraints`.
+
+A re-run does **not** touch other `harness.config.json` fields (`composed`, scaffolds,
+etc.), other root files such as `README.md`, or `.harness-lock.json`. Constraint state does
+not flow through `harness sync`. Delete `.harness-known-constraints.md` only when you also
+remove the `constraints` block intentionally and no longer want a persisted constraint
+record.
+
 ### Closing a CS
 
 - **Run the plan-vs-implementation review gate (GPT-5.5)** — see
