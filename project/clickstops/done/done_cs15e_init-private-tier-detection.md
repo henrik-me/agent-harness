@@ -1,14 +1,16 @@
 # CS15e — `harness init` private-tier detection (umbrella: CS04a)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs15e/content (after claim)
+**Branch:** cs15e/content (merged in PR #95, 2026-05-10) → cs15e/close-out (this PR)
 **Started:** 2026-05-10
-**Closed:** —
+**Closed:** 2026-05-10
 **Filed by:** Pre-CS16 backlog cleanup (planning PR for cs15-cleanup-planning, 2026-05-09); user authorization for Option C umbrella bundling 2026-05-09 ("you can add the CS structure needed to optimize for parralelism"); CS04a Q1–Q5 resolved by user via Q&A 2026-05-09.
 **Depends on:** CS04 (CLI dispatcher), CS09 (init flow), CS15c (uses `--config` threading), CS15d (uses `lib/config-reader.mjs`)
 
 ## ⚠️ RESUME POINT — read this first if you're a fresh agent instance
+
+**This CS is DONE.** Content PR #95 merged 2026-05-10; close-out PR forthcoming on `cs15e/close-out`. The pre-CS16 backlog cleanup sequence (CS15c → CS15d → CS15e) is now COMPLETE. The next mainline CS is **CS16 (Bootstrap Sub Invaders)** — the first downstream consumer of CS15e's constraint-detection flow. See `WORKBOARD.md` and `HANDOFF.md` for the next CS to claim.
 
 This is the **third and final** umbrella in the pre-CS16 backlog cleanup
 sequence: **CS15c → CS15d → CS15e**, executed sequentially.
@@ -16,9 +18,7 @@ sequence: **CS15c → CS15d → CS15e**, executed sequentially.
 CS15e absorbs the CS04a planned file only. It is the only umbrella that
 introduces a genuinely new feature surface (private-tier detection at `init`
 time + new `constraints` schema field) rather than refactoring/extending
-existing surfaces. After CS15e closes, the next mainline CS is **CS16
-(Bootstrap Sub Invaders)** which is the first downstream consumer of CS15e's
-constraint-detection flow.
+existing surfaces.
 
 When this CS is claimed, the superseded planned file (`planned_cs04a_*.md`)
 gets moved to `done/` at close-out with the standard "absorbed by CS15e"
@@ -171,9 +171,18 @@ LRN-095..099 reserved for CS15e. Expected ~3-5 LRNs (likely: getGitHubToken-help
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
-| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT) | planned | — | — |
-| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-095..099 + supersede 1 planned file + file follow-up CS for Path D upgrade if appropriate) | planned | — | — |
+| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | done | yoga-ah | branch `workboard/cs15e-claim`; PR #94 |
+| γ1: `lib/get-github-token.mjs` + `lib/detect-repo-tier.mjs` + `tests/lib-github-detect.test.mjs` (≥10 tests) | done | sub-agent γ1 | 12 tests initial; +3 added during NEEDS-FIX response (private-team, private-enterprise, anonymous-against-private) for 15 total |
+| γ2: `schemas/harness.config.schema.json` (constraints subschema with if/then/else) + `docs/adr/0003-constraints-field.md` + harness self-host smoke block + 6 fixtures + 6 schema tests | done | sub-agent γ2 | 6/6 schema tests; ADR renamed 0002→0003 due to collision with existing 0002-readme-ownership.md |
+| γ3: `template/seeded/.harness-known-constraints.md` (NEW) + (chosen Option A: leave seeded harness.config.json untouched) | done | sub-agent γ3 | 62-line skeleton with substitution tokens; HTML comment block stripped at write time by γ4 |
+| γ4 (orchestrator): `bin/harness.mjs` cmdInit (flags + detection block) + `lib/config-reader.mjs::writeConfig` + `tests/cli.test.mjs` (12 → 14 init tests after NEEDS-FIX strengthening) | done | yoga-ah | HARNESS_DETECT_TIER_OVERRIDE env hook for deterministic CLI tests; idempotent CONTEXT.md regex; 3 NEEDS-FIX gaps fixed (skip-summary leak, missing disposition notice, broken `\Z` anchor) |
+| γ5: `template/managed/INSTRUCTIONS.md` re-evaluation subsection + `template/seeded/CONTEXT.md` ## Constraints anchor | done | sub-agent γ5 | +47 lines INSTRUCTIONS.md; +4 lines CONTEXT.md |
+| Race fix: `tests/lib-github-detect.test.mjs` tempRoot `process.cwd()` → `os.tmpdir()` (and `tests/render-deploy-summary.test.mjs` pre-existing race) | done | yoga-ah | recursive linter ENOENT during parallel test runs; documented as LRN-094 |
+| Re-render root `INSTRUCTIONS.md` via `harness sync --mode=apply --resolved-sha <content-sha>` | done | yoga-ah | per LRN-070/074; commit d0211d0 |
+| Plan-vs-implementation review (GPT-5.5) | done | yoga-ah | per LRN-064 mandatory close-out gate; initial NEEDS-FIX (3 blocking gaps), re-review GO after fixes (commit 27f56ae) |
+| Open content PR; CI green; admin merge | done | yoga-ah | PR #95 merged 2026-05-10 (squash, 4 commits → 962c866) |
+| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT; rename active → done; `git mv` planned_cs04a to done/ with "absorbed by CS15e" pointer) | done | yoga-ah | done in cs15e/close-out branch (this PR) |
+| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-092..099; re-check max LRN id per LRN-086) | done | yoga-ah | LRN-092..094 filed; reservation range LRN-095..099 not used (only 3 LRNs needed) |
 
 ## Notes / Learnings
 
@@ -188,7 +197,7 @@ LRN-095..099 reserved for CS15e. Expected ~3-5 LRNs (likely: getGitHubToken-help
 **Branch:** cs15e/content
 **Content commit:** b9aeba4
 **Lock-fixup commit:** d0211d0
-**Verdict:** NEEDS-FIX
+**Outcome:** NEEDS-FIX (superseded by re-review GO below)
 
 Three blocking gaps surfaced, all in `bin/harness.mjs cmdInit`:
 
@@ -207,7 +216,7 @@ Recommendations (non-blocking):
 **Branch:** cs15e/content
 **Fix commit:** 27f56ae
 **Prior verdict:** NEEDS-FIX (3 gaps)
-**This verdict:** GO
+**Outcome:** GO
 
 **Gap re-checks:**
 - Gap 1 (skip-path summary): RESOLVED — `bin/harness.mjs:764-769` now prints `Constraints detection: tier=${tier}${reasonText}. No constraints recorded.` on the no-`owner && repo` path, with `reasonText` from `detection.reason`, and no `.harness-known-constraints.md` reference. `tests/cli.test.mjs:1250-1275` exercises `tier=unknown` / `reason=no-remote` and asserts no `See .harness-known-constraints.md for details`, plus `No constraints recorded` and `reason=no-remote`.

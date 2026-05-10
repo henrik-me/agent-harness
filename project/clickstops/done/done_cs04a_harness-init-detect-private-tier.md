@@ -1,12 +1,12 @@
 # CS04a — `harness init` detects private-repo / free-tier constraints
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15e)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-10 (via CS15e)
+**Closed:** 2026-05-10 (via CS15e)
 **Filed by:** [LRN-002](../../../LEARNINGS.md#lrn-002) at CS01 close-out
-**Superseded by:** [CS15e](./planned_cs15e_init-private-tier-detection.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). CS04a Q1–Q5 user-resolved during the planning Q&A; resolved decisions captured in CS15e § "Resolved decisions". This file remains in `planned/` for provenance until CS15e closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15e](./done_cs15e_init-private-tier-detection.md) — absorbed and delivered by the CS15e umbrella; PR #95 merged 2026-05-10. CS04a Q1–Q5 were user-resolved during the cs15-cleanup-planning Q&A (2026-05-09) and captured in CS15e § "Resolved decisions". This file moved to `done/` at CS15e close-out.
 **Depends on:** CS04 (CLI dispatcher)
 
 ## Goal
@@ -31,6 +31,18 @@ When a consumer runs `harness init` against a repo, detect upfront whether the c
 
 This is an opt-in pre-emptive UX improvement, not a hard blocker. Sub Invaders (CS16) would still work without it — just less smoothly.
 
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | done | yoga-ah (via CS15e) | done in CS15e close-out (umbrella absorbed this CS); see done_cs15e_*.md |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | done | yoga-ah (via CS15e) | LRN-092..094 filed in CS15e; no follow-up planned CSs needed (CS04a deliverables fully delivered by CS15e Wave 1 sub-agents γ1–γ5) |
+
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15e umbrella review](./done_cs15e_init-private-tier-detection.md#plan-vs-implementation-review))
+**Date:** 2026-05-10
+**Outcome:** GO
+
+This CS was absorbed by the [CS15e umbrella](./done_cs15e_init-private-tier-detection.md) before it was ever independently claimed. CS04a's deliverables (private-tier detection at `harness init` time, `.harness-known-constraints.md` artifact, `harness.config.json` `constraints` block, INSTRUCTIONS.md re-evaluation guidance) were implemented as Wave 1 sub-agents γ1, γ2, γ3, γ5 plus orchestrator γ4 in CS15e and reviewed there. See CS15e's plan-vs-implementation review for the full analysis (initial NEEDS-FIX → re-review GO after fixes commit `27f56ae`).
