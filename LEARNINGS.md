@@ -2088,6 +2088,39 @@ Either way, the discipline is "never leave an unclassified `.md` in the repo roo
 
 **Disposition:** Applied. Established the convention "PR-body scratch goes to `$env:TEMP` (or `/tmp`)". Future orchestrators should follow the same pattern. Optional follow-up: a tiny harness CS could codify a `.gitignore` entry for `pr-body-*.md` at repo root as a belt-and-suspenders backstop, but the TEMP-path discipline is sufficient on its own.
 
+### LRN-100
+
+```yaml
+id: LRN-100
+date: 2026-05-10
+category: tooling
+source_cs: CS22
+status: open
+tags: [ci, github-actions, pr-body, workflow-triggers, harness-self-check]
+claim_area: ci-workflows
+```
+
+**Problem:** The `pr-body` job in `.github/workflows/harness-self-check.yml` is gated on `if: github.event_name == 'pull_request'` and the workflow's `pull_request:` trigger uses the default activity types (`opened`, `synchronize`, `reopened`). The `edited` activity type is NOT included. As a result, when an orchestrator fixes a `pr-body`-failing PR by editing the body in place via `gh pr edit <num> --body-file <path>`, the workflow does **not** re-run, and the cached FAILURE conclusion remains visible on the PR's status checks — the PR continues to show as failing CI even though the body is now valid. Encountered on PR #110 2026-05-10: the initial PR body was missing the required `## Changes` and `## Testing` sections; `gh pr edit 110 --body-file ...` added both sections (verified locally with `node scripts/check-pr-body.mjs --file <body>` showing `0 errors`), but the GitHub status check still showed FAILURE.
+
+**Finding:** **`gh pr edit --body` does not re-trigger workflows that gate on `pull_request` without `types: [edited]`.** Two reliable workarounds when fixing a body-only failure:
+
+- **`gh run rerun <run-id> --failed`** — re-runs only the failed jobs from a specific workflow run. Get the `run-id` from `gh pr view <pr-num> --json statusCheckRollup --jq '.statusCheckRollup[] | select(.name == "pr-body") | .detailsUrl'` (the URL ends with `/runs/<id>/job/<id>`, take the runs id). The re-run executes against the current (fixed) PR body and clears the FAILURE.
+- **Push any new commit** (even an empty one: `git commit --allow-empty -m "trigger ci"`) — `synchronize` fires and re-runs the full workflow. Heavier but always works; useful when you don't have permissions to call `gh run rerun` on a PR you didn't open.
+
+**The proper fix** is a one-line change to `.github/workflows/harness-self-check.yml` line 11:
+
+```yaml
+pull_request:
+  branches: [main]
+  types: [opened, synchronize, reopened, edited]   # add `edited`
+```
+
+Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot edits if relevant (the existing `if: github.event_name == 'pull_request'` is sufficient — `edited` is still a `pull_request` event, so no additional guarding needed). Worth filing as a tiny follow-up CS so the rerun-dance is no longer necessary.
+
+**Evidence:** Observed during PR #110 work 2026-05-10: `gh pr view 110 --json statusCheckRollup --jq '.statusCheckRollup[] | select(.name == "pr-body")'` returned `{"conclusion":"FAILURE",...}` for the run at `https://github.com/henrik-me/agent-harness/actions/runs/25642102623/job/75264191065` after the body was edited via `gh pr edit 110 --body-file <fixed-body>`. The local `node scripts/check-pr-body.mjs --file <fixed-body>` returned `PR body: 0 errors / Linter passed`. Workflow source: [`harness-self-check.yml` lines 11-12](`.github/workflows/harness-self-check.yml`) shows `pull_request:` with `branches: [main]` only — no `types:` enumerated. Workaround `gh run rerun 25642102623 --failed` cleared the cached failure within ~30 s; final status was 9/9 SUCCESS + 1 SKIPPED.
+
+**Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
+
 ## Obsolete
 
 (none yet)
