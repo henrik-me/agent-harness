@@ -1,8 +1,7 @@
 # harness-self-check.yml
 #
-# CS11 Stage B.4: full drift gate active. Runs harness lint + sync --check
-# on every PR; intentional drift between template/managed|composed/ and
-# root files is mechanically prevented from this CS forward.
+# CS11 Stage B.4: full drift gate active. CS15a adds standalone policy
+# jobs so the CS15b Ruleset can require their exact check contexts.
 
 name: harness-self-check
 
@@ -16,8 +15,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
       - run: npm ci
@@ -26,3 +25,113 @@ jobs:
       - run: node --test tests/*.test.mjs
       - run: node bin/harness.mjs lint --quiet
       - run: node bin/harness.mjs sync --mode=check --cwd .
+
+  commit-trailers:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - name: Check commit trailers
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$BASE_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "ERROR: invalid BASE_SHA" >&2
+            exit 2
+          fi
+          if ! printf '%s' "$HEAD_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "ERROR: invalid HEAD_SHA" >&2
+            exit 2
+          fi
+          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.\[\]-]+$'; then
+            echo "ERROR: invalid PR_AUTHOR" >&2
+            exit 2
+          fi
+          if [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            echo "Dependabot PR: commit trailer check is not required."
+            exit 0
+          fi
+          mkdir -p .tmp/commit-messages
+          failures=0
+          for sha in $(git rev-list "${BASE_SHA}..${HEAD_SHA}"); do
+            git log --format=%B -n 1 "$sha" > ".tmp/commit-messages/${sha}.txt"
+            node scripts/check-commit-trailers.mjs \
+              --file ".tmp/commit-messages/${sha}.txt" \
+              --allow 'Co-authored-by=^Copilot <223556219\+Copilot@users\.noreply\.github\.com>$' \
+              --quiet || failures=1
+          done
+          exit "$failures"
+
+  pr-body:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - name: Check PR body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
+            echo "ERROR: invalid PR_NUMBER" >&2
+            exit 2
+          fi
+          if ! printf '%s' "$REPO" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+            echo "ERROR: invalid repository slug" >&2
+            exit 2
+          fi
+          if ! printf '%s' "$PR_AUTHOR" | grep -Eq '^[A-Za-z0-9_.\[\]-]+$'; then
+            echo "ERROR: invalid PR_AUTHOR" >&2
+            exit 2
+          fi
+          if [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            echo "Dependabot PR: PR body template check is not required."
+            exit 0
+          fi
+          mkdir -p .tmp
+          gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.body // ""' > .tmp/pr-body.md
+          node scripts/check-pr-body.mjs --file .tmp/pr-body.md --quiet
+
+  check-workflow-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: node scripts/check-workflow-pins.mjs --dir .github/workflows
+
+  check-public-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Build and inspect package artifact
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/public-artifact
+          npm pack --json > .tmp/npm-pack.json
+          tgz="$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('.tmp/npm-pack.json','utf8')); console.log(data[0].filename)")"
+          tar -xzf "$tgz" -C .tmp/public-artifact --strip-components=1
+          node scripts/check-public-artifact.mjs --dir .tmp/public-artifact

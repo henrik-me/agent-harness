@@ -54,7 +54,8 @@
     "HANDOFF.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md"
   ],
   "templating": {
     "project_name": "agent-harness",

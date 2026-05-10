@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability privately
+    url: https://github.com/henrik-me/agent-harness/security/advisories/new
+    about: Do not open public issues for security reports; use GitHub Security Advisories.
+  - name: Read the contribution guide
+    url: https://github.com/henrik-me/agent-harness/blob/main/CONTRIBUTING.md
+    about: Start here for local validation and pull request expectations.

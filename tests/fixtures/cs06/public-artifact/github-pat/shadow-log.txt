@@ -2,6 +2,6 @@
 
 Run started at 2026-05-03T12:00:00Z
 
-Authorization: ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Authorization: ghp_FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE
 
 Run completed successfully.

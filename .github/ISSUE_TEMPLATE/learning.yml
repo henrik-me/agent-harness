@@ -1,0 +1,47 @@
+name: Learning candidate
+description: Capture a process or architecture gotcha for possible LEARNINGS.md elevation.
+title: "learning: "
+labels: ["learning-candidate"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - process
+        - architecture
+        - testing
+        - tooling
+        - security
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What went wrong, or what friction did you encounter?
+    validations:
+      required: true
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding
+      description: What should future agents or maintainers remember?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Link to the PR, commit, file, log, or review finding that supports this.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-disposition
+    attributes:
+      label: Suggested disposition
+      description: Apply, defer, obsolete, or file a follow-up CS/issue.
+    validations:
+      required: false

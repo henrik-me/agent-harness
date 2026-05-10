@@ -90,7 +90,9 @@ own clickstop-driven process — see
 - Keep PRs small and focused. One concern per PR. If you discover an
   unrelated bug, file an issue and address it in a separate PR.
 - All PRs require:
-  - 1 approving review (from a code owner per `.github/CODEOWNERS`).
+  - 1 approving review. `.github/CODEOWNERS` routes review ownership, but the
+    CS15b Ruleset does not require CODEOWNER review because the workboard bot
+    cannot satisfy a human CODEOWNER requirement.
   - All required status checks green (see [Required gates](#required-gates)).
   - All review threads resolved.
   - A linear-history-compatible state (rebase, don't merge, if your branch
@@ -111,8 +113,8 @@ the post-CS15b Ruleset):
 | `npm-pack-dry-run` | `npm-pack-dry-run.yml` | `npm pack --dry-run` shape matches expectation |
 | `commit-trailers` | local + reusable | Every commit has the Copilot co-author trailer |
 | `pr-body` | local + reusable | PR body has no placeholders, all sections filled |
-| `check-workflow-pins` | inline in `harness-self-check.yml` | All third-party action `uses:` refs are 40-char SHAs |
-| `check-public-artifact` | inline in `harness-self-check.yml` | `npm pack` excludes private/test files |
+| `check-workflow-pins` | `harness-self-check.yml` | Harness workflow refs are pinned to the configured version or a 40-char SHA |
+| `check-public-artifact` | `harness-self-check.yml` | Packed public artifact contains no private/test files or forbidden secret patterns |
 
 You can run all of them locally via `node bin/harness.mjs lint --quiet`
 (reuses the same script implementations the workflows call).

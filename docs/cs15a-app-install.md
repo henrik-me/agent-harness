@@ -6,7 +6,8 @@
 
 The `agent-harness-workboard-bot` GitHub App backs `.github/workflows/workboard-auto-approve.yml`. From CS15b onward, when the global Ruleset requires `≥1 approving review` on every PR, this bot supplies the approval **only for verified WORKBOARD-only PRs** (path-restricted, label-restricted, branch-name-restricted, actor-allowlisted). Per cs-plan §CS15a #8 + Decision #23 + bot threat model.
 
-Why an App and not a PAT? Least-privilege scoped permissions, dedicated identity, no PAT rotation, no human-account credential leak surface.
+Why an App and not a PAT? Least-privilege scoped permissions, dedicated
+identity, no PAT rotation, no human-account credential leak surface.
 
 ## Step 1 — Register the App
 
@@ -16,7 +17,7 @@ Why an App and not a PAT? Least-privilege scoped permissions, dedicated identity
    - **Homepage URL:** `https://github.com/henrik-me/agent-harness`
    - **Webhook:** **uncheck "Active"** (no webhook needed; the App is invoked from workflows only).
 3. **Repository permissions** (least-privilege per the bot threat model):
-   - **Contents:** Read
+   - **Contents:** Read & write (required for `gh pr merge --squash --auto`)
    - **Pull requests:** Read & write
    - **Metadata:** Read (auto-granted)
    - **All other permissions:** No access
@@ -57,9 +58,15 @@ After steps 1-4, ping the orchestrator (yoga-ah). The orchestrator will:
 
 ## Security model — what the App can and cannot do
 
-**Can:** approve PRs, merge PRs, read PR file lists.
+**Can:** approve PRs, merge verified workboard-only PRs, read PR file lists.
 
-**Cannot:** modify branch protection, modify Ruleset, rotate secrets, modify other workflows, push to branches directly, create new branches, manage repo settings, manage Actions configuration, access organization data.
+**Cannot:** modify branch protection, modify Ruleset, rotate secrets, modify
+other workflows, manage repo settings, manage Actions configuration, access
+organization data, or bypass the workflow's path/label/actor/branch checks.
+
+The App has Contents write only because GitHub requires it for merge/auto-merge
+operations. The workflow mints the App token only after the PR passes the
+workboard-only validation gate.
 
 The workflow itself enforces additional path/label/actor/branch-name validation BEFORE invoking the App's credentials. Even if the App were compromised, it could not approve a PR that touched `lib/`, `bin/`, `template/`, `.github/workflows/`, `schemas/`, or `package.json` — those paths fail the workflow's pre-checks before the bot is even contacted.
 

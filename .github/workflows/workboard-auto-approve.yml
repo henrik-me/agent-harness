@@ -22,11 +22,14 @@
 #   - WORKBOARD_BOT_PRIVATE_KEY
 #
 # Bot threat model (per cs-plan §CS15a #6):
-#   - App has Contents:Read + Pull-requests:Read&write only; no admin /
-#     workflow / secrets permissions.
-#   - App is NOT a CODEOWNER for any non-WORKBOARD path; CODEOWNERS
-#     enforces that code/config/workflow paths require a human review the
-#     bot cannot supply.
+#   - App has Contents:Read&write + Pull-requests:Read&write only; no
+#     admin / workflow / secrets permissions. Contents write is required for
+#     `gh pr merge --squash --auto` and the token is minted only after the
+#     validation gate passes.
+#   - The CS15b Ruleset requires an approving review but not CODEOWNER review:
+#     GitHub Apps cannot satisfy a human CODEOWNER requirement. Non-WORKBOARD
+#     paths are protected by this workflow's path allowlist because the App is
+#     never invoked for those PRs.
 #   - Path-restriction enforcement happens IN this workflow BEFORE the
 #     App's credentials are ever invoked, so a compromised App alone
 #     cannot approve a PR that touches sensitive paths.
