@@ -10,7 +10,7 @@
 
 ## ⚠️ RESUME POINT (2026-05-09T18:07Z) — read this first if you're a fresh agent instance
 
-The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** The CS15a content PR (#74) was squash-merged to `main` at `69fcee3`; a follow-up settings-evidence update is on `cs15a/settings-evidence`.
+The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** CS15a content PR #74, settings-evidence PR #76, helper PR #77, and bot dry-run PR #78 have all merged to `main`.
 
 **Bootstrap for resume:**
 
@@ -46,11 +46,10 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 
 **What still needs to be done (in order):**
 
-1. **Merge settings-evidence update** — records repository settings that were applied via API after PR #74 merged.
-2. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) plus any UI-only settings still unavailable via API: auto-merge and Private Vulnerability Reporting if the controls are present.
-3. **Bot dry-run + readiness update** — after the App/settings exist, open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
-4. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
-5. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
+1. **Record bot dry-run evidence** — PR #78 succeeded and merged via the GitHub App bot.
+2. **Resolve remaining repo-setting evidence** — `allow_auto_merge` still reports `false`, and Private Vulnerability Reporting still returns `404`; keep these explicitly open unless GitHub UI/API state changes.
+3. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out, but close-out remains blocked while #17/#18 in `docs/pre-flip-readiness.md` are not green or explicitly accepted as unavailable until CS15b.
+4. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
 
 **Why the previous instance stopped:** transient "Failed to get response from the AI model; retried 5 times" error during a `create` tool call. No state lost. The user-required GitHub UI work (steps 19) is the natural pause point regardless.
 
@@ -113,7 +112,7 @@ Per the user authorization (2026-05-09):
   - On all checks pass → uses `actions/create-github-app-token@<sha>` + `gh pr review --approve` + `gh pr merge --squash --auto`.
   - Logs decisions clearly; rejects loudly on any validation failure.
 - [x] `docs/cs15a-app-install.md` — step-by-step GitHub App registration + install + secrets-storage instructions for henrik-me.
-- [ ] **Dry-run** (after user installs App): trigger workflow on a throwaway test PR; capture results in `pre-flip-readiness.md`.
+- [x] **Dry-run**: PR #78 (`workboard/cs15a-close`, label `workboard-only`) was approved by the GitHub App and merged at `e6b3502b1a533782be10ba44d2f180a34078f132`; all dry-run checks passed.
 
 ### Public-facing files (#9-14)
 - [x] `SECURITY.md` — GHSA-only reporting policy + supported-versions table (`v0.1.0`, `v0.2.0` (Unreleased)).
@@ -179,15 +178,15 @@ Per the user authorization (2026-05-09):
 |---|---|---|---|
 | Process-health audit (#1-5) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Ruleset spec (#6-7) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| Bot workflow + manifest (#8) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (workflow + App docs done; dry-run waits on user App install) \| learnings=0 |
+| Bot workflow + manifest (#8) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (App secrets present; PR #78 dry-run approved and merged by bot) \| learnings=0 |
 | Public-facing files (#9-14) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Repo-settings checklist (#15-18) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (#15-16 applied via API; #17 partial; #18 still reports disabled) \| learnings=0 |
 | Secret/IP scan (#19-24) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | New workflows (#25) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (all 9 required check contexts green on PR #74 at `8b9e839`) \| learnings=0 |
 | `pre-flip-readiness.md` artifact | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | GPT-5.5 content rubber-duck | done | yoga-ah | agent-id=yoga-ah \| role=reviewer \| report-status=complete (targeted workflow/security review outcome: GO after immutable-diff fix) \| learnings=0 |
-| User actions: App + repo settings | planned | henrik-me | external dependency |
-| Bot dry-run + readiness update | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
+| User actions: App + repo settings | in_progress | henrik-me/yoga-ah | App/secrets done; UI/API-only settings #17/#18 remain not green |
+| Bot dry-run + readiness update | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | GPT-5.5 plan-vs-impl review | planned | — | agent-id=— \| role=reviewer \| report-status=pending \| learnings=0 |
 
 ## Risks + mitigations
