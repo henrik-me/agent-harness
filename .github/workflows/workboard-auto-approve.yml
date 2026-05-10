@@ -99,18 +99,31 @@ jobs:
           if ! printf '%s' "$REPO" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
             fail "invalid repository slug."
           fi
-          head_sha="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          pr_meta="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '[.head.sha, .changed_files] | @tsv')"
+          IFS=$'\t' read -r head_sha changed_files <<< "$pr_meta"
           if ! printf '%s' "$head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
             fail "invalid PR head SHA."
           fi
+          if ! printf '%s' "$changed_files" | grep -Eq '^[0-9]+$'; then
+            fail "invalid changed_files count."
+          fi
+          if [ "$changed_files" -ge 3000 ]; then
+            fail "PR changes $changed_files files; GitHub file-list API is capped at 3000, so bot validation cannot prove completeness."
+          fi
           echo "Validated PR head: $head_sha"
+          echo "Expected changed files: $changed_files"
           echo "head-sha=$head_sha" >> "$GITHUB_OUTPUT"
-          # Paginate through all files; cap at 1000 (PR file lists rarely exceed 100 for workboard PRs).
+          echo "changed-files=$changed_files" >> "$GITHUB_OUTPUT"
+          # Paginate through all files; GitHub caps this endpoint at 3000 files.
           gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
             --jq '.[] | [.filename, .status, (.previous_filename // "")] | @tsv' > pr-files.tsv
           echo "Files in PR (filename/status/previous_filename):"
           cat pr-files.tsv
-          echo "files-count=$(wc -l < pr-files.tsv | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          files_count="$(wc -l < pr-files.tsv | tr -d ' ')"
+          if [ "$files_count" -ne "$changed_files" ]; then
+            fail "file-list API returned $files_count files but PR reports $changed_files changed files; refusing incomplete validation."
+          fi
+          echo "files-count=$files_count" >> "$GITHUB_OUTPUT"
 
       - name: Enforce path-allowlist (NO files outside WORKBOARD/CONTEXT/LEARNINGS/clickstops)
         run: |
