@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS08 close-out ([LRN-049](../../../LEARNINGS.md#lrn-049) dot-notation placeholder anti-pattern + [LRN-050](../../../LEARNINGS.md#lrn-050) source-relative path anti-pattern).
+**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
 **Depends on:** CS08
 
 ## Goal

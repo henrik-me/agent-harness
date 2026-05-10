@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS04 close-out (GPT-5.5 R1 non-blocking #2: "`--ref` is parsed globally but never used — pin semantics unspecified").
+**Superseded by:** [CS15c](./planned_cs15c_cli-surface-cleanup.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). Option B (explicit reject) chosen per the planned file's own recommendation. This file remains in `planned/` for provenance until CS15c closes; it MUST NOT be claimed independently.
 **Depends on:** CS04
 
 ## Goal

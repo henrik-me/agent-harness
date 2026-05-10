@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-10T04:08Z (CS15a close-out)
+> **Last updated:** 2026-05-10T20:00Z (Pre-CS16 backlog cleanup planning PR `cs15-cleanup-planning` open: 3 umbrella CSs filed)
 
 ## Orchestrators
 
@@ -10,13 +10,24 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T04:08Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-10T20:00Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS | — | — | — | 2026-05-10T04:08Z | — |
+| — | No active CS (planning PR `cs15-cleanup-planning` open; CS15c/d/e queued) | — | — | — | 2026-05-10T20:00Z | — |
+
+## Queued (planned, ready to claim in order)
+
+| Order | CS | Title | Notes |
+|---|---|---|---|
+| 1 | [CS15c](project/clickstops/planned/planned_cs15c_cli-surface-cleanup.md) | CLI surface cleanup (umbrella absorbing CS04b + CS04d + CS09b) | Reserves LRN-082..086. 4 sub-agents. |
+| 2 | [CS15d](project/clickstops/planned/planned_cs15d_linter-expansion.md) | Linter expansion (umbrella absorbing CS06b + CS08b + CS10b) | Reserves LRN-087..094. 8 parallel + 1 sequential sub-agents. |
+| 3 | [CS15e](project/clickstops/planned/planned_cs15e_init-private-tier-detection.md) | `harness init` private-tier detection (umbrella absorbing CS04a) | Reserves LRN-095..099. 5 sub-agents. CS04a Q1–Q5 user-resolved 2026-05-09. |
+| later | CS16 | Bootstrap Sub Invaders | First downstream consumer of CS15e constraint-detection flow. |
+
+The 7 absorbed planned files (`planned_cs04a_*`, `planned_cs04b_*`, `planned_cs04d_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs09b_*`, `planned_cs10b_*`) carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out (mirrors CS04c "partially superseded by CS13" precedent).
 
 ## Recently Completed
 

@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS10 close-out (per [LRN-063](../../../LEARNINGS.md#lrn-063) and PR #29 §"Notable scope adjustment").
+**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
 **Depends on:** CS10
 
 ## Goal

@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS06 close-out ([LRN-039](../../../LEARNINGS.md#lrn-039) guessed-field-name anti-pattern + [LRN-042](../../../LEARNINGS.md#lrn-042) lock-format misread; GPT-5.5 R1 NB-6 (deferred) + NB-8 (deferred)).
+**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
 **Depends on:** CS06
 
 ## Goal

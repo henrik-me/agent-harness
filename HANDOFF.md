@@ -159,11 +159,16 @@ Otherwise, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-
 
 - **v0.1.0 tagged** on main (CS14 close, 2026-05-04). Draft GitHub Release exists.
 - **v0.2.0 unreleased** (CS02b + CS03d + CS03e cleared the pre-CS15a deferred-LRN backlog 2026-05-09; CHANGELOG `[Unreleased]` carries 1 BREAKING + 2 Added/Changed entries — see `CHANGELOG.md`).
-- **CS01 → CS15a complete.** CS15a absorbed the public visibility flip and Ruleset application. No active CS. WORKBOARD `## Active Work` row is empty.
+- **CS01 → CS15a complete.** CS15a absorbed the public visibility flip and Ruleset application.
+- **Pre-CS16 backlog cleanup planning PR open** (`cs15-cleanup-planning`, 2026-05-10): 3 umbrella CSs filed in `project/clickstops/planned/` to clear the 7 deferred planned CSs accumulated through CS01–CS15a, per user authorization 2026-05-09 ("umbrella seems good"):
+  - **CS15c** — CLI surface cleanup (CS04b + CS04d + CS09b). 4 sub-agents. LRN-082..086.
+  - **CS15d** — Linter expansion (CS06b + CS08b + CS10b). 8 parallel + 1 sequential sub-agents; adds 2 linters (15→17). LRN-087..094.
+  - **CS15e** — `harness init` private-tier detection (CS04a; Q1–Q5 user-resolved). 5 sub-agents. LRN-095..099.
+  - Order: CS15c → CS15d → CS15e (sequential single-orchestrator). Each umbrella has its own claim/content/close-out cycle (9 PRs total vs 21 separate). The 7 absorbed planned files carry `**Superseded by:**` pointers and MUST NOT be claimed independently; they get `git mv`'d to `done/` at each umbrella's close-out.
 - **Repo is public and mechanically protected.** Main Ruleset `main-protection` is active with required checks, squash-only/linear-history/non-fast-forward/deletion protection, one approving review by default, and an explicit repository-admin bypass for owner override (LRN-080). The workboard GitHub App bot is installed and dry-run proven for eligible `workboard-only` PRs.
 - **Security posture after public flip is green.** Secret scanning, Dependabot alerts/security updates, and Private Vulnerability Reporting are enabled; post-flip `fast-uri` alerts were fixed and alert readback was empty (LRN-081).
-- **Next work:** no CS is active. Choose from the planned backlog in `project/clickstops/planned/` (for example CS04a/b/d, CS06b, CS08b, CS09b, CS10b, CS22b) or file a new planned CS if the cs-plan needs a post-CS15a follow-up.
-- 15 linters in `harness lint`; 533 tests passing; public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
+- **Next work:** once the planning PR `cs15-cleanup-planning` merges, claim **CS15c** first (smallest fan-out; settles the bundling discipline before CS15d's 8-way wave). After CS15c → CS15d → CS15e all close, the next mainline slot is **CS16 (Bootstrap Sub Invaders)** — first downstream consumer of CS15e's constraint-detection flow.
+- 15 linters in `harness lint`; 538 tests passing; public/private-smoke workflow verified end-to-end against `v0.1.0` via `npx -y "github:henrik-me/agent-harness#v0.1.0"`.
 
 ## Parallelism: what runs in parallel today vs what doesn't
 
@@ -176,7 +181,7 @@ Otherwise, proceed autonomously. Use [LRN-058](LEARNINGS.md#lrn-058) cumulative-
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). What works today with care:
 
-1. **Lane split.** One orchestrator on the next selected mainline/planned CS, another on the deferred backlog (CS04a/b/d, CS06b, CS08b, CS09b, CS10b). Backlog CSs target narrow disjoint areas — low race risk.
+1. **Lane split.** One orchestrator on the next selected mainline/planned CS, another on the deferred backlog. Backlog CSs target narrow disjoint areas — low race risk. (As of 2026-05-10 the deferred backlog is bundled into CS15c/d/e umbrellas — see § "Current mainline state".)
 2. **LRN range allocation.** Each orchestrator pre-reserves a 10-ID block (e.g. orchestrator A reserves LRN-060..069 for CS10, B reserves LRN-070..079 for CS06b). Document the reservation in WORKBOARD.
 
 **What's missing for safe true-parallel orchestration** (would itself be a future CS — call it `CS22b: multi-orchestrator coordination`):

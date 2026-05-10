@@ -6,6 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** [LRN-002](../../../LEARNINGS.md#lrn-002) at CS01 close-out
+**Superseded by:** [CS15e](./planned_cs15e_init-private-tier-detection.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). CS04a Q1–Q5 user-resolved during the planning Q&A; resolved decisions captured in CS15e § "Resolved decisions". This file remains in `planned/` for provenance until CS15e closes; it MUST NOT be claimed independently.
 **Depends on:** CS04 (CLI dispatcher)
 
 ## Goal
