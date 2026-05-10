@@ -733,24 +733,12 @@ describe('harness check --mode rejection (Blocker 1)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Blocker 2 — --config rejected for sync/check
+// Blocker 2 historical (CS04, LRN-027): --config was rejected with exit 2 for
+// sync/check as a stop-gap. CS15c (CS04b) closes the gap by threading --config
+// into the sync engine. The stop-gap tests have been replaced by the new
+// `CS15c — CS04b --config threading + CS04d --ref reject` describe block at the
+// end of this file.
 // ---------------------------------------------------------------------------
-
-describe('--config rejected for sync/check (Blocker 2)', () => {
-  const cfgFile = path.join(REPO_ROOT, 'examples', 'agent-harness-self.harness.config.json');
-
-  it('sync --config=<path> exits 2', () => {
-    const r = run([`--config=${cfgFile}`, 'sync']);
-    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
-    assert.ok(r.stderr.includes('--config is not yet supported for sync/check'), `stderr: ${r.stderr}`);
-  });
-
-  it('check --config=<path> exits 2', () => {
-    const r = run([`--config=${cfgFile}`, 'check']);
-    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
-    assert.ok(r.stderr.includes('--config is not yet supported for sync/check'), `stderr: ${r.stderr}`);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Blocker 3 — --cwd path canonicalization
@@ -934,5 +922,175 @@ describe('stub subcommand fail-closed (Blocker 7)', () => {
   it('harvest --snooze=reason:2099-01-01 exits 3 (recognized flag, still not implemented)', () => {
     const r = run(['harvest', '--snooze=reason:2099-01-01']);
     assert.equal(r.status, 3, `Expected exit 3; got ${r.status}`);
+  });
+});
+
+describe('CS15c — CS04b --config threading + CS04d --ref reject', () => {
+  const refNotImplemented = "--ref is not yet implemented. To pin a harness version, set 'version' in harness.config.json.";
+
+  function configWithReadme(projectName, suffix) {
+    return {
+      ...minimalConfig(suffix),
+      project: {
+        name: projectName,
+        agent_suffix: suffix,
+      },
+      seeded: { files: ['README.md'] },
+      templating: {
+        project_name: projectName,
+      },
+    };
+  }
+
+  function makeRepoWithConfig(projectName = 'cwd-config-project', suffix = 'cwd') {
+    const dir = makeTmpDir('harness-cs15c-repo-');
+    writeJSON(path.join(dir, 'harness.config.json'), configWithReadme(projectName, suffix));
+    return dir;
+  }
+
+  function assertReadmeProjectName(repoDir, expectedProjectName) {
+    const readme = readFileSync(path.join(repoDir, 'README.md'), 'utf8');
+    assert.ok(
+      readme.includes(`# ${expectedProjectName}`),
+      `README.md should reflect override project name ${expectedProjectName}; got:\n${readme}`,
+    );
+  }
+
+  it('sync --config <path> uses the alternate config instead of --cwd harness.config.json', () => {
+    const repoDir = makeRepoWithConfig('cwd-config-project', 'cwd');
+    const altConfigPath = path.join(makeTmpDir('harness-cs15c-config-'), 'alt.harness.config.json');
+    try {
+      writeJSON(altConfigPath, configWithReadme('alt-config-project', 'alt'));
+      const r = run(['sync', '--mode=apply', '--config', altConfigPath, '--cwd', repoDir]);
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}; stdout: ${r.stdout}`);
+      assertReadmeProjectName(repoDir, 'alt-config-project');
+    } finally {
+      rmSync(path.dirname(altConfigPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config=<path> uses the alternate config instead of --cwd harness.config.json', () => {
+    const repoDir = makeRepoWithConfig('cwd-config-project', 'cwd');
+    const altConfigPath = path.join(makeTmpDir('harness-cs15c-config-equals-'), 'alt.harness.config.json');
+    try {
+      writeJSON(altConfigPath, configWithReadme('alt-config-equals-project', 'eq'));
+      const r = run(['sync', '--mode=apply', `--config=${altConfigPath}`, '--cwd', repoDir]);
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}; stdout: ${r.stdout}`);
+      assertReadmeProjectName(repoDir, 'alt-config-equals-project');
+    } finally {
+      rmSync(path.dirname(altConfigPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config <missing-file> exits 1 with the explicit config-file message', () => {
+    const repoDir = makeRepoWithConfig();
+    const missingConfigPath = path.join(repoDir, 'does-not-exist.harness.config.json');
+    try {
+      const r = run(['sync', '--config', missingConfigPath, '--cwd', repoDir]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(
+        r.stderr.includes(`Config file not found at ${missingConfigPath}`),
+        `stderr missing explicit config path; got: ${r.stderr}`,
+      );
+      assert.ok(
+        !r.stderr.includes('harness.config.json not found at'),
+        `stderr must not use legacy implicit-config message; got: ${r.stderr}`,
+      );
+    } finally {
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config <malformed-json> exits 1 with a JSON parse message', () => {
+    const repoDir = makeRepoWithConfig();
+    const malformedConfigPath = path.join(makeTmpDir('harness-cs15c-malformed-'), 'malformed.harness.config.json');
+    try {
+      writeText(malformedConfigPath, '{ this is not json\n');
+      const r = run(['sync', '--config', malformedConfigPath, '--cwd', repoDir]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(
+        r.stderr.includes('Config file is not valid JSON'),
+        `stderr missing JSON parse message; got: ${r.stderr}`,
+      );
+    } finally {
+      rmSync(path.dirname(malformedConfigPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config <schema-invalid-json> exits 1 with schema-related stderr', () => {
+    const repoDir = makeRepoWithConfig();
+    const invalidConfigPath = path.join(makeTmpDir('harness-cs15c-invalid-schema-'), 'invalid.harness.config.json');
+    try {
+      writeJSON(invalidConfigPath, { project: { name: 'x', agent_suffix: 'x' } });
+      const r = run(['sync', '--config', invalidConfigPath, '--cwd', repoDir]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}; stderr: ${r.stderr}`);
+      assert.match(
+        r.stderr,
+        /schema|validation|invalid|missing required field/i,
+        `stderr should be schema-related; got: ${r.stderr}`,
+      );
+    } finally {
+      rmSync(path.dirname(invalidConfigPath), { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --config <relative-path> resolves relative to the invocation cwd, not --cwd', () => {
+    const invocationDir = makeTmpDir('harness-cs15c-invocation-');
+    const repoDir = makeRepoWithConfig('cwd-relative-project', 'cwdrel');
+    const relativeConfigPath = path.join('configs', 'alt.harness.config.json');
+    try {
+      writeJSON(path.join(invocationDir, relativeConfigPath), configWithReadme('invocation-relative-project', 'invrel'));
+      writeJSON(path.join(repoDir, relativeConfigPath), configWithReadme('cwd-relative-wrong-project', 'wrong'));
+      const r = run(['sync', '--mode=apply', '--config', relativeConfigPath, '--cwd', repoDir], { cwd: invocationDir });
+      assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}; stdout: ${r.stdout}`);
+      assertReadmeProjectName(repoDir, 'invocation-relative-project');
+    } finally {
+      rmSync(invocationDir, { recursive: true, force: true });
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --ref rejects in the subcommand body with the planned-flag message', () => {
+    const repoDir = makeRepoWithConfig();
+    try {
+      const r = run(['sync', '--ref', 'v0.2.0', '--cwd', repoDir]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes(refNotImplemented), `stderr missing --ref rejection; got: ${r.stderr}`);
+    } finally {
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('check --ref rejects in the subcommand body with the planned-flag message', () => {
+    const repoDir = makeRepoWithConfig();
+    try {
+      const r = run(['check', '--ref', 'X', '--cwd', repoDir]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes(refNotImplemented), `stderr missing --ref rejection; got: ${r.stderr}`);
+    } finally {
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+
+  it('sync --help mentions --ref as planned or not yet implemented', () => {
+    const r = run(['sync', '--help']);
+    assert.equal(r.status, 0, `Expected exit 0; stderr: ${r.stderr}`);
+    assert.match(r.stdout, /--ref.*(planned|not yet implemented|future)/i, `stdout missing planned --ref note; got: ${r.stdout}`);
+  });
+
+  it('check --ref=<value> parses globally before the subcommand-level rejection', () => {
+    const repoDir = makeRepoWithConfig();
+    try {
+      const r = run(['check', '--ref=value', '--cwd', repoDir]);
+      assert.equal(r.status, 2, `Expected exit 2; got ${r.status}; stderr: ${r.stderr}`);
+      assert.ok(r.stderr.includes(refNotImplemented), `stderr missing --ref rejection; got: ${r.stderr}`);
+      assert.ok(!/Unknown flag.*--ref/i.test(r.stderr), `--ref should not be rejected by argv parsing; got: ${r.stderr}`);
+    } finally {
+      rmSync(repoDir, { recursive: true, force: true });
+    }
   });
 });
