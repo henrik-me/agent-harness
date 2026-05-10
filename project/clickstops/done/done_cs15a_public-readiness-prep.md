@@ -94,11 +94,11 @@ Per the user authorization (2026-05-09):
 
 ### Ruleset spec (#6-7)
 - [x] `docs/ruleset/main-protection.json` — applied as active Ruleset `main-protection` (`id=16185634`) via `POST /repos/:owner/:repo/rulesets`. Includes:
-  - PR-required, no approving review required because GitHub does not allow PR authors to approve their own PRs
+  - PR-required, ≥1 approving review, with an explicit repository-admin bypass so @henrik-me can override when needed
   - Squash-merge only, linear history, conversation resolution required
   - Signed-commits intentionally not required because GitHub App squash auto-merge can otherwise stall for workboard-only PRs
   - Status checks list (9 required checks): `validate`, `validate-schemas`, `smoke / harness-lint`, `secret-scan`, `npm-pack-dry-run`, `commit-trailers`, `pr-body`, `check-workflow-pins`, `check-public-artifact`
-  - No force pushes, no deletions, include administrators (no ad-hoc bypass)
+  - No force pushes, no deletions, explicit repository-admin bypass for owner override
   - Bot threat model: GitHub App with PR-review/write only; Ruleset does not require CODEOWNER review because the App cannot satisfy a human CODEOWNER requirement
 - [x] `.github/CODEOWNERS` — verified default `* @henrik-me` plus `/lib/ @henrik-me` covers `template/managed/`, `template/composed/`, `schemas/`, `lib/`, `bin/`, and `.github/workflows/`.
 
@@ -180,7 +180,7 @@ Per the user authorization (2026-05-09):
 | Ruleset spec (#6-7) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Bot workflow + manifest (#8) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (App secrets present; PR #78 dry-run approved and merged by bot) \| learnings=0 |
 | Public-facing files (#9-14) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| Repo-settings checklist (#15-18) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (repo public; auto-merge enabled; PVR 204; secret scanning enabled; Ruleset active with 0 required approving reviews) \| learnings=0 |
+| Repo-settings checklist (#15-18) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (repo public; auto-merge enabled; PVR 204; secret scanning enabled; Ruleset active with 1 required approving review and explicit admin bypass) \| learnings=0 |
 | Secret/IP scan (#19-24) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | New workflows (#25) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (all 9 required check contexts green on PR #74 at `8b9e839`) \| learnings=0 |
 | `pre-flip-readiness.md` artifact | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
@@ -208,10 +208,11 @@ public visibility flip during close-out. All 25 readiness preconditions are
 green in `docs/pre-flip-readiness.md`: public-facing docs exist, scan evidence
 is recorded, required status-check workflows are green, the workboard GitHub App
 bot is installed and dry-run proven, the repository is public, the main Ruleset
-is active with 0 required approving reviews so authors can merge their own green
-PRs, auto-merge is enabled, Private Vulnerability Reporting returned 204, secret
-scanning is enabled, and the post-flip `fast-uri` Dependabot alerts are
-addressed by the close-out lockfile update.
+is active with 1 required approving review and an explicit repository-admin
+bypass so @henrik-me can override when needed, auto-merge is enabled, Private
+Vulnerability Reporting returned 204, secret scanning is enabled, and the
+post-flip `fast-uri` Dependabot alerts are addressed by the close-out lockfile
+update.
 
 Decision: CS15a can close out. CS15b's originally planned visibility-flip work
 has been absorbed into this close-out per user authorization; the next mainline
