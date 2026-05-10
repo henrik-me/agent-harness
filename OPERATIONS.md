@@ -632,6 +632,20 @@ nothing (fail-closed per ADR 0001 § Legacy-content fail-closed invariant).
 Use `harness composed-audit --from-existing-harness` to generate the initial
 mapping when migrating an existing file onto the harness.
 
+### Integration testing for templated outputs (LRN-057)
+
+Any change to seeded skeletons or composed templates must be validated with the
+init → sync-check integration path: run `harness init` into a fresh consumer
+repo, then run `harness --cwd <consumer> sync --mode=check`. The sync check
+must exit 0 with `No drift detected` and must not mutate files.
+
+This catches bug classes that lint alone can miss: inline harness markers in
+prose, unresolved or malformed template placeholders, and composed-merge edge
+cases that only appear when the seeded `harness.config.json` selects the
+rendered template set. LRN-057 is the canonical example: individual linters
+passed, but sync-check rejected the init-produced OPERATIONS.md because the
+composed parser saw marker-like prose end-to-end.
+
 ### Composed marker syntax
 
 Local blocks are delimited by HTML comment markers. The `id` attribute must
