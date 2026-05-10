@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-10 (Dependabot PR cleanup note added to LRN-081)
+> **Last updated:** 2026-05-10 (CS15d close-out: LRN-087..091 added)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -1802,6 +1802,106 @@ claim_area: planning
 **Evidence:** CS15c plan reserved LRN-082..086. By close-out, LRN-082 (close-out task rows) and LRN-083 (workboard stale-history linting) were both filed against CS15a. CS15c close-out filed LRN-084..086 instead.
 
 **Disposition:** Applied procedurally at this close-out. Future planning docs should describe LRN ranges as "approximate" and the close-out checklist should include a "scan LEARNINGS.md for current max LRN id" step before filing.
+
+### LRN-087
+
+```yaml
+id: LRN-087
+date: 2026-05-10
+category: process
+source_cs: CS15d
+status: applied
+tags: [aggregator, cli, scaffold-linters, mapping-table, registration]
+claim_area: cli
+```
+
+**Problem:** CS15d had to wire two consumer-shipped scaffold linters (`check-migration-policy.mjs` for `migrations`, `check-feature-flag-policy.mjs` for `feature-flags`) into `harness lint` so that when a consumer's `harness.config.json` `scaffolds[]` includes one of those category names, the corresponding linter runs automatically. The natural-feeling implementation was "auto-discover any `scripts/check-<scaffold-name>*.mjs` and run it", but scaffold directory names are *plural* (`migrations`, `feature-flags`) while the shipped linters are named *singular* (`migration-policy`, `feature-flag-policy`) — there is no mechanical name transform that works.
+
+**Finding:** Use an explicit `SHIPPED_SCAFFOLD_LINTERS` mapping table (`{ migrations: 'check-migration-policy.mjs', 'feature-flags': 'check-feature-flag-policy.mjs' }`) keyed by scaffold name. This makes the registration source-visible (one place to grep), avoids fragile name-mangling, and surfaces missing entries as static gaps rather than silent skips. Auto-discovery for cross-naming-domain dispatch is an anti-pattern — explicit dispatch tables beat clever string transforms every time.
+
+**Evidence:** [`bin/harness.mjs:959-994`](../bin/harness.mjs) (CS15d Wave 2). Initial sub-agent β8 surfaced the naming mismatch as a pre-implementation question; orchestrator chose the mapping-table over a rename of the shipped linters because `done_cs10_scaffolds.md` documents that the per-item singular naming is intentional (each linter targets a single shipped policy, not the category). The map is the only place new shipped scaffold linters need to be registered.
+
+**Disposition:** Applied. When adding a new shipped scaffold linter, append a row to `SHIPPED_SCAFFOLD_LINTERS` and ensure the corresponding `scaffolds/<name>/` exists. Aggregator help text and tests will pick it up automatically.
+
+### LRN-088
+
+```yaml
+id: LRN-088
+date: 2026-05-10
+category: process
+source_cs: CS15d
+status: applied
+tags: [aggregator, cli, lint-rows, self-host, consumer-parity]
+claim_area: cli
+```
+
+**Problem:** When an aggregator linter has nothing to scan in a consumer repo (no scaffolds shipped, no composed blocks present), the natural impulse is to emit zero rows. CS15d ran into this with `scaffold-readme:`: in self-host mode it walks `scaffolds/<name>/README.md` and emits one row per scaffold (8 rows currently); in consumer mode without scaffolds it would emit nothing. That broke aggregator-shape tests and made the per-repo lint summary inconsistent.
+
+**Finding:** When an aggregator linter has no work in a given context, emit one explicit "skipped" row (with `args: null, target: null`) rather than zero rows. This matches the existing `composed-blocks:` pattern (which prints a single skipped row when no blocks are configured) and keeps the row count and shape predictable across self-host and consumer invocations. Tests can then assert "row exists with `result: skipped`" instead of conditional "row exists *or* doesn't exist depending on repo".
+
+**Evidence:** [`bin/harness.mjs:921-958`](../bin/harness.mjs) (CS15d Wave 2). Pattern lifted from the pre-existing `composed-blocks:` no-files branch. Same behaviour now applies to `scaffold-readme` and the auto-dispatched `*-policy` rows.
+
+**Disposition:** Applied. Future aggregator linters with conditional-applicability MUST emit one skipped row instead of zero; aggregator-shape tests should assert presence-of-row, not row-count-equals-N.
+
+### LRN-089
+
+```yaml
+id: LRN-089
+date: 2026-05-10
+category: tooling
+source_cs: CS15d
+status: applied
+tags: [linter, regex, github-actions, markdown-context, false-positives]
+claim_area: linters
+```
+
+**Problem:** `scripts/check-templates.mjs` (CS08b deliverable) enforces three template-authoring rules. The dot-notation rule (`{{ obj.field }}` is forbidden in composed templates per LRN-049) was implemented with the regex `/\{\{[^}]+\.[^}]+\}\}/g`. This fired on **GitHub Actions workflow YAML** that uses `${{ github.event.number }}` (legitimate Actions syntax, not a template placeholder), and on **docs that show examples** of the violation inside backticks or fenced code blocks.
+
+**Finding:** Template-content regexes need two protections to be safely reusable across the file tree: (1) negative-lookbehind `(?<!\$)` to exclude GitHub Actions `${{ ... }}` (and any other dollar-prefixed template syntax); (2) a `stripMarkdownNonScannable(line, state)` pass that empties out fenced code blocks (` ``` ` lines flip a state flag), inline single-backtick spans, and multi-line HTML comments before the rule fires. Without both, you cannot lint markdown files under `template/` (the operations doc itself triggers the rule when explaining it).
+
+**Evidence:** [`scripts/check-templates.mjs:108-137`](../scripts/check-templates.mjs) (`stripMarkdownNonScannable`); [`scripts/check-templates.mjs:155`](../scripts/check-templates.mjs) (negative-lookbehind regex). Two new fixture-based tests added in [`tests/check-templates.test.mjs`](../tests/check-templates.test.mjs): `valid/github-actions.yml`, `valid/docs-as-examples.md`. Without the fix, `harness lint` on the harness repo itself would have errored on `template/composed/OPERATIONS.md` and `.github/workflows/*.yml`.
+
+**Disposition:** Applied. Two follow-up gaps logged as `planned_csNN_extend-check-templates-markdown-context.md`: tilde fences (`~~~`), indented code blocks (≥4 leading spaces), double-backtick spans (`` `` ``).
+
+### LRN-090
+
+```yaml
+id: LRN-090
+date: 2026-05-10
+category: tooling
+source_cs: CS15d
+status: applied
+tags: [pr-body, linter, placeholder-detection, escaping]
+claim_area: pr-process
+```
+
+**Problem:** CS15d's PR #92 body initially failed `check-pr-body.mjs` because the body included `T-O-D-O:` and `F-I-X-M-E:` (with the colons) as part of normal prose explaining what the linter rejects. The PR body linter's placeholder detector does a literal substring scan for `TODO:` / `FIXME:` and flagged them as unfilled placeholders.
+
+**Finding:** When self-host repos must mention these tokens in PR bodies (e.g. when the PR is about the linter that detects them, or when explaining process docs that reference them), use a hyphenated form (`T-O-D-O:`, `F-I-X-M-E:`) or quote the token in inline-code backticks. The PR body linter does not introspect markdown context; literal substring is intentional because most placeholder leaks come from authors copy-pasting template skeletons.
+
+**Evidence:** [`scripts/check-pr-body.mjs`](../scripts/check-pr-body.mjs) (LRN-014 era detector). CS15d session-state PR body file contains the workaround in the "Notes" section.
+
+**Disposition:** Applied. No code change to the linter — the literal-substring rule remains correct for its primary purpose. Documented here so future authors of self-host PRs about lint tooling don't waste a round-trip on the false-positive.
+
+### LRN-091
+
+```yaml
+id: LRN-091
+date: 2026-05-10
+category: tooling
+source_cs: CS15d
+status: applied
+tags: [powershell, git-commit, here-string, quoting, github-actions]
+claim_area: shell-ops
+```
+
+**Problem:** Composing a multi-line git commit message from PowerShell with `git commit -m "..."` fails when the message contains `${{ ... }}` (GitHub Actions expression syntax) — PowerShell expands `${{` as variable interpolation and the commit aborts or eats characters silently. CS15d's content commit body included `${{ github.* }}` in an explanation of LRN-089; the inline `-m` form mangled it.
+
+**Finding:** When a commit message contains any `${...}` or `${{...}}` substring, write it to a file (e.g. under the session workspace) and use `git commit -F <file>`. Do not try to escape it inside the PowerShell here-string — the failure modes vary across PowerShell versions and are silent. The file path can be under `~/.copilot/session-state/<id>/files/` for one-shot composition (it does not need to be checked in).
+
+**Evidence:** CS15d session-state contains `commit-msg-cs15d-content.txt`. Initial inline attempt produced a corrupt commit body that had to be amended via `git commit -F`.
+
+**Disposition:** Applied procedurally at this close-out. Documented here for any future agent on Windows/PowerShell composing commit messages that reference Actions expressions, harness templating, or other `${{ }}` syntax.
 
 ## Obsolete
 

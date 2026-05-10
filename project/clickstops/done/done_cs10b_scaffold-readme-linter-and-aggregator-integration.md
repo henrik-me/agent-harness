@@ -1,12 +1,12 @@
 # CS10b — Scaffold-readme linter + aggregator integration of optional scaffold linters
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15d)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-10 (via CS15d)
+**Closed:** 2026-05-10 (via CS15d)
 **Filed by:** CS10 close-out (per [LRN-063](../../../LEARNINGS.md#lrn-063) and PR #29 §"Notable scope adjustment").
-**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15d](./done_cs15d_linter-expansion.md) — absorbed and delivered as one of three deliverables in the CS15d umbrella; PR #92 merged 2026-05-10.
 **Depends on:** CS10
 
 ## Goal
@@ -63,6 +63,8 @@ CS10 explicitly deferred both items per the cs-plan and the active-CS scope adju
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | done | yoga-ah (via CS15d) | done in CS15d close-out (umbrella absorbed this CS); see done_cs15d_*.md |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | done | yoga-ah (via CS15d) | LRN-087..091 filed in CS15d; LRN-087 (mapping-table) and LRN-088 (skipped-row) directly arose from CS10b's aggregator-integration deliverable |
 
 ## Notes / Learnings
 
@@ -70,4 +72,13 @@ CS10 explicitly deferred both items per the cs-plan and the active-CS scope adju
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15d umbrella review](./done_cs15d_linter-expansion.md#plan-vs-implementation-review))
+**Date:** 2026-05-10
+**Outcome:** GO
+
+This CS was absorbed by the [CS15d umbrella](./done_cs15d_linter-expansion.md) before it was ever independently claimed. CS10b's two parts were both delivered:
+
+- **Part 1** (`scripts/check-scaffold-readme.mjs` + 11 tests) — Wave 1 sub-agent β7 in CS15d. Passes against all 8 in-tree scaffold READMEs.
+- **Part 2** (aggregator integration) — Wave 1 sub-agent β8 wrote the integration test (initially skip-gated via `lint --help` feature-detect); orchestrator (β9) wired the aggregator. Self-host walks `scaffolds/<name>/README.md` (one row per scaffold matching `composed-blocks:` pattern). Consumer auto-dispatch uses a deterministic `SHIPPED_SCAFFOLD_LINTERS` map (intentional plural→singular: `migrations`→`migration-policy`, `feature-flags`→`feature-flag-policy`) — chosen over name-mangling because the shipped scaffold linters are already named per-item, not per-category.
+
+See CS15d's plan-vs-implementation review for the full analysis.
