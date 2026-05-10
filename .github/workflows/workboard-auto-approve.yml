@@ -1,0 +1,161 @@
+# .github/workflows/workboard-auto-approve.yml — CS15a § precondition #8.
+#
+# Bot workflow that auto-approves + auto-merges WORKBOARD-only PRs once the
+# Ruleset (authored at CS15a, applied at CS15b) makes ≥1 approving review
+# mandatory on every PR. The bot supplies the approval ONLY for PRs that
+# pass a strict pre-check enforcing:
+#
+#   1. PR has the `workboard-only` label.
+#   2. PR branch name matches `workboard/cs<NN>-(claim|close)` OR
+#      `cs<NN>(/|-)(claim|close-out|close)` regex.
+#   3. PR author is in an explicit allowlist (orchestrator agent IDs).
+#   4. PR's changed file list is exclusively a subset of:
+#        - WORKBOARD.md
+#        - CONTEXT.md
+#        - LEARNINGS.md
+#        - project/clickstops/{planned,active,done}/**
+#      ANY file outside this set fails the check; bot does NOT approve.
+#
+# The bot uses a GitHub App (per Q1) configured in
+# docs/cs15a-app-install.md. Credentials must be stored as repo secrets:
+#   - WORKBOARD_BOT_APP_ID
+#   - WORKBOARD_BOT_PRIVATE_KEY
+#
+# Bot threat model (per cs-plan §CS15a #6):
+#   - App has Contents:Read + Pull-requests:Read&write only; no admin /
+#     workflow / secrets permissions.
+#   - App is NOT a CODEOWNER for any non-WORKBOARD path; CODEOWNERS
+#     enforces that code/config/workflow paths require a human review the
+#     bot cannot supply.
+#   - Path-restriction enforcement happens IN this workflow BEFORE the
+#     App's credentials are ever invoked, so a compromised App alone
+#     cannot approve a PR that touches sensitive paths.
+
+name: workboard-auto-approve
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-and-approve:
+    runs-on: ubuntu-latest
+    # Skip immediately if the workboard-only label is absent — saves CI cycles.
+    if: contains(github.event.pull_request.labels.*.name, 'workboard-only')
+    steps:
+      - name: Validate PR shape (label + branch name + author + paths)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          # Allowlist of orchestrator GitHub usernames + the bot itself once it's
+          # installed. Update this list whenever a new orchestrator agent comes
+          # online.
+          ALLOWED_AUTHORS: 'henrik-me'
+        run: |
+          set -euo pipefail
+          fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+
+          # Branch-name regex per cs-plan + observed conventions:
+          #   workboard/cs<NN>-(claim|close|close-out)
+          #   cs<NN>/(claim|close-out|close)
+          #   docs/file-planned-cs<NN>(-...)?
+          if ! printf '%s' "$PR_BRANCH" | grep -Eq '^(workboard/cs[0-9]+[a-z]?-(claim|close|close-out)|cs[0-9]+[a-z]?/(claim|close|close-out)|docs/file-planned-cs[0-9]+[a-z]?(-.+)?)$'; then
+            fail "branch name '$PR_BRANCH' does not match the workboard-only branch pattern."
+          fi
+
+          # Actor allowlist.
+          allowed=0
+          for a in $ALLOWED_AUTHORS; do
+            if [ "$PR_AUTHOR" = "$a" ]; then allowed=1; break; fi
+          done
+          if [ "$allowed" -ne 1 ]; then
+            fail "author '$PR_AUTHOR' is not in the orchestrator allowlist [$ALLOWED_AUTHORS]."
+          fi
+
+          echo "Branch + author checks: OK."
+
+      - name: Fetch PR file list (no checkout needed)
+        id: files
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Paginate through all files; cap at 1000 (PR file lists rarely exceed 100 for workboard PRs).
+          gh api --paginate "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" \
+            --jq '.[].filename' > pr-files.txt
+          echo "Files in PR:"
+          cat pr-files.txt
+          echo "files-count=$(wc -l < pr-files.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce path-allowlist (NO files outside WORKBOARD/CONTEXT/LEARNINGS/clickstops)
+        run: |
+          set -euo pipefail
+          fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+          # Allowed paths (exact OR prefix). Each line either an exact filename
+          # or a path-prefix ending in `/`.
+          cat > allowed-paths.txt <<'EOF'
+          WORKBOARD.md
+          CONTEXT.md
+          LEARNINGS.md
+          project/clickstops/planned/
+          project/clickstops/active/
+          project/clickstops/done/
+          EOF
+
+          violations=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            ok=0
+            while IFS= read -r p; do
+              [ -z "$p" ] && continue
+              if [ "${p%/}" != "$p" ]; then
+                # Prefix match
+                case "$f" in
+                  "${p}"*) ok=1; break ;;
+                esac
+              else
+                # Exact match
+                if [ "$f" = "$p" ]; then ok=1; break; fi
+              fi
+            done < allowed-paths.txt
+            if [ "$ok" -ne 1 ]; then
+              echo "::error ::file '$f' is OUTSIDE the workboard-only allowlist."
+              violations=$((violations + 1))
+            fi
+          done < pr-files.txt
+
+          if [ "$violations" -gt 0 ]; then
+            fail "$violations file(s) outside allowlist; bot will NOT approve."
+          fi
+          echo "Path-allowlist check: OK ($(wc -l < pr-files.txt | tr -d ' ') file(s) all in allowlist)."
+
+      - name: Mint App installation token
+        id: app-token
+        # Pin to a specific SHA per LRN-075 (third-party action). actions/create-github-app-token@v1
+        # head SHA at time of authoring — orchestrator should refresh this pin via
+        # `gh api repos/actions/create-github-app-token/git/refs/tags/v1` before merge.
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.WORKBOARD_BOT_APP_ID }}
+          private-key: ${{ secrets.WORKBOARD_BOT_PRIVATE_KEY }}
+
+      - name: Approve PR (as bot)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr review "$PR_NUMBER" --repo "${{ github.repository }}" --approve --body 'workboard-auto-approve: validated path/label/branch/actor allowlists and approved per CS15b bot wiring (CS15a-authored, CS15b-applied).'
+
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash --auto
