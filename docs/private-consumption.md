@@ -23,7 +23,7 @@ Use the token in your environment:
 # Example only — replace with your real token. NEVER commit a real token.
 export GH_TOKEN=ghp_FAKE_DO_NOT_USE
 git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-npx -y github:henrik-me/agent-harness#v0.1.0 --help
+npx -y github:henrik-me/agent-harness#v0.2.0 --help
 ```
 
 ### Option B — classic PAT (not recommended)
@@ -55,10 +55,10 @@ side.
 ## Public consumption
 
 CS15a flipped this harness repo to public. No token is required for public
-consumption — `npx -y github:henrik-me/agent-harness#v0.1.0` works
+consumption — `npx -y github:henrik-me/agent-harness#v0.2.0` works
 anonymously, and an
 `@henrik-me/agent-harness` npm package may be published for `npx -y
-@henrik-me/agent-harness@0.1.0`.
+@henrik-me/agent-harness@0.2.0`.
 
 ## Security notes
 

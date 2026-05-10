@@ -5,7 +5,7 @@
 # Used as the canonical reproduction of the private-consumption flow.
 #
 # Triggers:
-#   - workflow_dispatch (manual, with `ref` input — defaults to `v0.1.0`)
+#   - workflow_dispatch (manual, with `ref` input — defaults to `v0.2.0`)
 #   - schedule: weekly Monday 09:00 UTC (catches infra-side regressions)
 #   - pull_request: on main (small regression sanity check on the workflow itself)
 #
@@ -28,7 +28,7 @@ on:
       ref:
         description: 'Git ref (tag/branch/SHA) to smoke-test'
         required: true
-        default: 'v0.1.0'
+        default: 'v0.2.0'
   schedule:
     - cron: '0 9 * * 1'
   pull_request:
@@ -60,7 +60,7 @@ jobs:
             source="github.sha"
           fi
           # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
-          # Covers semver tags (v0.1.0), branch names (main, feature/x), and 40-char SHAs.
+          # Covers semver tags (v0.2.0), branch names (main, feature/x), and 40-char SHAs.
           # Rejects anything with shell metacharacters.
           if ! printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'; then
             echo "ERROR: ref \"$ref\" (source=$source) contains characters outside allowlist [a-zA-Z0-9._/-]." >&2

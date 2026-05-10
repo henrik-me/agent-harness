@@ -2,7 +2,7 @@
 
 Multi-agent process harness — extracted from [`henrik-me/guesswhatisnext`](https://github.com/henrik-me/guesswhatisnext) for reuse across projects.
 
-> **Status:** v0.1.0 shipped (CS14, 2026-05-04). v0.2.0 unreleased: pre-public-flip hygiene (CS02b BREAKING — `local_blocks` schema cleanup; CS03d additive — `template_prose_hash` evolution detection; CS03e additive — `legacy-composed-mapping` schema). See [`CHANGELOG.md`](CHANGELOG.md) for the full delta and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap. **Next gate: CS15a** (public-readiness preparation).
+> **Status:** v0.2.0 shipped (CS22, 2026-05-10). Public-flip complete (CS15a). See [`CHANGELOG.md`](CHANGELOG.md) for the full delta and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap. **Next gate: CS16** (Bootstrap Sub Invaders consumer).
 
 ## What this is
 
@@ -23,7 +23,7 @@ Three file classes:
 
 Two install models are supported:
 
-**Option B — install from GitHub by ref** (today, while the repo is private + pre-publish): `npx -y github:henrik-me/agent-harness#<ref>` works in any environment with a `GITHUB_TOKEN` having `contents:read` on the harness repo. `<ref>` is a semver tag (e.g. `v0.1.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility.
+**Option B — install from GitHub by ref** (today, default install path): `npx -y github:henrik-me/agent-harness#<ref>` works anonymously now that the repo is public — no token required. `<ref>` is a semver tag (e.g. `v0.2.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility. (For private forks of this harness, see [`docs/private-consumption.md`](docs/private-consumption.md) for the `GITHUB_TOKEN` setup.)
 
 > **Note:** as of v0.2.0 the bare `npx -y "github:owner/repo#<sha>"` install path hits an npm 10.8.x/10.9.x `GitFetcher requires an Arborist constructor` regression on GitHub Actions runners. The harness's own reusable workflow (`harness-checks.yml`) bypasses this by cloning + invoking `node bin/harness.mjs` directly. External consumers running their own CI may want to do the same. Tracked as a known issue.
 
@@ -33,9 +33,9 @@ Two install models are supported:
 
 ```bash
 # In a consumer repo:
-npx -y github:henrik-me/agent-harness#v0.1.0 init
+npx -y github:henrik-me/agent-harness#v0.2.0 init
 # review the generated harness.config.json, then:
-npx -y github:henrik-me/agent-harness#v0.1.0 sync
+npx -y github:henrik-me/agent-harness#v0.2.0 sync
 ```
 
 ## Repo layout

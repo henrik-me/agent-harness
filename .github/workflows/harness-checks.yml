@@ -3,9 +3,9 @@
 # Consumers invoke this with ~10 lines:
 #   jobs:
 #     harness:
-#       uses: henrik-me/agent-harness/.github/workflows/harness-checks.yml@v0.1.0
+#       uses: henrik-me/agent-harness/.github/workflows/harness-checks.yml@v0.2.0
 #       with:
-#         cli-ref: v0.1.0  # optional; defaults to harness.config.json version
+#         cli-ref: v0.2.0  # optional; defaults to harness.config.json version
 #
 # Runs `harness lint --quiet` against the caller repo using the harness CLI
 # pinned to the supplied (or auto-derived) ref.
@@ -92,7 +92,7 @@ jobs:
             exit 2
           fi
           # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
-          # Covers semver tags (v0.1.0), branch names (main, feature/x),
+          # Covers semver tags (v0.2.0), branch names (main, feature/x),
           # and 40-char SHAs. Rejects anything with shell metacharacters.
           if ! printf '%s' "$ref" | grep -Eq '^[a-zA-Z0-9._/-]+$'; then
             echo "ERROR: ref \"$ref\" (source=$source) contains characters outside the allowlist [a-zA-Z0-9._/-]." >&2
