@@ -1986,6 +1986,26 @@ claim_area: orchestrator-runtime
 
 **Disposition:** Applied. Generalises Decision #22 (GPT-5.5 unavailable >30min → fall back to Sonnet 4.6 for review) into a broader **session-hygiene rule** for the implementer side: when degradation symptoms appear, the orchestrator's correct response is to **summarise + restart in a clean session** rather than push through. Consider adding a "session-depth checkpoint" cue to OPERATIONS.md § Per-CS loop — e.g. "after each umbrella close-out, prefer a fresh orchestrator session for the next claim" — but defer the documentation change until a second occurrence confirms the cue is needed (per LRN-rule-of-three; CS15e is occurrence #1).
 
+### LRN-096
+
+```yaml
+id: LRN-096
+date: 2026-05-10
+category: process
+source_cs: CS06c
+status: applied
+tags: [test-naming, plan-vs-impl, deliverables, fileclass-conventions]
+claim_area: testing
+```
+
+**Problem:** The CS06c plan deliverables line referenced `tests/lib-doc-schema.test.mjs` as the existing test file to extend, but the actual file in this repo is `tests/doc-schema.test.mjs` (no `lib-` prefix). The plan was filed by a previous CS (CS15d close-out) that introduced the `lib-` prefix convention for new lib test files (e.g. `tests/lib-config-reader.test.mjs`, `tests/lib-lock-reader.test.mjs`, `tests/lib-github-detect.test.mjs`) without retroactively renaming the older `tests/doc-schema.test.mjs` (which predates the prefix convention). The implementer caught the mismatch only when going to add tests, and silently reused the existing filename rather than rename — which is the correct call (renaming would have been a drive-by change outside CS06c scope) but the plan→implementation gap was a small point of friction.
+
+**Finding:** When a plan deliverables line references an "existing file" by path, the plan author should `ls`-verify the path before writing it down. When the implementer discovers a mismatch, the correct action is **use the existing file as-is and document the deviation in the close-out Notes** (not silently rename, not silently create the named-but-nonexistent file). The repository currently has a mixed convention: lib test files added since CS15d use the `lib-` prefix; older lib test files (`tests/doc-schema.test.mjs`, `tests/sync.test.mjs`) do not. A future cleanup CS could rename the older files for consistency, but the current state is harmless because `node --test tests/*.test.mjs` discovers all of them regardless of name.
+
+**Evidence:** [`project/clickstops/done/done_cs06c_centralize-doc-schema-primitives.md`](project/clickstops/done/done_cs06c_centralize-doc-schema-primitives.md) Deliverables list line 7 (post-close-out edit) records the deviation explicitly; [`tests/doc-schema.test.mjs`](tests/doc-schema.test.mjs) (the actual file) was extended from 8 → 30 tests in PR #101 @ `2d87579`. Sibling pattern: [`tests/lib-config-reader.test.mjs`](tests/lib-config-reader.test.mjs), [`tests/lib-lock-reader.test.mjs`](tests/lib-lock-reader.test.mjs), [`tests/lib-github-detect.test.mjs`](tests/lib-github-detect.test.mjs) all use the prefix; [`tests/sync.test.mjs`](tests/sync.test.mjs) does not.
+
+**Disposition:** Applied. No code change required — the existing convention works and renaming is out of scope for CS06c. Future CS plan authors should `ls tests/<expected-path>` before naming an "existing file to extend"; future implementers who find a mismatch should document the deviation in close-out Notes rather than silently rename or create. Optional follow-up: a tiny cleanup CS could rename `tests/doc-schema.test.mjs` → `tests/lib-doc-schema.test.mjs` and `tests/sync.test.mjs` → `tests/lib-sync.test.mjs` for naming consistency, but this is purely cosmetic and not worth a dedicated CS unless bundled with another testing-area change.
+
 ## Obsolete
 
 (none yet)
