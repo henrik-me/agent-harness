@@ -85,7 +85,7 @@ jobs:
           echo "Branch + author checks: OK."
 
       - name: Checkout base repository (never PR head)
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 1
@@ -199,10 +199,10 @@ jobs:
       - name: Mint App installation token
         id: app-token
         # Pin to a specific SHA per LRN-075 (third-party action).
-        # SHA = head of actions/create-github-app-token@v1 at CS15a authoring
-        # time (2026-05-09). Refresh via:
-        #   gh api repos/actions/create-github-app-token/git/refs/tags/v1
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547  # v1
+        # SHA = head of actions/create-github-app-token@v3.1.1 at refresh
+        # time (2026-05-10). Refresh via:
+        #   gh api repos/actions/create-github-app-token/git/refs/tags/v3.1.1
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
         with:
           app-id: ${{ secrets.WORKBOARD_BOT_APP_ID }}
           private-key: ${{ secrets.WORKBOARD_BOT_PRIVATE_KEY }}
