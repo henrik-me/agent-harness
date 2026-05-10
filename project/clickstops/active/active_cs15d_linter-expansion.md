@@ -1,9 +1,9 @@
 # CS15d — Linter expansion (umbrella: CS06b + CS08b + CS10b)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs15d/content (after claim)
+**Started:** 2026-05-09
 **Closed:** —
 **Filed by:** Pre-CS16 backlog cleanup (planning PR for cs15-cleanup-planning, 2026-05-09); user authorization for Option C umbrella bundling 2026-05-09 ("you can add the CS structure needed to optimize for parralelism").
 **Depends on:** CS06 (structural linters), CS08 (managed/composed process docs), CS10 (scaffolds), CS15c (uses `lib/config-reader.mjs` consistency with `--config` threading)
@@ -149,9 +149,21 @@ LRN-087..094 reserved for CS15d. Expected ~4-6 LRNs (likely: shared-library refa
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
-| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT) | planned | — | — |
-| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-087..094 + supersede 3 planned files) | planned | — | — |
+| Claim PR (rename planned → active; populate Tasks; WORKBOARD update) | done | yoga-ah | branch `workboard/cs15d-claim`; this PR |
+| β1: `lib/config-reader.mjs` + `tests/lib-config-reader.test.mjs` (≥4 tests) | pending | sub-agent β1 | CS06b shared config helper; consistent with CS15c `--config` semantics; sub-agent does NOT commit (LRN-021) |
+| β2: `lib/lock-reader.mjs` + `tests/lib-lock-reader.test.mjs` (≥4 tests) | pending | sub-agent β2 | CS06b shared lock helper; LRN-042 anti-pattern fix |
+| β3: refactor `scripts/check-instructions.mjs` to `lib/doc-schema.mjs` + add cross-link validation; update `tests/check-instructions.test.mjs` | pending | sub-agent β3 | CS06b refactor + new LRN/ADR cross-link validation |
+| β4: refactor `scripts/check-readme.mjs` to `lib/doc-schema.mjs`; update `tests/check-readme.test.mjs` | pending | sub-agent β4 | CS06b refactor |
+| β5: refactor `scripts/check-clickstop.mjs` to `lib/doc-schema.mjs`; update `tests/check-clickstop.test.mjs`; **preserve LRN-064 H2 detection** | pending | sub-agent β5 | CS06b refactor; verify Plan-vs-impl gate regex still matches exactly |
+| β6: `scripts/check-templates.mjs` (3 rules) + `tests/check-templates.test.mjs` (≥12) + `tests/fixtures/cs15d/check-templates/` | pending | sub-agent β6 | CS08b new linter (LRN-049/050/051) |
+| β7: `scripts/check-scaffold-readme.mjs` + `tests/check-scaffold-readme.test.mjs` (≥6) | pending | sub-agent β7 | CS10b part 1 new linter; must pass cleanly against all 8 in-tree scaffold READMEs |
+| β8: `tests/cs15d-aggregator.test.mjs` | pending | sub-agent β8 | CS10b part 2 aggregator test (Wave 1; rebases against β9 once Wave 2 lands) |
+| β9 (orchestrator): wire β6+β7 linters into `bin/harness.mjs cmdLint`; aggregator extension for β8; update `template/managed/INSTRUCTIONS.md` linter count + `template/composed/OPERATIONS.md` preamble | pending | yoga-ah | Wave 2 sequential after Wave 1 returns |
+| Re-render root `INSTRUCTIONS.md` + `OPERATIONS.md` via `harness sync --mode=apply --resolved-sha <content-sha>` | pending | yoga-ah | per LRN-070/074 |
+| Plan-vs-implementation review (GPT-5.5) | pending | yoga-ah | per LRN-064 mandatory close-out gate |
+| Open content PR (label none / standard); CI green; admin merge if bot rejects (per user standing authorization) | pending | yoga-ah | — |
+| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15d" pointer) | pending | yoga-ah | required by check-clickstop close-out enforcement |
+| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-087..094; re-check max LRN id per LRN-086; document any deferred follow-ups as new planned CSs) | pending | yoga-ah | required by check-clickstop close-out enforcement |
 
 ## Notes / Learnings
 
