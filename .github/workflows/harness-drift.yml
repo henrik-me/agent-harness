@@ -47,7 +47,7 @@ jobs:
             echo "Using github.sha self-host fallback: $ref"
           else
             echo "ERROR: harness.config.json version is empty or '0.0.0-pre' but this is not the henrik-me/agent-harness repo." >&2
-            echo "ERROR: Pin a real semver tag (e.g. 'v0.1.0'), branch name, or 40-char SHA in harness.config.json 'version'." >&2
+            echo "ERROR: Pin a real semver tag (e.g. 'v0.2.0'), branch name, or 40-char SHA in harness.config.json 'version'." >&2
             exit 1
           fi
           # Allowlist: alphanumeric, dot, underscore, slash, hyphen.
