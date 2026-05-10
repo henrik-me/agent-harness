@@ -1,12 +1,12 @@
 # CS06b — Shared parser primitives refactor + cross-link validation
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15d)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-10 (via CS15d)
+**Closed:** 2026-05-10 (via CS15d)
 **Filed by:** CS06 close-out ([LRN-039](../../../LEARNINGS.md#lrn-039) guessed-field-name anti-pattern + [LRN-042](../../../LEARNINGS.md#lrn-042) lock-format misread; GPT-5.5 R1 NB-6 (deferred) + NB-8 (deferred)).
-**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15d](./done_cs15d_linter-expansion.md) — absorbed and delivered as one of three deliverables in the CS15d umbrella; PR #92 merged 2026-05-10.
 **Depends on:** CS06
 
 ## Goal
@@ -47,6 +47,8 @@ During CS06, three linter scripts were implemented with ad-hoc markdown parsing 
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | done | yoga-ah (via CS15d) | done in CS15d close-out (umbrella absorbed this CS); see done_cs15d_*.md |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | done | yoga-ah (via CS15d) | LRN-087..091 filed in CS15d; CS06c follow-up planned CS filed for residual doc-schema centralization |
 
 ## Notes / Learnings
 
@@ -54,4 +56,8 @@ During CS06, three linter scripts were implemented with ad-hoc markdown parsing 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15d umbrella review](./done_cs15d_linter-expansion.md#plan-vs-implementation-review))
+**Date:** 2026-05-10
+**Outcome:** GO
+
+This CS was absorbed by the [CS15d umbrella](./done_cs15d_linter-expansion.md) before it was ever independently claimed. CS06b's deliverables (`lib/config-reader.mjs`, `lib/lock-reader.mjs`, refactor of three linters to `lib/doc-schema.mjs`, cross-link validation in `check-instructions`) were implemented as Wave 1 sub-agents β1, β2, β3, β4, β5 in CS15d and reviewed there. See CS15d's plan-vs-implementation review for the full analysis. One follow-up was logged: centralize remaining heading/anchor primitives in `lib/doc-schema.mjs` so the residual inline parsers in `check-instructions`/`check-readme`/`check-clickstop` can be removed.

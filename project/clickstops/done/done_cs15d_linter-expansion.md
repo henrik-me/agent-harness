@@ -1,14 +1,16 @@
 # CS15d — Linter expansion (umbrella: CS06b + CS08b + CS10b)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs15d/content (after claim)
+**Branch:** cs15d/content (merged in PR #92, 2026-05-10) → cs15d/close-out (this PR)
 **Started:** 2026-05-09
-**Closed:** —
+**Closed:** 2026-05-10
 **Filed by:** Pre-CS16 backlog cleanup (planning PR for cs15-cleanup-planning, 2026-05-09); user authorization for Option C umbrella bundling 2026-05-09 ("you can add the CS structure needed to optimize for parralelism").
 **Depends on:** CS06 (structural linters), CS08 (managed/composed process docs), CS10 (scaffolds), CS15c (uses `lib/config-reader.mjs` consistency with `--config` threading)
 
 ## ⚠️ RESUME POINT — read this first if you're a fresh agent instance
+
+**This CS is DONE.** Content PR #92 merged 2026-05-10; close-out PR forthcoming on `cs15d/close-out`. The next umbrella in sequence is **CS15e** (the third and final pre-CS16 umbrella). See `planned_cs15e_*.md` and `WORKBOARD.md` for the next CS to claim.
 
 This is the **second** umbrella in the pre-CS16 backlog cleanup sequence:
 **CS15c → CS15d → CS15e**, executed sequentially.
@@ -162,8 +164,8 @@ LRN-087..094 reserved for CS15d. Expected ~4-6 LRNs (likely: shared-library refa
 | Re-render root `INSTRUCTIONS.md` + `OPERATIONS.md` via `harness sync --mode=apply --resolved-sha <content-sha>` | pending | yoga-ah | per LRN-070/074 |
 | Plan-vs-implementation review (GPT-5.5) | pending | yoga-ah | per LRN-064 mandatory close-out gate |
 | Open content PR (label none / standard); CI green; admin merge if bot rejects (per user standing authorization) | pending | yoga-ah | — |
-| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15d" pointer) | pending | yoga-ah | required by check-clickstop close-out enforcement |
-| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-087..094; re-check max LRN id per LRN-086; document any deferred follow-ups as new planned CSs) | pending | yoga-ah | required by check-clickstop close-out enforcement |
+| Close-out: docs + restart state (CONTEXT/WORKBOARD/HANDOFF + this CS file's RESUME POINT; rename active → done; `git mv` 3 absorbed planned files to `done/` with "absorbed by CS15d" pointer) | done | yoga-ah | done in cs15d/close-out branch (PR forthcoming) |
+| Close-out: learnings + follow-ups (LEARNINGS.md within LRN-087..094; re-check max LRN id per LRN-086; document any deferred follow-ups as new planned CSs) | done | yoga-ah | LRN-087..091 filed; 2 follow-up planned CSs created (centralize-doc-schema-primitives, extend-check-templates-markdown-context) |
 
 ## Notes / Learnings
 

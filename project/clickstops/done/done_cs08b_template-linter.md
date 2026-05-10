@@ -1,12 +1,12 @@
 # CS08b — Template linter (`check-templates.mjs`)
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah (via CS15d)
 **Branch:** —
-**Started:** —
-**Closed:** —
+**Started:** 2026-05-10 (via CS15d)
+**Closed:** 2026-05-10 (via CS15d)
 **Filed by:** CS08 close-out ([LRN-049](../../../LEARNINGS.md#lrn-049) dot-notation placeholder anti-pattern + [LRN-050](../../../LEARNINGS.md#lrn-050) source-relative path anti-pattern).
-**Superseded by:** [CS15d](./planned_cs15d_linter-expansion.md) (planning PR `cs15-cleanup-planning`, 2026-05-09). This file remains in `planned/` for provenance until CS15d closes; it MUST NOT be claimed independently.
+**Superseded by:** [CS15d](./done_cs15d_linter-expansion.md) — absorbed and delivered as one of three deliverables in the CS15d umbrella; PR #92 merged 2026-05-10.
 **Depends on:** CS08
 
 ## Goal
@@ -61,6 +61,8 @@ Both issues are mechanical and checkable at lint time. Without a linter, they wi
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | done | yoga-ah (via CS15d) | done in CS15d close-out (umbrella absorbed this CS); see done_cs15d_*.md |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | done | yoga-ah (via CS15d) | LRN-087..091 filed in CS15d; CS08c follow-up planned CS filed for tilde-fence/indented-code/double-backtick markdown-context extension |
 
 ## Notes / Learnings
 
@@ -68,4 +70,8 @@ Both issues are mechanical and checkable at lint time. Without a linter, they wi
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (via [CS15d umbrella review](./done_cs15d_linter-expansion.md#plan-vs-implementation-review))
+**Date:** 2026-05-10
+**Outcome:** GO
+
+This CS was absorbed by the [CS15d umbrella](./done_cs15d_linter-expansion.md) before it was ever independently claimed. CS08b's deliverables (`scripts/check-templates.mjs` enforcing LRN-049/050/051 with 18 tests + 6 fixture trees) were implemented as Wave 1 sub-agent β6 in CS15d and reviewed there. The orchestrator added two robustness improvements during integration: a negative-lookbehind to exclude GitHub Actions `${{...}}` expressions, and markdown-context awareness (skip backtick spans, fenced code blocks, HTML comments) to prevent false-positives on docs that show examples of the violations. See CS15d's plan-vs-implementation review for the full analysis. One follow-up was logged: extend markdown-context awareness to CommonMark tilde fences (`~~~`), indented code blocks, and double-backtick spans.
