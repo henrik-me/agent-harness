@@ -42,7 +42,7 @@ user-action dependency with captured follow-up evidence.
 | 22 | Release/package artifact inspection | ✅ Done | `npm pack --dry-run --json`: `henrik-me-agent-harness-0.1.0.tgz`, `96` files, `614136` bytes; `v0.1.0` GitHub Release is draft with no assets. |
 | 23 | Extracted content ownership / license compatibility | ✅ Done | Git history for added harness files is authored by `henrik-me` / `henrikm`; source repo `henrik-me/guesswhatisnext` is public; project license remains MIT. |
 | 24 | Public artifact redaction posture | ✅ Done | `scripts/check-public-artifact.mjs` remains wired in lint; pack dry-run excludes `.github/`, `tests/`, `project/`, lock/config, and logs. |
-| 25 | Required status-check workflows exist and run | ⚠️ PR evidence pending | `.github/workflows/secret-scan.yml` and `.github/workflows/npm-pack-dry-run.yml` are authored with SHA-pinned actions. `harness-self-check.yml` now emits standalone `commit-trailers`, `pr-body`, `check-workflow-pins`, and `check-public-artifact` contexts. Need green runs on the CS15a content PR. |
+| 25 | Required status-check workflows exist and run | ✅ Done | PR #74 at head `8b9e839` is green for all 9 required contexts: `validate`, `validate-schemas`, `smoke / harness-lint`, `secret-scan`, `npm-pack-dry-run`, `commit-trailers`, `pr-body`, `check-workflow-pins`, and `check-public-artifact`. |
 
 ## Ruleset summary
 
@@ -78,6 +78,9 @@ Expected dry-run:
 - Command: `gitleaks detect --source . --redact --report-format json
   --report-path docs/gitleaks-history-results.json`.
 - Result: no leaks found; report file contains `[]`.
+- PR workflow: `.github/workflows/secret-scan.yml` downloads gitleaks `8.30.1`,
+  verifies the release checksum, and runs `gitleaks dir . --redact
+  --exit-code 1`; PR #74 passed at head `8b9e839`.
 
 ## License/IP review summary
 

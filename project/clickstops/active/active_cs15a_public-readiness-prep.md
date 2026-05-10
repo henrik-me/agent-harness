@@ -10,7 +10,7 @@
 
 ## ⚠️ RESUME POINT (2026-05-09T18:07Z) — read this first if you're a fresh agent instance
 
-The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** All progress so far is committed at `a7e756d` on `origin/cs15a/content`.
+The previous agent instance hit a transient AI-model error mid-content-PR. **No work was lost.** Current content-PR progress is committed at `8b9e839` on `origin/cs15a/content`.
 
 **Bootstrap for resume:**
 
@@ -38,7 +38,7 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 | `CONTRIBUTING.md` | ✅ committed | fork→PR flow, no CLA/DCO, commit-trailer and local gate conventions |
 | `CODE_OF_CONDUCT.md` + issue templates | ✅ authored | Contributor Covenant 2.1 with GHSA enforcement; bug/feature/learning issue forms plus blank-issue routing |
 | `.github/dependabot.yml` | ✅ authored | npm + GitHub Actions, weekly Monday cadence |
-| `.github/workflows/{secret-scan,npm-pack-dry-run}.yml` | ✅ authored | required status-check workflows with SHA-pinned third-party actions |
+| `.github/workflows/{secret-scan,npm-pack-dry-run}.yml` | ✅ authored + green on PR #74 | required status-check workflows; secret-scan installs gitleaks 8.30.1 with checksum verification, npm-pack wraps `scripts/check-pack.mjs` |
 | `docs/cs15a-repo-settings-checklist.md` | ✅ authored | user-facing GitHub UI checklist |
 | `docs/pre-flip-readiness.md` | ✅ authored | all 25 preconditions with evidence and action-required rows |
 | Secret/IP scan (#19-24) | ✅ complete | gitleaks 8.30.1 full-history scan found no leaks; grep sweeps and artifact review documented in readiness |
@@ -46,13 +46,11 @@ node bin/harness.mjs sync --mode=check --cwd .   # expect "No drift detected"
 
 **What still needs to be done (in order):**
 
-1. **Verify**: `harness lint --quiet` clean, `node --test` clean, `sync --mode=check` no drift.
-2. **GPT-5.5 content rubber-duck** via `task` tool with `agent_type: code-review`, `model: gpt-5.5`, mode `sync`. Brief with the 25-precondition checklist; ask reviewer to verify each.
-3. **Open content PR** (do not auto-merge): title `CS15a content: public-readiness preparation (GUARDRAIL) — action required from @henrik-me`. Body: full action-required checklist front-and-center.
-4. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) + repo-settings flips (per `docs/cs15a-repo-settings-checklist.md`). User pings when done.
-5. **Bot dry-run + readiness update** — open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
-6. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
-7. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
+1. **Review/merge PR #74** — content PR is open, mergeable, and all 9 required check contexts are green at `8b9e839`.
+2. **WAIT for user actions** — App install (per `docs/cs15a-app-install.md`) + repo-settings flips (per `docs/cs15a-repo-settings-checklist.md`). User pings when done.
+3. **Bot dry-run + readiness update** — after PR #74 lands and the App/settings exist, open a throwaway test PR matching the bot's allowlist; verify `workboard-auto-approve.yml` triggers, validates, approves, auto-merges; capture results in `docs/pre-flip-readiness.md` § Bot dry-run.
+4. **GPT-5.5 plan-vs-impl review** (LRN-064 gate) — mandatory before close-out.
+5. **Close-out PR** — rename active→done, populate `## Plan-vs-implementation review` section, update WORKBOARD/CONTEXT, pre-file `planned_cs15b_visibility-flip.md`.
 
 **Why the previous instance stopped:** transient "Failed to get response from the AI model; retried 5 times" error during a `create` tool call. No state lost. The user-required GitHub UI work (steps 19) is the natural pause point regardless.
 
@@ -80,7 +78,7 @@ Per the user authorization (2026-05-09):
 | D4 | **CODE_OF_CONDUCT.md = Contributor Covenant 2.1 boilerplate**; enforcement contact = "via GitHub Security Advisory" (matches Q2). | Boilerplate with no email exposure. |
 | D5 | **Dependabot** (not Renovate) for npm + GitHub Actions, weekly cadence; fine-grained config in `.github/dependabot.yml`. | Native GitHub; lighter setup; existing `dependabot/...` PRs already use it. |
 | D6 | **Discussions stay OFF** for the public flip (per Q6 default). Can enable later when needed. | Smaller public surface area. |
-| D7 | **gitleaks scan via local install** (download Go binary or `npm install -g gitleaks-cli` if available) + `secret-scan.yml` workflow uses `gitleaks/gitleaks-action@v2` (pinned to a 40-char SHA per LRN-075). | Two layers: one-shot full-history scan now + per-PR scan going forward. |
+| D7 | **gitleaks scan via local install** for the full-history check + `secret-scan.yml` installs gitleaks `8.30.1` from the GitHub release with checksum verification and runs `gitleaks dir . --redact --exit-code 1`. | Two layers: one-shot full-history scan now + per-PR working-tree scan going forward. The workflow avoids PR-history false positives while still scanning the submitted tree. |
 | D8 | **`npm-pack-dry-run.yml`** wraps the existing `scripts/check-pack.mjs` (CS13) as a standalone workflow so it can be a named status check at CS15b. No new logic. | Reuses existing self-host-guarded linter. |
 | D9 | **Repo settings** that need GitHub UI: prepared as a one-page checklist at `docs/cs15a-repo-settings-checklist.md`. User applies; I verify state via `gh api repos/henrik-me/agent-harness` after they confirm. | I have no settings-API write access. |
 | D10 | **`pre-flip-readiness.md`** is the single artifact summarizing all 25 preconditions with checkbox status; ALSO contains the "Action required from @henrik-me" checklist (App + repo settings) so the user has one document to work from. | One document, one source of truth. |
@@ -147,9 +145,9 @@ Per the user authorization (2026-05-09):
 - [x] All extracted-from-gwn content owned by user / MIT-compatible (git history authored by henrik-me/henrikm; source repo is public; project license MIT).
 
 ### Status-check existence (#25)
-- [x] `.github/workflows/secret-scan.yml` — gitleaks-action workflow on PR + main; uses pinned action SHA per LRN-075.
+- [x] `.github/workflows/secret-scan.yml` — gitleaks `8.30.1` workflow on PR + main; verifies the release checksum before scanning.
 - [x] `.github/workflows/npm-pack-dry-run.yml` — wraps `scripts/check-pack.mjs` as a standalone workflow.
-- [ ] After both workflows ship: trigger them on the cs15a content PR; verify both green; capture run URLs in `pre-flip-readiness.md` as evidence for #25.
+- [x] Both workflows are green on PR #74 at head `8b9e839`; required contexts also include `commit-trailers`, `pr-body`, `check-workflow-pins`, and `check-public-artifact`.
 
 ### `pre-flip-readiness.md` artifact
 - [x] `docs/pre-flip-readiness.md` — single source of truth for CS15b. Contains:
@@ -185,9 +183,9 @@ Per the user authorization (2026-05-09):
 | Public-facing files (#9-14) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Repo-settings checklist (#15-18) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (user settings changes still external) \| learnings=0 |
 | Secret/IP scan (#19-24) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| New workflows (#25) | in_progress | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=partial (workflow files done; PR run evidence pending) \| learnings=0 |
+| New workflows (#25) | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete (all 9 required check contexts green on PR #74 at `8b9e839`) \| learnings=0 |
 | `pre-flip-readiness.md` artifact | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 |
-| GPT-5.5 content rubber-duck | planned | — | agent-id=— \| role=reviewer \| report-status=pending \| learnings=0 |
+| GPT-5.5 content rubber-duck | done | yoga-ah | agent-id=yoga-ah \| role=reviewer \| report-status=complete (targeted workflow/security review outcome: GO after immutable-diff fix) \| learnings=0 |
 | User actions: App + repo settings | planned | henrik-me | external dependency |
 | Bot dry-run + readiness update | planned | — | agent-id=— \| role=orchestrator \| report-status=pending \| learnings=0 |
 | GPT-5.5 plan-vs-impl review | planned | — | agent-id=— \| role=reviewer \| report-status=pending \| learnings=0 |
