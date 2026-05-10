@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs15d/content",
-  "resolved_sha": "5d095a154cf913deda084230e0041e28a2fddf56",
+  "resolved_sha": "c40fa8926a043533b45c8f321042a4e183ad7775",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-10T07:21:26.134Z",
+  "synced_at": "2026-05-10T07:23:56.572Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -85,7 +85,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "9673a61db03a0d91ff581683161ff9178e7bcd3d81d317ac56e30e380a6d797a",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
