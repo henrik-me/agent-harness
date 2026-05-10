@@ -65,6 +65,10 @@ describe('private-smoke.yml workflow shape', () => {
     assert.match(yaml, /npx -y "github:henrik-me\/agent-harness#\$\{REF\}"/);
   });
 
+  it('pins npm 11 before npx github install smoke', () => {
+    assert.match(yaml, /npm install -g npm@11\.2\.0/);
+  });
+
   it('uses GH_TOKEN from secrets.GITHUB_TOKEN env (no plaintext token)', () => {
     assert.match(yaml, /GH_TOKEN:\s*\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}/);
     assert.ok(!/ghp_[A-Za-z0-9]{36,}/.test(yaml), 'workflow must not contain a real-looking PAT');

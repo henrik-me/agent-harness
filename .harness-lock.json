@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs15a/restart-docs",
-  "resolved_sha": "dfee1dbe934327b209e0cea054ab4e1245ed6e55",
+  "harness_ref": "dependabot-cleanup/actions-updates",
+  "resolved_sha": "9a5d5af576bf0cdc3f2116867dbdb80c52ec876c",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-10T04:44:53.327Z",
+  "synced_at": "2026-05-10T04:54:39.554Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -57,7 +57,7 @@
       "target": ".github/workflows/harness-drift.yml",
       "source_template": "template/managed/.github/workflows/harness-drift.yml",
       "class": "managed",
-      "rendered_hash": "3227d99c38c732381aa42b90d796c6c8cb2d7af0de9aade316fc6f30fd6c6489",
+      "rendered_hash": "de959c3ab24da44d7fc281d0aa72bdf45796067449599214900cae6cac3cddb2",
       "action": "skipped"
     },
     {

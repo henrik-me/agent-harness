@@ -80,6 +80,11 @@ jobs:
           git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
 
+      - name: 'Pin npm 11.x (works around npm 10.x GitFetcher bug)'
+        # Actions-hosted Node 20 can ship npm 10.x, whose `npx github:...#<sha>`
+        # path fails with `GitFetcher requires an Arborist constructor`.
+        run: npm install -g npm@11.2.0
+
       - name: Smoke — npx --help
         env:
           REF: ${{ steps.derive.outputs.ref }}

@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-10 (CS15a restart review: LRN-080..083 added)
+> **Last updated:** 2026-05-10 (Dependabot PR cleanup note added to LRN-081)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -1691,17 +1691,17 @@ date: 2026-05-10
 category: tooling
 source_cs: CS15a
 status: applied
-tags: [dependabot, public-flip, npm-audit, security-alerts, close-out]
+tags: [dependabot, dependabot-prs, public-flip, npm-audit, security-alerts, close-out]
 claim_area: release-security
 ```
 
 **Problem:** After the repository was flipped public, GitHub reported two high Dependabot alerts for `fast-uri` on the default branch. Earlier CS15a checks had enabled Dependabot/security settings and verified the public-readiness scan posture, but the alerts only became visible as live repository security state after the public flip and before the close-out PR merged.
 
-**Finding:** Public-visibility flips can expose default-branch dependency alerts that are not fully represented by the pre-flip checklist or by non-default-branch PR state. Close-out for a public flip should include a live Dependabot-alert readback plus an ecosystem-native audit (`npm audit --audit-level=high` here). If alerts are actionable via lockfile updates, fix them before declaring the public-readiness CS complete.
+**Finding:** Public-visibility flips can expose default-branch dependency alerts that are not fully represented by the pre-flip checklist or by non-default-branch PR state. Close-out for a public flip should include a live Dependabot-alert readback, an open Dependabot PR/issue audit, plus an ecosystem-native audit (`npm audit --audit-level=high` here). If alerts are actionable via lockfile updates, fix them before declaring the public-readiness CS complete; if Dependabot PRs remain open after the default branch is fixed, either merge a corrected PR or close the stale bot PR with evidence.
 
-**Evidence:** During CS15a close-out, GitHub push output reported two high vulnerabilities. `gh api repos/henrik-me/agent-harness/dependabot/alerts` showed two open `fast-uri` alerts (`GHSA-v39h-62p7-jpjc`, `GHSA-q3j6-qgpj-74h6`) against `package-lock.json`; `npm update fast-uri --package-lock-only` moved `fast-uri` from `3.1.0` to `3.1.2`; `npm audit --audit-level=high` then reported `found 0 vulnerabilities`; final Dependabot alert readback returned `[]`.
+**Evidence:** During CS15a close-out, GitHub push output reported two high vulnerabilities. `gh api repos/henrik-me/agent-harness/dependabot/alerts` showed two open `fast-uri` alerts (`GHSA-v39h-62p7-jpjc`, `GHSA-q3j6-qgpj-74h6`) against `package-lock.json`; `npm update fast-uri --package-lock-only` moved `fast-uri` from `3.1.0` to `3.1.2`; `npm audit --audit-level=high` then reported `found 0 vulnerabilities`; final Dependabot alert readback returned `[]`. Post-closeout audit found stale Dependabot PR #57 for the already-fixed `fast-uri` lockfile update and Dependabot PR #75 for GitHub Actions updates; PR #75 failed because bot-only root workflow edits caused harness template/lock drift, proving the PR audit must include whether bot updates need source-template propagation.
 
-**Disposition:** Applied in CS15a PR #82 by updating `package-lock.json` and recording evidence in `docs/pre-flip-readiness.md`. Future public-flip close-outs should add two explicit checks before final completion: `gh api repos/:owner/:repo/dependabot/alerts` for open alerts and the relevant package-manager audit command for the repository ecosystem.
+**Disposition:** Applied in CS15a PR #82 by updating `package-lock.json` and recording evidence in `docs/pre-flip-readiness.md`; extended during post-closeout Dependabot cleanup by handling stale/open bot PRs. Future public-flip close-outs should add three explicit checks before final completion: `gh api repos/:owner/:repo/dependabot/alerts` for open alerts, `gh pr list --state open --author app/dependabot`, and the relevant package-manager audit command for the repository ecosystem.
 
 ### LRN-082
 
