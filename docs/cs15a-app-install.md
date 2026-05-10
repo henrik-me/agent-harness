@@ -9,7 +9,27 @@ The `agent-harness-workboard-bot` GitHub App backs `.github/workflows/workboard-
 Why an App and not a PAT? Least-privilege scoped permissions, dedicated
 identity, no PAT rotation, no human-account credential leak surface.
 
-## Step 1 — Register the App
+## Recommended helper path
+
+From the repository root, run:
+
+```powershell
+node scripts/cs15a-workboard-app-helper.mjs --manifest
+```
+
+The helper starts a local callback server, opens a browser page with a
+preconfigured GitHub App manifest, exchanges the returned one-time code with
+GitHub, stores the two `WORKBOARD_BOT_*` repository secrets through `gh`, and
+opens the App installation page. Install the App on **only**
+`henrik-me/agent-harness`.
+
+After installing, validate with:
+
+```powershell
+node scripts/cs15a-workboard-app-helper.mjs --validate
+```
+
+## Manual fallback — Step 1: Register the App
 
 1. Go to <https://github.com/settings/apps/new> (your personal account; do NOT use an organization account for this).
 2. Fill the registration form:
@@ -26,19 +46,30 @@ identity, no PAT rotation, no human-account credential leak surface.
 6. **Where can this GitHub App be installed?** "Only on this account."
 7. Click **Create GitHub App**.
 
-## Step 2 — Generate a private key
+## Manual fallback — Step 2: Generate a private key
 
 1. On the App's settings page, scroll to **Private keys**.
 2. Click **Generate a private key**. A `.pem` file downloads — keep it; we need its contents in step 4.
 
-## Step 3 — Install on the harness repo
+## Manual fallback — Step 3: Install on the harness repo
 
 1. On the App's settings page, click **Install App** in the left nav.
 2. Click **Install** next to your account (`henrik-me`).
 3. Choose **Only select repositories** → select `henrik-me/agent-harness`.
 4. Confirm install.
 
-## Step 4 — Store credentials as repo secrets
+## Manual fallback — Step 4: Store credentials as repo secrets
+
+Either use the helper:
+
+```powershell
+node scripts/cs15a-workboard-app-helper.mjs `
+  --set-secrets `
+  --app-id <numeric-app-id> `
+  --private-key C:\path\to\downloaded-key.pem
+```
+
+Or use the GitHub UI:
 
 1. Go to <https://github.com/henrik-me/agent-harness/settings/secrets/actions>.
 2. Add a **New repository secret**:
