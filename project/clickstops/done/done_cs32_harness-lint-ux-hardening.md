@@ -1,10 +1,10 @@
 # CS32 — Harness lint UX hardening + sub-agent path discipline (umbrella)
 
-**Status:** active
+**Status:** done
 **Owner:** orchestrator
 **Branch:** cs32/harness-lint-ux-hardening
 **Started:** 2026-05-12
-**Closed:** —
+**Closed:** 2026-05-12
 **Filed by:** Post-CS31 follow-up batch — addresses the three open LRNs filed during the CS30/CS31 close-out batch (LRN-104, LRN-105, LRN-106) that were each tagged "Open. Action will be filed as a planned CS." Bundling into one umbrella because all three are small follow-ups from the same CS30 retrospective. Single-orchestrator emergency mode per LRN-103.
 **Depends on:** CS30 (introduced --explain registry, briefing-preamble path discussion, and --only/--skip flags); CS31 (introduced the --only zero-match validation that D1 mirrors).
 
