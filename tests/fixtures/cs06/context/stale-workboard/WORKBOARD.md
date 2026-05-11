@@ -13,9 +13,3 @@
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS07 | Next batch of linters | claimed | test-agent | cs07/content | 2026-05-03 | _(none)_ |
-
-## Recently Completed
-
-| CS | Title | Closed | Notes |
-|---|---|---|---|
-| CS06 | Structural linters | 2026-05-03 | Done. |

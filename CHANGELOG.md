@@ -11,11 +11,18 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
-### Changed
+- **LRN-102** ([LEARNINGS.md](LEARNINGS.md#lrn-102)): WORKBOARD shows live coordination state only — never duplicate the planned/ queue or done/ history.
+
+### Changed (BREAKING)
+
+- **WORKBOARD shape (CS28):** `WORKBOARD.md` and `template/seeded/WORKBOARD.md` no longer contain `## Queued` or `## Recently Completed` sections. Live coordination state only — Orchestrators table + Active Work table. The queue lives in `project/clickstops/planned/` (filesystem source-of-truth, priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. **Consumer migration:** running `harness sync` against an existing consumer will diff the seeded WORKBOARD template, but seeded files are create-if-missing — existing WORKBOARDs are not auto-rewritten. Consumers should manually delete their `## Queued` and `## Recently Completed` sections; `harness lint` (`check-workboard.mjs`) now forbids both headings (was: `Recently Completed` was *required*). Any orchestrator process docs / scripts referencing those sections must be updated to cross-link `project/clickstops/{planned,done}/` instead. Per CS28 / [LRN-102](LEARNINGS.md#lrn-102).
+- **`check-workboard.mjs` (CS28):** required headings reduced from `[Orchestrators, Active Work, Recently Completed]` to `[Orchestrators, Active Work]`; new check forbids `## Queued` and `## Recently Completed` headings (any occurrence is an error); removed the previous "exactly one Recently Completed" duplicate-section check and the "stale in-flight language in Recently Completed rows" check (both obsolete — the section is now forbidden). Per CS28.
+- **`template/managed/TRACKING.md` (CS28):** rewritten lifecycle/state-table prose to drop "Queued" (now "Planned") wording and to clarify that close-out removes the WORKBOARD Active Work row (the `done/` directory IS the historical record — no "moves to Recently Completed" step). Per CS28.
+- **`README.md` (CS28):** `WORKBOARD.md` per-path description rewritten to "Live coordination only — Orchestrators + Active Work. Nothing else." Per CS28.
 
 ### Fixed
 
-### Changed (BREAKING)
+### Changed
 
 ## [0.2.0] — 2026-05-10
 

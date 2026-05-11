@@ -63,7 +63,7 @@ Per-path purpose:
 | `INSTRUCTIONS.md` | Orchestrator workflow — bootstrap reading order, Session Start checklist (incl. sanity-check commands), Per-CS Loop, "When to Add X" recipes |
 | `OPERATIONS.md` | Lifecycle procedures — Claim / Dispatch / Sync / Harvest / SemVer / Conventions; canonical sub-agent briefing preamble |
 | `CONTEXT.md` | Current state, recently completed CSs with commit refs, active CS pointer, blockers, parallelism posture |
-| `WORKBOARD.md` | Live coordination — Orchestrators table, Active Work (single-row by discipline), Recently Completed, Queued |
+| `WORKBOARD.md` | Live coordination only — Orchestrators table + Active Work table. Nothing else. The queue lives in `project/clickstops/planned/` and history in `project/clickstops/done/`; WORKBOARD never duplicates either. |
 | `LEARNINGS.md` | Process learnings (LRN-001..N), schema-validated, sectioned by status |
 | `ARCHITECTURE.md` | Architecture overview — Components, Data model, Decision log |
 | `REVIEWS.md` | Independent-reviewer model, taxonomy, HIGH-RISK CS list, GPT-5.5 fallback rules |

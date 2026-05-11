@@ -95,18 +95,29 @@ function logError(msg) {
 // Check 1 — Required headings present
 // ---------------------------------------------------------------------------
 
-const REQUIRED_HEADINGS = ['Orchestrators', 'Active Work', 'Recently Completed'];
+const REQUIRED_HEADINGS = ['Orchestrators', 'Active Work'];
 const headingFindings = assertHeadings(markdownText, REQUIRED_HEADINGS);
 for (const f of headingFindings) {
   logError(`Missing required heading: "${f.heading}"`);
 }
 
 const normalizedMarkdown = markdownText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-const recentlyCompletedHeadingCount = (normalizedMarkdown.match(/^## Recently Completed\s*$/gm) ?? []).length;
-if (recentlyCompletedHeadingCount > 1) {
-  logError(
-    `WORKBOARD.md must contain exactly one "## Recently Completed" section; found ${recentlyCompletedHeadingCount}`
-  );
+
+// CS28: WORKBOARD must NOT contain Queued or Recently Completed sections —
+// the queue lives in project/clickstops/planned/ and history in
+// project/clickstops/done/. WORKBOARD is live coordination state only.
+const FORBIDDEN_HEADINGS = [
+  { name: 'Recently Completed', re: /^##\s+Recently Completed\s*$/gm },
+  { name: 'Queued', re: /^##\s+Queued\b/gm },
+];
+for (const fh of FORBIDDEN_HEADINGS) {
+  const count = (normalizedMarkdown.match(fh.re) ?? []).length;
+  if (count > 0) {
+    logError(
+      `WORKBOARD.md must not contain a "## ${fh.name}" section ` +
+      `(filesystem is source-of-truth: planned/ for queue, done/ for history) — found ${count}`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -231,22 +242,6 @@ for (const row of activeRows) {
     if (!/^CS\d{2,}[a-z]?$/.test(csId)) {
       logError(
         `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d{2,}(a-z)? format`
-      );
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Check 5 — Recently Completed rows must not contain stale in-flight language
-  // ---------------------------------------------------------------------------
-
-  const completedRows = parseTableRows(markdownText, 'Recently Completed');
-  for (const row of completedRows) {
-    const cs = (row['CS'] ?? '').trim();
-    const rowText = Object.values(row).join(' ');
-    if (/\b(pending|tbd|in progress)\b/i.test(rowText)) {
-      logError(
-        `Recently Completed row${cs ? ` ${cs}` : ''} contains stale in-flight language ` +
-        `("pending", "TBD", or "in progress")`
       );
     }
   }

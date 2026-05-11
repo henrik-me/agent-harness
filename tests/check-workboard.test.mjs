@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import require_fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -121,30 +122,80 @@ describe('check-workboard linter', () => {
     );
   });
 
-  // 5. Duplicate Recently Completed sections → exit 1
-  it('5. duplicate Recently Completed sections exit 1', () => {
-    const r = runLinter(['--file', fixture('duplicate-recently-completed.md')]);
-    assert.equal(
-      r.status, 1,
-      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
-    );
-    assert.ok(
-      r.stdout.includes('exactly one') && r.stdout.includes('Recently Completed'),
-      `Expected duplicate Recently Completed error; got:\n${r.stdout}`
-    );
+  // 5. Forbidden ## Recently Completed section → exit 1 (CS28)
+  it('5. forbidden Recently Completed section exits 1', () => {
+    const tmp = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs06', 'workboard', '_tmp_forbidden_rc.md');
+    const content = [
+      '# Work Board',
+      '',
+      '## Orchestrators',
+      '',
+      '| Agent ID | Machine | Repo Folder | Status | Last Seen |',
+      '|----------|---------|-------------|--------|-----------|',
+      '| test-ag  | TEST-PC | C:\\src\\test | 🟢 Active | 2026-05-01T00:00Z |',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS07 | Implement something | in-progress | test-ag | cs07/work | 2026-05-01 | _(none)_ |',
+      '',
+      '## Recently Completed',
+      '',
+      '| CS | Title | Closed | Notes |',
+      '|----|-------|--------|-------|',
+      '| CS06 | Structural linters | 2026-05-01 | Done. |',
+      '',
+    ].join('\n');
+    require_fs.writeFileSync(tmp, content);
+    try {
+      const r = runLinter(['--file', tmp]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('must not contain') && r.stdout.includes('Recently Completed'),
+        `Expected forbidden Recently Completed error; got:\n${r.stdout}`
+      );
+    } finally {
+      require_fs.unlinkSync(tmp);
+    }
   });
 
-  // 6. Recently Completed rows with stale in-flight language → exit 1
-  it('6. stale Recently Completed row exits 1', () => {
-    const r = runLinter(['--file', fixture('stale-completed.md')]);
-    assert.equal(
-      r.status, 1,
-      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
-    );
-    assert.ok(
-      r.stdout.includes('stale in-flight language'),
-      `Expected stale language error; got:\n${r.stdout}`
-    );
+  // 6. Forbidden ## Queued section → exit 1 (CS28)
+  it('6. forbidden Queued section exits 1', () => {
+    const tmp = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs06', 'workboard', '_tmp_forbidden_q.md');
+    const content = [
+      '# Work Board',
+      '',
+      '## Orchestrators',
+      '',
+      '| Agent ID | Machine | Repo Folder | Status | Last Seen |',
+      '|----------|---------|-------------|--------|-----------|',
+      '| test-ag  | TEST-PC | C:\\src\\test | 🟢 Active | 2026-05-01T00:00Z |',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS07 | Implement something | in-progress | test-ag | cs07/work | 2026-05-01 | _(none)_ |',
+      '',
+      '## Queued',
+      '',
+      '| Order | CS | Title | Notes |',
+      '|---|---|---|---|',
+      '| 1 | CS08 | Next thing | Notes. |',
+      '',
+    ].join('\n');
+    require_fs.writeFileSync(tmp, content);
+    try {
+      const r = runLinter(['--file', tmp]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('must not contain') && r.stdout.includes('Queued'),
+        `Expected forbidden Queued error; got:\n${r.stdout}`
+      );
+    } finally {
+      require_fs.unlinkSync(tmp);
+    }
   });
 
   // 7. Real-file regression: actual WORKBOARD.md → exit 0
