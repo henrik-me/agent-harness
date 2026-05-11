@@ -18,6 +18,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
   `public-artifact`, `readme`, `scaffold-readme`, `templates`,
   `workflow-pins`. Each entry documents the linter script, target file/dir,
   rule set, and a Why or Canonical-seed line. Per CS32/D3, applies LRN-104.
+- `harness lint cs-plan`: new linter that flags harness-repo-internal path prefixes (`template/composed/`, `lib/`, etc.) inside consumer CS plans; self-host-guarded. Closes the second half of LRN-105 (CS34).
 
 ### Changed
 
