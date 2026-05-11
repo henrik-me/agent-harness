@@ -1,8 +1,8 @@
 {
-  "harness_ref": "v0.3.0",
-  "resolved_sha": "58f18585c8d6864c998fe0a4ce13d625340d94bc",
+  "harness_ref": "cs32/harness-lint-ux-hardening",
+  "resolved_sha": "3e0e9fc18075c1236271cf03d5c3b62035fd8cc9",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-11T02:38:46.028Z",
+  "synced_at": "2026-05-11T04:00:15.720Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -84,21 +84,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "c73d20e6ebe124015be54426d62529841019f8c4b061fc62123db6e6aa94637b",
+      "rendered_hash": "ebb85e9e5e4b157e1f4d577364916237219835895b80f69897e624e8adbec5cd",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1079,
-            "end": 1081
+            "start": 1087,
+            "end": 1089
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "d8fcd412b715410af179bb6e042d7aba43d33b639f5ed440b8724ae48afacd42"
+      "template_prose_hash": "71acca36d0f49285d8ca00fce780f7d8455fc98693e5134b9d116ee5e7fbc531"
     },
     {
       "target": "REVIEWS.md",
@@ -138,14 +138,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "17bd5895b9c015589f55a2496b80fd7db5bd52d1dd9180edadbe163ecb1daa70",
+      "rendered_hash": "a4b23b1056bc09811afd361175cf34130e4b64f57a0fe554b50ddd94b3af0cf9",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "525a56c57cae497ce520df8b27e952f4b20dc6687f44d4817d9ca8df5628440c",
+      "rendered_hash": "44b48ec6258e1dbc35c5933592f16695892d97273b5551e7c1a60b128c7a9010",
       "action": "preserved"
     }
   ],

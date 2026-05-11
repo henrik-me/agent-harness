@@ -9,7 +9,25 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+### Added
+
+- **`harness lint --explain` covers all 18 shipped linters** (was 3 in
+  v0.3.1: `architecture`, `text-encoding`, `workboard`). New entries:
+  `clickstop`, `commit-trailers`, `compose-v2`, `composed-blocks`,
+  `context`, `fixtures`, `instructions`, `learnings`, `pack`, `pr-body`,
+  `public-artifact`, `readme`, `scaffold-readme`, `templates`,
+  `workflow-pins`. Each entry documents the linter script, target file/dir,
+  rule set, and a Why or Canonical-seed line. Per CS32/D3, applies LRN-104.
+
 ### Changed
+
+- **`harness lint --skip NAME`** now exits 2 with a known-linters list when
+  `NAME` matches no linter, instead of silently no-op'ing the unknown
+  name. Mirrors the CS31 `--only` validation. Mixed valid+typo
+  selections (e.g. `--skip workflow-pins,typo`) also fail. The error
+  matches the `--only` UX. A typo in a CI workflow that intends to
+  skip a renamed/removed linter no longer silently re-runs that
+  linter — the typo is surfaced. Per CS32/D1, applies LRN-106.
 
 - **`harness lint --only NAME` and `harness lint:NAME`** now exit 2 with a
   known-linters list when `NAME` matches no linter, instead of silently
