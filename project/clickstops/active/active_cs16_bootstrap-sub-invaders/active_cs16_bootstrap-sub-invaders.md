@@ -1,11 +1,11 @@
 # CS16 — Bootstrap Sub Invaders from harness (greenfield)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs16/content
+**Started:** 2026-05-11
 **Closed:** —
-**Filed by:** Authored 2026-05-10 to unblock the WORKBOARD CS16 row (queued since CS15f close-out). Scope expanded vs. rev. 2 master plan ([`harness-cs-plan.md`](../done/done_cs01_bootstrap-repo/harness-cs-plan.md) § CS16) per user direction on 2026-05-10 to: (a) validate **harness governance of unsupervised agent work** end-to-end via three follow-on SI-CSs, not just `harness init`; (b) **mirror harness-repo standards** on the new sub-invaders repo (Ruleset, App, scanning, templates); (c) lock in a **.NET 8 isolated** backend + **vanilla JS frontend with a custom extractable game engine**, overriding master-plan Decisions #8 (TypeScript) and #9 (Node Function).
+**Filed by:** Authored 2026-05-10 to unblock the WORKBOARD CS16 row (queued since CS15f close-out). Scope expanded vs. rev. 2 master plan ([`harness-cs-plan.md`](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md) § CS16) per user direction on 2026-05-10 to: (a) validate **harness governance of unsupervised agent work** end-to-end via three follow-on SI-CSs, not just `harness init`; (b) **mirror harness-repo standards** on the new sub-invaders repo (Ruleset, App, scanning, templates); (c) lock in a **.NET 8 isolated** backend + **vanilla JS frontend with a custom extractable game engine**, overriding master-plan Decisions #8 (TypeScript) and #9 (Node Function).
 **Depends on:** CS22 (**closed 2026-05-10**; [`v0.2.0`](https://github.com/henrik-me/agent-harness/releases/tag/v0.2.0) published — the pin target; supersedes CS14 as the pin target now that v0.2.0 captures the full post-CS14 delta), CS15a (public flip + Ruleset shape proven), CS15e (constraint-detection flow), CS10 (scaffolds)
 
 ## Scope refinement (2026-05-11) — AUTHORITATIVE
@@ -169,7 +169,7 @@ The headline non-goal is feature-completeness of Sub Invaders v1. The three SI-C
 - `henrik-me/sub-invaders` does **not exist** as of CS16 planning (verified via `gh repo view henrik-me/sub-invaders` → 404 on 2026-05-10). CS16 creates it.
 - The harness has been **public** since CS15a; consumers no longer need PAT/GitHub-App tokens to `npx -y "github:henrik-me/agent-harness#v0.2.0"`.
 - `v0.2.0` is the latest published harness tag (cut by CS22, **closed 2026-05-10**, content-PR squash SHA `1484de7536d062461bfde8abe1779864fe5c2c7d`; release.yml run [`25643171684`](https://github.com/henrik-me/agent-harness/actions/runs/25643171684) SUCCESS; private-smoke against `v0.2.0` run [`25643193863`](https://github.com/henrik-me/agent-harness/actions/runs/25643193863) SUCCESS). It captures the full post-CS14 delta: CS02b BREAKING (top-level `local_blocks` removal), CS03d/CS03e (template prose-hash + legacy-mapping schema), CS06c (centralised doc-schema primitives), CS08c (extended check-templates markdown context), and the entire CS15-series (a/c/d/e/f). CS16 pins `v0.2.0`. SI-CS03 explicitly tests the **version-pin upgrade path** by bumping the pin to a newer published tag (cut between CS16 close and SI-CS03 claim — likely as a follow-up to CS21's gwn harvest if any apply landed in the distributed surface) or falling back to a `main`-SHA pin if none exists.
-- This is the **first cross-repo CS** in the project. CS16 deliverables span both repos. Sub-agent file-ownership rules ([LRN-016](../../../LEARNINGS.md#lrn-016)) apply across the boundary — every owned file is qualified `<repo>:<path>` in the briefings. A new learning candidate (`cross-repo-cs-mechanics`) should be filed if any non-obvious mechanics surface.
+- This is the **first cross-repo CS** in the project. CS16 deliverables span both repos. Sub-agent file-ownership rules ([LRN-016](../../../../LEARNINGS.md#lrn-016)) apply across the boundary — every owned file is qualified `<repo>:<path>` in the briefings. A new learning candidate (`cross-repo-cs-mechanics`) should be filed if any non-obvious mechanics surface.
 - Master-plan Decisions #8 and #9 are explicitly **superseded** by user direction 2026-05-10. The supersession is recorded here (decisions C16-9..C16-12) rather than amending the master plan, because the master plan is a historical artefact of CS01.
 - The master plan's only gameplay-design content is row 5 ("sea-themed Space Invaders") plus row 597 ("full spec in CS16"). The full spec lives in this CS plan's [§ Game design](#game-design-sub-invaders-v1) section, and the durable home (after bootstrap) is `sub-invaders:ARCHITECTURE.md § Game design` per deliverable §5 (`architecture-source.md`).
 
@@ -284,7 +284,7 @@ The engine MUST contain only game-agnostic primitives. The line is enforced by C
 | C16-5 | Branch protection on sub-invaders | **Apply same `main-protection` Ruleset shape as CS15a, AS PART OF CS16** (not deferred to SI-CS01) | User directive: "ensure there are branch protections etc. ensuring it follows the same standards as the harness project itself in terms of contributions." Bootstrap commit lands BEFORE Ruleset application; Ruleset goes on AFTER first push, BEFORE opening any SI-CS PR. |
 | C16-6 | SI-CS01–03 scope | See § "Three SI-CSs queued" below | User direction 2026-05-10. |
 | C16-7 | Azure subscription confirmation | **Hard claim-time prerequisite.** User confirms subscription is accessible before opening the CS16 claim PR. If unavailable, CS16 is **blocked** with `azure-subscription-unavailable` reason in WORKBOARD until resolved. | Master-plan prerequisites checklist (line 57); was always deferred to CS16. |
-| C16-8 | Cumulative LRN reservation | LRN-100..LRN-115 advisory (re-check at filing per [LRN-086](../../../LEARNINGS.md#lrn-086)) | Generous reservation; first cross-repo CS + new tech stack likely surfaces several mechanics LRNs. |
+| C16-8 | Cumulative LRN reservation | LRN-100..LRN-115 advisory (re-check at filing per [LRN-086](../../../../LEARNINGS.md#lrn-086)) | Generous reservation; first cross-repo CS + new tech stack likely surfaces several mechanics LRNs. |
 | **C16-9** | **Backend tech** | **Azure Functions (.NET 8 isolated worker model), hosted as SWA-managed Functions (route: `/api/*`)** | User directive: ".net". Isolated model is current Microsoft recommendation; in-process .NET in Azure Functions sunsets 2026-11-10. SWA-managed Functions = single deploy pipeline (no separate Function App resource), free tier supports it. |
 | **C16-10** | **Frontend tech** | **Vanilla JavaScript (ES2022), HTML5 Canvas, ES modules served directly (no bundler, no transpiler, no TypeScript). Zero runtime deps in browser. Dev-only deps allowed (e.g. `@types/*` JSDoc shims for editor support, but no build step.)** | User directive: "front end in .js (with no to few libraries)" + "Keep it simple". Native browser ES modules in 2026 cover everything we need; no need for Webpack/Vite/Rollup/tsc. |
 | **C16-11** | **Game engine** | **Custom, in-tree at `src/engine/`, structured for future extraction. Hard rule: zero `import` from `src/engine/` to anything outside `src/engine/` (one-way dep).** A `src/engine/README.md` documents the engine API surface, the extraction contract, and the future repo target (placeholder: `henrik-me/canvas-game-engine`). Extraction itself is **deferred** to a later CS (likely CS17b-equivalent or first multi-game CS). | User directive: "build our own simple game engine ... separate and can be extracted into it's own library later". |
@@ -298,16 +298,16 @@ The engine MUST contain only game-agnostic primitives. The line is enforced by C
 
 ### In `agent-harness` (this repo) — committed during CS16's content PR
 
-1. **`project/clickstops/active/active_cs16_bootstrap-sub-invaders/`** (directory form per [TRACKING.md § Clickstop lifecycle](../../../TRACKING.md#clickstop-lifecycle)) containing:
+1. **`project/clickstops/active/active_cs16_bootstrap-sub-invaders/`** (directory form per [TRACKING.md § Clickstop lifecycle](../../../../TRACKING.md#clickstop-lifecycle)) containing:
    - `active_cs16_bootstrap-sub-invaders.md` — this file, renamed and Status flipped to `active`.
-   - `sub-invaders-bootstrap-summary.md` — sanitized post-execution summary (per [Decision #24](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#decisions-locked-in)): `harness init` exit code, `harness lint` summary inside sub-invaders, `harness sync --mode=check` result, the new repo's HEAD SHA, the 3 SI-CS planned filenames, the Azure resource IDs (sanitised — RG name + SWA name + Storage account name only; no subscription ID, no connection strings), Ruleset ID, App-install ID. **No raw logs, no secrets, no full-history.**
+   - `sub-invaders-bootstrap-summary.md` — sanitized post-execution summary (per [Decision #24](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md#decisions-locked-in)): `harness init` exit code, `harness lint` summary inside sub-invaders, `harness sync --mode=check` result, the new repo's HEAD SHA, the 3 SI-CS planned filenames, the Azure resource IDs (sanitised — RG name + SWA name + Storage account name only; no subscription ID, no connection strings), Ruleset ID, App-install ID. **No raw logs, no secrets, no full-history.**
    - `composed-block-source.md` — the authored content for the three local blocks before insertion into the sub-invaders repo.
    - `architecture-source.md` — the authored Sub Invaders ARCHITECTURE.md content (game architecture, .NET 8 isolated Function backend design, engine API contract + extraction plan, persistence schema, session-token design, rate-limit + replay-protection design) before insertion. **Also includes a `## Game design` section that elaborates the headlines from this CS16 plan's [§ Game design](#game-design-sub-invaders-v1) into the durable home** (sprite-layout sketches, timing tables, balance-tuning notes, modifier-pool full text). Headlines + the extraction contract live in CS16; full narrative + tuning land in `sub-invaders:ARCHITECTURE.md`.
    - `engine-readme-source.md` — the authored `src/engine/README.md` content (engine API surface, extraction contract, future repo target).
    - `si-cs-plans/planned_sics01_skeleton-and-playable-game.md`, `planned_sics02_persistent-leaderboard.md`, `planned_sics03_daily-challenge-with-sync.md` — verbatim copies of the SI-CS planned files committed to sub-invaders.
    - `si-cs-plans/planned_sicsNN_re-evaluate-persistence.md`, `planned_sicsNN_re-evaluate-cloudflare-full-stack.md` — re-eval planned files (master-plan deliverables; filed but not scheduled).
 
-2. **`done_cs16_*/` rename** at close-out per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) three-PR shape.
+2. **`done_cs16_*/` rename** at close-out per [OPERATIONS.md § Claim](../../../../OPERATIONS.md#claim) three-PR shape.
 
 ### In `henrik-me/sub-invaders` (new repo) — committed during CS16's execution
 
@@ -324,12 +324,12 @@ The engine MUST contain only game-agnostic primitives. The line is enforced by C
      --with-scaffold=seed \
      --with-scaffold=health-check
    ```
-   `--constraint-disposition` is recorded for shape only when tier is `public` (see [LRN-093](../../../LEARNINGS.md#lrn-093)); if init's stdout claims a disposition was applied to the public repo, that's a learning to file.
+   `--constraint-disposition` is recorded for shape only when tier is `public` (see [LRN-093](../../../../LEARNINGS.md#lrn-093)); if init's stdout claims a disposition was applied to the public repo, that's a learning to file.
 
 5. **Seeded harness files** (filled in, not skeleton):
    - `ARCHITECTURE.md` — full v1 architecture: vanilla JS + Canvas frontend; custom engine extraction contract; .NET 8 isolated Function backend; Storage Tables schema for leaderboard + sessions; session-token replay-protection design; rate-limit design; CI/CD topology.
    - `CONTEXT.md` — bootstrap state; CS plan pointer; "no SI-CS active yet, SI-CS01 ready to claim".
-   - `README.md` — follows [READMEGUIDE.md](../../../template/managed/READMEGUIDE.md): `## What this is` + `## Quickstart` (local dev: `npm test`, `dotnet test`, `swa start`) + `## Repo layout` + `## Architecture pointer` + `## Status` + `## License`.
+   - `README.md` — follows [READMEGUIDE.md](../../../../template/managed/READMEGUIDE.md): `## What this is` + `## Quickstart` (local dev: `npm test`, `dotnet test`, `swa start`) + `## Repo layout` + `## Architecture pointer` + `## Status` + `## License`.
    - `WORKBOARD.md` — initialised with the orchestrators table, an empty `## Active Work` table, and three rows in `## Queued (planned, ready to claim in order)` (SI-CS01, SI-CS02, SI-CS03). Each Queued row points at the corresponding planned file at `project/clickstops/planned/planned_sicsNN_*.md` per the standard harness convention.
    - `LEARNINGS.md` — empty harness-shaped skeleton (matches `template/seeded/LEARNINGS.md`).
 
@@ -522,12 +522,12 @@ CS16 close-out is permitted only when **all** the following are true and recorde
     - `SECURITY.md`, `CONTRIBUTING.md` (with the `Co-authored-by: Copilot ...` trailer requirement explicitly stated), `CODE_OF_CONDUCT.md`, `.github/pull_request_template.md`, `.github/copilot-instructions.md` (rendered from template, unmodified), `.github/CODEOWNERS` (single line `* @henrik-me`), `.github/ISSUE_TEMPLATE/*` all present.
     - `harness lint --quiet` inside sub-invaders shows `commit-trailers: pass` on the bootstrap PR's commit set (i.e. trailer enforcement is actually wired into CI, not just documented).
     - **Azure resource isolation (C16-14):** `infra/provision.sh` exists at the sub-invaders root; the bootstrap-summary records the dedicated RG name (default `rg-sub-invaders-prod`) plus the sanitised resource IDs of every resource in it (Storage, SWA, Budget, Action Group). The script's idempotency check (RG `workload=sub-invaders` tag verification) is observable in the script source. **Note:** at CS16 close-out the RG itself does NOT need to exist yet (G4 runs between bootstrap-PR-merge and SI-CS01-claim, which is post-CS16) — the close-out gate verifies the **script + plan** for isolation, not the live Azure footprint.
-12. **No-supervision validation gate:** the close-out summary must explicitly state that the bootstrap was completed without ad-hoc fixes to the harness mid-CS. If a harness fix WAS required, that fix lands as a separate harness CS (NOT CS16) before close-out, per the master plan's hot-fix policy ([Decision #21](../done/done_cs01_bootstrap-repo/harness-cs-plan.md#decisions-locked-in)).
+12. **No-supervision validation gate:** the close-out summary must explicitly state that the bootstrap was completed without ad-hoc fixes to the harness mid-CS. If a harness fix WAS required, that fix lands as a separate harness CS (NOT CS16) before close-out, per the master plan's hot-fix policy ([Decision #21](../../done/done_cs01_bootstrap-repo/harness-cs-plan.md#decisions-locked-in)).
 13. CS16-specific LRNs (cross-repo CS mechanics, init-flow surprises, scaffold-customization gotchas, .NET-Function bootstrap learnings, SWA managed-Functions friction points) filed in the close-out PR.
 
 ## Sub-agent fan-out
 
-8 sub-tasks with explicit disjoint file ownership per [LRN-016](../../../LEARNINGS.md#lrn-016). Cross-repo file paths are qualified `<repo>:<path>`.
+8 sub-tasks with explicit disjoint file ownership per [LRN-016](../../../../LEARNINGS.md#lrn-016). Cross-repo file paths are qualified `<repo>:<path>`.
 
 | # | Sub-agent | Owned files |
 |---|-----------|-------------|
@@ -545,7 +545,7 @@ CS16 close-out is permitted only when **all** the following are true and recorde
 - **Wave A (parallel, 8-way):** sub-agents 1–8, all in agent-harness, all writing disjoint files.
 - **Wave B (orchestrator-owned, sequential):** repo creation → push bootstrap commit (skeleton only) → `harness init` (against the cloned new repo, which is now public) → copy authored sources → second commit → push → `gh api` Ruleset + App-install verification + PVR + Dependabot enable + secret scanning verify → open sub-invaders bootstrap PR → wait for CI green → squash-merge → write bootstrap summary back here.
 
-Briefings MUST include all standard guards: no-commit preflight per [LRN-021](../../../LEARNINGS.md#lrn-021), schema source-of-truth per [LRN-039](../../../LEARNINGS.md#lrn-039), explicit `--file` per [LRN-032](../../../LEARNINGS.md#lrn-032), `requireValue` per [LRN-040](../../../LEARNINGS.md#lrn-040), canonical preamble verbatim per [LRN-068](../../../LEARNINGS.md#lrn-068), tempdirs in `os.tmpdir()` not REPO_ROOT per [LRN-094](../../../LEARNINGS.md#lrn-094). Cross-repo briefings additionally state which repo each owned file belongs to.
+Briefings MUST include all standard guards: no-commit preflight per [LRN-021](../../../../LEARNINGS.md#lrn-021), schema source-of-truth per [LRN-039](../../../../LEARNINGS.md#lrn-039), explicit `--file` per [LRN-032](../../../../LEARNINGS.md#lrn-032), `requireValue` per [LRN-040](../../../../LEARNINGS.md#lrn-040), canonical preamble verbatim per [LRN-068](../../../../LEARNINGS.md#lrn-068), tempdirs in `os.tmpdir()` not REPO_ROOT per [LRN-094](../../../../LEARNINGS.md#lrn-094). Cross-repo briefings additionally state which repo each owned file belongs to.
 
 ## Risks + open questions
 
@@ -563,7 +563,22 @@ Briefings MUST include all standard guards: no-commit preflight per [LRN-021](..
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| T1: Wave A — author SI-CS01 planned file (Repo hardening + first SWA staging deploy; ≥6 SAs) | pending | sub-agent `cs16-sics01-planner` | Owns `agent-harness:active_cs16_*/si-cs-plans/planned_sics01_repo-hardening-and-first-deploy.md`. Must include `## Sub-agent fan-out` table with disjoint owned files. |
+| T2: Wave A — author SI-CS02 planned file (Engine + game skeleton + minimal playable game; ≥8 SAs) | pending | sub-agent `cs16-sics02-planner` | Owns `agent-harness:active_cs16_*/si-cs-plans/planned_sics02_engine-and-minimal-game.md`. Pulls game-design spec from this CS's `## Game design` § for the in-scope subset (whale-shark + sound + mobile touch deferred). |
+| T3: Wave A — author SI-CS03 planned file (Backend Function project + persistent leaderboard; ≥8 SAs) | pending | sub-agent `cs16-sics03-planner` | Owns `agent-harness:active_cs16_*/si-cs-plans/planned_sics03_backend-and-leaderboard.md`. Must spec session-token replay protection per C16-12 + Storage Tables schema in full. |
+| T4: Wave A — author SI-CS04 planned file (Daily challenge + harness-sync exercise + whale-shark + v1 polish; ≥7 SAs) | pending | sub-agent `cs16-sics04-planner` | Owns `agent-harness:active_cs16_*/si-cs-plans/planned_sics04_daily-challenge-and-pin-bump.md`. Hard task #1: harness pin bump + `harness sync --mode=apply`. |
+| T5: Wave A — author 2 re-eval planned files (skeletons; deferred) | pending | sub-agent `cs16-reevals-planner` | Owns `agent-harness:active_cs16_*/si-cs-plans/planned_sicsNN_re-evaluate-persistence.md` AND `planned_sicsNN_re-evaluate-cloudflare-full-stack.md`. Tiny placeholders. |
+| T6: Wave B — `gh repo create henrik-me/sub-invaders` | pending | orchestrator (yoga-ah) | Public, MIT, description per deliverable §3. Covered by user "Work autonomously" + scope-refinement directive (G2 absorbed). |
+| T7: Wave B — clone + `harness init` in sub-invaders | pending | orchestrator (yoga-ah) | `cd C:\src\sub-invaders`; `npx -y "github:henrik-me/agent-harness#v0.2.0" init` with the 5 scaffolds per deliverable §4. |
+| T8: Wave B — folder skeleton (`src/engine/`, `src/game/`, `api/`, `infra/` each with `.gitkeep`) | pending | orchestrator (yoga-ah) | EMPTY skeletons only — no source code, no stubs (per scope refinement). |
+| T9: Wave B — copy SI-CS planned files into `sub-invaders:project/clickstops/planned/` | pending | orchestrator (yoga-ah) | The 4 active SI-CSs + 2 re-evals. Source-of-truth at execution time is the in-sub-invaders copy; the in-agent-harness copy is for CS16 close-out audit trail. |
+| T10: Wave B — populate `sub-invaders:WORKBOARD.md` `## Queued` with 4+2 rows | pending | orchestrator (yoga-ah) | SI-CS01..04 in priority order; re-evals at bottom with `priority=defer`. |
+| T11: Wave B — push bootstrap branch + open sub-invaders bootstrap PR + CI green + admin-merge | pending | orchestrator (yoga-ah) | No Ruleset on sub-invaders yet (SI-CS01's first deliverable), so admin-merge is straightforward. CI must be green (the harness `init` should produce a green-CI repo by construction). |
+| T12: Wave B — write `sub-invaders-bootstrap-summary.md` (sanitised; no secrets) | pending | orchestrator (yoga-ah) | In `agent-harness:active_cs16_*/`. Records: repo URL, init exit code, bootstrap commit SHA on sub-invaders, internal `harness lint` + `sync --mode=check` results inside sub-invaders, the 6 SI-CS planned filenames. |
+| T13: Open agent-harness CS16 content PR (branch `cs16/content`) | pending | orchestrator (yoga-ah) | All Wave A SI-CS plan files + summary in one content PR. CI green required. |
+| T14: **CHANGELOG-touch (LRN-101 pilot)** — append CS16 entry to `CHANGELOG.md` | pending | orchestrator (yoga-ah) | Pilots the convention CS24 will mechanically enforce. Single line per harness convention (date + CS-ID + one-line summary). |
+| T15: Plan-vs-implementation review (GPT-5.5 gate) | pending | orchestrator + review sub-agent | Per OPERATIONS.md § Plan-vs-implementation review (close-out gate). NEEDS-FIX blocks close-out. |
+| T16: Close-out PR (rename active → done; WORKBOARD; CONTEXT; LEARNINGS) | pending | orchestrator (yoga-ah) | Branch `cs16/closeout`. Standard 3-PR shape final step. |
 
 ## Notes / Learnings
 
@@ -571,4 +586,4 @@ Briefings MUST include all standard guards: no-commit preflight per [LRN-021](..
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
