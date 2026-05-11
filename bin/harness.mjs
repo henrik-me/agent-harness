@@ -1314,6 +1314,24 @@ async function cmdLint(args, _global) {
   const results = [];
   let anyError = false;
 
+  // CS31: validate that every name in --only / lint:NAME matches at least
+  // one known linter base name. Without this, a typo like
+  // `lint --only text-encding` silently exits 0 with "0 passed, 0 failed,
+  // 0 skipped" — a usability footgun that lets typos in CI workflows pass
+  // forever. Mirrors the --explain unknown-name UX (line ~1033).
+  if (only) {
+    const knownBaseNames = new Set(linters.map((l) => l.name.split(':')[0]));
+    const unknown = [...only].filter((n) => !knownBaseNames.has(n));
+    if (unknown.length > 0) {
+      const known = [...knownBaseNames].sort().join(', ');
+      const label = unknown.length === 1 ? 'name' : 'names';
+      die(
+        `harness lint --only: unknown linter ${label}: ${unknown.join(', ')}\nKnown: ${known}`,
+        2,
+      );
+    }
+  }
+
   for (const linter of linters) {
     const baseName = linter.name.split(':')[0];
     if (only && !only.has(baseName)) continue;

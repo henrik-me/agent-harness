@@ -9,7 +9,20 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
-(no entries yet)
+### Changed
+
+- **`harness lint --only NAME` and `harness lint:NAME`** now exit 2 with a
+  known-linters list when `NAME` matches no linter, instead of silently
+  exiting 0 with `Total: 0 passed, 0 failed, 0 skipped`. Refines the
+  CS30/D2 contract — the `lint:NAME` dispatcher rewrite is preserved
+  (the dispatcher still must NOT emit `Unknown subcommand` for `lint:typo`),
+  but `cmdLint` now rejects zero-match selections so a typo in a CI
+  workflow (e.g. `harness lint:text-encding`) fails loudly. Mixed
+  valid+typo selections (e.g. `--only learnings,typo`) also fail. The
+  error mirrors the existing `--explain unknown-name` UX —
+  `lint --explain <name>` is the canonical "give me help on one linter"
+  partner of `--only` / `lint:NAME` (see also LRN-104 on per-linter
+  explainability). Per CS31.
 
 ## [0.3.1] — 2026-05-12
 

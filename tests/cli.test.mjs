@@ -400,13 +400,49 @@ describe('harness lint', () => {
     assert.ok(!r.stdout.includes('context:'), `Expected context filtered out; got:\n${r.stdout}`);
   });
 
-  it('CS30/D2: lint:NAME alias survives an unknown linter name with a clean skip (filter, not error)', () => {
-    // The alias rewrites to --only <name>. If <name> doesn't match any linter,
-    // every linter is filtered out — exit 0 with a "0 passed, 0 failed, 0 skipped"
-    // body is acceptable; what we explicitly forbid is the dispatcher returning
-    // exit 2 ("Unknown subcommand") for `lint:something-typoed`.
+  it('CS31: lint:NAME with an unknown linter name exits 2 with a known-linters list (refines CS30/D2)', () => {
+    // CS30 / D2 originally accepted exit 0 + "0 passed, 0 failed, 0 skipped"
+    // for an unknown lint:NAME alias because the worse failure mode at the
+    // time was the dispatcher returning "Unknown subcommand" (which would
+    // have shadowed any future legitimate subcommand). CS31 keeps the
+    // dispatcher rewrite (lint:NAME → cmdLint --only NAME), but cmdLint now
+    // rejects zero-match selections with exit 2 + a useful known-linters
+    // list (mirrors the existing --explain unknown-name UX). This is a
+    // contract refinement, not a reversal — the dispatcher still must NOT
+    // emit "Unknown subcommand" for lint:typo.
     const r = run(['lint:does-not-exist-aaa', '--quiet']);
-    assert.notEqual(r.status, 2, `Expected non-usage exit; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.ok(
+      !r.stderr.includes('Unknown subcommand'),
+      `dispatcher must NOT shadow lint: with "Unknown subcommand"; got:\n${r.stderr}`,
+    );
+    assert.ok(
+      r.stderr.includes('does-not-exist-aaa'),
+      `Expected unknown name echoed in stderr; got:\n${r.stderr}`,
+    );
+    assert.ok(
+      r.stderr.includes('Known:'),
+      `Expected "Known:" listing in stderr; got:\n${r.stderr}`,
+    );
+  });
+
+  it('CS31: lint --only valid,typo (mixed) still exits 2 because of the typo', () => {
+    const r = run(['lint', '--only', 'learnings,typo-name-bbb', '--quiet']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stderr.includes('typo-name-bbb'),
+      `Expected unknown name "typo-name-bbb" echoed in stderr; got:\n${r.stderr}`,
+    );
+    // The "unknown linter name:" header line must list ONLY the typo, not the
+    // valid co-supplied name. (The Known: list at the bottom of stderr legitimately
+    // mentions every valid name, which is why we scope this assertion to the
+    // header line.)
+    const headerLine = r.stderr.split('\n').find((l) => l.startsWith('harness lint --only:'));
+    assert.ok(headerLine, `Expected "harness lint --only:" header line in stderr; got:\n${r.stderr}`);
+    assert.ok(
+      !headerLine.includes('learnings'),
+      `Did not expect valid name "learnings" in error header; got: ${headerLine}`,
+    );
   });
 
   // -------------------------------------------------------------------------
