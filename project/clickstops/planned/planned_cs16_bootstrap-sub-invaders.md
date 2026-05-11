@@ -8,6 +8,151 @@
 **Filed by:** Authored 2026-05-10 to unblock the WORKBOARD CS16 row (queued since CS15f close-out). Scope expanded vs. rev. 2 master plan ([`harness-cs-plan.md`](../done/done_cs01_bootstrap-repo/harness-cs-plan.md) § CS16) per user direction on 2026-05-10 to: (a) validate **harness governance of unsupervised agent work** end-to-end via three follow-on SI-CSs, not just `harness init`; (b) **mirror harness-repo standards** on the new sub-invaders repo (Ruleset, App, scanning, templates); (c) lock in a **.NET 8 isolated** backend + **vanilla JS frontend with a custom extractable game engine**, overriding master-plan Decisions #8 (TypeScript) and #9 (Node Function).
 **Depends on:** CS22 (**closed 2026-05-10**; [`v0.2.0`](https://github.com/henrik-me/agent-harness/releases/tag/v0.2.0) published — the pin target; supersedes CS14 as the pin target now that v0.2.0 captures the full post-CS14 delta), CS15a (public flip + Ruleset shape proven), CS15e (constraint-detection flow), CS10 (scaffolds)
 
+## Scope refinement (2026-05-11) — AUTHORITATIVE
+
+User direction 2026-05-11 (verbatim):
+
+> "you should stop when you have setup the folders and created the CS's, after harness init. we need to validate that the agent in the si repo can figure things out"
+>
+> "the scope is to ensure the new repo can build v1 leveraging the harness so anything you have in CS16 that should be done on the si repo should be filed as CS's ensuring it can work effectively in parallel and with sub agents as expected when working on a new project with the harness"
+
+**This § supersedes anything below in conflict.** Specifically: the original
+plan (rev. 2026-05-10) had CS16 author full ARCHITECTURE.md content, customise
+the three composed local blocks, ship engine + game + Function stub code,
+apply the `main-protection` Ruleset, install the workboard-auto-approve App,
+enable security features (secret scanning, push protection, CodeQL,
+Dependabot, PVR), provision Azure, and produce a parity-spec — all inside
+CS16. **All of that work is now reassigned to the SI-CSs filed by CS16.**
+
+### Effective CS16 scope
+
+In `henrik-me/sub-invaders` (new repo, post-`harness init`):
+1. Repo created (public, MIT) per deliverable §3.
+2. `harness init` run pinning `v0.2.0` with the 5 scaffolds per deliverable §4.
+3. Folder skeleton only: `src/engine/`, `src/game/`, `api/`, `infra/` each
+   containing a `.gitkeep` sentinel — **NO source code, NO stubs, NO
+   ARCHITECTURE.md content beyond what `harness init` renders, NO
+   composed-block customisation, NO ruleset, NO security settings, NO Azure
+   provisioning, NO `host.json`, NO `.csproj`, NO `index.html`**.
+4. Comprehensive SI-CS planned files (4 + 2 re-evals, see § SI-CS series
+   below) filed in `sub-invaders:project/clickstops/planned/`.
+5. `sub-invaders:WORKBOARD.md` `## Queued` populated with rows pointing at
+   the 4 + 2 planned files (re-evals with `priority=defer`).
+6. Bootstrap PR opened on sub-invaders, CI green, admin-merged
+   (no Ruleset exists yet — Ruleset is SI-CS01's first deliverable).
+
+In `agent-harness` (this repo):
+1. `active_cs16_*/` directory with the 4 + 2 SI-CS planned-file copies for
+   audit-trail per CS16 close-out per deliverable §1 (only the SI-CS-plans
+   sub-list of §1 applies; `architecture-source.md`, `engine-readme-source.md`,
+   `composed-block-source.md`, parity-spec are **CUT**).
+2. `sub-invaders-bootstrap-summary.md` post-execution.
+3. Standard close-out (`active → done`, WORKBOARD, CONTEXT, LEARNINGS).
+
+### SI-CS series (4 active + 2 re-evals)
+
+The validation goal — "ensure it can work effectively in parallel and with
+sub agents" — drives the per-CS structure. **Every active SI-CS plan MUST
+include a `## Sub-agent fan-out` table with disjoint file ownership** so the
+SI agent can dispatch the harness's standard parallel pattern from day one.
+
+| # | SI-CS | Headline scope | Min sub-agent fan-out |
+|---|---|---|---|
+| 01 | Repo hardening + first SWA staging deploy | Ruleset, App install (G3), security (G7: secret-scanning + push-protection + CodeQL default-setup + Dependabot + PVR), governance docs (SECURITY/CONTRIBUTING/CODE_OF_CONDUCT/PR template/CODEOWNERS/ISSUE_TEMPLATE), full ARCHITECTURE.md per CS16 § Game design + § Engine vs. game split, composed-blocks customisation (CONVENTIONS+OPERATIONS+REVIEWS local blocks), CI workflow (`ci.yml` with Node + .NET matrix), Azure provisioning (G4) + token paste (G5), `swa-deploy.yml` un-guarded, first staging deploy of a stub `index.html` + `/api/health` returning 200. | 6+ |
+| 02 | Engine + game skeleton + minimal playable game | Engine modules (loop, entity, collision, input, renderer, sprite, scene, seed, audio + README), game modules (player, invaders, hud, scenes, constants, flags-stub, api-stub), bootstrap glue (`index.html` + `main.mjs`), engine + game tests (`*.test.mjs` per module, `node --test` exits 0), staging deploy of the playable game per CS16 § Game design (sub-set: submarine + 5×11 formation + single-torpedo rule + AABB + wave progression + localStorage high-score; whale-shark + sound + mobile touch deferred). | 8+ |
+| 03 | Backend Function project + persistent leaderboard | Function project scaffold (`Sub-invaders.Api.csproj` + `Program.cs` + `host.json` + `local.settings.json.example`), `HealthFunction.cs` (real impl), `SessionFunction.cs` (POST /api/session), `ScoreFunction.cs` (POST /api/score with C16-12 replay protection), `LeaderboardFunction.cs` (GET /api/leaderboard), `SessionsCleanupFunction.cs` (timer-triggered cleanup), in-process rate-limit middleware, `dotnet test` xUnit tests per Function, frontend `src/game/api.mjs` + leaderboard scene, Storage Tables provisioned + schema documented, full leaderboard live in staging. | 8+ |
+| 04 | Daily challenge + harness-sync exercise + whale-shark + v1 polish | Hard task #1: bump `harness.config.json:version` to a newer published harness tag (or `main`-SHA fallback) + run `harness sync --mode=apply`. Then: feature-flags wiring (frontend `flags.mjs` reading from SWA env mapping; backend `FEATURE_FLAGS_DAILY_CHALLENGE`), date-seeded RNG (Mulberry32) added to engine, 5 daily modifiers per CS16 § Daily challenge spec, daily leaderboard partition (backend partition routing + frontend daily-only view), whale-shark mystery enemy implemented, final ARCHITECTURE update with v1 declared shipped. | 7+ |
+| (re) | re-eval-persistence | Re-evaluate Storage Tables choice once leaderboard load patterns are observable in staging. Tiny placeholder; deferred. | 1 |
+| (re) | re-eval-cloudflare-full-stack | Re-evaluate Azure SWA + Functions vs. Cloudflare Pages + Workers once cost + cold-start data is observable in staging. Tiny placeholder; deferred. | 1 |
+
+The 4 active SI-CSs are queued in order in `sub-invaders:WORKBOARD.md`.
+Re-evals are filed but not queued (or queued at the bottom with explicit
+`priority=defer` notes).
+
+### Sub-agent fan-out (in CS16 itself)
+
+Reduced from the original 8-way to a **6-way fan-out**: 4 SI-CS planners
+(SI-CS01..04) + 1 re-eval planner (owns both re-eval files) + 1
+bootstrap-summary author (orchestrator-owned in Wave B; no sub-agent dispatch
+for §1's summary). Sub-agents 1 (architecture-author), 2 (engine-readme-author),
+3 (composed-blocks-author), and 8 (parity-spec-author) from the original plan
+are **CUT** — their deliverables are now SI-CS01's responsibility.
+
+Wave A (parallel): SI-CS01..04 planners + re-eval planner = 5 sub-agents.
+Wave B (orchestrator-owned): repo create → `harness init` → folder skeleton +
+`.gitkeep` sentinels → copy planned files into sub-invaders → populate
+WORKBOARD → bootstrap PR → CI green → admin-merge → write summary.
+
+### Gates re-mapped
+
+| Original | New owner |
+|---|---|
+| G1 (Azure subscription confirmation) | CS16 (claim-time prereq) — **already confirmed 2026-05-10** |
+| G2 (`gh repo create` authorisation) | CS16 (Wave B) — covered by user's "Work autonomously" directive |
+| G3 (App install) | **SI-CS01** |
+| G4 (Azure provisioning) | **SI-CS01** |
+| G5 (SWA token paste) | **SI-CS01** |
+| G6 (Ruleset) | **SI-CS01** |
+| G7 (PVR + Dependabot + Secret scanning) | **SI-CS01** |
+| G8 (Production SWA promotion) | future SI-CS (unchanged) |
+
+### Exit criteria (slim)
+
+CS16 close-out is permitted when:
+1. `henrik-me/sub-invaders` exists (public, MIT).
+2. `harness init` exited 0; `harness.config.json` shows pin `v0.2.0`,
+   tier `public`, and the 5 scaffolds.
+3. Folder skeleton present with `.gitkeep` files; no other source code.
+4. `harness lint --quiet` and `harness sync --mode=check` BOTH exit 0
+   inside sub-invaders.
+5. The 4 active SI-CS planned files + 2 re-eval planned files exist in
+   `sub-invaders:project/clickstops/planned/` AND mirrored in
+   `agent-harness:active_cs16_*/si-cs-plans/`.
+6. Each of the 4 active SI-CS planned files passes `check-clickstop.mjs` and
+   contains a populated `## Sub-agent fan-out` section with disjoint owned
+   files (machine-checkable: `grep -E '^\| [0-9]+ \|' planned_sicsNN_*.md`
+   shows ≥ the minimum fan-out from the table above).
+7. `sub-invaders:WORKBOARD.md` lists all 4 active SI-CSs in `## Queued`
+   pointing at their planned files.
+8. `gh repo view henrik-me/sub-invaders` shows the bootstrap commit on
+   `main` with CI green.
+9. `sub-invaders-bootstrap-summary.md` records: repo URL, init exit code,
+   bootstrap commit SHA, internal `harness lint` + `sync --mode=check`
+   results, the 6 SI-CS planned filenames.
+10. **CS16-specific LRNs filed:** cross-repo CS mechanics, init-flow surprises,
+    any harness friction encountered.
+11. **No-supervision validation gate:** the close-out summary explicitly
+    states whether bootstrap was completed without ad-hoc fixes to the
+    harness mid-CS. If a fix WAS required, that fix lands as a separate
+    harness CS before close-out.
+
+(Exit criteria 11 from the original plan — Standards parity — is
+**reassigned to SI-CS01's exit criteria**, where it belongs.)
+
+### Sections below — status
+
+The remaining sections of this plan (`## Goal`, `## Background`,
+`## Game design (Sub Invaders v1)`, `## Decisions (CS16-specific...)`,
+`## Deliverables`, `## Three SI-CSs filed as proper planned CS files...`,
+`## User-approval gates`, `## Exit criteria`, `## Sub-agent fan-out`,
+`## Risks + open questions`) are kept as **historical / source-of-truth for
+content** that the SI-CS01..04 planners reference. Where they conflict with
+this § Scope refinement, this § wins. In particular:
+
+- `## Game design` **stays** — it's the authoritative spec the SI-CS02 + 04
+  planners pull from.
+- `## Decisions` C16-1..C16-16 **stay** — the locked-in tech choices that
+  the SI-CS planners reference.
+- The original `## Deliverables` list is **superseded by § Effective CS16
+  scope above** for execution; deliverables 5/6/7/8/10 + the
+  parity-spec sub-list of §1 are reassigned to SI-CS01.
+- The original `## Sub-agent fan-out` 8-way table is **superseded by
+  § Sub-agent fan-out above** (6-way: 5 in Wave A + orchestrator in Wave B).
+- The original `## Exit criteria` are **superseded by § Exit criteria
+  above**.
+- The original `## User-approval gates` are **superseded by § Gates
+  re-mapped above**; gates G3..G7 are now SI-CS01's concern.
+
 ## Goal
 
 Stand up `henrik-me/sub-invaders` as the first **non-self-host** consumer of `agent-harness`, with the same contribution standards and protections as the harness repo, and queue three follow-on SI-CSs whose successful unsupervised execution will validate that:
