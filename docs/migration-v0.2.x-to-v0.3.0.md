@@ -154,23 +154,64 @@ threaded through `cmdLint` yet).
 
 ## Cross-references
 
-- [SI Finding #1] — `ajv`/`ajv-formats`/`js-yaml` runtime deps. **Fixed in
-  v0.3.0** ([CS25](../CHANGELOG.md#030--2026-05-11)). Migration: just bump
-  the pin.
-- [SI Finding #2] — no `lint:NAME` form. **Fixed in v0.3.1** (CS30/D2).
-- [SI Finding #3] — `text-encoding` walks gitignored files. **Fixed in
-  v0.3.1** (CS30/D3).
-- [SI Finding #4] — seeded WORKBOARD ships forbidden sections. **Fixed in
-  v0.3.0** (CS28). Existing consumers must do the manual delete above.
-- [SI Finding #5] — architecture-linter discoverability. **Fixed in v0.3.1**
-  (CS30/D5). Existing ARCHITECTUREs without `## Data model` must add it.
-- [SI Finding #6] — composed-block paths in CS plans. **Fixed in v0.3.1**
-  (CS30/D6) — see new OPERATIONS.md "Composed-block edits — consumer vs
-  harness-repo paths" subsection.
-- [SI Finding #7] — SAML-blocked `gh api`. **Fixed in v0.3.1** (CS30/D7) —
-  see new OPERATIONS.md callout.
-- [SI Finding #8] — `harness lint` no version header. **Fixed in v0.3.1**
-  (CS30/D8).
+Subheadings below provide stable anchor targets for the `[SI Finding #N]`
+reference-style links used elsewhere in this guide and in `CHANGELOG.md`.
+
+### SI Finding #1 ajv runtime deps
+
+`ajv`/`ajv-formats`/`js-yaml` runtime deps. **Fixed in v0.3.0**
+([CS25](../CHANGELOG.md#030--2026-05-11)). Migration: just bump the pin.
+
+### SI Finding #2 no lint-NAME form
+
+No `harness lint:NAME` shorthand for re-running a single linter. **Fixed
+in v0.3.1** (CS30/D2). Use `harness lint:<name>` (or the equivalent
+`harness lint --only <name>`) to drill into one linter.
+
+### SI Finding #3 text-encoding gitignored files
+
+`scripts/check-text-encoding.mjs` walked the filesystem and flagged CRLF /
+BOM in `.gitignore`d build artifacts (e.g. dotnet `api/bin`, `api/obj`).
+**Fixed in v0.3.1** (CS30/D3) — see [Change 3 above](#change-3--text-encoding-is-now-gitignore-aware-cs30d3).
+
+### SI Finding #4 seeded WORKBOARD forbidden sections
+
+The seeded `WORKBOARD.md` shipped with `## Queued` and
+`## Recently Completed` sections, then the new linter forbade them on day
+zero. **Fixed in v0.3.0** (CS28) — seeded template no longer ships those
+sections; existing consumers must do the manual delete documented in
+[Change 1 above](#change-1--workboard-shape-cs28-breaking).
+
+### SI Finding #5 architecture-linter discoverability
+
+`Missing required heading: "## Data model"` gave no path forward.
+**Fixed in v0.3.1** (CS30/D5) — first missing-heading error now lists the
+full required-heading set, points at the canonical seed file, and hints at
+`harness lint --explain architecture`. See [Change 2 above](#change-2--architecture-linter-discoverability-cs30d5).
+Existing ARCHITECTUREs without `## Data model` must still add it.
+
+### SI Finding #6 composed-block paths
+
+CS plan templates referenced `template/composed/<file>` (the harness-repo
+view), which doesn't exist in consumer repos. **Fixed in v0.3.1**
+(CS30/D6) — new OPERATIONS.md subsection "Composed-block edits — consumer
+vs harness-repo paths" disambiguates which file an editor should touch in
+each repo type.
+
+### SI Finding #7 SAML-blocked gh api
+
+`gh api repos/Azure/<repo>/git/ref/tags/<tag>` returned 403 because Azure
+enforces SAML SSO and standard CLI tokens aren't SSO'd. **Fixed in
+v0.3.1** (CS30/D7) — OPERATIONS.md Reusable-CI-workflow section now
+documents `git ls-remote https://github.com/<org>/<repo>.git refs/tags/<tag>`
+as the SAML-safe fallback (works without auth).
+
+### SI Finding #8 no version header
+
+`harness lint` output didn't identify the harness version that produced
+it, slowing cross-clone debugging. **Fixed in v0.3.1** (CS30/D8) — every
+`harness lint` run now starts with `# harness vX.Y.Z — lint (cwd: ...)`
+on the first stdout line, regardless of `--quiet`.
 
 [SI Finding #1]: #si-finding-1-ajv-runtime-deps
 [SI Finding #2]: #si-finding-2-no-lint-name-form

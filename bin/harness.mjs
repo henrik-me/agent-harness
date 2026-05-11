@@ -170,7 +170,8 @@ Options:
   --only <name1,name2>      Run only named linters (e.g. --only learnings,context)
   --skip <name1,name2>      Skip named linters
   --public-artifact-dir <p> Override target dir for check-public-artifact
-  --explain <linter-name>   Print rules + canonical seed paths for one linter and exit 0
+  --explain <linter-name>   Print rules + canonical seed path for a supported linter and exit 0
+                            (currently: architecture, text-encoding, workboard)
   --help                    Print this help
 
 Aliases:
