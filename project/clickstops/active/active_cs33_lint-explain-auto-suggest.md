@@ -92,4 +92,14 @@ The goal is discoverability: a sub-agent (or first-time human consumer) hitting 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, code-review agent, pre-content-PR gate)
+**Date:** 2026-05-12
+**Outcome:** GO
+
+**Per-deliverable assessment — D1: PASS.** The CS33 behaviour is implemented at the `cmdLint` aggregator level in `bin/harness.mjs`, NOT in individual `scripts/check-*.mjs` linters (Decision C33-1). The conditional is exactly scoped to failure + not quiet + registry presence: `exitCode !== 0 && !quiet && LINTER_EXPLANATIONS[baseName]`, covering all three suppression conditions in Decision C33-2. The hint is emitted via `process.stderr.write` (LRN-044), does not call `process.exit`, and does not mutate result/error counts (exit codes unchanged per Decision C33-3). Placement is inside the per-linter loop after the linter process completes and OUTSIDE any per-error loop — fires once per failing linter, not once per individual error. The three CS33 tests correctly cover hint-on with non-zero exit + stderr assertion, `--quiet` suppression, and pass suppression (the accepted design-freedom substitute for the unreachable "linter not in registry" condition; CS32/D3 filled all 18 shipped linters making that case structurally unreachable). CHANGELOG entry placed in `[Unreleased] § Changed`. Diff scope is limited to `bin/harness.mjs`, `tests/cli.test.mjs`, and `CHANGELOG.md`; no scope creep.
+
+**Plan items not implemented:** None for the scoped CS33 deliverable.
+
+**Implementation items not in plan:** None.
+
+**Recommended follow-ups:** None blocking.
