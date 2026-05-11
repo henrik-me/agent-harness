@@ -1,10 +1,10 @@
 # CS33 — Auto-suggest `harness lint --explain <linter>` at the bottom of every linter failure
 
-**Status:** active
+**Status:** done
 **Owner:** orchestrator
 **Branch:** cs33/content
 **Started:** 2026-05-12
-**Closed:** —
+**Closed:** 2026-05-12
 **Filed by:** [CS32](../done/done_cs32_harness-lint-ux-hardening.md) close-out (2026-05-12) by `yoga-ah`. CS32/D3 expanded the `LINTER_EXPLANATIONS` registry to all 18 shipped linters; this CS lands the second half of [LRN-104](../../../LEARNINGS.md#lrn-104) — promote `--explain` from an opt-in subcommand to an automatic suggestion at the bottom of every linter failure.
 **Depends on:** None. CS32 already shipped the registry that makes this useful for all 18 linters; without this CS the registry is opt-in via `--explain <name>` only.
 

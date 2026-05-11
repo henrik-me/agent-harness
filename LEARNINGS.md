@@ -2221,6 +2221,8 @@ claim_area: tooling-linters
 
 **Disposition update (2026-05-12, `yoga-ah`, CS32 close-out):** Applied via [CS32/D3](project/clickstops/done/done_cs32_harness-lint-ux-hardening.md). `LINTER_EXPLANATIONS` registry expanded from 3 entries to **all 18 shipped linters** (the original "21 remaining / 24 total" count overstated the active linter set; the correct shipped count at registry-fill time was 18). New entries: `clickstop`, `commit-trailers`, `compose-v2`, `composed-blocks`, `context`, `fixtures`, `instructions`, `learnings`, `pack`, `pr-body`, `public-artifact`, `readme`, `scaffold-readme`, `templates`, `workflow-pins`. Each entry follows the established pattern (Linter / Target / Rules / Why-or-Canonical-seed). The other recommended next step — auto-suggesting `--explain <name>` at the bottom of every linter failure — was deferred (low-priority UX polish; the existing "harness lint --explain <linter>" hint in architecture-style errors covers the discovery path). Status flipped `open` → `applied`; the deferred auto-suggestion follow-up is now formally tracked as [CS33 (planned)](project/clickstops/planned/planned_cs33_lint-explain-auto-suggest.md).
 
+**Disposition update (2026-05-12, `yoga-ah`, CS33 close-out):** Auto-suggest piece now also applied via [CS33](project/clickstops/done/done_cs33_lint-explain-auto-suggest.md) (PR #132 merged). Aggregator now emits `→ Run \`harness lint --explain <name>\` for the full rule set.` to stderr after every linter failure where `LINTER_EXPLANATIONS[<name>]` exists, suppressed under `--quiet`. Both halves of LRN-104 are now applied; the LRN's recommended-next-step list is fully addressed.
+
 ### LRN-103
 
 ```yaml
