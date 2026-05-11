@@ -12,6 +12,11 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 ### Added
 
 - **LRN-102** ([LEARNINGS.md](LEARNINGS.md#lrn-102)): WORKBOARD shows live coordination state only — never duplicate the planned/ queue or done/ history.
+- **Regression test** `tests/cs25-runtime-deps.test.mjs` locks the contract that `ajv`, `ajv-formats`, and `js-yaml` remain runtime `dependencies` (not `devDependencies`). Per CS25.
+
+### Fixed
+
+- **`harness init` from a fresh consumer (CS25):** moved `ajv ^8.20.0`, `ajv-formats ^3.0.1`, and `js-yaml ^4.1.0` from `devDependencies` to `dependencies` in `package.json`. Without this fix, `npx -y "github:henrik-me/agent-harness#vX.Y.Z" init` silently failed the constraint-merge and post-init sync steps with `Cannot find package 'ajv'` (visible as warnings on stderr; the warning text directed users to a manual `harness sync --mode=apply` workaround which itself also failed for the same reason). Affected every fresh consumer install on `v0.1.0` and `v0.2.0`. Surfaced during sub-invaders bootstrap (2026-05-11) Finding #1; required a manual `npm install --no-save ajv ajv-formats js-yaml` workaround into the npx cache. Per CS25.
 
 ### Changed (BREAKING)
 

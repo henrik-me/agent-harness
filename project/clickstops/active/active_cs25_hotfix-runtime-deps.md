@@ -1,12 +1,14 @@
 # CS25 — Hotfix: move ajv/ajv-formats/js-yaml to runtime dependencies + cut v0.2.1
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** `cs25/hotfix-runtime-deps`
+**Started:** 2026-05-11
 **Closed:** —
-**Filed by:** Pre-claim disposition of [Finding #1](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
-**Depends on:** None. CRITICAL — should claim and ship before any other v0.2.x consumer work.
+**Filed by:** Pre-claim disposition of [Finding #1](../../active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
+**Depends on:** None. CRITICAL — claimed without workboard-only-PR ceremony (single-orchestrator emergency hotfix, per user direction 2026-05-11).
+
+> **Deviation from C25-5 (release shape):** The CS28 BREAKING template change (PR #120, merged 2026-05-11 at `84bb4c5`) already shifted the trajectory from v0.2.x to v0.3.0. CS25's hotfix entries are therefore added to `[Unreleased]` (not a `## [v0.2.1]` section) and will roll into the v0.3.0 release-cut CS along with CS28. Exit criteria 7 (tag `v0.2.1`), 8 (Release `v0.2.1`), 10 (README `v0.2.1` install pin) are reframed accordingly: the release-cut CS owns the tag/release/README work; CS25 owns only the dep-move + regression test + CHANGELOG entry under `[Unreleased]`.
 
 ## Goal
 
@@ -79,11 +81,45 @@ Self-host runs (executing directly from a cloned `agent-harness/` working tree w
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1: Edit `package.json` — move `ajv`/`ajv-formats`/`js-yaml` from devDependencies to dependencies | done | yoga-ah | Done in this branch. |
+| T2: `npm install` to refresh `package-lock.json` | done | yoga-ah | Lockfile root.dependencies now contains all 3; root.devDependencies is `{}`. |
+| T3: Verify no other ajv/js-yaml runtime imports in `lib/`, `bin/`, `scripts/`, `scaffolds/` (R3 mitigation) | done | yoga-ah | `grep -rn "from 'ajv\|from 'js-yaml" lib/ bin/ scripts/ scaffolds/` returns only the 3 expected packages — no fourth dependency surfaced. Found in: lib/{config-reader,sync,lock-reader,lock,doc-schema}.mjs + scripts/{check-learnings,validate-schemas}.mjs. |
+| T4: New `tests/cs25-runtime-deps.test.mjs` — assert all 3 in dependencies, none in devDependencies, lockfile mirrors | done | yoga-ah | 7 tests; all pass. |
+| T5: Run full test suite + `harness lint --quiet` for regression | done | yoga-ah | Full suite: 676/676 pass (5 consecutive runs after race fix). `harness lint --quiet`: 24 pass / 0 fail / 3 skipped. |
+| T6: CHANGELOG.md entry under `[Unreleased] ### Fixed` (CS25 deviation: not `[v0.2.1]` per release-trajectory note above) | done | yoga-ah | Entry added. |
+| T7: Close-out: docs + restart state | pending | yoga-ah | Active→done rename + WORKBOARD active row removed at close-out PR. |
+| T8: Close-out: learnings + follow-ups | pending | yoga-ah | LRN candidate: dep-shape contract should ideally be enforced earlier (CI on every PR, not just CS25's regression test). May file as planned CS or LRN at close-out. |
+| T9: Did this CS need a CHANGELOG entry? (LRN-101 pilot) | done | yoga-ah | Yes — entry added under `[Unreleased] ### Fixed`. |
+| T10: End-to-end fresh-install smoke (Deliverable #5) | pending | yoga-ah | Owned by the v0.3.0 release-cut CS (post-tag smoke). Skipped here per release-trajectory deviation. |
 
 ## Notes / Learnings
 
-(filled during execution)
+### CS28 piggyback test-race fix (2026-05-11)
+
+While running the full test suite for T5, intermittently 1/676 tests failed:
+`tests/check-text-encoding.test.mjs` test 12 (`linter exits 0 against the harness repo`).
+Failure mode: linter exited 1 with empty `violations:` stdout (race-condition
+ENOENT during recursive walk).
+
+Root cause was **two** pre-existing tests writing transient files inside
+REPO_ROOT during parallel `node --test` runs — same anti-pattern as LRN-094:
+
+1. `tests/lib-lock-reader.test.mjs` line 18 — `mkdtempSync(path.join(process.cwd(), 'tests', '.tmp-lib-lock-reader-'))`
+2. `tests/check-clickstop.test.mjs` line 75 — `path.join(REPO_ROOT, '.test-output', 'check-clickstop', name)`
+
+Both moved to `os.tmpdir()`. Verified clean across 5 consecutive full-suite
+runs. Diagnostic improved on test 12 to also surface `stderr` (which was
+previously silently dropped from the failure message — the original failure
+was confusing because the only visible info was an empty `violations:` blob).
+
+This piggybacks on CS25 because the same branch needed the test suite to be
+race-clean to land. Filed as Notes here rather than a separate CS, since the
+fixes are 1-liner, mechanical, and follow an existing repo convention.
+
+LRN candidate: anything writing transient files anywhere under REPO_ROOT
+should be detected mechanically — perhaps a lint that grep's for
+`mkdtempSync\(.*REPO_ROOT|process\.cwd\(\)` patterns inside `tests/`. File
+during close-out.
 
 ## Plan-vs-implementation review
 
