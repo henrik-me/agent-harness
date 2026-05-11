@@ -122,20 +122,61 @@ Single-agent briefing must include the standard guards: no-commit preflight per 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Workboard claim PR (rename planned→active, update WORKBOARD active/queued tables) | done | yoga-ah | this PR (`workboard/cs22-claim`) |
-| Branch `cs22/cut-v0.2.0` from main | pending | yoga-ah | after claim PR merges |
-| Phase 1: dispatch `cs22-changelog-auditor` sub-agent — produce `audit-report.md` (per C22-2 + C22-7) capturing actual `git rev-list --count v0.1.0..main` count, full commit list with subject + classification, gap-analysis vs `[Unreleased]`, pin-sweep target list | pending | yoga-ah | sub-agent owns audit; orchestrator reviews |
-| Phase 2: write CHANGELOG.md `[0.2.0]` section + sweep doc-pin references from v0.1.0 → v0.2.0 (README + docs/private-consumption.md + examples/sub-invaders.harness.config.json + package.json) per audit pin-sweep list | pending | yoga-ah | orchestrator-owned (small surface) |
-| Phase 2: run `harness lint --quiet` + `node --test tests/*.test.mjs` + `harness sync --mode=check` — must all exit 0 | pending | yoga-ah | baseline 24/0/3 lint, 669/669 tests |
-| Phase 2: open content PR `cs22/cut-v0.2.0`; address GPT-5.5 local-review findings; squash-merge | pending | yoga-ah | capture content-PR `MERGE_SHA` via `gh pr view <pr> --json mergeCommit --jq .mergeCommit.oid` |
-| Phase 3: pre-tag verification — `gh workflow run private-smoke.yml --ref main` succeeds; review `release.yml` for any post-CS14 SHA changes | pending | yoga-ah | per R1+R2 mitigations |
-| Phase 3: tag content-PR merge SHA — `git tag v0.2.0 <MERGE_SHA>` then `git push origin v0.2.0`. **NOT** `HEAD`; **NOT** the close-out merge SHA. Per C22-3 + C22-8 + R5. | pending | yoga-ah | tag-after-content-merge-before-close-out discipline (CS14 precedent) |
-| Phase 3: verify `release.yml` fired and produced a draft GitHub Release for v0.2.0; verify `private-smoke.yml` against the new tag green | pending | yoga-ah | per exit criterion 7 |
-| Local review (GPT-5.5) of content PR | pending | yoga-ah | mandatory per OPERATIONS.md § Local review |
-| Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | mandatory per OPERATIONS.md § Plan-vs-implementation review (close-out gate) |
-| Close-out: docs + restart state (rename active→done; update WORKBOARD active row → Recently Completed; CONTEXT.md current-state prose) | pending | yoga-ah | close-out PR `cs22/close-out` |
-| Close-out: learnings + follow-ups (LRN entries reserved 100..103 per C22-5; file what's actually surfaced; reconcile LRN-100 if the workflow-trigger fix is folded in) | pending | yoga-ah | close-out PR; reservation may underflow — only file what surfaces |
+| Workboard claim PR (rename planned→active, update WORKBOARD active/queued tables) | done | yoga-ah | PR #112 squash-merged |
+| Branch `cs22/cut-v0.2.0` from main | done | yoga-ah | branch created from `a5d2314` |
+| Phase 1: dispatch `cs22-changelog-auditor` sub-agent — produce `audit-report.md` (per C22-2 + C22-7) capturing actual `git rev-list --count v0.1.0..main` count, full commit list with subject + classification, gap-analysis vs `[Unreleased]`, pin-sweep target list | done | yoga-ah | sub-agent dispatched twice (re-dispatch with explicit R1/R2 pre-authorization); 250-line `changelog-audit-report.md`; row 57 added at close-out for content-PR squash `1484de7` (anchor-drift reconciliation; see LRN-101) |
+| Phase 2: write CHANGELOG.md `[0.2.0]` section + sweep doc-pin references from v0.1.0 → v0.2.0 (README + docs/private-consumption.md + examples/sub-invaders.harness.config.json + package.json) per audit pin-sweep list | done | yoga-ah | CHANGELOG `[0.2.0] — 2026-05-10` + fresh `[Unreleased]` + Migration subsection (commit `bc129b4`); pin sweep 9 files / 15 lines (commit `336722d` amended to `7163de1` to fold in README Option B fix from local review) |
+| Phase 2: run `harness lint --quiet` + `node --test tests/*.test.mjs` + `harness sync --mode=check` — must all exit 0 | done | yoga-ah | lint 24/0/3; tests 669/669; sync no-drift |
+| Phase 2: open content PR `cs22/cut-v0.2.0`; address GPT-5.5 local-review findings; squash-merge | done | yoga-ah | PR #113 squash-merged with `--admin` per ruleset; merge SHA `1484de7536d062461bfde8abe1779864fe5c2c7d` captured via `gh pr view 113 --json mergeCommit` |
+| Phase 3: pre-tag verification — `gh workflow run private-smoke.yml --ref main` succeeds; review `release.yml` for any post-CS14 SHA changes | done | yoga-ah | private-smoke run `25643138701` against `main` SUCCESS; release.yml unchanged since CS14 |
+| Phase 3: tag content-PR merge SHA — `git tag v0.2.0 <MERGE_SHA>` then `git push origin v0.2.0`. **NOT** `HEAD`; **NOT** the close-out merge SHA. Per C22-3 + C22-8 + R5. | done | yoga-ah | tagged `v0.2.0 → 1484de7…` (verified via `git rev-parse v0.2.0`); pushed to origin |
+| Phase 3: verify `release.yml` fired and produced a draft GitHub Release for v0.2.0; verify `private-smoke.yml` against the new tag green | done | yoga-ah | release.yml run `25643171684` SUCCESS; release v0.2.0 promoted from draft to published (CS14 precedent); private-smoke against tag `25643193863` SUCCESS |
+| Local review (GPT-5.5) of content PR | done | yoga-ah | 2 passes; pass 1 NEEDS-FIX (README Option B contradiction post-CS15a public flip); pass 2 GO |
+| Plan-vs-implementation review (GPT-5.5 close-out gate) | done | yoga-ah | 3 passes; pass 1 NEEDS-FIX (audit row 57 + process LRN); pass 2 NEEDS-FIX (fix uncommitted); pass 3 GO at 2026-05-10T23:59:13Z; verdict recorded in `## Plan-vs-implementation review` section below |
+| Close-out: docs + restart state (rename active→done; update WORKBOARD active row → Recently Completed; CONTEXT.md current-state prose) | done | yoga-ah | this close-out PR (`cs22/close-out`) |
+| Close-out: learnings + follow-ups (LRN entries reserved 100..103 per C22-5; file what's actually surfaced; reconcile LRN-100 if the workflow-trigger fix is folded in) | done | yoga-ah | reservation underflowed: only LRN-100 (tooling — pr-body trigger gotcha, filed in PR #111 mid-CS) and LRN-101 (process — audit-cadence; filed in this close-out commit `47de597`) actually surfaced; LRN-102/103 not used |
 
 ## Plan-vs-implementation review
 
-_(Populated at close-out per [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate). Reviewer = GPT-5.5 rubber-duck or fallback per OPERATIONS.md.)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-05-10T23:59:13Z
+**Outcome:** GO
+
+### Per-deliverable outcome
+
+| Plan deliverable | Outcome | Evidence |
+|---|---|---|
+| Phase 1 Deliverable §1 (changelog-audit-report.md) | match | Snapshot records `v0.2.0` tag SHA `1484de7536d062461bfde8abe1779864fe5c2c7d` and final count `57` at `changelog-audit-report.md:10-16`; row 57 records `1484de7` as Process-only with reconciliation note. |
+| Phase 2 Deliverable §2 (CHANGELOG.md transform) | match | Fresh empty `[Unreleased]` block at `CHANGELOG.md:10-18`; `[0.2.0] — 2026-05-10` block begins at line 20; migration subsection at lines 118-137. |
+| Phase 2 Deliverable §3 (pin sweep) | match | Remaining `v0.1.0` hits are historical/parser-only; install and template examples point to `v0.2.0`; `package.json:3` is `0.2.0`. |
+| Phase 3 Deliverable §4 (tag + push) | match | `git rev-parse v0.2.0` returned `1484de7536d062461bfde8abe1779864fe5c2c7d` (content-PR squash SHA, NOT close-out SHA). |
+| Phase 3 Deliverable §5 (release verification) | match | `release.yml` run `25643171684` completed `success` on `1484de7…`; release `v0.2.0` is non-draft. |
+| Phase 3 Deliverable §6 (private-smoke against tag) | match | Smoke run `25643193863` completed `success` on `1484de7…`. Pre-tag run `25643138701` against `main` also succeeded (R2 mitigation). |
+
+### Test-coverage assessment
+
+`sufficient` (release-mechanics CS, no behavior-code paths to cover; `node bin/harness.mjs lint --quiet` exits 0 with 24 passed / 0 failed / 3 skipped; `node --test tests/*.test.mjs` exits 0 with 669/669 pass).
+
+### Risks discharged
+
+- R1 (release.yml regression): discharged — `release.yml` ran on tag push and succeeded.
+- R2 (private-smoke regression): discharged — pre-tag (against main, run `25643138701`) and post-tag (against v0.2.0, run `25643193863`) both succeeded.
+- R3 (commit-count consistency): discharged — `git rev-list --count v0.1.0..v0.2.0` returns 57 (audit-time 56 + content-PR squash 1, reconciled in audit row 57).
+- R4 (BREAKING error message): discharged — `lib/composed.mjs:9-13` documents top-level `local_blocks` removal; `lib/sync.mjs:525-530` names `composed.overrides[file].local_blocks` as source of truth.
+- R5 (tag SHA discipline): discharged — tag points to content-PR merge SHA `1484de7`, not `HEAD` and not the close-out SHA.
+- R6 (SemVer 0.x carve-out): discharged — `CHANGELOG.md:120-122` migration notes acknowledge SemVer 0.x convention while calling out the intentional breaking config cleanup.
+
+### Gate history (for transparency)
+
+The gate ran three times:
+
+1. **2026-05-10T23:52:10Z (pass 1, NEEDS-FIX):** Audit table contained 56 rows and omitted the `1484de7` content squash; required process LRN was absent.
+2. **2026-05-10T23:57:18Z (pass 2, NEEDS-FIX):** Fixes existed only as unstaged working-tree changes; not yet committed to `cs22/close-out`.
+3. **2026-05-10T23:59:13Z (pass 3, GO — this verdict):** Both findings addressed by commit `47de597 CS22 close-out fix #1: audit reconciliation + LRN-101 (process)`. All exit criteria + decisions + risks verified.
+
+### Local review (pre-content-PR, separate gate per OPERATIONS.md § Local review)
+
+For completeness — this is the GPT-5.5 rubber-duck pass that ran BEFORE the content PR opened (PR #113), as a separate discipline from the close-out gate above:
+
+- **2026-05-10T23:45:01Z (pass 1, NEEDS-FIX):** README.md:26 self-contradicted (Option B claimed "while the repo is private + pre-publish" while the same branch's status line said public flip is complete). Fixed in the amended pin-sweep commit.
+- **2026-05-10T23:46:06Z (pass 2, GO):** Fix verified.
