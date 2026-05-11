@@ -1,10 +1,10 @@
 # CS30 — SI bootstrap-feedback fixes (8 findings)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** `cs30/si-feedback-fixes`
 **Started:** 2026-05-11
-**Closed:** —
+**Closed:** 2026-05-12
 **Filed by:** Sub-invaders (SI) agent's CS01 close-out feedback report (2026-05-11). User direction: SI agent will revert their harness-side workarounds; the harness must fully own the fixes so SI consumers do not need to carry workarounds.
 **Depends on:** CS25 (`b37a22f`), CS28 (`84bb4c5`), CS29 (`58f1858`) — v0.3.0 already shipped; this CS rolls into v0.3.1 (or v0.4.0 if any change is breaking).
 
@@ -107,9 +107,8 @@ Address all eight findings from the SI agent's CS01 feedback so SI (and any futu
 ## Plan-vs-implementation review
 
 **Reviewer:** GPT-5.5 (code-review sub-agent, model id `gpt-5.5`)
-**Run timestamp:** 2026-05-12 (post-merge, pre-v0.3.1 release-cut gate)
-**Verdict:** **NEEDS-FOLLOW-UP** — implementation matches plan, no blockers,
-release can ship.
+**Date:** 2026-05-12 (post-merge, pre-v0.3.1 release-cut gate)
+**Outcome:** NEEDS-FOLLOW-UP — implementation matches plan, no blockers, release can ship.
 
 ### Process deviation acknowledged
 
