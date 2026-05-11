@@ -664,6 +664,28 @@ To document marker syntax inside a code fence (e.g. in tests or this ADR),
 insert a zero-width space (U+200B) immediately after the leading `<` to
 prevent the parser from treating the example as a live marker.
 
+### Composed-block edits — consumer vs harness-repo paths
+
+When a CS plan or sub-agent briefing tells you to "edit a composed block",
+**do the edit at the consumer-repo path**, not the harness-repo template path.
+The two are different files:
+
+| Where you are | What to edit | Path |
+|---|---|---|
+| **Consumer repo** (e.g. `henrik-me/sub-invaders`) | The materialised composed file at the repo root, between its `<​!-- harness:local-start id=… -->` / `<​!-- harness:local-end id=… -->` markers | `<repo-root>/CONVENTIONS.md`, `<repo-root>/OPERATIONS.md`, `<repo-root>/REVIEWS.md` |
+| **Harness repo itself** (`henrik-me/agent-harness`) | The template that generates every consumer's composed file. Edits here propagate to all consumers on next `harness sync`. | `template/composed/CONVENTIONS.md`, `template/composed/OPERATIONS.md`, `template/composed/REVIEWS.md` |
+
+The CS plan template historically used harness-repo-relative paths (e.g.
+"edit `template/composed/CONVENTIONS.md`") because those plans were authored
+in the harness repo. **In a consumer repo, those paths do not exist.** The
+orchestrator briefing template now reminds dispatchers to translate to
+consumer-relative paths before sending a sub-agent into a consumer repo.
+
+A sub-agent that finds itself looking for `template/composed/...` inside a
+consumer repo should escalate ("the dispatch path appears to reference the
+harness repo, not this consumer repo — please clarify") rather than silently
+guess. ([SI Finding #6](LEARNINGS.md), CS30.)
+
 ### Mid-CS sync policy
 
 Do **not** run `harness sync` mid-CS unless fixing a harness blocker. Running
@@ -697,6 +719,30 @@ no version skew between developer machines and the CI runner.
 The workflow's steps are: checkout (pinned SHA), setup-node 20 (pinned SHA),
 derive-ref shell step, `npx -y github:henrik-me/agent-harness#<ref> lint --quiet`.
 All third-party `uses:` refs are pinned to 40-character commit SHAs.
+
+#### Resolving the SHA for an `actions/<owner>/<repo>@<tag>` pin
+
+The standard recipe is:
+
+```bash
+gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object.sha
+```
+
+**SAML-protected orgs (Azure, several enterprises) — fallback:** when an org
+enforces SAML SSO on its GitHub App and your CLI token isn't SSO-authorised,
+`gh api repos/<org>/...` returns `403`. The standard recipe then breaks for
+common pins like `Azure/static-web-apps-deploy@v1`.
+
+Use `git ls-remote` instead — it works against the org's public HTTP endpoint
+without authentication and returns the same SHA:
+
+```bash
+git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<tag>
+# Output:
+# <40-char-sha>    refs/tags/<tag>
+```
+
+Pipe through `awk '{print $1}'` to get the bare SHA. ([SI Finding #7](LEARNINGS.md), CS30.)
 
 ### Drift-detection workflow
 

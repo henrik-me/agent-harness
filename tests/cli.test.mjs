@@ -389,6 +389,70 @@ describe('harness lint', () => {
       `Expected missing-value error in stderr; got:\n${result.stderr}`
     );
   });
+
+  // -------------------------------------------------------------------------
+  // CS30 / D2 — `harness lint:NAME` shorthand alias for `lint --only NAME`
+  // -------------------------------------------------------------------------
+  it('CS30/D2: lint:NAME alias maps to lint --only NAME', () => {
+    const r = run(['lint:learnings', '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(r.stdout.includes('learnings: pass'), `Expected learnings: pass; got:\n${r.stdout}`);
+    assert.ok(!r.stdout.includes('context:'), `Expected context filtered out; got:\n${r.stdout}`);
+  });
+
+  it('CS30/D2: lint:NAME alias survives an unknown linter name with a clean skip (filter, not error)', () => {
+    // The alias rewrites to --only <name>. If <name> doesn't match any linter,
+    // every linter is filtered out — exit 0 with a "0 passed, 0 failed, 0 skipped"
+    // body is acceptable; what we explicitly forbid is the dispatcher returning
+    // exit 2 ("Unknown subcommand") for `lint:something-typoed`.
+    const r = run(['lint:does-not-exist-aaa', '--quiet']);
+    assert.notEqual(r.status, 2, `Expected non-usage exit; got ${r.status}\nstderr: ${r.stderr}`);
+  });
+
+  // -------------------------------------------------------------------------
+  // CS30 / D5 — `harness lint --explain <name>` prints rule docs
+  // -------------------------------------------------------------------------
+  it('CS30/D5: lint --explain architecture prints required-heading set + canonical seed path', () => {
+    const r = run(['lint', '--explain', 'architecture']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    for (const heading of ['Overview', 'Components', 'Data model', 'Decision log']) {
+      assert.ok(r.stdout.includes(heading), `Expected "${heading}" in --explain output; got:\n${r.stdout}`);
+    }
+    assert.ok(
+      r.stdout.includes('template/seeded/ARCHITECTURE.md'),
+      `Expected canonical seed path in --explain output; got:\n${r.stdout}`,
+    );
+  });
+
+  it('CS30/D5: lint --explain unknown-linter exits 2 with the known-linters list', () => {
+    const r = run(['lint', '--explain', 'no-such-linter-xyz']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stderr.includes('Known:'),
+      `Expected "Known:" listing in stderr; got:\n${r.stderr}`,
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // CS30 / D8 — version header at top of every `lint` invocation
+  // -------------------------------------------------------------------------
+  it('CS30/D8: lint output starts with a `# harness vX.Y.Z` header line', () => {
+    const r = run(['lint', '--quiet']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    const firstLine = (r.stdout.split('\n')[0] ?? '');
+    assert.match(
+      firstLine,
+      /^# harness v\d+\.\d+\.\d+ — lint \(cwd: /,
+      `Expected first line to be the version header; got: ${JSON.stringify(firstLine)}`,
+    );
+  });
+
+  it('CS30/D8: lint help output documents the lint:NAME alias and --explain', () => {
+    const r = run(['lint', '--help']);
+    assert.equal(r.status, 0);
+    assert.ok(r.stdout.includes('lint:NAME'), `Expected "lint:NAME" in --help; got:\n${r.stdout}`);
+    assert.ok(r.stdout.includes('--explain'), `Expected "--explain" in --help; got:\n${r.stdout}`);
+  });
 });
 
 // ---------------------------------------------------------------------------

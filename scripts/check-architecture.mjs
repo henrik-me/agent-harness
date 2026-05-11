@@ -110,8 +110,26 @@ function logError(msg) {
 // ---------------------------------------------------------------------------
 
 const headingFindings = assertHeadings(markdownText, REQUIRED_HEADINGS);
-for (const f of headingFindings) {
-  logError(`Missing required heading: "## ${f.heading}"`);
+if (headingFindings.length > 0) {
+  // CS30 / D5: when any required heading is missing, list the FULL required set
+  // and point at the canonical seed file so consumers don't have to read the
+  // linter source to discover what's required.
+  // The remediation hint is printed once, on the first missing-heading error.
+  const requiredList = REQUIRED_HEADINGS.map((h) => `"## ${h}"`).join(', ');
+  let first = true;
+  for (const f of headingFindings) {
+    if (first) {
+      logError(
+        `Missing required heading: "## ${f.heading}". ` +
+        `Required headings (any order): ${requiredList}. ` +
+        `See template/seeded/ARCHITECTURE.md for the canonical skeleton, ` +
+        `or run \`harness lint --explain architecture\` for the full rules.`
+      );
+      first = false;
+    } else {
+      logError(`Missing required heading: "## ${f.heading}"`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

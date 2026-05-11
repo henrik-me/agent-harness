@@ -329,4 +329,121 @@ describe('check-text-encoding linter', () => {
     }
   });
 
+  // -------------------------------------------------------------------------
+  // CS30 / D3 — gitignore-aware scanning
+  // -------------------------------------------------------------------------
+
+  /**
+   * Initialize a real git repo at `dir` (no commits required for ls-files).
+   */
+  function gitInit(dir) {
+    const r = spawnSync('git', ['init', '-q'], { cwd: dir, encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`git init failed: ${r.stderr}`);
+  }
+
+  // 15. Default ON: a CRLF-tainted file inside a .gitignored subtree must be
+  // skipped (this is SI Finding #3: dotnet build emits CRLF JSON into bin/obj/).
+  it('15. (CS30/D3) gitignored CRLF file is skipped by default (--respect-gitignore ON)', () => {
+    const dir = makeTmpFixture('cs30-d3-default-on', {
+      '.gitignore': 'build/\n',
+      'README.md': '# Clean\n',
+      'build/artifact.json': crlfBuffer('{"crlf":"yes"}\n'),
+    });
+    try {
+      gitInit(dir);
+      const r = runLinter(['--dir', dir]);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0 (build/ ignored); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`,
+      );
+      assert.ok(
+        r.stdout.includes('mode: git'),
+        `Expected "mode: git" in summary (gitignore-aware path was used); got:\n${r.stdout}`,
+      );
+      assert.ok(
+        !r.stdout.includes('build/artifact.json'),
+        `Expected gitignored file NOT to be flagged; got:\n${r.stdout}`,
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // 16. --no-respect-gitignore re-enables the recursive-walk behaviour:
+  // the same gitignored CRLF file MUST surface as a violation.
+  it('16. (CS30/D3) --no-respect-gitignore re-scans gitignored files', () => {
+    const dir = makeTmpFixture('cs30-d3-opt-out', {
+      '.gitignore': 'build/\n',
+      'README.md': '# Clean\n',
+      'build/artifact.json': crlfBuffer('{"crlf":"yes"}\n'),
+    });
+    try {
+      gitInit(dir);
+      const r = runLinter(['--dir', dir, '--no-respect-gitignore']);
+      assert.equal(
+        r.status, 1,
+        `Expected exit 1 (CRLF re-surfaced); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`,
+      );
+      assert.ok(
+        r.stdout.includes('mode: walk'),
+        `Expected "mode: walk" in summary; got:\n${r.stdout}`,
+      );
+      assert.ok(
+        r.stdout.includes('build/artifact.json'),
+        `Expected gitignored CRLF file to be flagged with --no-respect-gitignore; got:\n${r.stdout}`,
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // 17. Tracked files with CRLF/BOM must STILL be flagged under
+  // --respect-gitignore (gitignore awareness should narrow the scan, not
+  // weaken the contract for tracked content).
+  it('17. (CS30/D3) tracked CRLF file is still flagged under --respect-gitignore', () => {
+    const dir = makeTmpFixture('cs30-d3-tracked', {
+      '.gitignore': 'build/\n',
+      'tracked.md': crlfBuffer('# Title\r\n\r\nbody\r\n'),
+    });
+    try {
+      gitInit(dir);
+      // git ls-files --others returns untracked-but-not-ignored files, so
+      // tracked.md is reachable without an explicit `git add`. (Even untracked
+      // it must surface — that's the point of --others.)
+      const r = runLinter(['--dir', dir]);
+      assert.equal(
+        r.status, 1,
+        `Expected exit 1 (tracked CRLF flagged); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`,
+      );
+      assert.ok(
+        r.stdout.includes('tracked.md'),
+        `Expected "tracked.md" in violation report; got:\n${r.stdout}`,
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // 18. Non-git target falls back to recursive walk (no error, no fallback
+  // surprise — the linter still works in tarball / docker scratch contexts).
+  it('18. (CS30/D3) non-git target falls back to recursive walk transparently', () => {
+    const dir = makeTmpFixture('cs30-d3-no-git', {
+      'README.md': '# Clean\n',
+    });
+    try {
+      // No git init — dir is not inside a git repo.
+      const r = runLinter(['--dir', dir]);
+      assert.equal(
+        r.status, 0,
+        `Expected exit 0 (clean fixture); got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`,
+      );
+      assert.ok(
+        r.stdout.includes('mode: walk'),
+        `Expected "mode: walk" in summary (gitignore-aware path skipped); got:\n${r.stdout}`,
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
 });

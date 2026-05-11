@@ -170,7 +170,12 @@ Options:
   --only <name1,name2>      Run only named linters (e.g. --only learnings,context)
   --skip <name1,name2>      Skip named linters
   --public-artifact-dir <p> Override target dir for check-public-artifact
+  --explain <linter-name>   Print rules + canonical seed paths for one linter and exit 0
   --help                    Print this help
+
+Aliases:
+  harness lint:NAME         Equivalent to: harness lint --only NAME
+                            (e.g. harness lint:text-encoding)
 
 Exit codes:
   0  all linters passed (warnings do not affect exit code)
@@ -934,11 +939,58 @@ async function cmdCheck(args, global) {
 // Subcommand: lint
 // ---------------------------------------------------------------------------
 
+// CS30 / D5: per-linter docstrings for `harness lint --explain <name>`.
+// Stays in sync with the actual linters by colocating each entry with the
+// linter's name. New linters should add an entry here when they ship.
+const LINTER_EXPLANATIONS = {
+  architecture: `
+**Linter:** check-architecture (scripts/check-architecture.mjs)
+**Target:** ARCHITECTURE.md (one per consumer repo)
+**Required headings (must appear as level-2 headings, in any order):**
+  - Overview
+  - Components
+  - Data model
+  - Decision log
+**Other rules:**
+  - All relative internal links must resolve to existing files / fragments.
+
+**Canonical seed:** template/seeded/ARCHITECTURE.md ships a complete skeleton
+with every required heading in place. The fastest way to satisfy the linter
+when starting from scratch is to copy that file and fill in the sections
+rather than authoring from prose alone (LRN-CS30-feedback-#5).
+`.trim(),
+  'text-encoding': `
+**Linter:** check-text-encoding (scripts/check-text-encoding.mjs)
+**Target:** the consumer repo (or any --dir)
+**Rules:**
+  - No UTF-8 BOM (0xEF 0xBB 0xBF) at start of any text file.
+  - No CRLF or bare-\\r line endings in any text file.
+  - .gitignore is respected by default (--respect-gitignore, default ON).
+    Use --no-respect-gitignore to scan ignored paths too.
+**Defaults:**
+  - Includes: .md, .mjs, .js, .json, .yml, .yaml, .sh, .ps1, .txt, .sql, .html, .css
+  - Static excludes (always): node_modules, .git
+**Why:** prevents BOM creep on Windows (LRN-006/018/065) and CRLF creep from
+git core.autocrlf=true (LRN-074), both of which silently break sync drift detection.
+`.trim(),
+  workboard: `
+**Linter:** check-workboard (scripts/check-workboard.mjs)
+**Target:** WORKBOARD.md
+**Rules:**
+  - Must contain ## Orchestrators and ## Active Work sections.
+  - Must NOT contain ## Queued or ## Recently Completed (CS28 — filesystem is
+    source-of-truth: planned/ for queue, done/ for history).
+**Why:** WORKBOARD is live-coordination state only; the queue and history are
+file-system-derived and would drift if duplicated here.
+`.trim(),
+};
+
 async function cmdLint(args, _global) {
   let quiet = false;
   let only = null;
   let skip = new Set();
   let publicArtifactDir = null;
+  let explain = null;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -960,9 +1012,27 @@ async function cmdLint(args, _global) {
     } else if (a === '--public-artifact-dir') {
       if (!args[i + 1] || args[i + 1].startsWith('-')) die('harness lint: missing value for --public-artifact-dir', 2);
       publicArtifactDir = args[++i];
+    } else if (a === '--explain') {
+      if (!args[i + 1] || args[i + 1].startsWith('-')) die('harness lint: missing value for --explain', 2);
+      explain = args[++i];
+    } else if (a.startsWith('--explain=')) {
+      explain = a.slice('--explain='.length);
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['lint']}`, 2);
     }
+  }
+
+  // CS30 / D5: --explain <linter> prints rule documentation + canonical seed/template
+  // file paths for one linter. Implemented for high-value linters first; falls back
+  // to a friendly "no docs yet" stub for unknown names so the contract is stable.
+  if (explain) {
+    const docs = LINTER_EXPLANATIONS[explain];
+    if (!docs) {
+      const known = Object.keys(LINTER_EXPLANATIONS).sort().join(', ');
+      die(`harness lint --explain: no documentation registered for linter "${explain}". Known: ${known}`, 2);
+    }
+    process.stdout.write(`# harness lint --explain ${explain}\n\n${docs}\n`);
+    process.exit(0);
   }
 
   const cwd = _global.cwd ?? process.cwd();
@@ -1000,6 +1070,16 @@ async function cmdLint(args, _global) {
 
   const publicDir = publicArtifactDir;
   const lockPath = path.join(cwd, '.harness-lock.json');
+
+  // CS30 / D8: print a version header at the top of every `lint` invocation
+  // so CI logs make it obvious which harness produced the result.
+  // Honoured even under --quiet (header is one line).
+  try {
+    const pkg = readPackageJSON();
+    process.stdout.write(`# harness v${pkg.version} — lint (cwd: ${cwd})\n`);
+  } catch {
+    // pkg may not be readable in unusual self-host scenarios; fail soft.
+  }
 
   // Linter table
   const linters = [
@@ -1488,6 +1568,18 @@ async function main() {
     process.exit(2);
   }
 
+  // CS30 / D2: support `harness lint:NAME` as a shorthand for
+  // `harness lint --only NAME`. Restricted to a conservative regex so it
+  // can't shadow a future legitimate subcommand. The alias rewrites
+  // `subcommand` to `lint` and prepends `--only NAME` to `rest`.
+  let effectiveSubcommand = subcommand;
+  let effectiveRest = rest;
+  const lintAliasMatch = /^lint:([a-z][a-z0-9-]+)$/.exec(subcommand);
+  if (lintAliasMatch) {
+    effectiveSubcommand = 'lint';
+    effectiveRest = ['--only', lintAliasMatch[1], ...rest];
+  }
+
   const dispatch = {
     init: cmdInit,
     sync: cmdSync,
@@ -1501,7 +1593,7 @@ async function main() {
     whoami: cmdWhoami,
   };
 
-  const handler = dispatch[subcommand];
+  const handler = dispatch[effectiveSubcommand];
   if (!handler) {
     process.stderr.write(`Unknown subcommand: "${subcommand}"\n\n${TOP_HELP}`);
     process.exit(2);
@@ -1513,7 +1605,7 @@ async function main() {
   // stop-gap removed; cmdSync now passes global.config into syncFn as configPath.
 
   // If --help was a global flag but a subcommand is present, forward it to the subcommand.
-  const subArgs = help ? ['--help', ...rest] : rest;
+  const subArgs = help ? ['--help', ...effectiveRest] : effectiveRest;
 
   try {
     await handler(subArgs, global);
