@@ -287,7 +287,7 @@ describe('check-text-encoding linter', () => {
     const r = runLinter(['--dir', REPO_ROOT]);
     assert.equal(
       r.status, 0,
-      `Expected exit 0 against harness repo; got ${r.status}\nviolations:\n${r.stdout}`,
+      `Expected exit 0 against harness repo; got ${r.status}\nstdout:\n${r.stdout}\nstderr:\n${r.stderr}`,
     );
   });
 

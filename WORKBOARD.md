@@ -17,6 +17,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS16 | Bootstrap Sub Invaders (slim scope per 2026-05-11 refinement) | claimed | yoga-ah | `cs16/content` | 2026-05-11T00:55Z | — |
+| CS25 | Hotfix: ajv/ajv-formats/js-yaml → runtime deps | active | yoga-ah | `cs25/hotfix-runtime-deps` | 2026-05-11 | — |
 
 CS16 active file: [`project/clickstops/active/active_cs16_bootstrap-sub-invaders/active_cs16_bootstrap-sub-invaders.md`](project/clickstops/active/active_cs16_bootstrap-sub-invaders/active_cs16_bootstrap-sub-invaders.md). Effective scope (per scope-refinement merged 2026-05-11): repo create + `harness init` + folder skeleton + file 4 active SI-CS planned files + 2 re-eval skeletons + bootstrap PR. All other work (Ruleset, security, ARCHITECTURE, composed blocks, stub code, Azure provisioning) is reassigned to SI-CS01..04 in `henrik-me/sub-invaders`.
 

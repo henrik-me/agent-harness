@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -15,7 +16,11 @@ const HASH = 'b'.repeat(64);
 const MARKER_HASH = 'c'.repeat(64);
 
 function tempRepo(t) {
-  const base = path.join(process.cwd(), 'tests', '.tmp-lib-lock-reader-');
+  // CS25 follow-up race fix: must NOT mkdtempSync inside REPO_ROOT — concurrent
+  // test runs have the text-encoding linter walking REPO_ROOT recursively, and
+  // transient tempdir creation/deletion under REPO_ROOT/tests triggers ENOENT
+  // in readdirSync (LRN-094 anti-pattern, same root cause as lib-github-detect).
+  const base = path.join(os.tmpdir(), 'lib-lock-reader-');
   const dir = mkdtempSync(base);
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   return dir;

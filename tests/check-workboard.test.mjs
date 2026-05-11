@@ -14,6 +14,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import require_fs from 'node:fs';
+import os from 'node:os';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -124,7 +125,8 @@ describe('check-workboard linter', () => {
 
   // 5. Forbidden ## Recently Completed section → exit 1 (CS28)
   it('5. forbidden Recently Completed section exits 1', () => {
-    const tmp = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs06', 'workboard', '_tmp_forbidden_rc.md');
+    const tmpdir = require_fs.mkdtempSync(path.join(os.tmpdir(), 'wb-cs28-rc-'));
+    const tmp = path.join(tmpdir, 'forbidden_rc.md');
     const content = [
       '# Work Board',
       '',
@@ -156,13 +158,14 @@ describe('check-workboard linter', () => {
         `Expected forbidden Recently Completed error; got:\n${r.stdout}`
       );
     } finally {
-      require_fs.unlinkSync(tmp);
+      require_fs.rmSync(tmpdir, { recursive: true, force: true });
     }
   });
 
   // 6. Forbidden ## Queued section → exit 1 (CS28)
   it('6. forbidden Queued section exits 1', () => {
-    const tmp = path.join(REPO_ROOT, 'tests', 'fixtures', 'cs06', 'workboard', '_tmp_forbidden_q.md');
+    const tmpdir = require_fs.mkdtempSync(path.join(os.tmpdir(), 'wb-cs28-q-'));
+    const tmp = path.join(tmpdir, 'forbidden_q.md');
     const content = [
       '# Work Board',
       '',
@@ -194,7 +197,7 @@ describe('check-workboard linter', () => {
         `Expected forbidden Queued error; got:\n${r.stdout}`
       );
     } finally {
-      require_fs.unlinkSync(tmp);
+      require_fs.rmSync(tmpdir, { recursive: true, force: true });
     }
   });
 

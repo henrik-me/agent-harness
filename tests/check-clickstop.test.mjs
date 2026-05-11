@@ -11,6 +11,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,7 +73,10 @@ function fixtureDirCs03b(name) {
  * @returns {string}
  */
 function writeGeneratedDoneFixture(name, gateSection) {
-  const root = path.join(REPO_ROOT, '.test-output', 'check-clickstop', name);
+  // CS25 follow-up race fix: must NOT write fixtures under REPO_ROOT — concurrent
+  // tests have the text-encoding linter walking REPO_ROOT recursively and
+  // transient .test-output creation triggers ENOENT (LRN-094 anti-pattern).
+  const root = path.join(os.tmpdir(), 'check-clickstop-test-output', name);
   const doneDir = path.join(root, 'done');
   fs.rmSync(root, { recursive: true, force: true });
   fs.mkdirSync(doneDir, { recursive: true });
