@@ -1557,6 +1557,11 @@ async function cmdLint(args, _global) {
     const exitCode = result.status ?? 1;
     results.push({ name: linter.name, status: exitCode === 0 ? 'pass' : 'fail', exitCode });
     if (exitCode !== 0) anyError = true;
+    // CS33: auto-suggest --explain at the bottom of every linter failure block.
+    // Gated: only for linters with a LINTER_EXPLANATIONS entry; suppressed under --quiet.
+    if (exitCode !== 0 && !quiet && LINTER_EXPLANATIONS[baseName]) {
+      process.stderr.write(`→ Run \`harness lint --explain ${baseName}\` for the full rule set.\n`);
+    }
   }
 
   // Aggregate summary

@@ -21,6 +21,10 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Changed
 
+- **`harness lint` now suggests `--explain <name>`** at the bottom of every
+  linter failure block (gated on registry presence; suppressed under
+  `--quiet`). Per CS33, applies LRN-104 (auto-suggest piece).
+
 - **`harness lint --skip NAME`** now exits 2 with a known-linters list when
   `NAME` matches no linter, instead of silently no-op'ing the unknown
   name. Mirrors the CS31 `--only` validation. Mixed valid+typo

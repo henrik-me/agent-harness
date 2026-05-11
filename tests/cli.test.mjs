@@ -532,6 +532,91 @@ describe('harness lint', () => {
   });
 
   // -------------------------------------------------------------------------
+  // CS33 — auto-suggest `harness lint --explain <name>` at linter failure
+  // -------------------------------------------------------------------------
+  it('CS33/A: failing linter with registry entry emits hint exactly once on stderr', () => {
+    const dir = makeTmpDir('harness-cs33-hint-');
+    try {
+      // WORKBOARD.md with a forbidden ## Queued heading → workboard linter fails
+      writeText(path.join(dir, 'WORKBOARD.md'), [
+        '# Work Board',
+        '',
+        '## Orchestrators',
+        '',
+        'Active: none',
+        '',
+        '## Active Work',
+        '',
+        '| CS | Status |',
+        '|---|---|',
+        '',
+        '## Queued',
+        '',
+        'none',
+        '',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--only', 'workboard']);
+      assert.notEqual(
+        r.status, 0,
+        `Expected non-zero exit for failing workboard; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`,
+      );
+      const hint = '→ Run `harness lint --explain workboard` for the full rule set.';
+      const hintCount = r.stderr.split(hint).length - 1;
+      assert.equal(
+        hintCount, 1,
+        `Expected hint exactly once in stderr; found ${hintCount} times\nstderr: ${r.stderr}`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('CS33/B: failing linter under --quiet does NOT emit hint on stderr', () => {
+    const dir = makeTmpDir('harness-cs33-quiet-');
+    try {
+      writeText(path.join(dir, 'WORKBOARD.md'), [
+        '# Work Board',
+        '',
+        '## Orchestrators',
+        '',
+        'Active: none',
+        '',
+        '## Active Work',
+        '',
+        '| CS | Status |',
+        '|---|---|',
+        '',
+        '## Queued',
+        '',
+        'none',
+        '',
+      ].join('\n'));
+      const r = run(['--cwd', dir, 'lint', '--only', 'workboard', '--quiet']);
+      assert.notEqual(r.status, 0, `Expected non-zero exit for failing workboard; got ${r.status}`);
+      assert.ok(
+        !r.stderr.includes('harness lint --explain'),
+        `Expected hint suppressed under --quiet; got stderr:\n${r.stderr}`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('CS33/C: passing linter does NOT emit hint on stderr (pass-suppression)', () => {
+    // Validates the pass-suppression condition from Decision C33-2.
+    // Note: "not in LINTER_EXPLANATIONS" case is unreachable because CS32/D3
+    // populated the registry for all 18 shipped linters. This test covers the
+    // third suppression condition: a passing linter never emits the hint even
+    // without --quiet.
+    const r = run(['lint', '--only', 'learnings']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}`);
+    assert.ok(
+      !r.stderr.includes('harness lint --explain'),
+      `Expected no hint for a passing linter; got stderr:\n${r.stderr}`,
+    );
+  });
+
+  // -------------------------------------------------------------------------
   // CS30 / D8 — version header at top of every `lint` invocation
   // -------------------------------------------------------------------------
   it('CS30/D8: lint output starts with a `# harness vX.Y.Z` header line', () => {
