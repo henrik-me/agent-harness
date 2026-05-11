@@ -11,12 +11,27 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.3.0] — 2026-05-11
+
+### Added
+
 - **LRN-102** ([LEARNINGS.md](LEARNINGS.md#lrn-102)): WORKBOARD shows live coordination state only — never duplicate the planned/ queue or done/ history.
 - **Regression test** `tests/cs25-runtime-deps.test.mjs` locks the contract that `ajv`, `ajv-formats`, and `js-yaml` remain runtime `dependencies` (not `devDependencies`). Per CS25.
 
 ### Fixed
 
 - **`harness init` from a fresh consumer (CS25):** moved `ajv ^8.20.0`, `ajv-formats ^3.0.1`, and `js-yaml ^4.1.0` from `devDependencies` to `dependencies` in `package.json`. Without this fix, `npx -y "github:henrik-me/agent-harness#vX.Y.Z" init` silently failed the constraint-merge and post-init sync steps with `Cannot find package 'ajv'` (visible as warnings on stderr; the warning text directed users to a manual `harness sync --mode=apply` workaround which itself also failed for the same reason). Affected every fresh consumer install on `v0.1.0` and `v0.2.0`. Surfaced during sub-invaders bootstrap (2026-05-11) Finding #1; required a manual `npm install --no-save ajv ajv-formats js-yaml` workaround into the npx cache. Per CS25.
+- **Test-race regression (CS25 piggyback):** two pre-existing tests (`tests/lib-lock-reader.test.mjs`, `tests/check-clickstop.test.mjs`) wrote transient files under `REPO_ROOT` during parallel `node --test`, racing with `check-text-encoding`'s recursive walk and intermittently failing the self-host test (LRN-094 anti-pattern). Both moved to `os.tmpdir()`. CS28 forbidden-section fixtures (`_tmp_forbidden_*.md`) also moved out of `tests/fixtures/cs06/workboard/` for the same reason. Diagnostic on `tests/check-text-encoding.test.mjs` test 12 improved to surface `stderr`. Per CS25.
 
 ### Changed (BREAKING)
 
@@ -24,10 +39,6 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 - **`check-workboard.mjs` (CS28):** required headings reduced from `[Orchestrators, Active Work, Recently Completed]` to `[Orchestrators, Active Work]`; new check forbids `## Queued` and `## Recently Completed` headings (any occurrence is an error); removed the previous "exactly one Recently Completed" duplicate-section check and the "stale in-flight language in Recently Completed rows" check (both obsolete — the section is now forbidden). Per CS28.
 - **`template/managed/TRACKING.md` (CS28):** rewritten lifecycle/state-table prose to drop "Queued" (now "Planned") wording and to clarify that close-out removes the WORKBOARD Active Work row (the `done/` directory IS the historical record — no "moves to Recently Completed" step). Per CS28.
 - **`README.md` (CS28):** `WORKBOARD.md` per-path description rewritten to "Live coordination only — Orchestrators + Active Work. Nothing else." Per CS28.
-
-### Fixed
-
-### Changed
 
 ## [0.2.0] — 2026-05-10
 
