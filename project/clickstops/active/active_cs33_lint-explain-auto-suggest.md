@@ -1,9 +1,9 @@
 # CS33 — Auto-suggest `harness lint --explain <linter>` at the bottom of every linter failure
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** orchestrator
+**Branch:** cs33/content
+**Started:** 2026-05-12
 **Closed:** —
 **Filed by:** [CS32](../done/done_cs32_harness-lint-ux-hardening.md) close-out (2026-05-12) by `yoga-ah`. CS32/D3 expanded the `LINTER_EXPLANATIONS` registry to all 18 shipped linters; this CS lands the second half of [LRN-104](../../../LEARNINGS.md#lrn-104) — promote `--explain` from an opt-in subcommand to an automatic suggestion at the bottom of every linter failure.
 **Depends on:** None. CS32 already shipped the registry that makes this useful for all 18 linters; without this CS the registry is opt-in via `--explain <name>` only.
@@ -76,7 +76,15 @@ The goal is discoverability: a sub-agent (or first-time human consumer) hitting 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 | Read CS file + LRN-104 + bin/harness.mjs cmdLint result-emission path | planned | sub-agent | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 | Implement hint-emit at aggregator level (Decision C33-1/C33-2/C33-3) | planned | sub-agent | — |
+| T3 | Add ≥3 tests in tests/cli.test.mjs CS33 block (hint-on, --quiet suppress, no-registry-entry suppress) | planned | sub-agent | — |
+| T4 | CHANGELOG.md `[Unreleased] § Changed` one-liner citing CS33 + LRN-104 | planned | sub-agent | — |
+| T5 | Self-checks (text-encoding, lint --quiet, node --test) | planned | sub-agent | — |
+| T6 | Orchestrator: commit on cs33/content, run GPT-5.5 plan-vs-impl gate | planned | orchestrator | — |
+| T7 | Open content PR; merge after CI green | planned | orchestrator | — |
+| T8 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, LRN-104 disposition update) | planned | orchestrator | per OPERATIONS.md § Claim |
+| T9 | Close-out: learnings + follow-ups (file any new LRNs from CS33 implementation) | planned | orchestrator | per OPERATIONS.md § Claim |
 
 ## Notes / Learnings
 
