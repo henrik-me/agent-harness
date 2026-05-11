@@ -1,9 +1,9 @@
 # CS34 — `check-cs-plan.mjs` linter — flag harness-repo-relative paths in consumer-targeted CS plans
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** orchestrator
+**Branch:** cs34/content
+**Started:** 2026-05-12
 **Closed:** —
 **Filed by:** [CS32](../done/done_cs32_harness-lint-ux-hardening.md) close-out (2026-05-12) by `yoga-ah`. CS32/D2 added a "Cross-repo path discipline" bullet to the mandatory sub-agent briefing preamble, addressing the human-readable side of [LRN-105](../../../LEARNINGS.md#lrn-105). This CS lands the machine-enforced side — a linter that catches the bug before a sub-agent gets dispatched with the wrong paths.
 **Depends on:** None. CS32 shipped the briefing-preamble bullet; this CS hardens the same contract with automated detection.
@@ -79,7 +79,17 @@ The goal is to catch the bug at lint time (before the orchestrator dispatches a 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 | Read CS file + LRN-105 + bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS pattern + existing scripts/check-*.mjs (e.g. check-fixtures.mjs as a similar self-host-aware linter) | planned | sub-agent | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 | Implement scripts/check-cs-plan.mjs per Decisions C34-1..C34-5 (self-host-aware; configurable forbidden-prefix list via harness.config.json) | planned | sub-agent | — |
+| T3 | Register the linter in bin/harness.mjs cmdLint linters list AND add a LINTER_EXPLANATIONS entry following the CS32/D3 pattern | planned | sub-agent | — |
+| T4 | Create tests/fixtures/cs-plan-lint/ with ≥4 fixture CS plans (consumer-target with template/composed/, with lib/, with mention inside fenced code block, harness-self-host with same refs) | planned | sub-agent | — |
+| T5 | Create tests/check-cs-plan.test.mjs with ≥6 tests covering all fixtures + --quiet + aggregator integration | planned | sub-agent | — |
+| T6 | CHANGELOG.md `[Unreleased] § Added` one-liner citing CS34 + LRN-105 | planned | sub-agent | — |
+| T7 | Self-checks (text-encoding, lint --quiet, node --test, fixtures linter on the new fixtures dir) | planned | sub-agent | — |
+| T8 | Orchestrator: commit on cs34/content, run GPT-5.5 plan-vs-impl gate | planned | orchestrator | — |
+| T9 | Open content PR; merge after CI green | planned | orchestrator | — |
+| T10 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, LRN-105 disposition update) | planned | orchestrator | per OPERATIONS.md § Claim |
+| T11 | Close-out: learnings + follow-ups (file any new LRNs from CS34 implementation) | planned | orchestrator | per OPERATIONS.md § Claim |
 
 ## Notes / Learnings
 
