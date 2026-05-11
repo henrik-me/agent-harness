@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-12 (CS32 closed: harness lint UX hardening + sub-agent path discipline; no active CS; orchestrator yoga-ah idle)
+> **Last updated:** 2026-05-12 (CS33 claimed: lint --explain auto-suggest at failure-emit; orchestrator yoga-ah)
 
 ## Orchestrators
 
@@ -16,6 +16,6 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | No active CS — see `project/clickstops/planned/` for queue | — | — | — | — | — |
+| CS33 | Auto-suggest `harness lint --explain <linter>` at failure-emit (LRN-104 follow-up) | claim | yoga-ah | `cs33/content` | 2026-05-12 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
