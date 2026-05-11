@@ -2050,7 +2050,7 @@ claim_area: process-docs
 - **Bootstrap reading order, Quick Reference Checklist, Session Start, Per-CS Loop:** `INSTRUCTIONS.md` (managed) — the agent's first-read entry door.
 - **Lifecycle procedures (Claim / Dispatch / Sync / Harvest / SemVer / Conventions; sub-agent briefing preamble):** `OPERATIONS.md` (composed).
 - **Current state (recently completed CSs, active CS pointer, blockers, parallelism posture):** `CONTEXT.md` (project-owned).
-- **Live coordination (Orchestrators table, Active Work, Recently Completed, Queued):** `WORKBOARD.md`.
+- **Live coordination (Orchestrators table + Active Work):** `WORKBOARD.md`. **Live state only — no queue, no history.** The queue is `project/clickstops/planned/` (filesystem source-of-truth); history is `project/clickstops/done/`.
 - **Repo-onboarding / human starter prompt / per-path map:** `README.md`.
 - **Process learnings:** `LEARNINGS.md`.
 - **Reviewer model / taxonomy / HIGH-RISK CS list:** `REVIEWS.md`.
@@ -2122,6 +2122,28 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 **Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
+
+### LRN-102
+
+```yaml
+id: LRN-102
+date: 2026-05-11
+category: process
+source_cs: CS28
+status: applied
+tags: [workboard, source-of-truth, doc-shape, anti-pattern]
+claim_area: process-coordination
+```
+
+**Problem:** `WORKBOARD.md` accumulated `## Queued` and `## Recently Completed` tables that mirrored the contents of `project/clickstops/planned/` and `project/clickstops/done/` respectively. Both tables required hand-curated updates at file/claim/close-out time, drifted out of sync with the filesystem (CS-list reorderings, status-text rewrites, completion notes), and forced multiple synchronous touch points per CS (file + WORKBOARD-Queued; close-out + WORKBOARD-RC; release-tag + RC notes-update). The pattern was the same anti-pattern as the deleted HANDOFF.md (see [LRN-098](#lrn-098)): one doc re-summarising what the canonical home already contains, looking helpful but generating duplicate-maintenance failure modes. User feedback during pre-CS16 planning explicitly questioned the existence of these tables ("where did this come from?") — the answer was a long-form drift that no CS ever consciously decided.
+
+**Finding:** **WORKBOARD shows live coordination state only — active orchestrators and their active work. Nothing else.** The queue is `project/clickstops/planned/` (ordered by filename + per-file `**Depends on:**` headers). The history is `project/clickstops/done/` (full per-CS audit trail including close-out notes, sub-agent ledger, plan-vs-impl review). WORKBOARD must never duplicate either.
+
+This generalises [LRN-098](#lrn-098)'s "single source of truth" rule from orchestrator-facing process docs to coordination tables: **if a piece of state already lives in a structured filesystem location (file naming, frontmatter, directory membership), no markdown table elsewhere should re-list it**. Cross-link to the directory path; do not re-summarise its contents.
+
+**Evidence:** [`project/clickstops/done/done_cs28_remove-workboard-historical-tables/`](project/clickstops/done/done_cs28_remove-workboard-historical-tables/) (or content PR if filed without the active/done directory form) — removes `## Queued` (12 lines) + `## Recently Completed` (35+ rows) from `WORKBOARD.md` + `template/seeded/WORKBOARD.md`; tightens `scripts/check-workboard.mjs` to forbid both headings (was: `Recently Completed` was *required*); deletes `tests/fixtures/cs06/workboard/{duplicate-recently-completed,stale-completed}.md` and 2 obsolete tests; rewrites `template/managed/TRACKING.md` lines 22/133/149 + `README.md:66` + this LEARNINGS line 2053. Original LRN that gave rise to the now-removed Check 5: [LRN-082](#lrn-082) ("Coordination docs need stale-history linting") is **superseded** by this LRN — the cleaner fix is to remove the historical table entirely so there is no history to go stale.
+
+**Disposition:** Applied at CS28 merge. Going forward: any CS proposing a new WORKBOARD section other than Orchestrators / Active Work must cite this LRN in its plan and justify why a filesystem location can't carry the state instead. The `check-workboard.mjs` linter mechanically enforces this (forbidden headings: `Queued`, `Recently Completed`).
 
 ### LRN-101
 

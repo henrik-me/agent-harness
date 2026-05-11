@@ -32,11 +32,13 @@ Every CS produces exactly three PRs in sequence:
    here. Standard review loop (GPT-5.5 + user). Squash-merge only.
 
 3. **Close-out PR** — branch `cs<NN>/close-out`; touches only
-   `WORKBOARD.md` (row state set to done or removed), the clickstop rename
-   (`active → done`), and any close-out updates to `CONTEXT.md` /
-   `LEARNINGS.md`. Label: `workboard-only`. Same auto-merge rules as the
-   claim PR. **Must be preceded by the plan-vs-implementation review gate
-   (see [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
+   `WORKBOARD.md` (Active Work row removed for this CS), the clickstop
+   rename (`active → done`), and any close-out updates to `CONTEXT.md` /
+   `LEARNINGS.md`. The `done/` directory is the historical record;
+   WORKBOARD never carries a "recently completed" log (LRN-102). Label:
+   `workboard-only`. Same auto-merge rules as the claim PR. **Must be
+   preceded by the plan-vs-implementation review gate (see
+   [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
 
 Every active/done CS file must include explicit `## Tasks` rows for:
 

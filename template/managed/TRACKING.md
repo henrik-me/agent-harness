@@ -19,7 +19,7 @@ mandatory file (or directory) rename inside `project/clickstops/`:
 
 | Stage | Folder | File / dir prefix |
 |-------|--------|-------------------|
-| Queued — not yet started | `project/clickstops/planned/` | `planned_cs<NN>_<slug>` |
+| Planned — not yet started | `project/clickstops/planned/` | `planned_cs<NN>_<slug>` |
 | In-flight — claimed and active | `project/clickstops/active/` | `active_cs<NN>_<slug>` |
 | Completed — merged to main | `project/clickstops/done/` | `done_cs<NN>_<slug>` |
 
@@ -130,7 +130,7 @@ planned  ──(claim)──►  claimed  ──(start work)──►  active  �
 | `claimed` | An agent has reserved the CS; work has not started yet. The WORKBOARD entry exists; the clickstop file is still in `planned/`. |
 | `active` | Work is actively in progress. The clickstop file has been renamed to `active/` and a content branch is open. |
 | `blocked` | Work cannot proceed (dependency, environment issue, decision needed). The `Blocked Reason` column in WORKBOARD is populated. |
-| `done` | The content PR has been merged to main; the clickstop file has been renamed to `done/`. The row moves to **Recently Completed**. |
+| `done` | The content PR has been merged to main; the clickstop file has been renamed to `done/`. The Active Work row in WORKBOARD is removed (the `done/` directory IS the historical record — WORKBOARD never duplicates it). |
 
 ### Claiming a CS
 
@@ -146,7 +146,7 @@ planned  ──(claim)──►  claimed  ──(start work)──►  active  �
 1. Open the content PR on branch `cs<NN>/<slug>`.
 2. After merge, open a close-out PR on branch `workboard/cs<NN>-close` that:
    - Renames the clickstop file from `active/` to `done/`.
-   - Moves the WORKBOARD row from Active Work to Recently Completed.
+   - Removes the WORKBOARD Active Work row for this CS (the `done/` directory is the historical record; WORKBOARD never carries a "recently completed" log).
 3. Tag main with the next version if this CS bumps the harness version.
 
 ### Task locking

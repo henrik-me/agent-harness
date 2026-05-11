@@ -1,22 +1,22 @@
 {
-  "harness_ref": "cs15f/retire-handoff-doc",
-  "resolved_sha": "1f86e20ac6428a74cb4d22836e4364d4bdd72366",
+  "harness_ref": "cs28/remove-workboard-historical-tables",
+  "resolved_sha": "9b4dcc94f85087c45732e018de80cca88bfe9aa5",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-10T16:24:32.922Z",
+  "synced_at": "2026-05-11T01:42:16.383Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
       "source_template": "template/managed/INSTRUCTIONS.md",
       "class": "managed",
       "rendered_hash": "57dcea2545c19244c86a3fbfb43d55a89057711c23f1726ebe5c5de59ec7bdaf",
-      "action": "updated"
+      "action": "skipped"
     },
     {
       "target": "TRACKING.md",
       "source_template": "template/managed/TRACKING.md",
       "class": "managed",
-      "rendered_hash": "beb0100919c685ae28e6c482d5c228e2eb37e7489cbfdecf51db0c0cd99b2751",
-      "action": "skipped"
+      "rendered_hash": "c84a9100bb52ed9d2f990612851a027b0c7e4468cef3dd5ab4267206398faeb2",
+      "action": "updated"
     },
     {
       "target": "RETROSPECTIVES.md",
@@ -57,7 +57,7 @@
       "target": ".github/workflows/harness-drift.yml",
       "source_template": "template/managed/.github/workflows/harness-drift.yml",
       "class": "managed",
-      "rendered_hash": "de959c3ab24da44d7fc281d0aa72bdf45796067449599214900cae6cac3cddb2",
+      "rendered_hash": "f8f8dc1d61e7049b4fae48c9d4c54aa0f62caf74422ca2e0b9aae7d7f62d1cc7",
       "action": "skipped"
     },
     {
@@ -84,21 +84,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "3128500c4ec0d593e6300a8279aa0edee4931c31253e9c7aa056fff5e7d0c7cb",
+      "rendered_hash": "52ccd9477b99b903a6d5e7d0f629eccde0f4fb71612121efbaad0c6030b63c59",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1031,
-            "end": 1033
+            "start": 1033,
+            "end": 1035
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "7f1fe2c19d479bf5a44351582260ab941706d75d82f0eaa161ba4ba2b9568b15"
+      "template_prose_hash": "8ec895429b006e2c34dfa1baa2939b3ab9d18b4c6bdb5426ffb509f566b5e4c3"
     },
     {
       "target": "REVIEWS.md",
@@ -124,7 +124,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "02e89a69a6db0f7d0079ef3b60c3652de6d3017031832b2cf5021be5b162f745",
+      "rendered_hash": "48498db245ee1d7c18f45435e894ee10235f926895f29e3c5319b337b2f44d31",
       "action": "preserved"
     },
     {
@@ -138,14 +138,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "2aa54d6285c76ab7e4aa55939f2ce3fa115694a6eef2e3467963a066b33bd5e4",
+      "rendered_hash": "17bd5895b9c015589f55a2496b80fd7db5bd52d1dd9180edadbe163ecb1daa70",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "fb689aeba229fe75d226bf8ec433000cca0d1abab5429db735129d30925a4c4d",
+      "rendered_hash": "9c9db0336a3a27a10b0e8ad49ec9b4aa3d9b41e406549f86ee992a53c862c6c5",
       "action": "preserved"
     }
   ],

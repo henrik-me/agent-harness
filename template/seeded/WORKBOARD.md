@@ -18,10 +18,4 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 |------------|-------|-------|-------|--------|--------------|----------------|
 | — | no active CS — populate when claiming | — | — | — | _(set on claim)_ | _(none)_ |
 
-## Recently Completed
-
-| CS | Title | Closed | Notes |
-|----|-------|--------|-------|
-| _(none yet)_ | _(n/a)_ | _(n/a)_ | _(n/a)_ |
-
-> **Note:** Clickstop files live under lifecycle subdirectories: `project/clickstops/planned/` (queued), `project/clickstops/active/` (in flight), `project/clickstops/done/` (completed).
+> **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority order via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

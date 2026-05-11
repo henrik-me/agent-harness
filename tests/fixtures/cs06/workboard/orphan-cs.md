@@ -11,9 +11,3 @@
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 |  | Some work item | in-progress | test-ag | cs07/work | 2026-05-01 | _(none)_ |
-
-## Recently Completed
-
-| CS | Title | Closed | Notes |
-|----|-------|--------|-------|
-| CS06 | Structural linters | 2026-05-01 | Done. |
