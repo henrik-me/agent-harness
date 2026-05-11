@@ -444,6 +444,14 @@ need" produces silent gaps that surface as integration failures later.
   cwd, not the harness source location. Never use `import.meta.url` or
   `process.cwd()` to resolve consumer-repo files.
 
+- Cross-repo path discipline (LRN-105). When a sub-agent operates in a repo
+  OTHER than the orchestrator's, every path in the briefing must be rooted
+  in the executing repo. For composed-block edits in a consumer repo:
+  edit `<consumer-root>/<file>` between `<​!-- harness:local-start id=X -->`
+  markers, NOT `template/composed/<file>` (that path only exists in the
+  harness repo). Disambiguate any `template/`, `scripts/`, or other
+  directory name that exists in both repos with different semantics.
+
 - Fail-closed parsers (LRN-033). Malformed JSON/YAML/etc → clear error
   message to stderr + process.exit(1). NEVER silent default. NEVER let a
   stack trace be the only error signal.

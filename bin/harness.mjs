@@ -984,6 +984,194 @@ git core.autocrlf=true (LRN-074), both of which silently break sync drift detect
 **Why:** WORKBOARD is live-coordination state only; the queue and history are
 file-system-derived and would drift if duplicated here.
 `.trim(),
+  clickstop: `
+**Linter:** check-clickstop (scripts/check-clickstop.mjs)
+**Target:** Direct .md children under project/clickstops/{active,done,planned}/
+**Rules:**
+  - Filename convention: active_csNN_*.md / done_csNN_*.md / planned_csNN_*.md.
+  - Required header fields: Status, Owner, Branch, Started, Closed, Depends on.
+  - Lifecycle invariant: directory name must match the **Status:** value.
+  - Active and recently-closed CS files must include a ## Tasks table with
+    explicit close-out hygiene rows (docs/restart task + learnings/follow-up
+    task) — see OPERATIONS.md close-out procedure.
+  - Done CS files must include a ## Plan-vs-implementation review section
+    with **Reviewer:**, **Date:**, and **Outcome:** fields at start-of-line
+    (LRN-064 gate; CS03b enforcement date).
+**Why:** clickstop files are the canonical record of what work is in flight,
+done, or queued. Drift between filename, status, and content would silently
+corrupt orchestration.
+`.trim(),
+  'commit-trailers': `
+**Linter:** check-commit-trailers (scripts/check-commit-trailers.mjs)
+**Target:** A git commit message file (e.g. .git/COMMIT_EDITMSG) supplied via --file.
+**Rules:**
+  - Trailer block is the trailing run of consecutive Key: Value lines after a blank line.
+  - --required Trailer1,Trailer2 enforces presence; --allow Trailer=regex enforces value shape.
+  - Empty file exits 0 (early return).
+**Why:** every harness commit must include the
+"Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" trailer
+(see OPERATIONS.md). The CI pr-body / commit-trailer workflows enforce this.
+`.trim(),
+  'compose-v2': `
+**Linter:** check-compose-v2 (scripts/check-compose-v2.mjs)
+**Target:** docker-compose.yml or compose.yaml at the repo root (auto-detected).
+**Rules:**
+  - No deprecated top-level \`version:\` key (Compose Spec v3-style is rejected).
+  - Top-level \`services:\` key present and non-empty.
+  - No known-deprecated keys: \`links:\`, \`external_links:\`, \`volume_driver:\`.
+**Why:** Compose Spec v2+ no longer needs/uses \`version:\` and the v3-style
+key now causes warnings in current docker compose. Catching deprecated keys
+before runtime keeps consumer compose files forward-compatible.
+`.trim(),
+  'composed-blocks': `
+**Linter:** check-composed-blocks (scripts/check-composed-blocks.mjs)
+**Target:** A composed-class markdown file (e.g. CONVENTIONS.md, OPERATIONS.md, REVIEWS.md).
+**Rules:**
+  - Required block IDs (via --allowed-ids) are present.
+  - No duplicate block IDs.
+  - Every <\u200b!-- harness:local-start id=X --> has a matching end marker.
+  - No markers appear UNESCAPED inside fenced code blocks (use &lt;!-- or
+    insert U+200B after the < to escape).
+  - Lock file (--lock) does not reference orphan IDs absent from the file.
+**Why:** composed files mix harness-managed regions with consumer-local blocks
+(harness:local-start / -end markers). Drift between the lock file's expected
+IDs and what's actually in the file silently breaks \`harness sync\`.
+`.trim(),
+  context: `
+**Linter:** check-context (scripts/check-context.mjs)
+**Target:** CONTEXT.md (one per consumer repo).
+**Rules:**
+  - Required section headings are present.
+  - No stale "ready to claim" language when a CS is currently active in
+    project/clickstops/active/ (cross-checked via --cwd).
+**Why:** CONTEXT.md is the orchestrator restart-state document. If it claims
+"ready to claim" while CSnn is active, a fresh agent will misread the state
+and either re-claim or skip the active CS.
+`.trim(),
+  fixtures: `
+**Linter:** check-fixtures (scripts/check-fixtures.mjs)
+**Target:** tests/fixtures/ (or any --dir).
+**Rules:**
+  - No path under the target may be silently swallowed by .gitignore
+    (validated via \`git check-ignore --no-index\`).
+**Why:** LRN-076 — test fixtures matched by .gitignore (e.g. *.log) exist
+locally but are never committed. CI then runs without them, the test
+silently changes shape (still asserts something — but not what was meant),
+and false-greens accumulate undetected.
+`.trim(),
+  instructions: `
+**Linter:** check-instructions (scripts/check-instructions.mjs)
+**Target:** INSTRUCTIONS.md.
+**Rules:**
+  - Required top-level (H2) headings are present.
+  - Anchor links ([text](#anchor)) resolve to existing headings.
+  - Headings with no body emit WARNING (dead-section detection; non-fatal).
+  - Scoped cross-file references resolve (LRN-NNN anchors and ADR files).
+**Why:** INSTRUCTIONS.md is the post-pull quick-reference checklist. Broken
+links or dead sections silently degrade the agent re-orientation flow.
+`.trim(),
+  learnings: `
+**Linter:** check-learnings (scripts/check-learnings.mjs)
+**Target:** LEARNINGS.md.
+**Rules:**
+  - Every entry's YAML frontmatter validates against schemas/learning.schema.json (AJV).
+  - Status / disposition consistency (e.g. status=deferred requires deferred_until).
+  - LRN-NNN sequence sanity warnings.
+**Why:** LEARNINGS.md is the institutional memory. Schema validation prevents
+silent typos in category/status/tags from causing missed harvests.
+`.trim(),
+  pack: `
+**Linter:** check-pack (scripts/check-pack.mjs)
+**Target:** Repo root (must contain package.json).
+**Rules:**
+  - Tarball unpacked-size budget (default 1 MB; --max-size-bytes override).
+  - Forbidden patterns absent from packed file list.
+  - Required entries present in packed file list.
+**Why:** consumers get the harness via \`npx -y github:henrik-me/agent-harness\`
+which runs \`npm pack\` under the hood. Size budget catches accidental .git/
+or test-fixture inclusion; required-entry checks catch missed bin/ scripts.
+Self-host-guarded: only runs when the consumer's package.json name is
+\`@henrik-me/agent-harness\`.
+`.trim(),
+  'pr-body': `
+**Linter:** check-pr-body (scripts/check-pr-body.mjs)
+**Target:** A PR body markdown file supplied via --file.
+**Rules:**
+  - Required section headings present (default: Summary, Changes, Testing).
+  - No placeholder text remains (TODO:, FIXME:, &lt;!-- placeholder -->, XXX:, TBD).
+  - Optional --min-words per required section body.
+**Why:** consistent PR bodies make the project log self-explanatory at a
+later date. The CI pr-body workflow runs this against the live PR body —
+when you edit a PR body in the UI to satisfy this linter, follow up with
+\`gh run rerun <run-id> --failed\` (see LRN-100).
+`.trim(),
+  'public-artifact': `
+**Linter:** check-public-artifact (scripts/check-public-artifact.mjs)
+**Target:** Archived shadow / pilot / migration artifact dir (--dir). Scans .md, .txt, .log, .json.
+**Rules:**
+  - Forbidden patterns are config-driven via \`public_artifact_redaction\`
+    in harness.config.json; hardcoded defaults apply when no config is present.
+**Why:** before promoting artifacts to a public branch / release, scan for
+secrets, internal URLs, and other leak vectors. Patterns are intentionally
+config-driven so each consumer can codify its own redaction policy.
+`.trim(),
+  readme: `
+**Linter:** check-readme (scripts/check-readme.mjs)
+**Target:** README.md.
+**Required (errors):**
+  - First non-empty line is an H1.
+  - At least one paragraph between the H1 and the first H2.
+  - "## Quickstart" OR "## Getting started" (case-insensitive).
+  - "## License" or a "MIT" mention anywhere in the file.
+  - "## Architecture" OR a link to ARCHITECTURE.md.
+  - "## Status" OR a link to CONTEXT.md.
+**Optional (warning):**
+  - At least one ![…](…) badge image in the first 30 lines.
+**Why:** v0 baseline structural README check (CS06 spec, will canonicalize
+when CS08 ships READMEGUIDE).
+`.trim(),
+  'scaffold-readme': `
+**Linter:** check-scaffold-readme (scripts/check-scaffold-readme.mjs)
+**Target:** scaffolds/<name>/README.md (one row per scaffold; auto-dispatched
+            via --file <readme> --name <scaffold-name>).
+**Required H2 headings:**
+  - ## When to use
+  - ## What it ships
+  - ## Customization points
+  - ## How to invoke
+**Why:** scaffold READMEs are pattern docs — consumers read them to decide
+whether to invoke the scaffold. Missing sections silently turn a useful
+pattern into an unfindable one. Self-host-guarded (only runs in the harness
+repo itself, not consumer repos).
+`.trim(),
+  templates: `
+**Linter:** check-templates (scripts/check-templates.mjs)
+**Target:** template/ directory (or any --file / --dir).
+**Rules (LRN-049/050/051):**
+  - No dot-notation placeholders ({{project.agent_suffix}}); use flat keys
+    ({{agent_suffix}}) — dot-notation is emitted literally, not substituted.
+  - No relative-up paths ('../...') in template-resolved file references.
+  - No self-referencing TODO/FIXME tokens in PR-template files.
+**Why:** template-authoring regressions are silent: a wrong placeholder
+renders as literal text in the consumer's checked-in file. The linter
+catches the most common authoring traps before sync ships them downstream.
+`.trim(),
+  'workflow-pins': `
+**Linter:** check-workflow-pins (scripts/check-workflow-pins.mjs)
+**Target:** .github/workflows/ (or any --dir of .yml/.yaml files).
+**Rules:**
+  - Every \`uses: henrik-me/agent-harness[/<path>]@<ref>\` reference must
+    either be a 40-char hex SHA pin OR exactly match the \`version\` field
+    in harness.config.json.
+  - Branch refs (@main, @master, @v1) are ERROR unless they are a SHA or
+    match the configured version.
+**Why:** unpinned workflow refs let an upstream main change silently break
+consumer CI between runs. Pinning to SHA (preferred) or to a release tag
+makes the dependency edge explicit. For SAML-protected orgs where
+\`gh api repos/<owner>/<repo>/git/ref/tags/<tag>\` returns 403, use
+\`git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<tag>\`
+as the SAML-safe fallback (see OPERATIONS.md § Reusable CI workflow).
+`.trim(),
 };
 
 async function cmdLint(args, _global) {
@@ -1314,19 +1502,31 @@ async function cmdLint(args, _global) {
   const results = [];
   let anyError = false;
 
-  // CS31: validate that every name in --only / lint:NAME matches at least
-  // one known linter base name. Without this, a typo like
-  // `lint --only text-encding` silently exits 0 with "0 passed, 0 failed,
-  // 0 skipped" — a usability footgun that lets typos in CI workflows pass
-  // forever. Mirrors the --explain unknown-name UX (line ~1033).
+  // CS31 + CS32/D1: validate that every name in --only / --skip matches at
+  // least one known linter base name. Without this, a typo like
+  // `lint --only text-encding` or `lint --skip text-encding` silently exits 0
+  // with "0 passed, 0 failed, 0 skipped" (--only) or no-effect (--skip) — a
+  // usability footgun that lets typos in CI workflows pass forever. Mirrors
+  // the --explain unknown-name UX (line ~1033).
+  const knownBaseNames = new Set(linters.map((l) => l.name.split(':')[0]));
   if (only) {
-    const knownBaseNames = new Set(linters.map((l) => l.name.split(':')[0]));
     const unknown = [...only].filter((n) => !knownBaseNames.has(n));
     if (unknown.length > 0) {
       const known = [...knownBaseNames].sort().join(', ');
       const label = unknown.length === 1 ? 'name' : 'names';
       die(
         `harness lint --only: unknown linter ${label}: ${unknown.join(', ')}\nKnown: ${known}`,
+        2,
+      );
+    }
+  }
+  if (skip.size > 0) {
+    const unknown = [...skip].filter((n) => !knownBaseNames.has(n));
+    if (unknown.length > 0) {
+      const known = [...knownBaseNames].sort().join(', ');
+      const label = unknown.length === 1 ? 'name' : 'names';
+      die(
+        `harness lint --skip: unknown linter ${label}: ${unknown.join(', ')}\nKnown: ${known}`,
         2,
       );
     }

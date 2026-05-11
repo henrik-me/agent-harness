@@ -446,6 +446,41 @@ describe('harness lint', () => {
   });
 
   // -------------------------------------------------------------------------
+  // CS32 / D1 — `--skip` zero-match validation (mirrors CS31 `--only`)
+  // -------------------------------------------------------------------------
+  it('CS32/D1: lint --skip <unknown> exits 2 with a known-linters list (mirrors CS31)', () => {
+    const r = run(['lint', '--skip', 'does-not-exist-aaa', '--quiet']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stderr.includes('does-not-exist-aaa'),
+      `Expected unknown name echoed in stderr; got:\n${r.stderr}`,
+    );
+    assert.ok(
+      r.stderr.includes('harness lint --skip:'),
+      `Expected "harness lint --skip:" header in stderr; got:\n${r.stderr}`,
+    );
+    assert.ok(
+      r.stderr.includes('Known:'),
+      `Expected "Known:" listing in stderr; got:\n${r.stderr}`,
+    );
+  });
+
+  it('CS32/D1: lint --skip valid,typo (mixed) still exits 2 because of the typo', () => {
+    const r = run(['lint', '--skip', 'workflow-pins,typo-name-ccc', '--quiet']);
+    assert.equal(r.status, 2, `Expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stderr.includes('typo-name-ccc'),
+      `Expected unknown name "typo-name-ccc" echoed in stderr; got:\n${r.stderr}`,
+    );
+    const headerLine = r.stderr.split('\n').find((l) => l.startsWith('harness lint --skip:'));
+    assert.ok(headerLine, `Expected "harness lint --skip:" header line in stderr; got:\n${r.stderr}`);
+    assert.ok(
+      !headerLine.includes('workflow-pins'),
+      `Did not expect valid name "workflow-pins" in error header; got: ${headerLine}`,
+    );
+  });
+
+  // -------------------------------------------------------------------------
   // CS30 / D5 — `harness lint --explain <name>` prints rule docs
   // -------------------------------------------------------------------------
   it('CS30/D5: lint --explain architecture prints required-heading set + canonical seed path', () => {
@@ -466,6 +501,33 @@ describe('harness lint', () => {
     assert.ok(
       r.stderr.includes('Known:'),
       `Expected "Known:" listing in stderr; got:\n${r.stderr}`,
+    );
+  });
+
+  // CS32 / D3 — LINTER_EXPLANATIONS now covers all 18 shipped linters
+  it('CS32/D3: lint --explain clickstop prints rule body for a newly-added linter', () => {
+    const r = run(['lint', '--explain', 'clickstop']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stdout.includes('check-clickstop'),
+      `Expected linter script name in --explain output; got:\n${r.stdout}`,
+    );
+    assert.ok(
+      r.stdout.includes('Plan-vs-implementation review'),
+      `Expected representative rule in --explain output; got:\n${r.stdout}`,
+    );
+  });
+
+  it('CS32/D3: lint --explain workflow-pins prints rule body for a newly-added linter', () => {
+    const r = run(['lint', '--explain', 'workflow-pins']);
+    assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.ok(
+      r.stdout.includes('check-workflow-pins'),
+      `Expected linter script name in --explain output; got:\n${r.stdout}`,
+    );
+    assert.ok(
+      r.stdout.includes('SHA pin') || r.stdout.includes('hex SHA'),
+      `Expected representative rule (SHA pin) in --explain output; got:\n${r.stdout}`,
     );
   });
 
