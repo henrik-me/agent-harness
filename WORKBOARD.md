@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-12 (CS31 claimed: validate lint --only / lint:NAME zero-linter selections; orchestrator yoga-ah)
+> **Last updated:** 2026-05-12 (CS31 closed out — active CS list empty; orchestrator yoga-ah idle on agent-harness)
 
 ## Orchestrators
 
@@ -16,6 +16,6 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS31 | Validate `lint --only` / `lint:NAME` zero-linter selections (refines CS30/D2) | implementation | yoga-ah | `cs31/lint-only-zero-match-validation` | 2026-05-12 | — |
+| — | No active CS — see `project/clickstops/planned/` for queue | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

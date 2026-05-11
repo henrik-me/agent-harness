@@ -2123,6 +2123,37 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-106
+
+```yaml
+id: LRN-106
+date: 2026-05-12
+category: tooling
+source_cs: CS31
+status: open
+tags: [cli, harness-lint, validation, skip-flag, footgun]
+claim_area: harness-cli
+```
+
+**Problem:** CS31 fixed `harness lint --only <unknown>` and `harness lint:<unknown>` to exit 2 with a useful "unknown linter name" error instead of silently exiting 0. The orthogonal flag, `harness lint --skip <unknown>`, was intentionally left untouched in CS31 to keep the change narrowly scoped — but the same footgun still exists for `--skip`. A typo'd `--skip text-encding` is silently accepted: the spelling is wrong, no linter is actually skipped, but no error fires. CI workflows that try to skip a renamed/removed linter would silently start running it again.
+
+**Finding:** **Apply the same zero-match validation to `--skip`.** The pattern is identical to CS31's: compute `knownBaseNames` (already done), `unknown = [...skip].filter(n => !knownBaseNames.has(n))`, and `die()` with exit 2 if `unknown.length > 0`. The error UX should mirror the `--only` UX (`harness lint --skip: unknown linter name: <typo>` + Known: list).
+
+There is one design subtlety vs `--only`: `--skip` removing a non-existent linter is a no-op even when the name *is* valid (the linter simply isn't run anyway), so the operational consequences of a typo are softer than for `--only`. But the typo-detection value is the same — a CI user who expected to skip the linter and saw it run anyway has no signal that their flag was malformed. Symmetry with `--only` also reduces cognitive load.
+
+**Evidence:**
+- CS31 GPT-5.5 plan-vs-impl review (2026-05-12, recorded in `done_cs31_lint-only-validation.md` § Plan-vs-implementation review): "`--skip` remains orthogonal and unknown skip names still silently no-op, including the all-linters path. This is explicitly identified as a possible follow-up candidate in the CS file, not part of CS31's required behavior."
+- `bin/harness.mjs` `cmdLint` (post-CS31): the `if (only) { ... }` validation block at the head of the per-linter section is the natural insertion point for an `if (skip.size > 0) { ... }` mirror. The two blocks would share the `knownBaseNames` set.
+
+**Recommended next step (open):**
+
+- File a small CS (CS32 candidate) that:
+  1. Adds `--skip` zero-match validation alongside the CS31 `--only` validation in `cmdLint`.
+  2. Adds tests mirroring the CS31 ones (`--skip typo`, `--skip valid,typo`, `--skip valid` continues to work).
+  3. Updates `CHANGELOG.md` `[Unreleased] § Changed` with a one-line note.
+
+**Disposition:** Open. Low-priority follow-up; not blocking any current work. Suitable as a tiny first-CS for an agent learning the harness, or as a piggyback on the next CS that touches `cmdLint`.
+
 ### LRN-105
 
 ```yaml

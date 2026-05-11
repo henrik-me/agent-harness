@@ -1,10 +1,10 @@
 # CS31 — Validate `lint --only` / `lint:NAME` zero-linter selections
 
-**Status:** active
+**Status:** done
 **Owner:** orchestrator
 **Branch:** cs31/lint-only-zero-match-validation
 **Started:** 2026-05-12
-**Closed:** —
+**Closed:** 2026-05-12
 **Filed by:** GPT-5.5 plan-vs-implementation review of CS30 (medium-severity follow-up; recorded in `done_cs30_si-feedback-fixes.md` and surfaced in CS30 close-out gate run 2026-05-12).
 **Depends on:** CS30 (introduced the `--only` filter and `lint:NAME` alias whose typo-handling we are tightening).
 
