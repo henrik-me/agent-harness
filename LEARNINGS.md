@@ -2130,7 +2130,7 @@ id: LRN-106
 date: 2026-05-12
 category: tooling
 source_cs: CS31
-status: open
+status: applied
 tags: [cli, harness-lint, validation, skip-flag, footgun]
 claim_area: harness-cli
 ```
@@ -2154,6 +2154,8 @@ There is one design subtlety vs `--only`: `--skip` removing a non-existent linte
 
 **Disposition:** Open. Low-priority follow-up; not blocking any current work. Suitable as a tiny first-CS for an agent learning the harness, or as a piggyback on the next CS that touches `cmdLint`.
 
+**Disposition update (2026-05-12, `yoga-ah`, CS32 close-out):** Applied via [CS32/D1](project/clickstops/done/done_cs32_harness-lint-ux-hardening.md). `cmdLint` now validates `--skip <unknown>` symmetrically to `--only`: exits 2 with a "Known: <list>" message. The two recommended tests (`--skip typo`, `--skip valid,typo`) and the CHANGELOG `[Unreleased] § Changed` one-liner all landed in the CS32 content PR (#128, merged `6d72b15`). Status flipped `open` → `applied`.
+
 ### LRN-105
 
 ```yaml
@@ -2161,7 +2163,7 @@ id: LRN-105
 date: 2026-05-12
 category: process
 source_cs: CS30
-status: open
+status: applied
 tags: [sub-agent-dispatch, paths, consumer-vs-harness, briefing-discipline]
 claim_area: process-dispatch
 ```
@@ -2184,6 +2186,8 @@ This generalises beyond composed blocks: any time a sub-agent operates on a diff
 
 **Disposition:** Open. Action will be filed as a planned CS (or piggybacked on the next CS that touches `template/composed/OPERATIONS.md`).
 
+**Disposition update (2026-05-12, `yoga-ah`, CS32 close-out):** Partially applied via [CS32/D2](project/clickstops/done/done_cs32_harness-lint-ux-hardening.md). The mandatory briefing preamble in `template/composed/OPERATIONS.md` § Conventions to follow now includes a "Cross-repo path discipline (LRN-105)" bullet that calls out the consumer-vs-harness composed-block trap explicitly. Rendered into root `OPERATIONS.md` via `harness sync --mode=apply`. The other recommended next step — a `check-cs-plan.mjs` linter that flags `template/composed/` references in CS plans whose target is a *consumer* repo — was deferred (heuristic-detection complexity vs. the briefing-preamble bullet covers the SI-style failure mode at lower implementation cost). Status flipped `open` → `applied`; the deferred linter idea is a candidate for a future CS if the path-trap recurs in practice.
+
 ### LRN-104
 
 ```yaml
@@ -2191,7 +2195,7 @@ id: LRN-104
 date: 2026-05-12
 category: tooling
 source_cs: CS30
-status: open
+status: applied
 tags: [linter, discoverability, ux, error-messages]
 claim_area: tooling-linters
 ```
@@ -2214,6 +2218,8 @@ claim_area: tooling-linters
 - Consider promoting `--explain` from an opt-in subcommand to an automatic suggestion at the bottom of every linter failure (e.g. "Run `harness lint --explain <name>` for the full rule set" appended to the first error per linter).
 
 **Disposition:** Open. Pattern is shipped (3/24 linters), expansion is straightforward future work.
+
+**Disposition update (2026-05-12, `yoga-ah`, CS32 close-out):** Applied via [CS32/D3](project/clickstops/done/done_cs32_harness-lint-ux-hardening.md). `LINTER_EXPLANATIONS` registry expanded from 3 entries to **all 18 shipped linters** (the original "21 remaining / 24 total" count overstated the active linter set; the correct shipped count at registry-fill time was 18). New entries: `clickstop`, `commit-trailers`, `compose-v2`, `composed-blocks`, `context`, `fixtures`, `instructions`, `learnings`, `pack`, `pr-body`, `public-artifact`, `readme`, `scaffold-readme`, `templates`, `workflow-pins`. Each entry follows the established pattern (Linter / Target / Rules / Why-or-Canonical-seed). The other recommended next step — auto-suggesting `--explain <name>` at the bottom of every linter failure — was deferred (low-priority UX polish; the existing "harness lint --explain <linter>" hint in architecture-style errors covers the discovery path). Status flipped `open` → `applied`; the auto-suggestion idea is a candidate for a future CS.
 
 ### LRN-103
 
