@@ -79,13 +79,13 @@ The goal is to catch the bug at lint time (before the orchestrator dispatches a 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 | Read CS file + LRN-105 + bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS pattern + existing scripts/check-*.mjs (e.g. check-fixtures.mjs as a similar self-host-aware linter) | planned | sub-agent | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 | Implement scripts/check-cs-plan.mjs per Decisions C34-1..C34-5 (self-host-aware; configurable forbidden-prefix list via harness.config.json) | planned | sub-agent | — |
-| T3 | Register the linter in bin/harness.mjs cmdLint linters list AND add a LINTER_EXPLANATIONS entry following the CS32/D3 pattern | planned | sub-agent | — |
-| T4 | Create tests/fixtures/cs-plan-lint/ with ≥4 fixture CS plans (consumer-target with template/composed/, with lib/, with mention inside fenced code block, harness-self-host with same refs) | planned | sub-agent | — |
-| T5 | Create tests/check-cs-plan.test.mjs with ≥6 tests covering all fixtures + --quiet + aggregator integration | planned | sub-agent | — |
-| T6 | CHANGELOG.md `[Unreleased] § Added` one-liner citing CS34 + LRN-105 | planned | sub-agent | — |
-| T7 | Self-checks (text-encoding, lint --quiet, node --test, fixtures linter on the new fixtures dir) | planned | sub-agent | — |
+| T1 | Read CS file + LRN-105 + bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS pattern + existing scripts/check-*.mjs (e.g. check-fixtures.mjs as a similar self-host-aware linter) | done | sub-agent | agent-id=cs34-implementer \| role=implementer \| report-status=complete \| learnings=2 |
+| T2 | Implement scripts/check-cs-plan.mjs per Decisions C34-1..C34-5 (self-host-aware; configurable forbidden-prefix list via harness.config.json) | done | sub-agent | — |
+| T3 | Register the linter in bin/harness.mjs cmdLint linters list AND add a LINTER_EXPLANATIONS entry following the CS32/D3 pattern | done | sub-agent | — |
+| T4 | Create tests/fixtures/cs-plan-lint/ with ≥4 fixture CS plans (consumer-target with template/composed/, with lib/, with mention inside fenced code block, harness-self-host with same refs) | done | sub-agent | — |
+| T5 | Create tests/check-cs-plan.test.mjs with ≥6 tests covering all fixtures + --quiet + aggregator integration | done | sub-agent | — |
+| T6 | CHANGELOG.md `[Unreleased] § Added` one-liner citing CS34 + LRN-105 | done | sub-agent | — |
+| T7 | Self-checks (text-encoding, lint --quiet, node --test, fixtures linter on the new fixtures dir) | done | sub-agent | — |
 | T8 | Orchestrator: commit on cs34/content, run GPT-5.5 plan-vs-impl gate | planned | orchestrator | — |
 | T9 | Open content PR; merge after CI green | planned | orchestrator | — |
 | T10 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, LRN-105 disposition update) | planned | orchestrator | per OPERATIONS.md § Claim |
@@ -93,7 +93,31 @@ The goal is to catch the bug at lint time (before the orchestrator dispatches a 
 
 ## Notes / Learnings
 
-(filled during execution)
+### Implementation decisions
+
+1. **Fenced-code-block detection:** A line whose `.trim()` starts with ` ``` ` (backtick-triple) toggles the `inFencedBlock` flag. This handles both opening and closing fences. Lines that START with triple-backtick are not scanned for violations — only pure toggle. This is simple and covers all standard Markdown fencing patterns used in harness CS plans. (Indented code blocks are not considered since CS plans use fenced blocks exclusively.)
+
+2. **Per-line exemption for harness links:** Any line containing `https://github.com/henrik-me/agent-harness/` is exempt even if it also contains a forbidden prefix. This covers markdown links like `[lib/composed.mjs](https://github.com/henrik-me/agent-harness/blob/main/lib/composed.mjs)`. The check is a simple substring match; no URL parsing needed.
+
+3. **First-prefix-wins per line:** When a line contains multiple forbidden prefixes, only the first matching prefix is reported. This avoids duplicate VIOLATION: lines for the same source line, keeping output readable.
+
+4. **One-level-deep walk:** The linter reads `<dir>/active/`, `<dir>/done/`, `<dir>/planned/` with `readdirSync` (no recursion). CS plan files are always direct children of these subdirectories per the harness convention.
+
+5. **Schema placement:** The new `cs_plan_lint` property was inserted before `excluded` in `schemas/harness.config.schema.json` to maintain approximate alphabetical ordering within the properties section.
+
+6. **LINTER_EXPLANATIONS placement:** `cs-plan` was inserted between `context` and `fixtures` to maintain alphabetical order in the `LINTER_EXPLANATIONS` object in `bin/harness.mjs`.
+
+7. **Linters array placement:** The `cs-plan` entry was placed immediately after the `fixtures` entry in the linters array. The self-host guard is handled inside the linter script itself (not via a conditional wrapper in the runner), because the linter needs to print the skip message on stdout — the runner's standard "target absent → skip" path does not emit such a message.
+
+### Unexpected discoveries
+
+- The `tests/fixtures/cs-plan-lint/` directory is under `tests/fixtures/`, which means `check-fixtures.mjs` will scan it (looking for .gitignore violations). The fixture files themselves have safe names and should not be gitignored, so this is benign.
+- The consumer fixture's active CS plan (active_cs01) triggers a `template/composed/` violation; the planned CS plan (planned_cs02) triggers a `lib/` violation. Both violations appear in the same linter run (tests 1–2 run against the same consumer clickstops dir).
+
+### Deferred / out-of-scope ideas
+
+- **Signal 2 (fenced-block marker for cross-repo dispatches inside the harness):** The CS plan mentions `<!-- cs-plan:consumer-target -->` markers as a potential future refinement. Not implemented in this CS; first cut with self-host-guard is sufficient per Decision C34-5.
+- **Aggregator integration test** (test 7 in the spec — running `harness lint --only cs-plan` from a temp consumer cwd): would require creating a temp consumer repo with a full `project/clickstops/` tree and a `package.json` (not the harness's). Deferred; the 7 unit tests in `tests/check-cs-plan.test.mjs` cover all functional paths.
 
 ## Plan-vs-implementation review
 

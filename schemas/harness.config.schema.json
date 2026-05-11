@@ -227,6 +227,25 @@
         }
       ]
     },
+    "cs_plan_lint": {
+      "type": "object",
+      "description": "Optional configuration for the check-cs-plan.mjs linter (CS34, LRN-105). Lets a consumer override the default set of harness-repo-internal path prefixes that are forbidden inside CS plan files. Self-host-guarded: the linter no-ops inside the harness repo itself regardless of this config.",
+      "additionalProperties": false,
+      "properties": {
+        "forbidden_path_prefixes": {
+          "type": "array",
+          "description": "Path prefix strings to forbid inside CS plan markdown (outside fenced code blocks and outside links to the harness repo). Replaces the default list when present. Defaults: ['template/composed/', 'template/seeded/', 'lib/', 'bin/', 'scripts/'].",
+          "items": {
+            "type": "string",
+            "description": "A path prefix string (substring match against each line).",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "examples": [["template/composed/", "lib/"]]
+        }
+      }
+    },
     "excluded": {
       "type": "array",
       "description": "Project-owned file paths or directory paths excluded from 'harness sync' entirely. Per ADR 0002. The harness will never create, overwrite, or skip-with-warning these paths — they are treated as if invisible to the sync engine. Use trailing '/' to mark a directory exclusion. Globs are NOT interpreted; list paths explicitly. Required for the harness repo's own self-host config (CS11) to protect README.md, LICENSE, package.json, .gitignore, .editorconfig and harness implementation paths from self-overwrite.",

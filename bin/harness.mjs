@@ -1048,6 +1048,20 @@ IDs and what's actually in the file silently breaks \`harness sync\`.
 "ready to claim" while CSnn is active, a fresh agent will misread the state
 and either re-claim or skip the active CS.
 `.trim(),
+  'cs-plan': `
+**Linter:** check-cs-plan (scripts/check-cs-plan.mjs)
+**Target:** project/clickstops/{active,done,planned}/*.md (CS plan files)
+**Rules:**
+  - No mention of harness-repo-internal path prefixes (default:
+    template/composed/, template/seeded/, lib/, bin/, scripts/) outside
+    fenced code blocks AND outside links to https://github.com/henrik-me/agent-harness/...
+  - Configurable via harness.config.json → cs_plan_lint.forbidden_path_prefixes (string[]).
+  - Self-host-guarded: skipped when package.json#name === '@henrik-me/agent-harness'.
+**Why:** consumer repos that copy CS-plan templates from the harness can
+inadvertently keep harness-perspective paths (e.g. "edit template/composed/CONVENTIONS.md")
+that don't exist in the consumer; sub-agents then look in the wrong place
+and waste a round-trip. LRN-105 documents the SI-CS01 trigger case.
+`.trim(),
   fixtures: `
 **Linter:** check-fixtures (scripts/check-fixtures.mjs)
 **Target:** tests/fixtures/ (or any --dir).
@@ -1357,6 +1371,20 @@ async function cmdLint(args, _global) {
       script: 'check-fixtures.mjs',
       args: ['--dir', path.join(cwd, 'tests', 'fixtures')],
       target: path.join(cwd, 'tests', 'fixtures'),
+    },
+    {
+      // CS34 (LRN-105): cs-plan linter. Flags harness-repo-relative paths
+      // (template/composed/, lib/, etc.) inside CS plans of CONSUMER repos.
+      // Self-host-guarded inside the linter script itself; the runner just
+      // dispatches and the script no-ops in the harness self-host.
+      name: 'cs-plan',
+      script: 'check-cs-plan.mjs',
+      args: [
+        '--dir', path.join(cwd, 'project', 'clickstops'),
+        '--cwd', cwd,
+        ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+      ],
+      target: path.join(cwd, 'project', 'clickstops'),
     },
     {
       // CS15d (CS08b): templates linter. Enforces LRN-049 (no dot-notation
