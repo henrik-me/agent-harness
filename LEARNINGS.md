@@ -2121,6 +2121,41 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
 
+### LRN-101
+
+```yaml
+id: LRN-101
+date: 2026-05-10
+category: process
+source_cs: CS22
+status: open
+tags: [release-cuts, changelog, audit-cadence, retro]
+claim_area: process-release
+```
+
+**Problem:** CS22 (Cut harness v0.2.0) ran a retroactive audit of all 56 (then 57) commits since `v0.1.0` to reconcile the CHANGELOG before tagging. The audit took the `cs22-changelog-auditor` sub-agent ~6 minutes (and one re-dispatch because the initial dispatch wording made the auditor over-escalate on R1/R2 benign workflow-hardening commits). The retroactive sweep also surfaced a structural reconciliation issue at the close-out gate: the audit was anchored at `main` HEAD pre-content-merge (`a5d2314`), but `v0.1.0..v0.2.0` is one commit longer (the squash-merge itself, `1484de7`), forcing a row-57 patch during close-out. The pattern — "audit only at release-cut time" — concentrates risk and effort at exactly the wrong moment (right before publishing), and creates the mismatch between audit-time HEAD and tag-time HEAD that needed reconciling.
+
+**Finding:** **For 53–57-commit windows, batch-audit-at-cut is workable but expensive and error-prone in two ways:**
+
+1. **Anchor drift.** A single-shot audit captures `main` HEAD at audit time. The release tag necessarily points at a later commit (the content-PR squash). The audit table is then "off by the squash" forever unless reconciled at close-out — which is exactly what the CS22 plan-vs-impl gate caught (NEEDS-FIX 2026-05-10T23:52Z).
+2. **Re-dispatch cost.** Without explicit "AUTHORIZED — benign hardening" notes for known-low-risk areas (R1 `release.yml`, R2 `private-smoke.yml`), well-disciplined sub-agents will halt and escalate, doubling the audit time.
+
+**The cheaper alternative — CHANGELOG-on-every-CS-close-out** — would distribute the cost across the source CSs (where the author already has full context on whether a change is user-visible) and eliminate anchor drift entirely (each CS adds entries to `[Unreleased]` as part of its own close-out PR, no retroactive sweep needed). Trade-offs: requires a tighter CS template (close-out gate must include "did this CS need a CHANGELOG entry?"), and may produce smaller-grained bullets that the release-cut CS would need to consolidate. Net: probably worth piloting in CS21+ (the gwn process catch-up) and CS16 (Sub Invaders bootstrap) by adding a CHANGELOG-touch line to their close-out task tables.
+
+**Recommended fix at the harness level:**
+
+- Add a "Did this CS need a CHANGELOG entry?" row to the `OPERATIONS.md § Close-out` checklist, defaulting to YES for any CS whose deliverable touches `lib/`, `bin/`, `schemas/`, `template/managed/`, or `template/composed/` files (i.e. anything that ships to consumers via `npx`/`harness sync`).
+- Update the `check-clickstop` linter to flag a missing CHANGELOG-touch task in the active CS file's `## Tasks` table for any CS that touches the above paths. This makes CHANGELOG-on-every-CS mechanically enforced rather than convention-only.
+- For the next release-cut CS (post-v0.2.0): expect to validate the CHANGELOG against `git log v<prev>..main` rather than build it from scratch. Audit cost should drop from ~6 min sub-agent run + reconciliation to ~30 s diff-check.
+
+**Evidence:**
+
+- CS22 audit-report at `project/clickstops/done/done_cs22_cut-harness-v0.2.0/changelog-audit-report.md`: 57 rows, 2 sub-agent dispatches (first stopped on R1/R2 escalation; second completed in ~6 min once R1/R2 were explicitly authorised in the dispatch).
+- Plan-vs-impl gate review 2026-05-10T23:52Z: VERDICT NEEDS-FIX with the explicit finding "audit table contains 56 rows and omits the `1484de7` content squash commit". Required a row-57 patch + snapshot reconciliation during close-out.
+- Cost comparison: CS22's 13 CHANGELOG bullets came from 7 distinct CSs (CS06c, CS08c, CS14, CS15a, CS15c, CS15d, CS15e, CS15f). Each of those CSs could have added their own bullet at close-out for a marginal cost of ~30 s of scribing per CS, distributed across ~6 days, vs. CS22's concentrated ~6 min + reconciliation cost.
+
+**Disposition:** Open. Recommended action: file as a tiny harness CS (touch `OPERATIONS.md` close-out checklist + `scripts/check-clickstop.mjs`); pilot the new convention in CS21 and CS16 close-outs. Until then, every release-cut CS plan must explicitly include the audit-table reconciliation step (anchor-drift fix) AND the explicit-authorization-of-R1/R2 dispatch language so the sub-agent doesn't over-escalate.
+
 ## Obsolete
 
 (none yet)
