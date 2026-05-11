@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-11T00:30Z (pre-CS16 prep: CS23 + CS24 filed as LRN-100/101 dispositions; CS16 still ready to claim — Azure RG isolation amendment to plan staged in same PR)
+> **Last updated:** 2026-05-11T00:55Z (CS16 claim — yoga-ah; scope refinement merged 2026-05-11; cs16/content branch)
 
 ## Orchestrators
 
@@ -10,23 +10,23 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-11T00:05Z |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-11T00:55Z |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS16 | Bootstrap Sub Invaders (slim scope per 2026-05-11 refinement) | claimed | yoga-ah | `cs16/content` | 2026-05-11T00:55Z | — |
 
-_No active CS. CS22 closed 2026-05-10; CS16 ready to claim against published `v0.2.0`._
+CS16 active file: [`project/clickstops/active/active_cs16_bootstrap-sub-invaders/active_cs16_bootstrap-sub-invaders.md`](project/clickstops/active/active_cs16_bootstrap-sub-invaders/active_cs16_bootstrap-sub-invaders.md). Effective scope (per scope-refinement merged 2026-05-11): repo create + `harness init` + folder skeleton + file 4 active SI-CS planned files + 2 re-eval skeletons + bootstrap PR. All other work (Ruleset, security, ARCHITECTURE, composed blocks, stub code, Azure provisioning) is reassigned to SI-CS01..04 in `henrik-me/sub-invaders`.
 
 ## Queued (planned, ready to claim in order)
 
 | Order | CS | Title | Notes |
 |---|---|---|---|
-| 1 | CS16 | Bootstrap Sub Invaders | **CS22 closed 2026-05-10; ready to claim.** First downstream consumer of CS15e's constraint-detection flow. Pinned to `v0.2.0` (now published). Planned file at [`project/clickstops/planned/planned_cs16_bootstrap-sub-invaders.md`](project/clickstops/planned/planned_cs16_bootstrap-sub-invaders.md). |
-| 2 | CS21 | Harvest gwn process-doc deltas back into harness templates | Independent of CS22/CS16 chain. May claim anytime; release follow-up will land AFTER CS21 close-out. Planned file at [`project/clickstops/planned/planned_cs21_harvest-process-optimizations-from-guesswhatisnext.md`](project/clickstops/planned/planned_cs21_harvest-process-optimizations-from-guesswhatisnext.md). |
-| 3 | CS23 | Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger | Tiny tooling/CI-hygiene CS (one workflow line + one regression test + workflows audit). Independent of CS16/CS21. Filed 2026-05-11 as the LRN-100 disposition per the pre-CS16 gate. Planned file at [`project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md`](project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). |
-| 4 | CS24 | Apply LRN-101: mechanically enforce CHANGELOG-touch task on distributed-surface CSs | Linter extension to `scripts/check-clickstop.mjs`. Should land **after** at least one pilot CS close-out (CS16 or CS21 — both pilot the convention voluntarily) so the convention is exercised before becoming mandatory. Filed 2026-05-11 as the LRN-101 disposition per the pre-CS16 gate. Planned file at [`project/clickstops/planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md`](project/clickstops/planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). |
+| 1 | CS21 | Harvest gwn process-doc deltas back into harness templates | Independent of CS22/CS16 chain. May claim anytime; release follow-up will land AFTER CS21 close-out. Planned file at [`project/clickstops/planned/planned_cs21_harvest-process-optimizations-from-guesswhatisnext.md`](project/clickstops/planned/planned_cs21_harvest-process-optimizations-from-guesswhatisnext.md). |
+| 2 | CS23 | Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger | Tiny tooling/CI-hygiene CS (one workflow line + one regression test + workflows audit). Independent of CS16/CS21. Filed 2026-05-11 as the LRN-100 disposition per the pre-CS16 gate. Planned file at [`project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md`](project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). |
+| 3 | CS24 | Apply LRN-101: mechanically enforce CHANGELOG-touch task on distributed-surface CSs | Linter extension to `scripts/check-clickstop.mjs`. Should land **after** at least one pilot CS close-out (CS16 or CS21 — both pilot the convention voluntarily) so the convention is exercised before becoming mandatory. Filed 2026-05-11 as the LRN-101 disposition per the pre-CS16 gate. Planned file at [`project/clickstops/planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md`](project/clickstops/planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). |
 
 All three pre-CS16 umbrella absorbed planned files (`planned_cs04a_*`, `planned_cs04b_*`, `planned_cs04d_*`, `planned_cs06b_*`, `planned_cs08b_*`, `planned_cs09b_*`, `planned_cs10b_*`) have been `git mv`'d to `done/` with `**Superseded by:**` pointers.
 
