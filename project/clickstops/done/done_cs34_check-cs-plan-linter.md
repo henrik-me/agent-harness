@@ -1,10 +1,10 @@
 # CS34 — `check-cs-plan.mjs` linter — flag harness-repo-relative paths in consumer-targeted CS plans
 
-**Status:** active
+**Status:** done
 **Owner:** orchestrator
 **Branch:** cs34/content
 **Started:** 2026-05-12
-**Closed:** —
+**Closed:** 2026-05-12
 **Filed by:** [CS32](../done/done_cs32_harness-lint-ux-hardening.md) close-out (2026-05-12) by `yoga-ah`. CS32/D2 added a "Cross-repo path discipline" bullet to the mandatory sub-agent briefing preamble, addressing the human-readable side of [LRN-105](../../../LEARNINGS.md#lrn-105). This CS lands the machine-enforced side — a linter that catches the bug before a sub-agent gets dispatched with the wrong paths.
 **Depends on:** None. CS32 shipped the briefing-preamble bullet; this CS hardens the same contract with automated detection.
 
@@ -86,10 +86,10 @@ The goal is to catch the bug at lint time (before the orchestrator dispatches a 
 | T5 | Create tests/check-cs-plan.test.mjs with ≥6 tests covering all fixtures + --quiet + aggregator integration | done | sub-agent | — |
 | T6 | CHANGELOG.md `[Unreleased] § Added` one-liner citing CS34 + LRN-105 | done | sub-agent | — |
 | T7 | Self-checks (text-encoding, lint --quiet, node --test, fixtures linter on the new fixtures dir) | done | sub-agent | — |
-| T8 | Orchestrator: commit on cs34/content, run GPT-5.5 plan-vs-impl gate | planned | orchestrator | — |
-| T9 | Open content PR; merge after CI green | planned | orchestrator | — |
-| T10 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, LRN-105 disposition update) | planned | orchestrator | per OPERATIONS.md § Claim |
-| T11 | Close-out: learnings + follow-ups (file any new LRNs from CS34 implementation) | planned | orchestrator | per OPERATIONS.md § Claim |
+| T8 | Orchestrator: commit on cs34/content, run GPT-5.5 plan-vs-impl gate | done | orchestrator | — |
+| T9 | Open content PR; merge after CI green | done | orchestrator | PR #135 merged |
+| T10 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, LRN-105 disposition update) | done | orchestrator | per OPERATIONS.md § Claim |
+| T11 | Close-out: learnings + follow-ups (file any new LRNs from CS34 implementation) | done | orchestrator | no new LRNs filed (sub-agent's count>=N suggestion noted but not promoted to a stand-alone LRN — low signal-to-noise) |
 
 ## Notes / Learnings
 
