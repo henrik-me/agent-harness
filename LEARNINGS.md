@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-10 (CS15d close-out: LRN-087..091 added)
+> **Last updated:** 2026-05-11 (pre-CS16 disposition: LRN-100 → CS23, LRN-101 → CS24 filed; both remain `open` until those CSs close)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2121,6 +2121,8 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
 
+**Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
+
 ### LRN-101
 
 ```yaml
@@ -2155,6 +2157,8 @@ claim_area: process-release
 - Cost comparison: CS22's 13 CHANGELOG bullets came from 7 distinct CSs (CS06c, CS08c, CS14, CS15a, CS15c, CS15d, CS15e, CS15f). Each of those CSs could have added their own bullet at close-out for a marginal cost of ~30 s of scribing per CS, distributed across ~6 days, vs. CS22's concentrated ~6 min + reconciliation cost.
 
 **Disposition:** Open. Recommended action: file as a tiny harness CS (touch `OPERATIONS.md` close-out checklist + `scripts/check-clickstop.mjs`); pilot the new convention in CS21 and CS16 close-outs. Until then, every release-cut CS plan must explicitly include the audit-table reconciliation step (anchor-drift fix) AND the explicit-authorization-of-R1/R2 dispatch language so the sub-agent doesn't over-escalate.
+
+**Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Two-pronged disposition. (a) **Pilot:** CS16 and CS21 close-outs will each add a CHANGELOG-touch row to their `## Tasks` table — for CS16 this is reflected in the active-CS Tasks table populated at claim time per [OPERATIONS.md § Claim](../OPERATIONS.md#claim); for CS21 the same convention applies at its claim time. (b) **Mechanical enforcement:** filed as planned [CS24 — Apply LRN-101: mechanically enforce CHANGELOG-touch task on distributed-surface CSs](../project/clickstops/planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). Status remains `open` until CS24 closes; will flip to `applied` at CS24 close-out per C24-7 (with pilot evidence from CS16/CS21 cited).
 
 ## Obsolete
 
