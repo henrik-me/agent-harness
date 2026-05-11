@@ -127,4 +127,25 @@ just re-uses the same `--only NAME` codepath.
 
 ## Plan-vs-implementation review
 
-(populated at close-out)
+**Reviewer:** GPT-5.5 (code-review sub-agent, model id `gpt-5.5`)
+**Date:** 2026-05-12 (pre-PR gate, branch `cs31/lint-only-zero-match-validation` HEAD `ee5dd0b`)
+**Outcome:** NEEDS-FOLLOW-UP — implementation matches the plan and all 8 smoke
+commands pass (lint 24/0/3, tests 688/688, all six --only / lint: variants
+return the expected exit code). One documentation gap flagged: the
+`CHANGELOG` entry omits the planned LRN-104 cross-reference — fixed
+in-band before PR open. One deferrable follow-up: `--skip` remains
+silently no-op for unknown names; out of CS31 scope but worth a future
+CS to extend the same validation to the orthogonal flag.
+
+Pre-merge fix applied:
+
+  - Added LRN-104 cross-reference to the CHANGELOG `[Unreleased] § Changed`
+    entry, framing `--explain` as the canonical partner of
+    `--only` / `lint:NAME` for per-linter exploration.
+
+Deferrable follow-up (not blocking):
+
+  - **LRN candidate** — `--skip` zero-match validation. `--skip typo-name`
+    currently no-ops silently. The same validation pattern from CS31
+    would catch CI workflows that try to skip a renamed/removed linter.
+    Defer to a follow-up CS so this PR stays narrowly scoped.

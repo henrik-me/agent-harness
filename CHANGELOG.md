@@ -19,7 +19,10 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
   but `cmdLint` now rejects zero-match selections so a typo in a CI
   workflow (e.g. `harness lint:text-encding`) fails loudly. Mixed
   valid+typo selections (e.g. `--only learnings,typo`) also fail. The
-  error mirrors the existing `--explain unknown-name` UX. Per CS31.
+  error mirrors the existing `--explain unknown-name` UX —
+  `lint --explain <name>` is the canonical "give me help on one linter"
+  partner of `--only` / `lint:NAME` (see also LRN-104 on per-linter
+  explainability). Per CS31.
 
 ## [0.3.1] — 2026-05-12
 
