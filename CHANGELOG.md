@@ -11,15 +11,37 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **`harness lint:NAME`** alias as a shorthand for `harness lint --only NAME` (CS30/D2). Aliases the
+  one linter name into a focused run — e.g. `harness lint:text-encoding` runs only `check-text-encoding`.
+  Resolves [SI Finding #2](docs/migration-v0.2.x-to-v0.3.0.md#si-finding-2-no-lint-name-form).
+- **`harness lint --explain <name>`** subcommand prints the full rule set + canonical seed/template
+  path for one linter. Documented for `architecture`, `text-encoding`, `workboard` to start; the
+  registry is colocated with `cmdLint` in `bin/harness.mjs` and grows opportunistically. Per CS30/D5.
+- **Version header on every `harness lint` run:** the first stdout line is now
+  `# harness vX.Y.Z — lint (cwd: <path>)` (printed regardless of `--quiet`). Makes CI logs and
+  cross-clone debugging unambiguous about which harness produced a result. Per CS30/D8.
+- **`scripts/check-text-encoding.mjs --respect-gitignore`** (default ON) — when `--dir` is inside
+  a git repo, the scan list comes from `git ls-files --cached --others --exclude-standard` instead
+  of a recursive walk. Build artifacts in `.gitignore`d directories (e.g. dotnet's `api/bin/`,
+  `api/obj/`) no longer surface as CRLF/BOM violations. `--no-respect-gitignore` re-enables the
+  recursive walk. Tracked content is still always checked. Per CS30/D3.
+- **`docs/migration-v0.2.x-to-v0.3.0.md`** — concrete consumer migration steps for upgrading from
+  the v0.2.x line to v0.3.0 (BREAKING WORKBOARD shape) plus v0.3.1 (text-encoding gitignore default,
+  improved architecture-linter discoverability). Cross-linked from `[0.3.0]` BREAKING entry. Per CS30/D4.
+
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- **`scripts/check-architecture.mjs` error message:** when a required heading is missing, the
+  error now lists the FULL required-heading set and points at `template/seeded/ARCHITECTURE.md`
+  as the canonical skeleton — plus the `harness lint --explain architecture` hint. Previous
+  message just said `Missing required heading: "## Data model"` with no recovery path. Per CS30/D5.
+- **`OPERATIONS.md` (composed)** new subsection "Composed-block edits — consumer vs harness-repo
+  paths" clarifies which file an editor should touch in a consumer repo (root file, between
+  marker comments) vs the harness repo (`template/composed/`). Resolves [SI Finding #6]. Per CS30/D6.
+- **`OPERATIONS.md` (composed)** Reusable-CI-workflow section now documents the **SAML-safe
+  `git ls-remote` fallback** for resolving an `actions/<owner>/<repo>@<tag>` SHA when the org
+  enforces SAML SSO and `gh api` returns 403 (the standard recipe breaks for Azure-published
+  actions). Resolves [SI Finding #7]. Per CS30/D7.
 
 ## [0.3.0] — 2026-05-11
 

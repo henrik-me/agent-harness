@@ -148,4 +148,31 @@ describe('check-architecture linter', () => {
       `Expected summary line with "error" in output; got:\n${r.stdout}`
     );
   });
+
+  // CS30 / D5: when a required heading is missing, the error message lists the
+  // FULL required-heading set + points at the canonical seed file. SI's CS01
+  // sub-agent A4 ran into Finding #5 by hand-authoring ARCHITECTURE.md from
+  // OPERATIONS prose alone and missing `## Data model`. The improved error
+  // tells the next user where to find the answer without reading source.
+  it('7. (CS30/D5) missing-heading error lists FULL required-heading set + seed-file path', () => {
+    const r = runLinter(['--file', fixture('missing-heading.md')]);
+    assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+    // All four required headings must be listed in the augmented error.
+    for (const heading of ['Overview', 'Components', 'Data model', 'Decision log']) {
+      assert.ok(
+        r.stdout.includes(`"## ${heading}"`),
+        `Expected required heading "## ${heading}" in error message; got:\n${r.stdout}`,
+      );
+    }
+    // Canonical seed file path is mentioned so consumers know where to copy from.
+    assert.ok(
+      r.stdout.includes('template/seeded/ARCHITECTURE.md'),
+      `Expected seed-file path "template/seeded/ARCHITECTURE.md" in error message; got:\n${r.stdout}`,
+    );
+    // The `harness lint --explain architecture` hint is mentioned.
+    assert.ok(
+      r.stdout.includes('--explain architecture'),
+      `Expected "--explain architecture" hint in error message; got:\n${r.stdout}`,
+    );
+  });
 });
