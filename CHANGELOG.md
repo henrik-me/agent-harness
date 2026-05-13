@@ -9,6 +9,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-13
+
 ### Added
 
 - **CS38b:** Retroactive `henrik-me/sub-invaders#28` self-test + harness self-host opt-in:
