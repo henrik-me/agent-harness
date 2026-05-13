@@ -28,6 +28,15 @@ const REQUIRED_FIELDS = [
   '**independence-invariant:**',
   '**model-fallback-ladder',
   '**output-schema-link:**',
+  '**required-output-fields:**',
+];
+
+const REQUIRED_OUTPUT_FIELD_LABELS = [
+  '`model:`',
+  '`branch HEAD SHA:`',
+  '`R-round:`',
+  '`verdict:`',
+  '`evidence link:`',
 ];
 
 /**
@@ -103,6 +112,16 @@ function assertOperationsFile(relPath) {
     assert.ok(
       preamble.includes(field),
       `${relPath}: preamble missing required field label: ${field}`,
+    );
+  }
+
+  // 4. The required-output-fields section enumerates all 5 verdict-row labels
+  //    the reviewer must populate (per CS35 C35-3 stale-diff doctrine + C35-2
+  //    cap discipline + REVIEWS.md § 2.6 verdict vocabulary).
+  for (const label of REQUIRED_OUTPUT_FIELD_LABELS) {
+    assert.ok(
+      preamble.includes(label),
+      `${relPath}: preamble required-output-fields section missing label: ${label}`,
     );
   }
 }
