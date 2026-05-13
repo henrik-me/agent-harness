@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-12 (CS34 closed: check-cs-plan.mjs linter shipped — both halves of LRN-105 now applied; no active CS; orchestrator yoga-ah idle)
+> **Last updated:** 2026-05-12 (#145 enforcement-gap arc filed in `planned/` as CS35→CS42 plus inserted CS35b for plan-review attestation linter; amendment batch addressing GPT-5.5 R1 review in flight on `docs/file-planned-cs35-cs42-arc-amendments`; no CS claimed yet — CS35 is next; orchestrator yoga-ah active)
 
 ## Orchestrators
 
