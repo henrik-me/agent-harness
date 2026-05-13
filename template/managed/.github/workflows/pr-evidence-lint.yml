@@ -108,23 +108,53 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
         run: |
           gh pr view "$PR_NUM" --json body --jq .body > /tmp/pr-body.md
-      - id: pr-evidence
-        name: Run harness pr-evidence
+      # C38a R2 B1: SPLIT the pr-evidence invocation into two steps so that
+      # the Copilot-review gate (A5+A16) can be wrapped with continue-on-error
+      # on fork-source PRs (where check-copilot-review.mjs exits 2 — a state
+      # that the aggregator treats as failure but the workflow should surface
+      # as a notice, not a red CI). Per C38a-10:
+      #   - Step A: read-only gates (B1, A3+A4, A6) — continue-on-error: false
+      #   - Step B: Copilot review gate (A5+A16) — continue-on-error: true
+      #   - Step C: aggregate annotation reading steps.copilot-gate.outcome
+      # The aggregator naturally skips A5+A16 when --repo and --pr are absent
+      # (bin/harness.mjs:2196-2207), so Step A passes no repo/PR args.
+      - id: read-only-gates
+        name: Run harness pr-evidence (read-only gates B1+A3+A4+A6)
         env:
           HARNESS_DIR: ${{ steps.install-harness.outputs.harness_dir }}
-          GH_REPO_FULL: ${{ github.repository }}
-          PR_NUM: ${{ github.event.pull_request.number }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SKIP_REASONS: ${{ steps.compute-skip-reasons.outputs.reasons }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           args=(
             --base "$PR_BASE_SHA"
             --head "$PR_HEAD_SHA"
             --pr-body /tmp/pr-body.md
+          )
+          if [ -n "$SKIP_REASONS" ]; then
+            args+=(--skip-reasons "$SKIP_REASONS")
+          fi
+          # No --repo / --pr → aggregator skips A5+A16 (gated separately below).
+          node "$HARNESS_DIR/bin/harness.mjs" pr-evidence "${args[@]}"
+      - id: copilot-gate
+        name: Run Copilot review gate (A5+A16)
+        # continue-on-error: true — fork-source PRs cause check-copilot-review.mjs
+        # to exit 2 (cannot request Copilot from forks). We surface the outcome
+        # via the next annotation step rather than failing the workflow.
+        continue-on-error: true
+        env:
+          HARNESS_DIR: ${{ steps.install-harness.outputs.harness_dir }}
+          GH_REPO_FULL: ${{ github.repository }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SKIP_REASONS: ${{ steps.compute-skip-reasons.outputs.reasons }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=(
             --repo "$GH_REPO_FULL"
             --pr "$PR_NUM"
+            --head "$PR_HEAD_SHA"
+            --pr-body /tmp/pr-body.md
           )
           if [ -n "$SKIP_REASONS" ]; then
             args+=(--skip-reasons "$SKIP_REASONS")
@@ -135,7 +165,21 @@ jobs:
           # --add-reviewer`). Engage-and-verify in the same workflow run will
           # always fail first attempt because Copilot's review pipeline is
           # asynchronous (~3 min).
-          node "$HARNESS_DIR/bin/harness.mjs" pr-evidence "${args[@]}"
+          node "$HARNESS_DIR/scripts/check-copilot-review.mjs" "${args[@]}"
+      - id: annotate-copilot-outcome
+        name: Annotate Copilot review gate outcome
+        env:
+          COPILOT_OUTCOME: ${{ steps.copilot-gate.outcome }}
+          SKIP_REASONS: ${{ steps.compute-skip-reasons.outputs.reasons }}
+        run: |
+          if [ "$COPILOT_OUTCOME" = "failure" ]; then
+            if printf '%s' "$SKIP_REASONS" | grep -Fq 'fork-source'; then
+              echo "::notice title=Copilot review gate skipped::Fork-source PR — Copilot review cannot be requested across forks (ADR4-2). Maintainer should engage manually after merge or via workflow_dispatch."
+            else
+              echo "::error title=Copilot review gate failed::A5+A16 did not pass. Maintainer should engage Copilot via the workflow_dispatch \"mutation-engage\" job or \`gh pr edit --add-reviewer copilot-pull-request-reviewer\`."
+              exit 1
+            fi
+          fi
 
   mutation-engage:
     if: github.event_name == 'workflow_dispatch'

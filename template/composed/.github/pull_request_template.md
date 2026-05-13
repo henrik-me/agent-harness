@@ -34,8 +34,8 @@ _(Describe how this was tested. Include at minimum:)_
 
 | Field | Value |
 |---|---|
-| Implementer model(s) | _(e.g. claude-opus-4.7-xhigh, gpt-5.4)_ |
-| Reviewer model(s) | _(e.g. gpt-5.5)_ |
+| Implementer models | _(comma-separated, e.g. claude-opus-4.7-xhigh, gpt-5.4)_ |
+| Reviewer model | _(single id from C35-2 ladder, e.g. gpt-5.5)_ |
 | Implementer agent | _(e.g. yoga-ah)_ |
 | Reviewer agent | _(e.g. rubber-duck)_ |
 | Notes | _(optional)_ |

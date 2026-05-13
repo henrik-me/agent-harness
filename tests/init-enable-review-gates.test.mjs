@@ -72,7 +72,11 @@ describe('harness init --enable-review-gates', () => {
       assert.deepEqual(readConfig(dir).review_gates, {
         enabled: true,
         copilot_required: true,
-        gate_set: ['B1', 'A3', 'A4', 'A5', 'A16', 'A6'],
+        // C38a R2 B4: A6 is dispatched independently by the pr-evidence aggregator
+        // (when planned/active CS files appear in the PR diff per C36-11) — not
+        // a default member of the consumer-declared gate_set. CS37 PASS spec'd
+        // ["B1","A3","A4","A5","A16"] (no A6).
+        gate_set: ['B1', 'A3', 'A4', 'A5', 'A16'],
       });
     } finally {
       rmSync(dir, { recursive: true, force: true });

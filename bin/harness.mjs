@@ -35,7 +35,14 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const PR_TEMPLATE_TARGET = '.github/pull_request_template.md';
 const PR_EVIDENCE_WORKFLOW_TARGET = '.github/workflows/pr-evidence-lint.yml';
 const REVIEW_EVIDENCE_BLOCK_ID = 'pull-request.review-evidence';
-const DEFAULT_REVIEW_GATE_SET = ['B1', 'A3', 'A4', 'A5', 'A16', 'A6'];
+// Per C38a-6 + C37-1b PASS branch: gate_set when CS37 spike PASSED.
+// CS37 closed PASS (see docs/adr/0004-copilot-graphql-spike.md). The
+// `--graphql-spike-outcome` override flag specified in C38a-6 is deferred
+// to a follow-up CS — for v0.4.0 this constant encodes the PASS set
+// directly. A6 (plan-review attestation) is omitted from the declared
+// gate_set per the plan; the `harness pr-evidence` aggregator dispatches
+// A6 independently when planned/active CS files appear in the PR diff.
+const DEFAULT_REVIEW_GATE_SET = ['B1', 'A3', 'A4', 'A5', 'A16'];
 const REVIEW_GATES_INSTRUCTION_BLOCK = `
 ══════════════════════════════════════════════════════════════════════
   PR-evidence gates enabled. Manual step required:

@@ -156,4 +156,63 @@ describe('CS38a — managed pr-evidence-lint workflow template', () => {
       'read-only checkout must set fetch-depth: 0 because B1 needs full commit graph'
     );
   });
+
+  // C38a R2 B1: workflow splits A5+A16 (Copilot review) off the aggregator
+  // so fork-source PRs (where check-copilot-review.mjs exits 2) don't fail CI.
+  it('splits Copilot review gate into a separate step with continue-on-error: true', () => {
+    const job = extractJob(readWorkflow(), 'read-only-gates');
+    assert.match(
+      job,
+      /- id:\s*copilot-gate\b/,
+      'must declare a step with id: copilot-gate for the A5+A16 gate'
+    );
+    assert.match(
+      job,
+      /id:\s*copilot-gate[\s\S]*?continue-on-error:\s*true/,
+      'copilot-gate step must set continue-on-error: true'
+    );
+  });
+
+  it('invokes check-copilot-review.mjs directly (not via aggregator) for the Copilot gate', () => {
+    const job = extractJob(readWorkflow(), 'read-only-gates');
+    assert.match(
+      job,
+      /node\s+"\$HARNESS_DIR\/scripts\/check-copilot-review\.mjs"/,
+      'copilot-gate must invoke scripts/check-copilot-review.mjs directly so its exit-2 fork-source code is preserved verbatim'
+    );
+  });
+
+  it('reads steps.copilot-gate.outcome and emits a notice (not an error) on fork-source skip', () => {
+    const job = extractJob(readWorkflow(), 'read-only-gates');
+    assert.match(
+      job,
+      /steps\.copilot-gate\.outcome/,
+      'must aggregate the copilot-gate outcome in a follow-on step'
+    );
+    assert.match(
+      job,
+      /::notice\s+title=Copilot review gate skipped/,
+      'fork-source path must emit a GitHub Actions ::notice (not ::error) when copilot-gate fails'
+    );
+  });
+
+  it('read-only aggregator invocation passes NO --repo / --pr (so A5+A16 is naturally skipped there)', () => {
+    const text = readWorkflow();
+    // Extract just the read-only-gates step (not the copilot-gate step)
+    const startIdx = text.indexOf('- id: read-only-gates');
+    assert.notEqual(startIdx, -1, 'must have read-only-gates step');
+    const endIdx = text.indexOf('- id: copilot-gate', startIdx);
+    assert.notEqual(endIdx, -1, 'must have copilot-gate step after read-only-gates');
+    const stepBody = text.slice(startIdx, endIdx);
+    assert.doesNotMatch(
+      stepBody,
+      /^\s*--repo\b/m,
+      'read-only step must not pass --repo (or A5+A16 will be registered by the aggregator)'
+    );
+    assert.doesNotMatch(
+      stepBody,
+      /^\s*--pr\s+"/m,
+      'read-only step must not pass --pr'
+    );
+  });
 });
