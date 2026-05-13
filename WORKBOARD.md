@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-13 (CS38a claimed: PR-evidence CI workflow + composed PR template + `--enable-review-gates` init flag — sixth CS in v0.4.0 #145 enforcement-gap arc; wires CS36+CS37 gates into every consumer PR via GitHub Actions. Per ADR4-8 (CS37): workflow MUST split engage and verify into separate jobs/events. Orchestrator yoga-ah active. CS35+CS35b+CS36+CS37 done.)
+> **Last updated:** 2026-05-13 (CS38a closed: PR-evidence CI workflow + composed PR template + `--enable-review-gates` init flag landed via PR [#163](https://github.com/henrik-me/agent-harness/pull/163), squash `528d1c7`. Sixth CS in v0.4.0 #145 enforcement-gap arc complete; wires CS36+CS37 gates into every consumer PR via GitHub Actions. CS35+CS35b+CS36+CS37+CS38a done. Orchestrator yoga-ah idle.)
 
 ## Orchestrators
 
@@ -10,12 +10,12 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-13 |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟡 Idle | 2026-05-13 |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS38a | PR-evidence CI workflow + composed PR template + `--enable-review-gates` init | active | yoga-ah | cs38a/pr-evidence-workflow-and-init | 2026-05-13 | — |
+| — | _no active CS_ | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
