@@ -1,9 +1,9 @@
 # CS35 — Enforcement doctrine + planning-locality (front-load for v0.4.0 arc)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs35/enforcement-doctrine-and-planning-locality
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS35 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145), [#142](https://github.com/henrik-me/agent-harness/issues/142), [#139](https://github.com/henrik-me/agent-harness/issues/139), and a planning-locality concern surfaced 2026-05-12 (session-state `~/.copilot/session-state/<id>/plan.md` was holding strategic content; non-durable; agent-handoff failure mode). Authored 2026-05-12 by `yoga-ah`. First CS in the v0.4.0 enforcement-gap arc; precedes [CS36](planned_cs36_pr-evidence-fs-and-git-linters.md), [CS37](planned_cs37_copilot-review-gate-graphql.md), [CS38a](planned_cs38a_pr-evidence-workflow-and-init.md), [CS38b](planned_cs38b_retro-pr28-and-self-host-optin.md), [CS39](planned_cs39_release-v0.4.0.md).
 **Depends on:** None. CS36–CS39 depend on the doctrine + schemas + planning-locality controls landed here.
@@ -107,7 +107,18 @@ CS35 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| T1 | Read full CS35 plan + REVIEWS.md / OPERATIONS.md / INSTRUCTIONS.md / CONVENTIONS.md baseline + LRN-068 canonical preamble pattern | pending | orchestrator | — |
+| T2 | Update REVIEWS.md + template/composed/REVIEWS.md per Deliverable 1 (review-log + model-audit schemas, R1/Rn distinction, stale-diff doctrine, gate names A1–A6) | pending | orchestrator | per C35-3/4/15 |
+| T3 | Update OPERATIONS.md + template/composed/OPERATIONS.md per Deliverable 2 (canonical reviewer preamble between markers, planning-locality pre-claim self-check, Copilot engagement procedure) | pending | orchestrator | per C35-1/10/11/14 |
+| T4 | Update INSTRUCTIONS.md per Deliverable 3 (bootstrap sanity check + planning-locality + agent-files-no-issues hard rules) | pending | orchestrator | per C35-11/13/14 |
+| T5 | Update CONVENTIONS.md per Deliverable 4 (per-commit trailer enforcement, workboard-only/bot/fork PR predicates) | pending | orchestrator | per C35-5/7/8/9 |
+| T6 | Implement scripts/check-planning-locality.mjs + register in bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS entry | pending | orchestrator | per C35-12, ~50 LOC |
+| T7 | Add tests/check-planning-locality.test.mjs (≥3 cases) + tests/operations-reviewer-preamble.test.mjs (markers + required fields) | pending | orchestrator | per Exit criteria #3, #5 |
+| T8 | CHANGELOG.md `[Unreleased] / Added` entries: planning-locality linter + reviewer doctrine + reviewer fallback ladder | pending | orchestrator | per LRN-101 policy |
+| T9 | Self-checks: harness lint --quiet, node --test tests/*.test.mjs, harness sync --mode=check, check-text-encoding | pending | orchestrator | per Exit criteria #2/3/4/9 |
+| T10 | Open content PR on cs35/enforcement-doctrine-and-planning-locality; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder; merge after CI green + review Go | pending | orchestrator | A4/A5 stale-diff invariant applies |
+| T11 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | pending | orchestrator | per OPERATIONS.md § Close-out |
+| T12 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` per C35-16; surface any new follow-up CS candidates) | pending | orchestrator | per RETROSPECTIVES.md and OPERATIONS.md close-out procedure |
 
 ## Notes / Learnings
 

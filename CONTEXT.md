@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-12 (CS34 closed — `check-cs-plan.mjs` linter shipped via PR #135 + close-out PR #136; both halves of LRN-105 now applied; no active CS; orchestrator yoga-ah idle. Prior 18 CSs since CS22 summarized in the post-CS22 consolidated entry below.)
+> **Last updated:** 2026-05-13 (CS35 claimed and active: enforcement-doctrine + planning-locality front-load for the v0.4.0 #145 enforcement-gap arc; preceded by 3 GPT-5.5 plan-review rounds [R1/R2/R3] across the full 10-CS arc — final R3 verdict Go-with-amendments, stale CS35b R1 risk language amended at claim time. Prior 18 CSs since CS22 summarized in the post-CS22 consolidated entry below; CS34 closed in PR #136.)
 
 > **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. This file (CONTEXT.md) covers current state only.
 
@@ -83,7 +83,7 @@
 
   - **CS34 — `check-cs-plan.mjs` linter** (closed 2026-05-12). LRN-105 follow-up (second half). New `scripts/check-cs-plan.mjs` (210 lines) scans `project/clickstops/{active,done,planned}/*.md` for harness-repo-internal path prefixes (`template/composed/`, `template/seeded/`, `lib/`, `bin/`, `scripts/`) outside fenced code blocks and outside links to the harness GitHub repo. Forbidden-prefix list configurable via `harness.config.json → cs_plan_lint.forbidden_path_prefixes` (new optional schema property). Self-host-guarded. +8 tests + 5 fixtures. Lint **25/0/3** (was 24/0/3; cs-plan adds the +1 row, passes via self-host skip in the harness self-host). PRs #134/#135/#136. GPT-5.5 plan-vs-impl gate: NEEDS-FIX → fixed (added aggregator integration test + strengthened exit-status assertions on three tests) → GO. After CS34 close-out, **LRN-105 fully addressed** (both halves applied; LEARNINGS.md has two disposition update paragraphs on LRN-105). LRN-106 was already fully addressed in CS32/D1.
 
-  Cumulative state at 2026-05-12: 703 tests pass; `harness lint --quiet` 25/0/3; no drift; no active CS; WORKBOARD `## Active Work` shows the canonical em-dash placeholder. Released: `v0.2.0` (CS22), `v0.2.1` (CS25 hotfix), `v0.3.0` (CS29), `v0.3.1` (CS30 SI-feedback fixes). Post-CS22 LRNs: **LRN-100..LRN-106** filed and disposed; the post-CS32 sweep flipped LRN-104 and LRN-105 to `applied` end-to-end via CS33/CS34 follow-ups.
+  Cumulative state at 2026-05-12: 703 tests pass; `harness lint --quiet` 25/0/3; no drift; queue empty (post-CS34); WORKBOARD `## Active Work` showed the canonical em-dash placeholder. Released: `v0.2.0` (CS22), `v0.2.1` (CS25 hotfix), `v0.3.0` (CS29), `v0.3.1` (CS30 SI-feedback fixes). Post-CS22 LRNs: **LRN-100..LRN-106** filed and disposed; the post-CS32 sweep flipped LRN-104 and LRN-105 to `applied` end-to-end via CS33/CS34 follow-ups.
 
 ## Architecture pointer
 
@@ -91,7 +91,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Blockers / open questions
 
-- None. Post-CS22 sprint complete through CS34 (closed 2026-05-12). All releases (`v0.2.0`/`v0.2.1`/`v0.3.0`/`v0.3.1`) published and smoke-verified. **No active CS**; WORKBOARD `## Active Work` shows the canonical em-dash placeholder. The post-CS32 follow-up sweep is complete: LRN-104 and LRN-105 are both `applied` end-to-end (CS32/CS33 closed LRN-104; CS32/CS34 closed LRN-105); LRN-106 was fully addressed in CS32/D1. SI consumer (`henrik-me/sub-invaders`) has confirmed the harness updates worked. CS21 (gwn process-doc harvest) may claim independently. LRN-014 remains `deferred` (CS19-bound).
+- **CS35 is active** (claimed 2026-05-13). Front-loads enforcement doctrine + planning-locality linter for the v0.4.0 #145 enforcement-gap arc; preceded by 3 GPT-5.5 plan-review rounds (R1/R2/R3) across the full 10-CS arc — final R3 verdict Go-with-amendments. CS36→CS39 (v0.4.0) and CS40→CS42 (v0.5.0) remain in `project/clickstops/planned/`. Post-CS22 sprint complete through CS34 (closed 2026-05-12). All releases (`v0.2.0`/`v0.2.1`/`v0.3.0`/`v0.3.1`) published and smoke-verified. The post-CS32 follow-up sweep is complete: LRN-104 and LRN-105 are both `applied` end-to-end (CS32/CS33 closed LRN-104; CS32/CS34 closed LRN-105); LRN-106 was fully addressed in CS32/D1. SI consumer (`henrik-me/sub-invaders`) has confirmed the harness updates worked. CS21 (gwn process-doc harvest) may claim independently. LRN-014 remains `deferred` (CS19-bound).
 
 ## Parallelism (single-orchestrator default)
 
