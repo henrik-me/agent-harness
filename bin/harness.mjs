@@ -26,9 +26,30 @@ import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
+import { migrateFileClass } from '../lib/file-class-migration.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
+
+const PR_TEMPLATE_TARGET = '.github/pull_request_template.md';
+const PR_EVIDENCE_WORKFLOW_TARGET = '.github/workflows/pr-evidence-lint.yml';
+const REVIEW_EVIDENCE_BLOCK_ID = 'pull-request.review-evidence';
+const DEFAULT_REVIEW_GATE_SET = ['B1', 'A3', 'A4', 'A5', 'A16', 'A6'];
+const REVIEW_GATES_INSTRUCTION_BLOCK = `
+══════════════════════════════════════════════════════════════════════
+  PR-evidence gates enabled. Manual step required:
+
+  Add the following status check to your branch ruleset for \`main\`:
+
+    pr-evidence-lint / read-only-gates
+
+  See: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository
+
+  This step is not automated because applying branch rulesets requires
+  maintainer authority that the harness CLI deliberately does not assume.
+══════════════════════════════════════════════════════════════════════
+`.trimStart();
 
 // ---------------------------------------------------------------------------
 // Help text
@@ -92,6 +113,7 @@ Options:
                                           (default: discipline-only)
   --skip-constraint-detection           Skip the GitHub-tier detection step entirely
                                           (no constraints block written; useful in CI without network)
+  --enable-review-gates                 Opt the project into the PR-evidence gate set per CS38a; writes \`review_gates\` config block, migrates \`.github/pull_request_template.md\` to composed, and emits a branch-ruleset instruction block. Idempotent.
   --help                                Print this help
 `.trimStart(),
 
@@ -388,6 +410,133 @@ function die(msg, code = 1) {
   process.exit(code);
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readConfigForReviewGates(configDest) {
+  try {
+    return JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+  } catch (err) {
+    die(
+      `harness init --enable-review-gates: harness.config.json is not valid JSON.\n` +
+        `Path: ${configDest}\nError: ${err.message}`,
+      1
+    );
+  }
+}
+
+function ensureFileClassBlock(config, className) {
+  if (config[className] === undefined) {
+    config[className] = { files: [] };
+  }
+  if (!isPlainObject(config[className])) {
+    die(`harness init --enable-review-gates: "${className}" must be an object in harness.config.json.`, 1);
+  }
+  if (config[className].files === undefined) {
+    config[className].files = [];
+  }
+  if (!Array.isArray(config[className].files)) {
+    die(`harness init --enable-review-gates: "${className}.files" must be an array in harness.config.json.`, 1);
+  }
+  return config[className];
+}
+
+function addUnique(values, value) {
+  if (!values.includes(value)) {
+    values.push(value);
+    return true;
+  }
+  return false;
+}
+
+function ensureComposedOverride(config) {
+  const composed = ensureFileClassBlock(config, 'composed');
+  if (composed.overrides === undefined) {
+    composed.overrides = {};
+  }
+  if (!isPlainObject(composed.overrides)) {
+    die('harness init --enable-review-gates: "composed.overrides" must be an object in harness.config.json.', 1);
+  }
+
+  const existing = composed.overrides[PR_TEMPLATE_TARGET];
+  if (existing === undefined) {
+    composed.overrides[PR_TEMPLATE_TARGET] = { local_blocks: [REVIEW_EVIDENCE_BLOCK_ID] };
+    return;
+  }
+  if (!isPlainObject(existing)) {
+    die(`harness init --enable-review-gates: composed.overrides["${PR_TEMPLATE_TARGET}"] must be an object.`, 1);
+  }
+
+  const blocks = Array.isArray(existing.local_blocks) ? existing.local_blocks : [];
+  composed.overrides[PR_TEMPLATE_TARGET] = {
+    ...existing,
+    local_blocks: blocks.includes(REVIEW_EVIDENCE_BLOCK_ID)
+      ? blocks
+      : [...blocks, REVIEW_EVIDENCE_BLOCK_ID],
+  };
+}
+
+function patchReviewGatesConfig(config) {
+  if (config.review_gates !== undefined && !isPlainObject(config.review_gates)) {
+    die('harness init --enable-review-gates: "review_gates" must be an object when present.', 1);
+  }
+
+  config.review_gates = {
+    ...(config.review_gates ?? {}),
+    enabled: true,
+    copilot_required: true,
+    gate_set: [...DEFAULT_REVIEW_GATE_SET],
+  };
+}
+
+function copyReviewGatesWorkflow(targetDir) {
+  const src = path.join(REPO_ROOT, 'template', 'managed', ...PR_EVIDENCE_WORKFLOW_TARGET.split('/'));
+  const dest = path.join(targetDir, ...PR_EVIDENCE_WORKFLOW_TARGET.split('/'));
+  if (!existsSync(src)) {
+    process.stderr.write(
+      `Warning: PR-evidence workflow template not found at ${src}; skipping workflow copy.\n`
+    );
+    return;
+  }
+
+  mkdirSync(path.dirname(dest), { recursive: true });
+  copyFileSync(src, dest);
+  process.stdout.write(`Created ${PR_EVIDENCE_WORKFLOW_TARGET}\n`);
+}
+
+function enableReviewGatesForInit(targetDir, configDest) {
+  if (!existsSync(configDest)) {
+    die(`harness init --enable-review-gates: harness.config.json not found at ${configDest}`, 1);
+  }
+
+  let config = readConfigForReviewGates(configDest);
+  if (!isPlainObject(config)) {
+    die('harness init --enable-review-gates: harness.config.json root must be an object.', 1);
+  }
+  patchReviewGatesConfig(config);
+
+  const managed = ensureFileClassBlock(config, 'managed');
+  addUnique(managed.files, PR_EVIDENCE_WORKFLOW_TARGET);
+
+  if (managed.files.includes(PR_TEMPLATE_TARGET)) {
+    config = migrateFileClass(config, PR_TEMPLATE_TARGET, { local_blocks: [REVIEW_EVIDENCE_BLOCK_ID] });
+    process.stdout.write(`Migrated ${PR_TEMPLATE_TARGET} from managed.files to composed.files\n`);
+  } else {
+    const composed = ensureFileClassBlock(config, 'composed');
+    if (addUnique(composed.files, PR_TEMPLATE_TARGET)) {
+      process.stdout.write(`Notice: ${PR_TEMPLATE_TARGET} was not in managed.files; added to composed.files for review gates.\n`);
+    } else {
+      process.stdout.write(`Notice: ${PR_TEMPLATE_TARGET} is already in composed.files; leaving migration unchanged.\n`);
+    }
+    ensureComposedOverride(config);
+  }
+
+  writeFileSync(configDest, JSON.stringify(config, null, 2) + '\n', 'utf8');
+  copyReviewGatesWorkflow(targetDir);
+  process.stdout.write(REVIEW_GATES_INSTRUCTION_BLOCK);
+}
+
 // ---------------------------------------------------------------------------
 // Parse global args
 // ---------------------------------------------------------------------------
@@ -463,6 +612,7 @@ async function cmdInit(args, global) {
   const withScaffolds = [];
   let constraintDisposition = null;
   let skipConstraintDetection = false;
+  let enableReviewGates = false;
   const VALID_DISPOSITIONS = ['discipline-only', 'upgrade-pro', 'flip-public-when-ready'];
 
   for (let i = 0; i < args.length; i++) {
@@ -492,6 +642,8 @@ async function cmdInit(args, global) {
       constraintDisposition = v;
     } else if (a === '--skip-constraint-detection') {
       skipConstraintDetection = true;
+    } else if (a === '--enable-review-gates') {
+      enableReviewGates = true;
     } else if (!a.startsWith('-')) {
       targetDir = path.resolve(cwd, a);
     } else {
@@ -596,6 +748,10 @@ async function cmdInit(args, global) {
         process.stdout.write(`Created harness.config.json at ${configDest}\n`);
       }
     }
+  }
+
+  if (enableReviewGates) {
+    enableReviewGatesForInit(targetDir, configDest);
   }
 
   // Copy seeded template files that are missing

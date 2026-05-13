@@ -815,13 +815,16 @@ default `harness lint` runs do not have (per CS35 decision C35-17).
 | B1 | `scripts/check-pr-commits.mjs` | Every commit in `<base>..<head>` carries the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer. |
 | A3 | `scripts/check-review-evidence.mjs` | PR body's `## Model audit` rows have no implementer-vs-reviewer model overlap. |
 | A4 | `scripts/check-review-evidence.mjs` | PR body's `## Review log` latest `Go` row's `analyzed_head` equals `--head`. |
+| A5+A16 | `scripts/check-copilot-review.mjs` | (CS37) Copilot review verifier — confirms `copilot-pull-request-reviewer` (`__typename: Bot`) submitted a review at the current HEAD with state in `{COMMENTED, APPROVED, CHANGES_REQUESTED}` AND submitted-at is after the latest local Go (A5 ordering, ADR4-5). Conditional dispatch: requires `--repo` + `--pr`; skipped with notice otherwise. Forks exit 2 with maintainer-rerun hint per ADR4-6. |
 | A6 | `scripts/check-clickstop-plan-review.mjs` | Diff-scoped: any planned/active CS file in the PR diff carries a fresh `## Plan review` row with verdict in `{Go, Go-with-amendments}` (predicate from CS35b, `--files <csv>` invocation per CS36 C36-11). |
 
 A3 and A4 share a single script because they parse the same PR body. A6
 re-uses the CS35b predicate; the aggregator computes the diff-scoped file
 list (`git diff --name-only $base..$head -- project/clickstops/{planned,active}/`)
 and threads it via `--files` so that pre-arc grandfathered files cannot
-fail unrelated PRs ([LRN-108](LEARNINGS.md#lrn-108)).
+fail unrelated PRs ([LRN-108](LEARNINGS.md#lrn-108)). A5+A16 is a single
+script because both gates share the same GraphQL fetch — exposing them as
+two scripts would double the API spend without adding signal (per ADR4-3).
 
 ### Canonical local invocation (orchestrator pre-PR sanity check)
 
@@ -838,12 +841,44 @@ Exits 0 when all gates pass, 1 on any gate failure, 2 on bad usage.
 
 ### Canonical CI invocation (CS38a wiring)
 
-The reusable workflow at `.github/workflows/harness-pr-evidence.yml` (added
-by CS38a) calls the same entry point. Workflow callers pass the PR's
-`base.sha` / `head.sha` and a body file rendered from
-`github.event.pull_request.body`. The CI step is OPT-IN per repository (the
-consumer repo enables it via the `harness pr-evidence` job in its branch
-protection required-checks list).
+The harness ships a managed workflow template at
+`template/managed/.github/workflows/pr-evidence-lint.yml` (added by CS38a).
+Consumers opt in via `harness init --enable-review-gates` (writes the
+`review_gates` block in `harness.config.json`, migrates
+`.github/pull_request_template.md` from the `managed` to the `composed`
+file class so consumers can keep custom prose, and prints branch-protection
+instructions per C38a-7/8) and the next `harness sync` lands the workflow
+in the consumer repo.
+
+The workflow is split into TWO jobs per [ADR4-8 (`docs/adr/0004-copilot-graphql-spike.md`)](https://github.com/henrik-me/agent-harness/blob/main/docs/adr/0004-copilot-graphql-spike.md):
+
+- **`read-only-gates`** runs on `pull_request` (`opened`, `synchronize`,
+  `reopened`, `edited` per [LRN-100](LEARNINGS.md#lrn-100)) with
+  `permissions: { contents: read, pull-requests: read }`. Computes
+  `--skip-reasons` from the event payload (workboard-only label,
+  `[bot]`-suffix login, fork detection via `head.repo != base.repo`),
+  then invokes `node "$HARNESS_DIR/bin/harness.mjs" pr-evidence` with
+  `--base $PR_BASE_SHA --head $PR_HEAD_SHA --pr-body /tmp/pr-body.md
+  --repo $GH_REPO_FULL --pr $PR_NUM`. This job NEVER mutates the PR.
+- **`mutation-engage`** runs on `workflow_dispatch` only, with
+  `permissions: { contents: read, pull-requests: write }`. Calls
+  `gh pr edit "$PR_NUM" --add-reviewer copilot-pull-request-reviewer`
+  per ADR4-2. Engagement and verification MUST live on separate events
+  because Copilot delivers reviews asynchronously (~3 min); a single-run
+  engage-and-verify will always fail the verify step the first time.
+
+The workflow uses the canonical clone-then-`node bin/harness.mjs` install
+pattern from `.github/workflows/harness-checks.yml` (NOT `npx harness@<ref>`
+— `harness` is a private package and npm 10.8.x's GitFetcher regression
+makes `npx` invocation flaky). The derive-ref step validates the resolved
+ref against the allowlist `^[a-zA-Z0-9._/-]+$` (CS12 R1 — shell-injection
+hardening) and uses environment-variable indirection for all interpolation.
+
+CI step is OPT-IN per repository (consumers list
+`pr-evidence-lint / read-only-gates` in their branch ruleset's required
+status checks). The instruction block emitted by `harness init
+--enable-review-gates` is intentionally manual: the harness CLI does not
+assume maintainer authority to apply branch rulesets remotely.
 
 ### Skip-reasons matrix (CS35 C35-19 / CS36 C36-5)
 
@@ -880,6 +915,51 @@ PR-evidence linters. Wiring them into `harness lint` would force every
 local lint run to require `--base`/`--head`/`--pr-body`, which is hostile
 to the local pre-PR convenience use case (per CS35 decision C35-17). The
 PR-evidence linters are dispatched ONLY via `harness pr-evidence`.
+
+---
+
+## Init
+
+`harness init` bootstraps a consumer repo with the harness file-class
+manifest, scaffolds `harness.config.json` and `.harness-lock.json`, and
+optionally opts the project into the PR-evidence gate set.
+
+### `--enable-review-gates` (CS38a)
+
+Passing `--enable-review-gates` to `harness init` performs three idempotent
+operations:
+
+1. **Patches `harness.config.json`** with a `review_gates` block — by default
+   `{ enabled: true, copilot_required: true, gate_set: ['B1','A3','A4','A5','A16','A6'] }`.
+   The default gate set is the CS37 spike PASS branch — full A5+A16
+   enforcement (per [ADR4-1](https://github.com/henrik-me/agent-harness/blob/main/docs/adr/0004-copilot-graphql-spike.md)).
+   Custom gate sets are accepted via direct config edit; the schema enum
+   bounds the vocabulary.
+2. **Migrates `.github/pull_request_template.md`** from `managed.files`
+   to `composed.files` via `lib/file-class-migration.mjs`. The composed
+   override gets `_inherited_class: 'managed'` (records the prior class
+   for future audit) and `local_blocks: ['pull-request.review-evidence']`
+   (the marker block carrying the `## Model audit` + `## Review log`
+   tables that CS37's A5+A16 + CS36's A3+A4 read). Consumers that
+   already have local prose in their PR template need to re-add it
+   (the marker block is appended; outside-marker prose from the prior
+   managed template is preserved as the composed skeleton).
+3. **Lands the workflow file** `template/managed/.github/workflows/pr-evidence-lint.yml`
+   in the consumer repo on the next `harness sync`.
+
+After completion, the command prints a branch-protection instruction
+block. The instruction is intentionally manual — the harness CLI does
+NOT silently apply branch rulesets because branch-protection mutations
+require maintainer authority that the harness deliberately does not
+assume (per C38a-8).
+
+The flag is opt-in (`review_gates.enabled` defaults to `false` in
+v0.4.0). The default flips to `true` in v0.5.0 (CS41) once the
+`harness copilot-engage` wrapper closes the manual-step gap.
+
+Idempotency: re-invoking `harness init --enable-review-gates` on an
+already-migrated repo is a no-op (re-emits the instruction block,
+makes no config or filesystem changes).
 
 ---
 
@@ -925,6 +1005,26 @@ pinned harness version recorded in `.harness-lock.json`.
 | **composed** | Re-render template sections; splice in preserved local-block contents. Consumer prose outside markers is replaced; block contents are kept verbatim. |
 | **seeded** | Create if missing (seed once); skip completely if the file already exists. |
 | **excluded** | Never touched (e.g. `README.md` per ADR 0002). Listed in `harness.config.json` `excluded[]`. |
+
+### `review_gates` block currency (CS38a / CS41)
+
+`harness sync` checks the `review_gates` block in `harness.config.json`
+against the version pinned in `.harness-lock.json`:
+
+- **v0.4.0 (CS38a):** if `review_gates` is absent, sync emits a WARN
+  to stderr advising the consumer to run `harness init
+  --enable-review-gates` to opt in. Sync still succeeds (exit 0). The
+  warning is suppressed by `--quiet`.
+- **v0.5.0 (CS41):** the warn is escalated to an ERROR — sync exits 1
+  unless `review_gates` is present (any value, including `enabled: false`).
+  Consumers that want to remain opted-out must EXPLICITLY record
+  `review_gates: { enabled: false }` to acknowledge the choice. Silent
+  absence is no longer a valid state because by v0.5.0 the gates are
+  the default expectation, not the exception.
+
+Document this escalation path in CS41's release notes; the v0.5.0
+upgrade guide must list the manual edit required for any consumer
+that wants opt-out without invoking `harness init --enable-review-gates`.
 
 ### Composed file sync invariant
 
