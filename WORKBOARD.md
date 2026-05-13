@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-13 (CS35 closed: enforcement doctrine + planning-locality linter merged via PR #151 with GPT-5.5 plan-vs-impl R3 GO; queue continues with CS35b → CS36 → CS37 → CS38a → CS38b → CS39 for v0.4.0; orchestrator yoga-ah idle pending next claim)
+> **Last updated:** 2026-05-13 (CS35b claimed: plan-review-attestation linter — second CS in the v0.4.0 #145 enforcement-gap arc, lands the gate that prevents plans from merging without independent review; orchestrator yoga-ah active)
 
 ## Orchestrators
 
@@ -16,6 +16,6 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | _no active CS — queue ready, CS35b is next per planned/ priority_ | — | — | — | 2026-05-13 | — |
+| CS35b | Plan-review attestation linter (`check-clickstop-plan-review`) + retroactive grandfathering | active | yoga-ah | cs35b/plan-review-attestation-linter | 2026-05-13 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

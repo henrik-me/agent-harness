@@ -1,9 +1,9 @@
 # CS35b — Plan-review attestation linter (`check-clickstop-plan-review`) + retroactive grandfathering
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs35b/plan-review-attestation-linter
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS35b disposition. Authored 2026-05-12 by `yoga-ah`. New CS inserted between CS35 and CS36 in the v0.4.0 arc to close a gap exposed when PR #147 (the original 9-file CS arc filing) merged without any documented GPT-5.5 review of the planned files. The user observed: "I thought there was a linter in place to ensure and guard against plans going into the repo without GPT-5.5 review" — confirmed missing; this CS lands it.
 **Depends on:** [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine front-load + planning-locality linter must already exist; CS35b extends the same enforcement layer).
@@ -118,7 +118,19 @@ Orchestrator owns: OPERATIONS.md + REVIEWS.md docs (Deliverables 4, 5); retroact
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T1 | Read full CS35b plan + CS35 R3 GO context (PR #151) + existing scripts/check-clickstop.mjs structure for re-use patterns | pending | orchestrator | — |
+| T2 | Implement `lib/plan-review-hash.mjs` (computes 12-char SHA-256 prefix over concatenated trimmed `## Decisions` + `## Deliverables` section bodies) per C35b-2 | pending | orchestrator | dependency-free; reuse extractSection from lib/doc-schema.mjs |
+| T3 | Implement `bin/harness.mjs plan-review-hash <file>` subcommand wrapping the helper from T2 per C35b-2 | pending | orchestrator | mirror existing `harness sync` / `harness lint` flag patterns |
+| T4 | Implement `scripts/check-clickstop-plan-review.mjs` per C35b-6/7 (schema, independence per C35b-4, hash-freshness per C35b-3, verdict gate per C35b-5, --strict + --mode=standalone\|pr-evidence per C35b-9/10) | pending | orchestrator | ~250-350 LOC; reuses lib/doc-schema.mjs assertHeadings + extractSectionBody |
+| T5 | Register `check-clickstop-plan-review` in `bin/harness.mjs` cmdLint linters list + LINTER_EXPLANATIONS entry per C35b-8 | pending | orchestrator | bump test count: tests/cs15d-aggregator.test.mjs:129 19→20 |
+| T6 | Add tests/check-clickstop-plan-review.test.mjs (≥10 cases: schema-pass, missing-section, malformed-table, model-overlap-rejected, hash-mismatch-rejected, verdict-needs-fix-rejected, warn-vs-strict modes, pr-evidence-strict-overrides, skip-reasons handling) + tests/lib-plan-review-hash.test.mjs (helper unit tests) | pending | orchestrator | tmp dirs via os.tmpdir() per LRN-094 |
+| T7 | Update OPERATIONS.md + template/composed/OPERATIONS.md (lockstep) with new H2 § "Plan review attestation procedure" containing the section template + procedure per C35b-12/15 | pending | orchestrator + sub-agent? | placement: immediately after Plan-vs-implementation review (close-out gate) |
+| T8 | Retroactive `## Plan review` rows on all 10 planned CS files + the now-active CS35b file per C35b-13: CS35 (done — backfill into done CS file as historical), CS35b (R1+R2 already drafted), CS36, CS37, CS38a, CS38b, CS39, CS40, CS41, CS42 | pending | orchestrator | each gets R1 (2026-05-12 GPT-5.5 review per #147 cycle) + R2 (2026-05-13 amendment review per #148+#149); R3-attestation for THIS PR happens at plan-vs-impl review time |
+| T9 | CHANGELOG.md `[Unreleased] / Added` entries: plan-review attestation linter + harness plan-review-hash CLI + retroactive grandfathering | pending | orchestrator | 2-3 bullets |
+| T10 | Self-checks: `node bin/harness.mjs lint --quiet` (27 passed / 0 failed / 3 skipped), `node --test tests/*.test.mjs`, `harness sync --mode=check`, `check-text-encoding` | pending | orchestrator | linter count bumps once |
+| T11 | Open content PR on cs35b/plan-review-attestation-linter; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder (capped at 3 rounds); merge after CI green + R3 Go | pending | orchestrator | A4/A5 stale-diff + A6 (CS35b's own gate from CS36) eventually applies |
+| T12 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | pending | orchestrator | per OPERATIONS.md § Close-out |
+| T13 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` recording the gap + closure; surface any new follow-up CS candidates) | pending | orchestrator | per OPERATIONS.md close-out procedure |
 
 ## Notes / Learnings
 
