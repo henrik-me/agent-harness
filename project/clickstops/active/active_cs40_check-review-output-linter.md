@@ -1,9 +1,9 @@
 # CS40 — `check-review-output.mjs` linter (R1 enumeration vs `git diff --name-only`)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs40/check-review-output
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS40 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) gap #3 + Change C2 (R1 per-file enumeration). Authored 2026-05-12 by `yoga-ah`. First CS in the v0.5.0 arc.
 **Depends on:** [CS39](planned_cs39_release-v0.4.0.md) (v0.4.0 must be released first), [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine/schema).
@@ -75,7 +75,18 @@ Orchestrator owns OPERATIONS.md + CHANGELOG.md.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T1 | claim PR (workboard/cs40-claim) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | active | yoga-ah | this PR |
+| T2 | branch `cs40/check-review-output` from main | planned | yoga-ah | — |
+| T3 | implement `scripts/check-review-output.mjs` per C40-2/3/4/5/6/7 (parser, R1/Rn enumeration, finding-row schema, independence-invariant guard, --update-pr idempotency) | planned | yoga-ah | self-implementation per autonomous-execution decision #3 |
+| T4 | implement `tests/check-review-output.test.mjs` (≥10 cases per Deliverable 2) | planned | yoga-ah | — |
+| T5 | register `harness review-output` subcommand in `bin/harness.mjs` + `tests/cli-review-output.test.mjs` | planned | yoga-ah | — |
+| T6 | OPERATIONS.md § Reviewer dispatch — append post-review block per Deliverable 4 | planned | yoga-ah | — |
+| T7 | CHANGELOG.md `[Unreleased] / Added` entry per Deliverable 5 | planned | yoga-ah | — |
+| T8 | validate (`harness lint` + tests + sync clean) | planned | yoga-ah | expect 29/0/3 lint with new linter |
+| T9 | dispatch GPT-5.5 R1 plan-vs-impl review (sync rubber-duck) | planned | yoga-ah | per LRN-064 |
+| T10 | amendments per R1 + dispatch R2 | planned | yoga-ah | — |
+| T11 | open content PR; engage Copilot via `gh pr edit --add-reviewer`; CI green; admin-merge | planned | yoga-ah | — |
+| T12 | close-out PR (rename done, plan-vs-impl section, WORKBOARD/CONTEXT) | planned | yoga-ah | — |
 
 ## Notes / Learnings
 
