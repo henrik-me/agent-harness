@@ -1,9 +1,9 @@
 # CS39 — Release v0.4.0 + file SI pin-bump SUB-CS
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs39/release-v0.4.0
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS39 disposition. Authored 2026-05-12 by `yoga-ah`. Sixth (final) CS in the v0.4.0 arc; release-cut.
 **Depends on:** [CS38b](planned_cs38b_retro-pr28-and-self-host-optin.md) (and transitively CS35–CS38a).
@@ -68,7 +68,19 @@ None. Release-cut is orchestrator-only.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T0 — Claim PR (this PR) | done | yoga-ah | Rename planned→active; populate Tasks; update WORKBOARD; workboard-only PR. |
+| T1 — Content branch from main | pending | yoga-ah | `cs39/release-v0.4.0` from current `main`. |
+| T2 — Read CS37 close-out for spike outcome (C39-3 conditional branch select) | pending | yoga-ah | Per C37 close-out notes: spike outcome = PASS → release notes include A5+A16 as enforced. |
+| T3 — CHANGELOG version bump | pending | yoga-ah | Replace `## [Unreleased]` with `## [0.4.0] — 2026-05-13` (em-dash U+2014 per C39-2; required by `release.yml` awk extractor). Verify all CS35–CS38b entries captured. |
+| T4 — package.json version bump | pending | yoga-ah | `0.0.0-pre` → `0.4.0` per C39-1. Run `npm install --package-lock-only` if needed for lockfile coherence. |
+| T5 — Local validation pre-PR | pending | yoga-ah | `harness lint --quiet`, `node --test tests/**/*.test.mjs`, `harness sync` clean drift. CHANGELOG dry-run via `awk '/^## \[0\.4\.0\]/' CHANGELOG.md` per C39-R1 mitigation. |
+| T6 — Open content PR + R1 plan-vs-impl review (release-cut convention) | pending | yoga-ah | Open PR; engage Copilot via `gh pr edit --add-reviewer copilot-pull-request-reviewer`; dispatch GPT-5.5 R1 plan-vs-impl review per C35-2. Wait for CI green + Copilot review. |
+| T7 — Close-out docs/restart-state task | pending | yoga-ah | Rename active→done; populate `## Plan-vs-implementation review` H2 with R1 transcript; refresh WORKBOARD (drop CS39 → no active CS, v0.4.0 arc complete) + CONTEXT (CS39-done bullet, queue moves to v0.5.0 arc CS40). |
+| T8 — Admin merge content PR | pending | yoga-ah | After CI green + R1 GO + Copilot review present, admin squash-merge. Capture squash SHA. |
+| T9 — Tag push v0.4.0 | pending | yoga-ah | `git tag v0.4.0 <squash-sha>` then `git push origin v0.4.0`. Triggers `release.yml` workflow. |
+| T10 — Verify GitHub Release page | pending | yoga-ah | Per C39-6: title `v0.4.0`; body matches CHANGELOG section; no asset requirements. |
+| T11 — Cross-repo SI pin-bump SUB-CS PR | pending | yoga-ah | Per C39-4/5: open PR against `henrik-me/sub-invaders` filing `planned_subNN_pin-harness-v0.4.0.md`. Verify next available SUB-CS number first. |
+| T12 — Close-out PR (workboard-only) for CS39 + close-out learnings task | pending | yoga-ah | Standard close-out PR. File any LRNs surfaced during release-cut. |
 
 ## Notes / Learnings
 
