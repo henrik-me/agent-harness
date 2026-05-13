@@ -2123,6 +2123,37 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-109
+
+```yaml
+id: LRN-109
+date: 2026-05-13
+category: process
+source_cs: CS36
+status: applied
+tags: [sub-agent-briefing, schema-drift, decision-authority, doc-as-source-of-truth]
+claim_area: sub-agent-dispatch
+```
+
+**Problem:** The CS36 sub-agent briefing for SA-3 (A3+A4 review-evidence linter) contained a "schema reference" section that paraphrased the `## Model audit` table as a row-per-round multi-column table (`Round | Implementer models | Reviewer model | Implementer agent | Reviewer agent | Notes`). The authoritative document, REVIEWS.md §2.8, defines `## Model audit` as a single key-value `| Field | Value |` table (one set per PR). SA-3 read both, identified the contradiction, and correctly resolved it by following REVIEWS.md per the briefing's own decision-authority section ("follow the ACTUAL column names in REVIEWS.md"). The discrepancy cost a read-cycle and was surfaced as an escalation in SA-3's report.
+
+**Finding:** **Sub-agent briefings MUST NOT paraphrase or restate authoritative document schemas in any form that can drift from the source.** The briefing should:
+
+1. Cite the authoritative document by file + section heading (`see REVIEWS.md § 2.8`), and
+2. Either inline the canonical block verbatim (paste-ready, kept in sync at briefing time), OR
+3. Refer the sub-agent to read the authoritative source first and use its content as the schema spec.
+
+Paraphrasing or "for convenience" restatement creates two sources of truth that drift over time and force every sub-agent into a reconciliation tax. The decision-authority escape hatch ("follow the actual doc when briefing diverges") is a safety net, not a license to write divergent briefings — it costs every sub-agent a read-and-resolve cycle and risks one of them silently following the briefing instead of the doc.
+
+This is a generalisation of LRN-068 (canonical preamble verbatim paste): briefings that DERIVE from canonical content invariably drift; briefings that PASTE canonical content stay correct.
+
+**Evidence:**
+- SA-3 escalation in cs36-sa3-evidence report (2026-05-13): "The briefing's 'schema reference' section claims `## Model audit` columns are `Round | Implementer models | Reviewer model | Implementer agent | Reviewer agent | Notes`. However, REVIEWS.md §2.8 and C35-4 define the format as a key-value `| Field | Value |` table. The implementation follows REVIEWS.md (authoritative per decision authority)."
+- REVIEWS.md:198-222 — canonical `## Model audit` definition (key-value `| Field | Value |` table).
+- SA-3 implementation in `scripts/check-review-evidence.mjs`: parses REVIEWS.md format correctly; 15 tests pass; CS36 dogfood `harness pr-evidence` with a REVIEWS.md-shaped fixture body returns A3+A4 ✓.
+
+**Disposition:** Applied. The orchestrator-side discipline is: when briefing a sub-agent on a file format owned by REVIEWS.md, INSTRUCTIONS.md, OPERATIONS.md, or any schema in `schemas/`, the briefing MUST link to the authoritative section and SHOULD paste the canonical block verbatim (one source of truth) — never paraphrase. Future briefings that violate this should be flagged in plan-vs-implementation review as a process defect even if the sub-agent successfully resolved the divergence.
+
 ### LRN-108
 
 ```yaml

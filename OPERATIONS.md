@@ -769,6 +769,89 @@ Decision C35-9).
 
 ---
 
+## PR-evidence aggregator (CS36)
+
+`harness pr-evidence` is the **single entry point** that runs the mechanical
+PR-state evidence gates against an open PR's commit graph and body markdown.
+It exists as a separate subcommand (not folded into `harness lint`) because
+PR-state checks need PR context (`--base`, `--head`, `--pr-body`) that
+default `harness lint` runs do not have (per CS35 decision C35-17).
+
+### Gates registered
+
+| Gate | Predicate script | Owns |
+|---|---|---|
+| B1 | `scripts/check-pr-commits.mjs` | Every commit in `<base>..<head>` carries the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer. |
+| A3 | `scripts/check-review-evidence.mjs` | PR body's `## Model audit` rows have no implementer-vs-reviewer model overlap. |
+| A4 | `scripts/check-review-evidence.mjs` | PR body's `## Review log` latest `Go` row's `analyzed_head` equals `--head`. |
+| A6 | `scripts/check-clickstop-plan-review.mjs` | Diff-scoped: any planned/active CS file in the PR diff carries a fresh `## Plan review` row with verdict in `{Go, Go-with-amendments}` (predicate from CS35b, `--files <csv>` invocation per CS36 C36-11). |
+
+A3 and A4 share a single script because they parse the same PR body. A6
+re-uses the CS35b predicate; the aggregator computes the diff-scoped file
+list (`git diff --name-only $base..$head -- project/clickstops/{planned,active}/`)
+and threads it via `--files` so that pre-arc grandfathered files cannot
+fail unrelated PRs ([LRN-108](LEARNINGS.md#lrn-108)).
+
+### Canonical local invocation (orchestrator pre-PR sanity check)
+
+```sh
+PR_BODY=$(mktemp)
+gh pr view <num> --json body --jq .body > "$PR_BODY"
+node bin/harness.mjs pr-evidence \
+  --base "$(gh pr view <num> --json baseRefOid --jq .baseRefOid)" \
+  --head "$(gh pr view <num> --json headRefOid --jq .headRefOid)" \
+  --pr-body "$PR_BODY"
+```
+
+Exits 0 when all gates pass, 1 on any gate failure, 2 on bad usage.
+
+### Canonical CI invocation (CS38a wiring)
+
+The reusable workflow at `.github/workflows/harness-pr-evidence.yml` (added
+by CS38a) calls the same entry point. Workflow callers pass the PR's
+`base.sha` / `head.sha` and a body file rendered from
+`github.event.pull_request.body`. The CI step is OPT-IN per repository (the
+consumer repo enables it via the `harness pr-evidence` job in its branch
+protection required-checks list).
+
+### Skip-reasons matrix (CS35 C35-19 / CS36 C36-5)
+
+The aggregator centralises skip semantics so individual gate scripts do not
+duplicate skip logic. The caller (CI workflow or orchestrator) computes
+skip applicability and passes via `--skip-reasons <csv>`:
+
+| Skip reason | B1 | A3 | A4 | A6 | Notes |
+|---|---|---|---|---|---|
+| `workboard-only` | skip | skip | skip | skip | Short-circuits to exit 0; used for workboard-only PRs (claim/close-out) per CS35-7. |
+| `bot-author` | skip | skip | skip | run | A6 still runs because plan attestation is not author-dependent. |
+| `fork-source` | run | run | run | run | Read-only gates remain in force; A16 (CS41) is the gate this reason will skip. |
+
+The harness MUST NOT call `gh pr view` or any other authenticated API to
+determine skip applicability — caller computes and passes the CSV. This
+keeps `harness pr-evidence` callable from forked PR contexts where the
+runner has only `read` permissions (per CS35 C35-9).
+
+### Output modes
+
+- Default: human-readable per-gate sections + a summary line listing
+  pass/fail counts.
+- `--quiet`: suppresses per-gate output; prints only the summary line.
+  Suitable for CI logs that want to surface failure detail only via
+  `actions/upload-artifact` of the gate-specific stderr streams.
+- `--json`: emits a structured `{gates: [{name, status, exitCode}]}`
+  payload to stdout. Suitable for downstream tooling (e.g. PR comment
+  renderers added in a future CS).
+
+### Wiring discipline
+
+The `harness lint` aggregator (root linter) MUST NOT register the three
+PR-evidence linters. Wiring them into `harness lint` would force every
+local lint run to require `--base`/`--head`/`--pr-body`, which is hostile
+to the local pre-PR convenience use case (per CS35 decision C35-17). The
+PR-evidence linters are dispatched ONLY via `harness pr-evidence`.
+
+---
+
 ## Sync
 
 `harness sync` updates managed and composed files in a consumer repo from the

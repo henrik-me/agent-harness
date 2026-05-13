@@ -46,6 +46,8 @@ Subcommands:
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
   pack              Run npm pack --dry-run and verify file whitelist
+  pr-evidence       Run PR-state evidence gates (B1, A3, A4, A6) against a PR's
+                    commit graph + body markdown (CS36)
   plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
                     Decisions+Deliverables (used to fill plan review rows)
   version           Print package version
@@ -243,6 +245,48 @@ against to detect stale attestations after plan amendments.
 
 Options:
   --help  Print this help
+`.trimStart(),
+
+  'pr-evidence': `
+Usage: harness pr-evidence --base <sha> --head <sha> --pr-body <file> [options]
+
+Run mechanical PR-state evidence gates against the given PR's commit graph +
+PR body markdown (CS36). Aggregates the following gates and exits non-zero
+on any failure:
+
+  B1 (commit-trailers)         — every commit in <base>..<head> carries the
+                                 Co-authored-by: Copilot trailer.
+  A3 (model-audit-independence) — PR body's "## Model audit" rows have no
+                                 implementer-vs-reviewer model overlap.
+  A4 (review-log-currency)     — PR body's "## Review log" latest Go row's
+                                 analyzed_head equals --head (full SHA).
+  A6 (plan-review-attestation) — diff-scoped: any planned/active CS file in
+                                 the PR diff carries a fresh "## Plan review"
+                                 row with verdict in {Go, Go-with-amendments}
+                                 (predicate from CS35b, --files diff-scoped
+                                 invocation from CS36 aggregator).
+
+Required flags:
+  --base <sha>           Merge-base SHA (full or short)
+  --head <sha>           Current PR head SHA (full 40-char preferred for A4)
+  --pr-body <file>       Path to a markdown file containing the PR body
+
+Optional flags:
+  --repo <slug>          Repository slug (owner/repo) — reserved for CS37 GraphQL gates
+  --pr <num>             PR number — reserved for CS37 GraphQL gates
+  --skip-reasons <csv>   workboard-only | bot-author | fork-source (per C35-19/C36-5).
+                         "workboard-only" short-circuits ALL gates to a pass.
+                         "bot-author" skips B1/A3/A4 (gates that fail naturally on
+                         bot commits without trailers/audits); A6 still runs.
+                         "fork-source" runs all read-only gates; A16 (CS41) exits 2.
+  --json                 Emit structured JSON {gates: [{name, status, exitCode}]}
+  --quiet                Suppress per-gate output; print only the summary line
+  --help                 Print this help
+
+Exit codes:
+  0  all gates passed (or skipped via --skip-reasons workboard-only)
+  1  at least one gate failed
+  2  bad usage (missing required flag, unknown flag)
 `.trimStart(),
 
   version: `
@@ -1862,6 +1906,188 @@ async function cmdPlanReviewHash(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: pr-evidence (CS36 — B1, A3, A4, A6)
+// ---------------------------------------------------------------------------
+//
+// Aggregates mechanical PR-state evidence gates against a PR's commit graph
+// and body markdown. Per C35-17, this is a SEPARATE entry point from
+// `harness lint` because PR-state checks need PR context (--base/--head/
+// --pr-body) and shouldn't fire on default `harness lint` runs.
+//
+// Skip semantics (C35-19/C36-5) are centralised here and short-circuit gates
+// per the documented matrix; the harness MUST NOT call `gh pr view` to
+// determine skip applicability — caller (CI workflow or orchestrator)
+// computes and passes via --skip-reasons.
+
+async function cmdPrEvidence(args, _global) {
+  let base = null;
+  let head = null;
+  let prBody = null;
+  let repo = null;
+  let pr = null;
+  let skipReasonsCsv = '';
+  let json = false;
+  let quiet = false;
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['pr-evidence']);
+      process.exit(0);
+    } else if (a === '--base') {
+      base = args[++i];
+    } else if (a === '--head') {
+      head = args[++i];
+    } else if (a === '--pr-body') {
+      prBody = args[++i];
+    } else if (a === '--repo') {
+      repo = args[++i];
+    } else if (a === '--pr') {
+      pr = args[++i];
+    } else if (a === '--skip-reasons') {
+      skipReasonsCsv = args[++i] || '';
+    } else if (a === '--json') {
+      json = true;
+    } else if (a === '--quiet') {
+      quiet = true;
+    } else {
+      die(`harness pr-evidence: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['pr-evidence']}`, 2);
+    }
+  }
+
+  if (!base) die(`harness pr-evidence: --base <sha> is required\n\n${SUBCOMMAND_HELP['pr-evidence']}`, 2);
+  if (!head) die(`harness pr-evidence: --head <sha> is required\n\n${SUBCOMMAND_HELP['pr-evidence']}`, 2);
+  if (!prBody) die(`harness pr-evidence: --pr-body <file> is required\n\n${SUBCOMMAND_HELP['pr-evidence']}`, 2);
+  if (!existsSync(prBody)) die(`harness pr-evidence: --pr-body file not found: ${prBody}`, 2);
+
+  const skipReasons = new Set(skipReasonsCsv.split(',').map((s) => s.trim()).filter(Boolean));
+
+  // workboard-only short-circuits ALL gates per C35-7 / C36-5.
+  if (skipReasons.has('workboard-only')) {
+    if (json) {
+      process.stdout.write(JSON.stringify({ gates: [], skipped: 'workboard-only' }, null, 2) + '\n');
+    } else {
+      if (!quiet) {
+        process.stdout.write('harness pr-evidence: skipped (workboard-only PR)\n');
+      }
+      process.stdout.write('harness pr-evidence: 0 passed, 0 failed (skipped)\n');
+    }
+    process.exit(0);
+  }
+
+  const cwd = process.cwd();
+  const skipArgs = skipReasonsCsv ? ['--skip-reasons', skipReasonsCsv] : [];
+
+  // Build the gate list. Each entry: { name, script, args }.
+  const gates = [];
+
+  gates.push({
+    name: 'B1 commit-trailers',
+    script: 'check-pr-commits.mjs',
+    args: ['--base', base, '--head', head, ...skipArgs],
+  });
+
+  gates.push({
+    name: 'A3+A4 review-evidence',
+    script: 'check-review-evidence.mjs',
+    args: ['--pr-body', prBody, '--head', head, ...skipArgs],
+  });
+
+  // A6 (plan-review attestation) — diff-scoped per C36-11.
+  // Compute the planned/active CS files in the PR diff. The aggregator
+  // skips A6 when the diff list is empty (no CS file changes mean no
+  // attestation requirement — orthogonal to the gate's intent).
+  const diffArgs = [
+    'diff', '--name-only', `${base}..${head}`,
+    '--', 'project/clickstops/planned/', 'project/clickstops/active/',
+  ];
+  const diffResult = spawnSync('git', diffArgs, { cwd, encoding: 'utf8' });
+  if (diffResult.status === 0) {
+    const changedFiles = diffResult.stdout
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (changedFiles.length > 0) {
+      gates.push({
+        name: 'A6 plan-review-attestation',
+        script: 'check-clickstop-plan-review.mjs',
+        args: [
+          '--dir', 'project/clickstops',
+          '--mode', 'pr-evidence',
+          '--files', changedFiles.join(','),
+          ...skipArgs,
+        ],
+      });
+    } else if (!quiet && !json) {
+      process.stdout.write('A6 plan-review-attestation: skipped (no planned/active CS files in PR diff)\n');
+    }
+  } else if (!quiet) {
+    process.stderr.write(
+      `harness pr-evidence: warning — could not compute planned/active diff ` +
+      `(git exit ${diffResult.status}); A6 not registered. ` +
+      `Ensure both base and head SHAs are fetched locally.\n`
+    );
+  }
+
+  // Run gates in series.
+  const results = [];
+  let anyFail = false;
+  for (const gate of gates) {
+    const scriptPath = path.join(REPO_ROOT, 'scripts', gate.script);
+    if (!existsSync(scriptPath)) {
+      results.push({
+        name: gate.name,
+        status: 'fail',
+        exitCode: 2,
+        message: `gate script missing: ${scriptPath}`,
+      });
+      anyFail = true;
+      continue;
+    }
+    const fullArgs = [scriptPath, ...gate.args];
+    if (quiet) fullArgs.push('--quiet');
+    if (!quiet && !json) {
+      process.stdout.write(`\n[${gate.name}]\n`);
+    }
+    const result = spawnSync(process.execPath, fullArgs, {
+      cwd,
+      encoding: 'utf8',
+      stdio: json ? 'pipe' : (quiet ? 'pipe' : 'inherit'),
+    });
+    const exitCode = result.status ?? 1;
+    const passed = exitCode === 0;
+    if (!passed) anyFail = true;
+    results.push({
+      name: gate.name,
+      status: passed ? 'pass' : 'fail',
+      exitCode,
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+    });
+  }
+
+  if (json) {
+    const payload = {
+      gates: results.map(({ name, status, exitCode, message }) => ({
+        name, status, exitCode, ...(message ? { message } : {}),
+      })),
+    };
+    process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+  } else {
+    process.stdout.write('\n=== harness pr-evidence summary ===\n');
+    for (const r of results) {
+      const icon = r.status === 'pass' ? '✓' : '✗';
+      process.stdout.write(`  ${icon} ${r.name}: ${r.status}${r.message ? ` (${r.message})` : ''}\n`);
+    }
+    const passCount = results.filter((r) => r.status === 'pass').length;
+    const failCount = results.filter((r) => r.status === 'fail').length;
+    process.stdout.write(`\nTotal: ${passCount} passed, ${failCount} failed\n`);
+  }
+
+  process.exit(anyFail ? 1 : 0);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: whoami
 // ---------------------------------------------------------------------------
 
@@ -1970,6 +2196,7 @@ async function main() {
     'check-migration': cmdCheckMigration,
     'composed-audit': cmdComposedAudit,
     pack: cmdPack,
+    'pr-evidence': cmdPrEvidence,
     'plan-review-hash': cmdPlanReviewHash,
     version: cmdVersion,
     whoami: cmdWhoami,
