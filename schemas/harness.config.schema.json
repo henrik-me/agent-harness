@@ -104,6 +104,33 @@
         }
       }
     },
+    "review_gates": {
+      "type": "object",
+      "description": "Per-CS38a/CS37/CS36: configuration for the PR-evidence CI workflow that wires the harness's gate set into every consumer PR. When 'enabled' is true, consumers should also land template/managed/.github/workflows/pr-evidence-lint.yml via 'harness sync' (typically opt-in via 'harness init --enable-review-gates'). Per C38a-9, sync warns (not errors) when this block is absent in v0.4.0; will error in v0.5.0 (per CS41).",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Master switch for the PR-evidence gate set. When false, the workflow runs but exits 0 unconditionally (a no-op shell). When true, the gate set listed below is enforced.",
+          "default": false
+        },
+        "copilot_required": {
+          "type": "boolean",
+          "description": "When true, the CS37 A5+A16 Copilot review gate is included in the gate set; when false, A5+A16 are skipped. Forced false when running on fork PRs (per ADR4-6 — forks cannot self-engage Copilot under their own token).",
+          "default": false
+        },
+        "gate_set": {
+          "type": "array",
+          "description": "Explicit list of PR-evidence gate short-names enforced by 'harness pr-evidence'. Vocabulary defined in REVIEWS.md § PR-evidence gates (B1, A2..A6, A16). Empty array = all gates skipped (gate set disabled). Default when 'harness init --enable-review-gates' was invoked with the CS37 PASS spike outcome: ['B1','A3','A4','A5','A16','A6'].",
+          "items": {
+            "type": "string",
+            "enum": ["B1", "A2", "A3", "A4", "A5", "A6", "A16"]
+          },
+          "uniqueItems": true,
+          "default": []
+        }
+      }
+    },
     "managed": {
       "$ref": "#/$defs/fileClass",
       "description": "Managed file class: the harness owns these files entirely and overwrites them on every 'harness sync'. No local edits survive a sync. Use 'composed' instead if a file needs local extension blocks."

@@ -87,11 +87,11 @@ Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T1 | Update planned_cs38a header references — Depends-on links now point to `../done/`; ordinal updated to "Sixth CS"; CS37 outcome (PASS) wired into C38a-6's gate_set selection (use ["B1","A3","A4","A5","A16"] — full set per C37-1b PASS branch) | done | orchestrator | Header fix per LRN equivalent of CS37's link-staleness pattern. |
-| T2 | Dispatch SA-1 (`bot38a-workflow`) — owns `template/managed/.github/workflows/pr-evidence-lint.yml` + `tests/template-pr-evidence-workflow.test.mjs` | pending | orchestrator → SA-1 | Per C38a-2/3/10. Canonical clone-then-`node bin/harness.mjs pr-evidence` invocation (NOT npx). Reference workflows: `.github/workflows/harness-checks.yml`, `private-smoke.yml`. ADR4-8: engage and verify MUST be separate jobs/events (read-only on `pull_request`, mutation on `workflow_dispatch` only). |
-| T3 | Dispatch SA-2 (`bot38a-init-and-migration`) — owns `bin/harness.mjs init --enable-review-gates` + `lib/file-class-migration.mjs` + schema update + `template/composed/.github/pull_request_template.md` + 3 init/migration/schema tests | pending | orchestrator → SA-2 | Per C38a-4/5/6/7/8/9. Schema change is breaking-shape additive only (gate is opt-in v0.4.0 per C35-15). |
-| T4 | OPERATIONS.md § Init: document `--enable-review-gates` opt-in path; § Sync: document v0.4.0 warn → v0.5.0 error escalation. Lockstep parity with template/composed | pending | orchestrator | Per Deliverable #7. |
-| T5 | CHANGELOG.md `[Unreleased] / Added` (workflow + init flag + schema + composed PR template) + `[Unreleased] / Changed` (PR template managed→composed) | pending | orchestrator | Per Deliverable #8. |
-| T6 | Local validation: `harness lint --quiet` (27/0/3 baseline + new linters), `harness sync --mode=check` clean, `node --test tests/*.test.mjs` total ≥820 + ≥10 new | pending | orchestrator | Per Exit Criteria #4-6. |
+| T2 | Dispatch SA-1 (`bot38a-workflow`) — owns `template/managed/.github/workflows/pr-evidence-lint.yml` + `tests/template-pr-evidence-workflow.test.mjs` | done | orchestrator → SA-1 | SA-1 reported 2026-05-13: workflow (153 LOC) + 15-case test, all owned checks pass. |
+| T3 | Dispatch SA-2 (`bot38a-init-and-migration`) — owns `bin/harness.mjs init --enable-review-gates` + `lib/file-class-migration.mjs` + schema update + `template/composed/.github/pull_request_template.md` + 3 init/migration/schema tests | done | orchestrator → SA-2 | SA-2 reported 2026-05-13: 7 files (init flag, migration lib, schema, composed PR template, 3 tests); 15/15 owned tests pass. |
+| T4 | OPERATIONS.md § Init: document `--enable-review-gates` opt-in path; § Sync: document v0.4.0 warn → v0.5.0 error escalation. Lockstep parity with template/composed | done | orchestrator | New `## Init` section + `### review_gates block currency` subsection added to root + lockstep template; CS37 A5+A16 row added to PR-evidence § Gates table; CS38a Canonical CI invocation refreshed. |
+| T5 | CHANGELOG.md `[Unreleased] / Added` (workflow + init flag + schema + composed PR template) + `[Unreleased] / Changed` (PR template managed→composed) | done | orchestrator | CS38a entry added at top of `### Added`; file-class transition added at top of `### Changed`. |
+| T6 | Local validation: `harness lint --quiet` (27/0/3 baseline + new linters), `harness sync --mode=check` clean, `node --test tests/*.test.mjs` total ≥820 + ≥10 new | done | orchestrator | lint 27/0/3, sync clean, node --test 851/0/1 (was 820; +31). |
 | T7 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (C35-2 ladder, cap 3); admin-merge after CI green + Go | pending | orchestrator | Per Exit Criterion #7. |
 | T8 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable | pending | orchestrator | Standard. |
 
@@ -101,4 +101,12 @@ Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+| Round | Reviewer model | Branch HEAD SHA | R-round | Verdict | Evidence link |
+|---|---|---|---|---|---|
+| R1 | gpt-5.5 | 685b936f39e70c33896a6ac77bdc684daa928f16 | R1 | Needs-Fix | https://github.com/henrik-me/agent-harness/pull/163#issuecomment-4441566368 — 4 Blocking findings (B1 workflow fork-source split, B2 PR template labels, B3 sync `_inherited_class` handler, B4 `DEFAULT_REVIEW_GATE_SET` includes A6). |
+| R2 | gpt-5.5 | 4ec7b07e4d1a2484afa8740e49f950fe678a7e23 | R2 | Go | https://github.com/henrik-me/agent-harness/pull/163#issuecomment-4441568806 — All four R1 Blocking findings verified fixed at HEAD 4ec7b07; one Non-blocking finding about stale C38a-4/Deliverable-5 wording (`pull-request.body` → actual `pull-request.review-evidence`), addressed in the same commit chain. |
+
+## Implementation notes
+
+- **Marker block ID divergence (Non-blocking R2 finding):** The C38a-4 + Deliverable #5 plan text references `local_blocks: ["pull-request.body"]` and `<!-- harness:review-evidence:start --> ... <!-- harness:review-evidence:end -->` markers. The shipped implementation uses the canonical repo block-marker shape `<!-- harness:local-start id=pull-request.review-evidence --> ... <!-- harness:local-end id=pull-request.review-evidence -->` (per `lib/composed.mjs` parser, which recognises only `harness:local-start`/`harness:local-end` sentinels). The block id `pull-request.review-evidence` (rather than `pull-request.body`) was chosen as more specific to the doctrine artefacts the block carries (Model audit + Review log). The composed-blocks linter accepts the implementation form; no schema or test churn is needed. This note documents the divergence for future audit.
+- **`--graphql-spike-outcome` flag (deferred, R1 B4 part 2):** The C38a-6 PASS branch references an override flag that lets the orchestrator force-select a degraded gate set when the CS37 spike outcome is not yet recorded in the close-out artefact. The flag was not implemented in CS38a; consumers can hand-edit `review_gates.gate_set` if they need a different shape. R2 reviewer accepted the deferral as non-blocking given CS37 PASS is the hard-coded path.
