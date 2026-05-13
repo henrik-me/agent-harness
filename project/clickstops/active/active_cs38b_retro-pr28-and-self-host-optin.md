@@ -107,7 +107,29 @@ Orchestrator owns: self-host opt-in commits (Deliverable 3); latent-violation tr
 
 ## Notes / Learnings
 
-(filled during execution)
+**T1 (retroactive run on SI PR #28):** Captured 2026-05-13 against `main` HEAD `adeceb5`. Reproducer in `docs/cs38b-retro-pr28-transcript.md`. **5 distinct doctrine failures** observed (B1×4, A3 review-log shape, A3 model-audit shape, A4/A16 stale Copilot review, A5 ordering — subsumed). Per C38b-5 PASS branch: required ≥4 → **PASS**.
+
+**T2 (fixture + regression test):** `tests/fixtures/si-pr28/` (repo.bundle 316 KB + pr.json + body.md + expected-evidence.json + README.md) + `tests/retro-si-pr28.test.mjs` (3 tests, all green). Each gate-level assertion cites C38b Decision ID + REVIEWS.md anchor per LRN-111.
+
+**T3 (harness self-host opt-in):** Ran `harness init --enable-review-gates` against the harness repo. Patches detailed in CHANGELOG `[Unreleased]` CS38b entry. One side-effect captured: init also generated `.harness-known-constraints.md` at root (tier=public detection) which tripped `tests/cs11-self-host-config.test.mjs`'s "every root .md classified" assertion → fixed by adding the file to `seeded.files`. The workflow file `.github/workflows/pr-evidence-lint.yml` is now live in the harness's own `.github/workflows/` and will fire on every subsequent PR (CS38b's own content PR included).
+
+**T4 (latent-violation triage):**
+
+| PR | Title (truncated) | B1 | A3+A4 | A6 | A5+A16 | Disposition |
+|---|---|---|---|---|---|---|
+| #163 | CS38a content | ✓ | ✗ | ✓ | ✗ | grandfather (in-arc) |
+| #162 | CS38a claim | ✓ | ✗ | ✓ | ✗ | grandfather (in-arc) |
+| #161 | CS37 close-out | ✓ | ✗ | ✓ | ✗ | grandfather (in-arc) |
+| #160 | CS37 content | ✓ | ✗ | ✓ | ✗ | grandfather (in-arc; A5+A16 self-bootstrap) |
+| #159 | CS37 claim | ✓ | ✗ | ✓ | ✗ | grandfather (pre-A5+A16) |
+| #158 | CS36 close-out | ✓ | ✗ | ✓ | ✗ | grandfather (pre-A5+A16) |
+| #157 | CS36 content | ✓ | ✓ | ✓ | ✗ | grandfather (pre-A5+A16) |
+
+7/7 pass B1 + A6; 6/7 fail A3+A4 (REVIEWS.md schema hardened through CS36/CS37/CS38a); 7/7 fail A5+A16 (gate didn't exist before PR #160 landed). Workboard-only PRs (#164, #165, #156) short-circuit per C35-19. **Disposition: grandfather all 7 with [LRN-112](../../../LEARNINGS.md#lrn-112) (in-arc retroactive grandfathering notice).** CS38b's own PR and onwards must comply with the full gate set.
+
+**T5 (CHANGELOG):** Entry added under `[Unreleased] / Added` covering all CS38b deliverables (T1–T5).
+
+**Process learnings:** None to escalate beyond the standard close-out LRN-112 (grandfathering). The whole CS38b workflow exercised CS35→CS38a end-to-end without surfacing any unexpected behaviors. The retroactive transcript is now the canonical "harness works" demo for v0.4.0.
 
 ## Plan-vs-implementation review
 

@@ -119,3 +119,7 @@ Until that CS lands, **single orchestrator at a time on the mainline** is the sa
 ## CS plan
 
 The full CS plan that drives this repo's evolution lives at [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md).
+
+## Constraints
+
+See `.harness-known-constraints.md` for repository tier and disposition (detected 2026-05-13T21:04:47.214Z).

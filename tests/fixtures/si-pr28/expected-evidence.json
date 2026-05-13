@@ -1,0 +1,19 @@
+{
+  "gates": [
+    {
+      "name": "B1 commit-trailers",
+      "status": "fail",
+      "exitCode": 1
+    },
+    {
+      "name": "A3+A4 review-evidence",
+      "status": "fail",
+      "exitCode": 1
+    },
+    {
+      "name": "A5+A16 copilot-review",
+      "status": "fail",
+      "exitCode": 1
+    }
+  ]
+}

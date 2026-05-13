@@ -8,7 +8,7 @@
   },
   "constraints": {
     "tier": "public",
-    "detected_at": "2026-05-10T00:00:00Z",
+    "detected_at": "2026-05-13T21:04:47.214Z",
     "owner": "henrik-me",
     "repo": "agent-harness"
   },
@@ -20,25 +20,38 @@
       "READMEGUIDE.md",
       ".github/CODEOWNERS",
       ".github/copilot-instructions.md",
-      ".github/pull_request_template.md",
-      ".github/workflows/harness-drift.yml"
+      ".github/workflows/harness-drift.yml",
+      ".github/workflows/pr-evidence-lint.yml"
     ]
   },
   "composed": {
     "files": [
       "CONVENTIONS.md",
       "OPERATIONS.md",
-      "REVIEWS.md"
+      "REVIEWS.md",
+      ".github/pull_request_template.md"
     ],
     "overrides": {
       "CONVENTIONS.md": {
-        "local_blocks": ["conventions.project"]
+        "local_blocks": [
+          "conventions.project"
+        ]
       },
       "OPERATIONS.md": {
-        "local_blocks": ["operations.project-deploy"]
+        "local_blocks": [
+          "operations.project-deploy"
+        ]
       },
       "REVIEWS.md": {
-        "local_blocks": ["reviews.project-gates"]
+        "local_blocks": [
+          "reviews.project-gates"
+        ]
+      },
+      ".github/pull_request_template.md": {
+        "_inherited_class": "managed",
+        "local_blocks": [
+          "pull-request.review-evidence"
+        ]
       }
     }
   },
@@ -47,7 +60,8 @@
       "CONTEXT.md",
       "ARCHITECTURE.md",
       "LEARNINGS.md",
-      "WORKBOARD.md"
+      "WORKBOARD.md",
+      ".harness-known-constraints.md"
     ]
   },
   "excluded": [
@@ -72,5 +86,16 @@
     "default_codeowner": "henrik-me",
     "lib_codeowner": "henrik-me"
   },
-  "scaffolds": []
+  "scaffolds": [],
+  "review_gates": {
+    "enabled": true,
+    "copilot_required": true,
+    "gate_set": [
+      "B1",
+      "A3",
+      "A4",
+      "A5",
+      "A16"
+    ]
+  }
 }
