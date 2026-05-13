@@ -1966,10 +1966,12 @@ async function cmdPrEvidence(args, _global) {
   if (skipReasons.has('workboard-only')) {
     if (json) {
       process.stdout.write(JSON.stringify({ gates: [], skipped: 'workboard-only' }, null, 2) + '\n');
-    } else if (!quiet) {
-      process.stdout.write('harness pr-evidence: skipped (workboard-only PR)\n');
+    } else {
+      if (!quiet) {
+        process.stdout.write('harness pr-evidence: skipped (workboard-only PR)\n');
+      }
+      process.stdout.write('harness pr-evidence: 0 passed, 0 failed (skipped)\n');
     }
-    process.stdout.write('harness pr-evidence: 0 passed, 0 failed (skipped)\n');
     process.exit(0);
   }
 

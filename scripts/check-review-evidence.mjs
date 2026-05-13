@@ -38,7 +38,7 @@
  */
 
 import fs from 'node:fs';
-import { extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
+import { headingAnchor } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -46,6 +46,14 @@ import { extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
 
 /** Full 40-char hex SHA pattern. */
 const SHA40_RE = /^[0-9a-f]{40}$/i;
+
+/** ISO 8601 timestamp (UTC, second-precision) per REVIEWS.md §2.7 example. */
+const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+/** REVIEWS.md §2.7 canonical Review log columns (all required, lowercase). */
+const REVIEW_LOG_REQUIRED_COLS = [
+  'timestamp', 'analyzed_head', 'actor', 'model', 'verdict', 'evidence_link',
+];
 
 /**
  * Skip reasons that short-circuit all A3+A4 checks.
@@ -169,6 +177,41 @@ function logError(msg) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Find the H2 section by anchor and return both its body and the absolute
+ * 1-based line number of the heading (so callers can compute global line
+ * numbers for individual rows — needed for actionable C36-9 error messages).
+ *
+ * @param {string} content
+ * @param {string} anchor
+ * @returns {{ body: string, headingLine: number } | null}
+ */
+function extractSectionWithLineNumber(content, anchor) {
+  const lines = content.split('\n');
+  let startIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^##\s+(.+?)\s*$/);
+    if (m && headingAnchor(m[1].trim()) === anchor) {
+      startIdx = i;
+      break;
+    }
+  }
+  if (startIdx === -1) return null;
+
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^#{1,2}\s/.test(lines[i])) {
+      endIdx = i;
+      break;
+    }
+  }
+
+  return {
+    body: lines.slice(startIdx + 1, endIdx).join('\n'),
+    headingLine: startIdx + 1,
+  };
+}
+
+/**
  * Split one markdown table row into trimmed cell values.
  * Strips leading and trailing pipe before splitting.
  *
@@ -184,18 +227,22 @@ function parseTableRow(line) {
 
 /**
  * Parse a pipe-delimited markdown table from a section body string.
- * Skips the separator row (|---|---|...). Returns header cells and data rows.
+ * Skips the separator row (|---|---|...). Returns header cells, data rows,
+ * and the within-section 0-based line index of each data row (so callers
+ * can compute global line numbers using `headingLine + 1 + rowLineOffset`).
  *
  * @param {string} body
- * @returns {{ headerCells: string[], dataRows: string[][] }}
+ * @returns {{ headerCells: string[], dataRows: string[][], rowLineOffsets: number[] }}
  */
 function parseMarkdownTable(body) {
   const lines = body.split('\n');
   let headerCells = null;
   const dataRows = [];
+  const rowLineOffsets = [];
   let sawSeparator = false;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const stripped = line.trim();
     if (!stripped.startsWith('|')) continue;
 
@@ -211,13 +258,15 @@ function parseMarkdownTable(body) {
       }
       // Separator row missing — treat as data row (column-count check fires later)
       dataRows.push(parseTableRow(line));
+      rowLineOffsets.push(i);
       continue;
     }
 
     dataRows.push(parseTableRow(line));
+    rowLineOffsets.push(i);
   }
 
-  return { headerCells: headerCells || [], dataRows };
+  return { headerCells: headerCells || [], dataRows, rowLineOffsets };
 }
 
 /**
@@ -241,62 +290,115 @@ function buildColMap(headerCells) {
 
 /**
  * A4: the latest `verdict=Go` row in `## Review log` must have an
- * `analyzed_head` equal to `--head`. Missing section, missing Go rows, and
- * malformed SHAs are all hard errors.
+ * `analyzed_head` equal to `--head`. Per REVIEWS.md §2.7, the table MUST
+ * also have all canonical columns and rows MUST have ISO 8601 timestamps.
+ * Missing section, missing required columns, malformed timestamps, malformed
+ * SHAs, and stale heads are all hard errors with file:line + fix hints
+ * (per C36-9 actionable-error requirement).
  */
 function checkA4() {
-  const sectionBody = extractSectionBody(prBodyContent, headingAnchor('Review log'));
-  if (!sectionBody.trim()) {
-    logError('## Review log section is missing; A4 (stale-diff currency) cannot be verified');
+  const section = extractSectionWithLineNumber(prBodyContent, headingAnchor('Review log'));
+  if (!section) {
+    logError(
+      `${prBodyFile}: ## Review log section is missing; ` +
+      `A4 (stale-diff currency) cannot be verified. ` +
+      `Fix: add a "## Review log" H2 section with the canonical column set ` +
+      `(${REVIEW_LOG_REQUIRED_COLS.join(' | ')}) per REVIEWS.md §2.7.`
+    );
     return;
   }
+  const { body: sectionBody, headingLine } = section;
 
-  const { headerCells, dataRows } = parseMarkdownTable(sectionBody);
+  const { headerCells, dataRows, rowLineOffsets } = parseMarkdownTable(sectionBody);
   if (!headerCells || headerCells.length === 0) {
-    logError('## Review log: table has no header row');
+    logError(
+      `${prBodyFile}:${headingLine}: ## Review log table has no header row. ` +
+      `Fix: add a header row "${REVIEW_LOG_REQUIRED_COLS.join(' | ')}" per REVIEWS.md §2.7.`
+    );
     return;
   }
 
   const colMap = buildColMap(headerCells);
+  const missingCols = REVIEW_LOG_REQUIRED_COLS.filter((c) => colMap.get(c) === undefined);
+  if (missingCols.length > 0) {
+    logError(
+      `${prBodyFile}:${headingLine}: ## Review log table is missing required column(s): ` +
+      `${missingCols.join(', ')}. ` +
+      `Fix: header row must be "${REVIEW_LOG_REQUIRED_COLS.join(' | ')}" per REVIEWS.md §2.7.`
+    );
+    return;
+  }
+
   const verdictIdx = colMap.get('verdict');
   const analyzedHeadIdx = colMap.get('analyzed_head');
+  const timestampIdx = colMap.get('timestamp');
 
-  if (verdictIdx === undefined) {
-    logError('## Review log: table is missing required "verdict" column');
-    return;
+  // Validate timestamp format on EVERY row (not just Go rows) — schema integrity
+  // matters across the full log per C35-3.
+  for (let i = 0; i < dataRows.length; i++) {
+    const cells = dataRows[i];
+    if (cells.length <= timestampIdx) continue; // column-count check fires below if needed
+    const ts = (cells[timestampIdx] || '').trim();
+    if (!ts) {
+      logError(
+        `${prBodyFile}:${headingLine + 1 + rowLineOffsets[i]}: ` +
+        `## Review log row ${i + 1}: empty "timestamp" column. ` +
+        `Fix: set timestamp to the UTC ISO 8601 instant when the review completed (e.g. 2026-05-13T18:42:00Z).`
+      );
+      return;
+    }
+    if (!ISO_TIMESTAMP_RE.test(ts)) {
+      logError(
+        `${prBodyFile}:${headingLine + 1 + rowLineOffsets[i]}: ` +
+        `## Review log row ${i + 1}: malformed timestamp "${ts}" ` +
+        `(expected ISO 8601 UTC like 2026-05-13T18:42:00Z). ` +
+        `Fix: replace with a strict ISO timestamp matching ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$.`
+      );
+      return;
+    }
   }
-  if (analyzedHeadIdx === undefined) {
-    logError('## Review log: table is missing required "analyzed_head" column');
-    return;
+
+  const goRowIndices = [];
+  for (let i = 0; i < dataRows.length; i++) {
+    const cells = dataRows[i];
+    if (cells.length > verdictIdx && cells[verdictIdx] === 'Go') {
+      goRowIndices.push(i);
+    }
   }
 
-  const goRows = dataRows.filter(
-    (cells) => cells.length > verdictIdx && cells[verdictIdx] === 'Go'
-  );
-
-  if (goRows.length === 0) {
-    logError('no Go verdict row found in ## Review log');
+  if (goRowIndices.length === 0) {
+    logError(
+      `${prBodyFile}:${headingLine}: ## Review log has no row with verdict="Go". ` +
+      `Fix: dispatch a reviewer per REVIEWS.md §2.2 ladder, then append a row ` +
+      `with verdict=Go and analyzed_head=<current PR HEAD SHA>.`
+    );
     return;
   }
 
   // Latest Go row = last in document order
-  const latestGoRow = goRows[goRows.length - 1];
+  const latestGoIdx = goRowIndices[goRowIndices.length - 1];
+  const latestGoRow = dataRows[latestGoIdx];
+  const latestGoLine = headingLine + 1 + rowLineOffsets[latestGoIdx];
   const analyzedHead = (
     latestGoRow.length > analyzedHeadIdx ? latestGoRow[analyzedHeadIdx] : ''
   ).trim();
 
   if (!SHA40_RE.test(analyzedHead)) {
     logError(
-      `## Review log: latest Go row has malformed analyzed_head "${analyzedHead}" ` +
-      `(expected full 40-char SHA)`
+      `${prBodyFile}:${latestGoLine}: ` +
+      `## Review log latest Go row has malformed analyzed_head "${analyzedHead}" ` +
+      `(expected full 40-char SHA, got ${analyzedHead.length} chars). ` +
+      `Fix: replace with the output of "git rev-parse HEAD" on the PR branch.`
     );
     return;
   }
 
   if (analyzedHead.toLowerCase() !== headSha.toLowerCase()) {
     logError(
-      `stale Go verdict: analyzed_head=${analyzedHead}, current head=${headSha}; ` +
-      `re-review required`
+      `${prBodyFile}:${latestGoLine}: ` +
+      `stale Go verdict — analyzed_head="${analyzedHead}" but current PR HEAD="${headSha}". ` +
+      `Fix: re-dispatch the reviewer against the current HEAD per REVIEWS.md §2.2 ` +
+      `(stale-diff doctrine), then append a new row with analyzed_head="${headSha}".`
     );
   }
 }
@@ -308,22 +410,35 @@ function checkA4() {
 /**
  * A3: the `## Model audit` section (| Field | Value | format per REVIEWS.md §2.8
  * and C35-4) must have `Implementer models` and `Reviewer model` fields whose
- * values have an empty intersection (case-insensitive).
+ * values have an empty intersection (case-insensitive). All errors include
+ * file:line + a fix hint per C36-9.
  */
 function checkA3() {
-  const sectionBody = extractSectionBody(prBodyContent, headingAnchor('Model audit'));
-  if (!sectionBody.trim()) {
-    logError('## Model audit section is missing; A3 (independence) cannot be verified');
+  const section = extractSectionWithLineNumber(prBodyContent, headingAnchor('Model audit'));
+  if (!section) {
+    logError(
+      `${prBodyFile}: ## Model audit section is missing; ` +
+      `A3 (independence) cannot be verified. ` +
+      `Fix: add a "## Model audit" H2 section with the | Field | Value | key-value table per REVIEWS.md §2.8.`
+    );
     return;
   }
+  const { body: sectionBody, headingLine } = section;
 
-  const { headerCells, dataRows } = parseMarkdownTable(sectionBody);
+  const { headerCells, dataRows, rowLineOffsets } = parseMarkdownTable(sectionBody);
   if (!headerCells || headerCells.length === 0) {
-    logError('## Model audit: table has no header row');
+    logError(
+      `${prBodyFile}:${headingLine}: ## Model audit table has no header row. ` +
+      `Fix: add a header row "| Field | Value |" per REVIEWS.md §2.8.`
+    );
     return;
   }
   if (dataRows.length === 0) {
-    logError('## Model audit: table has no data rows; at least one row required');
+    logError(
+      `${prBodyFile}:${headingLine}: ## Model audit table has no data rows; ` +
+      `at least Implementer models and Reviewer model rows are required. ` +
+      `Fix: see REVIEWS.md §2.8 for the canonical key-value rows.`
+    );
     return;
   }
 
@@ -333,32 +448,48 @@ function checkA3() {
 
   if (fieldIdx === undefined || valueIdx === undefined) {
     logError(
-      '## Model audit: table is missing "Field" or "Value" columns ' +
-      '(expected | Field | Value | key-value format per REVIEWS.md §2.8)'
+      `${prBodyFile}:${headingLine}: ` +
+      `## Model audit table is missing "Field" or "Value" columns ` +
+      `(expected | Field | Value | key-value format per REVIEWS.md §2.8). ` +
+      `Fix: replace the header row with "| Field | Value |".`
     );
     return;
   }
 
   let implementerModelsRaw = null;
   let reviewerModelRaw = null;
+  let implementerModelsLine = headingLine;
+  let reviewerModelLine = headingLine;
 
-  for (const cells of dataRows) {
+  for (let i = 0; i < dataRows.length; i++) {
+    const cells = dataRows[i];
     if (cells.length <= Math.max(fieldIdx, valueIdx)) continue;
     const fieldName = cells[fieldIdx].toLowerCase().trim();
     const value = cells[valueIdx];
+    const rowLine = headingLine + 1 + rowLineOffsets[i];
     if (fieldName === 'implementer models') {
       implementerModelsRaw = value;
+      implementerModelsLine = rowLine;
     } else if (fieldName === 'reviewer model') {
       reviewerModelRaw = value;
+      reviewerModelLine = rowLine;
     }
   }
 
   if (implementerModelsRaw === null) {
-    logError('## Model audit: "Implementer models" field not found in table');
+    logError(
+      `${prBodyFile}:${headingLine}: ` +
+      `## Model audit "Implementer models" row not found. ` +
+      `Fix: add a row "| Implementer models | <comma-separated model ids> |" per REVIEWS.md §2.8.`
+    );
     return;
   }
   if (reviewerModelRaw === null) {
-    logError('## Model audit: "Reviewer model" field not found in table');
+    logError(
+      `${prBodyFile}:${headingLine}: ` +
+      `## Model audit "Reviewer model" row not found. ` +
+      `Fix: add a row "| Reviewer model | <single model id from C35-2 ladder> |" per REVIEWS.md §2.8.`
+    );
     return;
   }
 
@@ -370,15 +501,24 @@ function checkA3() {
   const reviewerModel = reviewerModelRaw.trim().toLowerCase();
 
   if (!reviewerModel) {
-    logError('## Model audit: "Reviewer model" value is empty');
+    logError(
+      `${prBodyFile}:${reviewerModelLine}: ` +
+      `## Model audit "Reviewer model" value is empty. ` +
+      `Fix: set to a single model id from the C35-2 fallback ladder (e.g. gpt-5.5).`
+    );
     return;
   }
 
   const overlap = implementerModels.filter((m) => m === reviewerModel);
   if (overlap.length > 0) {
     logError(
-      `## Model audit: implementer models {${implementerModels.join(', ')}} ` +
-      `overlap with reviewer model {${reviewerModel}}`
+      `${prBodyFile}:${reviewerModelLine}: ` +
+      `## Model audit independence violation — implementer models {${implementerModels.join(', ')}} ` +
+      `overlap with reviewer model {${reviewerModel}}. ` +
+      `Fix: dispatch a different reviewer per the C35-2 fallback ladder ` +
+      `(GPT-highest-available → Sonnet-highest → orchestrator's-own with independence invariant); ` +
+      `then update the Reviewer model row at ${prBodyFile}:${reviewerModelLine} ` +
+      `and append a new ## Review log Go row for the new analyzed_head.`
     );
   }
 }

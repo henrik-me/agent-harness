@@ -279,7 +279,7 @@ describe('scripts/check-review-evidence.mjs', () => {
     const file = writeBody('case7.md', body);
     const r = run(file, VALID_HEAD);
     assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
-    assert.match(r.stdout, /no Go verdict row found/);
+    assert.match(r.stdout, /no row with verdict="Go"/);
   });
 
   // Case 8 ----------------------------------------------------------------
@@ -295,6 +295,86 @@ describe('scripts/check-review-evidence.mjs', () => {
     const r = run(file, VALID_HEAD);
     assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
     assert.match(r.stdout, /malformed analyzed_head/);
+  });
+
+  // Case 9 (R1 amendment): malformed timestamp -----------------------------
+  it('case 9 (R1): malformed timestamp in a Review log row → exit 1', () => {
+    // Row with non-ISO 8601 timestamp ("yesterday") should fail per REVIEWS.md §2.7
+    const badRow = `| yesterday | ${VALID_HEAD} | yoga-ah | gpt-5.5 | Go | https://example.com |`;
+    const body = buildPrBody({
+      reviewLogRows: [badRow],
+      modelAuditRows: CLEAN_AUDIT,
+    });
+    const file = writeBody('case9.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
+    assert.match(r.stdout, /malformed timestamp/i);
+    // Actionable C36-9: error must include file path + line number + fix hint
+    assert.match(r.stdout, new RegExp(`${file.replace(/\\/g, '\\\\')}:\\d+`));
+    assert.match(r.stdout, /Fix:/);
+  });
+
+  // Case 10 (R1 amendment): missing required Review log columns -----------
+  it('case 10 (R1): Review log missing a required column (e.g. "actor") → exit 1', () => {
+    // Header omits "actor" — should fail per REVIEWS.md §2.7 canonical schema
+    const body = [
+      '# PR Title',
+      '',
+      '## Review log',
+      '',
+      '| timestamp | analyzed_head | model | verdict | evidence_link |',
+      '|---|---|---|---|---|',
+      `| 2026-05-14T10:32:00Z | ${VALID_HEAD} | gpt-5.5 | Go | https://example.com |`,
+      '',
+      '## Model audit',
+      '',
+      '| Field | Value |',
+      '|---|---|',
+      '| Implementer models | claude-opus-4.7 |',
+      '| Reviewer model | gpt-5.5 |',
+      '',
+    ].join('\n');
+    const file = writeBody('case10.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
+    assert.match(r.stdout, /missing required column/i);
+    assert.match(r.stdout, /actor/);
+    assert.match(r.stdout, /Fix:/);
+  });
+
+  // Case 11 (R1 amendment): A4 stale-head error must be actionable --------
+  it('case 11 (R1): stale analyzed_head error is C36-9-actionable (file:line + fix)', () => {
+    const STALE_HEAD = 'b'.repeat(40);
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(STALE_HEAD, 'Go')],
+      modelAuditRows: CLEAN_AUDIT,
+    });
+    const file = writeBody('case11.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
+    assert.match(r.stdout, /stale Go verdict/i);
+    assert.match(r.stdout, new RegExp(`${file.replace(/\\/g, '\\\\')}:\\d+`));
+    assert.match(r.stdout, /Fix:.*re-dispatch/i);
+    // The fix hint should also tell the user the new SHA to use
+    assert.match(r.stdout, new RegExp(VALID_HEAD));
+  });
+
+  // Case 12 (R1 amendment): A3 independence error is C36-9-actionable -----
+  it('case 12 (R1): A3 independence violation error is C36-9-actionable (file:line + fix)', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD, 'Go')],
+      modelAuditRows: [
+        ['Implementer models', 'gpt-5.5, claude-opus-4.7'],
+        ['Reviewer model', 'gpt-5.5'], // overlap with implementer
+      ],
+    });
+    const file = writeBody('case12.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}`);
+    assert.match(r.stdout, /independence violation/i);
+    assert.match(r.stdout, new RegExp(`${file.replace(/\\/g, '\\\\')}:\\d+`));
+    assert.match(r.stdout, /Fix:/);
+    assert.match(r.stdout, /C35-2/);
   });
 
   // Bonus: skip-reasons ---------------------------------------------------

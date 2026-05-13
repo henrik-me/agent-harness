@@ -137,9 +137,10 @@ describe('harness pr-evidence', () => {
       '--json',
     ]);
     assert.equal(r.status, 0);
-    // Find the JSON object in stdout (everything before the summary line).
-    const jsonText = r.stdout.split('\nharness pr-evidence:')[0].trim();
-    const parsed = JSON.parse(jsonText);
+    // In JSON mode, stdout MUST be valid parseable JSON with no human suffix
+    // (R1 fix: previously the trailing `harness pr-evidence: 0 passed, 0 failed (skipped)`
+    // line corrupted the JSON output).
+    const parsed = JSON.parse(r.stdout);
     assert.equal(parsed.skipped, 'workboard-only');
     assert.deepEqual(parsed.gates, []);
   });
@@ -164,7 +165,6 @@ describe('harness pr-evidence', () => {
       '--json',
     ]);
     assert.equal(r.status, 0);
-    const jsonText = r.stdout.split('\nharness pr-evidence:')[0].trim();
-    assert.doesNotThrow(() => JSON.parse(jsonText), 'output must be valid JSON');
+    assert.doesNotThrow(() => JSON.parse(r.stdout), 'output must be valid JSON');
   });
 });
