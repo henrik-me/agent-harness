@@ -172,7 +172,7 @@ export async function runCheck(opts) {
             id
             headRefOid
             isCrossRepository
-            reviews(first:100) {
+            reviews(last:20) {
               nodes {
                 state
                 submittedAt

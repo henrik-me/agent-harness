@@ -46,8 +46,8 @@ Subcommands:
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
   pack              Run npm pack --dry-run and verify file whitelist
-  pr-evidence       Run PR-state evidence gates (B1, A3, A4, A6) against a PR's
-                    commit graph + body markdown (CS36)
+  pr-evidence       Run PR-state evidence gates (B1, A3, A4, A5+A16, A6) against
+                    a PR's commit graph + body markdown (CS36 + CS37)
   plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
                     Decisions+Deliverables (used to fill plan review rows)
   version           Print package version

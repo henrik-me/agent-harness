@@ -741,8 +741,9 @@ invariants may require 5–8 rounds ([LRN-024](LEARNINGS.md#lrn-024)).
 GitHub Copilot review engagement on a content PR (gate A16 in REVIEWS.md
 PR-evidence list) is performed locally by the orchestrator using
 `harness copilot-engage` (lands in CS41). The CI workflow only VERIFIES
-the engagement happened (PR-evidence gate `harness check-copilot-review`
-from CS37); CI never mutates the PR.
+the engagement happened (PR-evidence gate dispatched by
+`harness pr-evidence` via `scripts/check-copilot-review.mjs` from CS37);
+CI never mutates the PR.
 
 **Spike outcome (CS37, ADR-0004):** the `requestReviews` GraphQL mutation
 REJECTS the Copilot reviewer ID with "Could not resolve to User node"
