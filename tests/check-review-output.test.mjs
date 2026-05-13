@@ -236,23 +236,173 @@ describe('check-review-output linter (CS40)', () => {
     assert.match(r.stderr, /malformed finding row/);
   });
 
-  it('independence-invariant violation: reviewer model overlaps implementer set → exit 1', () => {
-    // We mock `gh pr view` by intercepting the env. Easier: this test is
-    // structurally hard to do without network or a gh stub. Instead, we test
-    // the parser via a direct module import in a separate test file. Here, we
-    // verify that without --repo/--pr the guard is silently skipped (clean exit).
+  it('independence-invariant violation: reviewer model overlaps implementer set → exit 1 (fake-gh)', () => {
+    // Inject a fake `gh` binary via CHECK_REVIEW_OUTPUT_GH_BIN. The shim
+    // simulates `gh pr view --json body --jq .body` returning a PR body whose
+    // ## Model audit table has Reviewer model gpt-5.5 in the Implementer set.
+    const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
+    repos.push(dir);
+    const review = buildReviewOutput({ analyzedHead: head, files: ['a.txt', 'b.txt'] });
+    const reviewFile = path.join(scratch, 'guard-violation.md');
+    fs.writeFileSync(reviewFile, review);
+
+    // The PR body the fake-gh returns: includes a canonical | Field | Value |
+    // Model audit table where gpt-5.5 is BOTH an implementer and the reviewer.
+    const fakePrBody = [
+      '## Summary', '', 'Test PR', '',
+      '## Changes', '', '- a.txt', '- b.txt', '',
+      '## Testing', '', 'manual', '',
+      '## Model audit',
+      '',
+      '| Field | Value |',
+      '|---|---|',
+      '| Implementer models | claude-opus-4.7, gpt-5.5 |',
+      '| Reviewer model | gpt-5.5 |',
+      '',
+      '## Review log',
+      '',
+      '| timestamp | analyzed_head | actor | model | verdict | evidence_link |',
+      '|---|---|---|---|---|---|',
+      '',
+    ].join('\n');
+    const fakeGh = path.join(dir, 'fake-gh.mjs');
+    fs.writeFileSync(fakeGh, [
+      '#!/usr/bin/env node',
+      'import fs from "node:fs";',
+      'const args = process.argv.slice(2);',
+      // Match `pr view <num> ... --json body --jq .body`
+      'if (args[0] === "pr" && args[1] === "view") {',
+      `  process.stdout.write(${JSON.stringify(fakePrBody)});`,
+      '  process.exit(0);',
+      '}',
+      'process.stderr.write("fake-gh: unexpected args " + args.join(" ") + "\\n");',
+      'process.exit(1);',
+    ].join('\n'));
+
+    const r = spawnSync('node', [
+      SCRIPT,
+      '--review-output', reviewFile,
+      '--round', 'R1',
+      '--base', base,
+      '--head', head,
+      '--repo', 'henrik-me/agent-harness',
+      '--pr', '999',
+      '--reviewer-model', 'gpt-5.5',
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, CHECK_REVIEW_OUTPUT_GH_BIN: fakeGh },
+    });
+    assert.strictEqual(r.status, 1, `expected exit 1, got ${r.status}; stderr: ${r.stderr}`);
+    assert.match(r.stderr, /independence-invariant violation/, `expected violation message; stderr: ${r.stderr}`);
+    assert.match(r.stderr, /gpt-5\.5/);
+  });
+
+  it('independence-invariant guard skipped without --reviewer-model → warning, exit 0', () => {
+    // Sanity check that omitting --reviewer-model still cleanly skips.
     const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
     repos.push(dir);
     const review = buildReviewOutput({ analyzedHead: head, files: ['a.txt', 'b.txt'] });
     const reviewFile = path.join(scratch, 'no-guard.md');
     fs.writeFileSync(reviewFile, review);
 
-    // Without --repo/--pr the guard does not run; exit 0 expected.
     const r = runLinter([
       '--review-output', reviewFile, '--round', 'R1', '--base', base, '--head', head,
       '--reviewer-model', 'gpt-5.5',
     ], dir);
     assert.strictEqual(r.status, 0, `expected guard-skipped exit 0, got ${r.status}; stderr: ${r.stderr}`);
+  });
+
+  it('--update-pr idempotency: second run with same inputs is a no-op (fake-gh)', () => {
+    // Mock both `gh pr view` (returns a stub body) and `gh pr edit` (records
+    // the new body to a file). Then run the linter twice with the same inputs;
+    // first call should add a row (and write the body), second call should
+    // detect the dedup hit and skip.
+    const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
+    repos.push(dir);
+    const review = buildReviewOutput({ analyzedHead: head, files: ['a.txt', 'b.txt'] });
+    const reviewFile = path.join(scratch, 'update-pr.md');
+    fs.writeFileSync(reviewFile, review);
+
+    const stateFile = path.join(dir, 'pr-body.md');
+    const initialBody = [
+      '## Summary', '', 'Test PR', '',
+      '## Changes', '', '- a.txt', '- b.txt', '',
+      '## Testing', '', 'manual', '',
+      '## Review log',
+      '',
+      '| timestamp | analyzed_head | actor | model | verdict | evidence_link |',
+      '|---|---|---|---|---|---|',
+      '',
+    ].join('\n');
+    fs.writeFileSync(stateFile, initialBody);
+
+    const fakeGh = path.join(dir, 'fake-gh-update.mjs');
+    fs.writeFileSync(fakeGh, [
+      '#!/usr/bin/env node',
+      'import fs from "node:fs";',
+      'const args = process.argv.slice(2);',
+      `const stateFile = ${JSON.stringify(stateFile)};`,
+      // gh pr view <num> --repo <slug> --json body --jq .body  → print body
+      'if (args[0] === "pr" && args[1] === "view") {',
+      '  process.stdout.write(fs.readFileSync(stateFile, "utf8"));',
+      '  process.exit(0);',
+      '}',
+      // gh pr edit <num> --repo <slug> --body-file <path>  → write to stateFile
+      'if (args[0] === "pr" && args[1] === "edit") {',
+      '  const bf = args.indexOf("--body-file");',
+      '  if (bf < 0) { process.stderr.write("fake-gh: missing --body-file\\n"); process.exit(1); }',
+      '  const newBody = fs.readFileSync(args[bf + 1], "utf8");',
+      '  fs.writeFileSync(stateFile, newBody);',
+      '  process.exit(0);',
+      '}',
+      'process.stderr.write("fake-gh: unexpected args " + args.join(" ") + "\\n");',
+      'process.exit(1);',
+    ].join('\n'));
+
+    const baseArgs = [
+      SCRIPT,
+      '--review-output', reviewFile,
+      '--round', 'R1',
+      '--base', base,
+      '--head', head,
+      '--repo', 'henrik-me/agent-harness',
+      '--pr', '999',
+      '--reviewer-model', 'gpt-5.5',
+      '--actor', 'yoga-ah',
+      '--evidence-link', 'https://example.com/r1',
+      '--update-pr',
+    ];
+    const env = { ...process.env, CHECK_REVIEW_OUTPUT_GH_BIN: fakeGh };
+
+    // First run: should add a row.
+    const r1 = spawnSync('node', baseArgs, { cwd: dir, encoding: 'utf8', env });
+    assert.strictEqual(r1.status, 0, `first run expected exit 0, got ${r1.status}; stderr: ${r1.stderr}`);
+    assert.match(r1.stderr, /## Review log row added/, `first run should add row; stderr: ${r1.stderr}`);
+
+    // Verify the new body has the canonical row shape (6 cells in correct order).
+    const afterFirst = fs.readFileSync(stateFile, 'utf8');
+    // Look for the appended row line.
+    const rowLine = afterFirst.split('\n').find((l) => l.includes(head) && l.includes('yoga-ah'));
+    assert.ok(rowLine, `expected new row in ${afterFirst}`);
+    const cells = rowLine.split('|').slice(1, -1).map((s) => s.trim());
+    assert.strictEqual(cells.length, 6, `canonical row must have 6 cells, got ${cells.length}: ${rowLine}`);
+    // Column order: timestamp | analyzed_head | actor | model | verdict | evidence_link
+    assert.match(cells[0], /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, `cell[0] should be ISO timestamp, got ${cells[0]}`);
+    assert.strictEqual(cells[1], head, 'cell[1] should be analyzed_head');
+    assert.strictEqual(cells[2], 'yoga-ah', 'cell[2] should be actor');
+    assert.strictEqual(cells[3], 'gpt-5.5', 'cell[3] should be model');
+    assert.strictEqual(cells[4], 'Go', 'cell[4] should be verdict');
+    assert.strictEqual(cells[5], 'https://example.com/r1', 'cell[5] should be evidence_link');
+
+    // Second run: should detect dedup hit and skip.
+    const r2 = spawnSync('node', baseArgs, { cwd: dir, encoding: 'utf8', env });
+    assert.strictEqual(r2.status, 0, `second run expected exit 0, got ${r2.status}; stderr: ${r2.stderr}`);
+    assert.match(r2.stderr, /## Review log row unchanged \(idempotent\)/, `second run should be idempotent; stderr: ${r2.stderr}`);
+
+    // Body must be byte-identical after the no-op second run.
+    const afterSecond = fs.readFileSync(stateFile, 'utf8');
+    assert.strictEqual(afterSecond, afterFirst, 'idempotent second run must not alter body');
   });
 
   it('--json output: emits structured JSON with errors/warnings/findings/enumerated_files', () => {

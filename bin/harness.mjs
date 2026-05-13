@@ -346,9 +346,12 @@ are all provided, fetches the PR body via gh and asserts the reviewer model
 is NOT in the implementer model set per the PR's ## Model audit table.
 
 Optional --update-pr posts the parsed structured output as a new row in the
-PR body's ## Review log section via 'gh pr edit --body-file'. Idempotent:
+PR body's ## Review log section via 'gh pr edit --body-file'. The row matches
+the canonical 6-column schema per REVIEWS.md §2.7
+(timestamp | analyzed_head | actor | model | verdict | evidence_link), parsed
+by column header so a future column reorder won't silently break it. Idempotent:
 re-running with the same --review-output produces the same single row
-(deduplicated by analyzed_head + verdict + reviewer-model).
+(deduplicated by analyzed_head + actor + model + verdict).
 
 Per CS40 C40-8, this subcommand is NOT registered with 'harness pr-evidence' —
 it requires the reviewer output file which is not available in CI. It is a
@@ -364,7 +367,9 @@ Optional flags:
   --prev-head <sha>            Required for Rn enumeration check (warn-skip if absent)
   --repo <owner/repo>          For PR-body fetch (independence guard + --update-pr)
   --pr <number>                For PR-body fetch (independence guard + --update-pr)
-  --reviewer-model <model-id>  Reviewer model (required when independence guard runs)
+  --reviewer-model <model-id>  Reviewer model (required when independence guard runs or --update-pr)
+  --actor <agent-id>           Actor agent ID (required with --update-pr; canonical 'actor' column per REVIEWS.md §2.7)
+  --evidence-link <url>        evidence_link cell value for ## Review log row (defaults to file basename)
   --update-pr                  Post parsed output as new ## Review log row (idempotent)
   --json                       Emit machine-readable JSON instead of text
   --quiet                      Suppress per-finding output; print summary only

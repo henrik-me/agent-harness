@@ -91,6 +91,21 @@ const VERDICT_RE = /^Verdict:\s+(Go|Needs-Fix|Block)\s*$/m;
 const FINDING_ROW_RE = /^-\s+\[(Blocking|Non-blocking|Suggestion)\]\s+(\S+):(\d+):\s+(.+)$/;
 
 /**
+ * Resolve and invoke the `gh` binary. Tests inject a fake-gh shim by setting
+ * the `CHECK_REVIEW_OUTPUT_GH_BIN` env var. If the env var points to a .mjs /
+ * .js / .cjs file, the linter spawns `node <script>` so test seams don't have
+ * to cross Windows .cmd-vs-shell concerns. Production defaults to the system
+ * `gh` on PATH.
+ */
+function runGh(args) {
+  const ghBin = process.env.CHECK_REVIEW_OUTPUT_GH_BIN;
+  if (ghBin && /\.(mjs|js|cjs)$/i.test(ghBin)) {
+    return spawnSync(process.execPath, [ghBin, ...args], { encoding: 'utf8' });
+  }
+  return spawnSync(ghBin || 'gh', args, { encoding: 'utf8' });
+}
+
+/**
  * Per-file enumeration row regex. Matches any of:
  *   `- <path>: <one-line>`
  *   `- \`<path>\`: <one-line>`
@@ -111,6 +126,8 @@ let prevHead = null;
 let repo = null;
 let pr = null;
 let reviewerModel = null;
+let actor = null;
+let evidenceLink = null;
 let updatePr = false;
 let jsonOut = false;
 let quiet = false;
@@ -133,6 +150,8 @@ const HELP = [
   '  --repo <owner/repo>          For PR-body fetch (independence guard + --update-pr)',
   '  --pr <number>                For PR-body fetch (independence guard + --update-pr)',
   '  --reviewer-model <model-id>  Reviewer model (required when independence guard runs)',
+  '  --actor <agent-id>           Actor for ## Review log row (required with --update-pr)',
+  '  --evidence-link <url>        evidence_link cell value for ## Review log row (defaults to file basename)',
   '  --update-pr                  Post parsed output as new ## Review log row (idempotent)',
   '  --json                       Emit machine-readable JSON instead of text',
   '  --quiet                      Suppress per-finding output; print summary only',
@@ -164,6 +183,8 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--repo') { repo = requireValue(argv, i, '--repo'); i++; }
   else if (a === '--pr') { pr = requireValue(argv, i, '--pr'); i++; }
   else if (a === '--reviewer-model') { reviewerModel = requireValue(argv, i, '--reviewer-model'); i++; }
+  else if (a === '--actor') { actor = requireValue(argv, i, '--actor'); i++; }
+  else if (a === '--evidence-link') { evidenceLink = requireValue(argv, i, '--evidence-link'); i++; }
   else if (a === '--update-pr') { updatePr = true; }
   else if (a === '--json') { jsonOut = true; }
   else if (a === '--quiet') { quiet = true; }
@@ -321,7 +342,7 @@ if (repo && pr) {
   if (!reviewerModel) {
     warnings.push(`independence-invariant guard skipped: --reviewer-model not provided (cannot compare against PR-body Model audit)`);
   } else {
-    const ghResult = spawnSync('gh', ['pr', 'view', pr, '--repo', repo, '--json', 'body', '--jq', '.body'], { encoding: 'utf8' });
+    const ghResult = runGh(['pr', 'view', pr, '--repo', repo, '--json', 'body', '--jq', '.body']);
     if (ghResult.status !== 0) {
       warnings.push(`could not fetch PR body via gh (exit ${ghResult.status}): ${ghResult.stderr.trim()}`);
     } else {
@@ -329,8 +350,11 @@ if (repo && pr) {
       const implementerModels = parseModelAuditImplementers(prBody);
       if (implementerModels.size === 0) {
         warnings.push(`independence-invariant guard: no Model audit table found in PR body (or no implementer rows)`);
-      } else if (implementerModels.has(reviewerModel)) {
-        errors.push(`independence-invariant violation: reviewer model '${reviewerModel}' is also in implementer set ${[...implementerModels].sort().join(', ')} per PR body Model audit`);
+      } else {
+        const lowerImpl = new Set([...implementerModels].map((m) => m.toLowerCase()));
+        if (lowerImpl.has(reviewerModel.toLowerCase())) {
+          errors.push(`independence-invariant violation: reviewer model '${reviewerModel}' is also in implementer set ${[...implementerModels].sort().join(', ')} per PR body Model audit`);
+        }
       }
     }
   }
@@ -345,18 +369,24 @@ if (updatePr) {
     warnings.push(`--update-pr skipped: linter errors present (refusing to post a defective row)`);
   } else if (!repo || !pr) {
     warnings.push(`--update-pr skipped: --repo and --pr are both required`);
+  } else if (!reviewerModel) {
+    warnings.push(`--update-pr skipped: --reviewer-model is required (canonical ## Review log "model" column)`);
+  } else if (!actor) {
+    warnings.push(`--update-pr skipped: --actor is required (canonical ## Review log "actor" column)`);
   } else if (!analyzedHead || !verdict) {
     warnings.push(`--update-pr skipped: parsed output is incomplete (analyzedHead=${analyzedHead}, verdict=${verdict})`);
   } else {
     const updateResult = updatePrReviewLog({
-      repo, pr, analyzedHead, verdict, reviewerModel: reviewerModel || 'unknown',
-      reviewOutput: path.basename(reviewOutput),
+      repo, pr, analyzedHead, verdict,
+      actor,
+      reviewerModel,
+      evidenceLink: evidenceLink || path.basename(reviewOutput),
     });
     if (updateResult.error) {
       errors.push(`--update-pr failed: ${updateResult.error}`);
     } else if (!quiet) {
       const action = updateResult.added ? 'added' : 'unchanged (idempotent)';
-      process.stderr.write(`check-review-output: ## Review log row ${action} for analyzed_head=${analyzedHead}, verdict=${verdict}\n`);
+      process.stderr.write(`check-review-output: ## Review log row ${action} for analyzed_head=${analyzedHead}, actor=${actor}, model=${reviewerModel}, verdict=${verdict}\n`);
     }
   }
 }
@@ -400,39 +430,39 @@ process.exit(errors.length > 0 ? 1 : 0);
 /**
  * Parse the implementer model set from a PR body's `## Model audit` section.
  *
- * Recognised columns: any column with header containing "model" — typically
- * `Model` or `Model ID`. The implementer set is the union of model values in
- * rows whose first column (Step) doesn't contain "review".
+ * Per REVIEWS.md §2.8 the canonical schema is a `| Field | Value |` key-value
+ * table where one row has Field = `Implementer models` (case-insensitive) and
+ * its Value cell is a comma-separated list of model identifiers. Returns an
+ * empty Set if the section is absent, the table is missing required columns,
+ * or the row is absent.
  *
  * @param {string} prBody Markdown content of PR body
- * @returns {Set<string>} set of implementer model IDs
+ * @returns {Set<string>} set of implementer model IDs (preserved-case strings)
  */
 function parseModelAuditImplementers(prBody) {
   const result = new Set();
-  // Find the `## Model audit` H2 and consume rows until the next H2.
+  // Find the `## Model audit` H2 and consume rows until the next H2/H1 or EOF.
   const m = prBody.match(/##\s+Model audit\s*\r?\n([\s\S]*?)(?:\r?\n##\s|\r?\n#\s|$)/);
   if (!m) return result;
   const section = m[1];
-  const rows = section.split(/\r?\n/).filter((l) => /^\|/.test(l));
-  if (rows.length < 2) return result; // need header + separator + at least one data row
-  const header = rows[0].split('|').map((s) => s.trim()).filter(Boolean);
-  // Find the column index containing "model".
-  const modelIdx = header.findIndex((h) => /model/i.test(h));
-  const stepIdx = 0; // first column is conventionally the step name
-  if (modelIdx < 0) return result;
-  // Skip header + separator (rows 0 and 1).
+  const rows = section.split(/\r?\n/).filter((l) => /^\|/.test(l.trim()));
+  if (rows.length < 2) return result; // header + separator at minimum
+
+  // First row must be the header. Identify Field + Value column indices.
+  const headerCells = rows[0].split('|').slice(1, -1).map((s) => s.trim());
+  const fieldIdx = headerCells.findIndex((h) => /^field$/i.test(h));
+  const valueIdx = headerCells.findIndex((h) => /^value$/i.test(h));
+  if (fieldIdx < 0 || valueIdx < 0) return result;
+
+  // Skip header (row 0) and separator (row 1, the ---|--- line). Walk data rows.
   for (let i = 2; i < rows.length; i++) {
-    const cells = rows[i].split('|').map((s) => s.trim()).filter((_, j, arr) => j > 0 && j < arr.length - 1);
-    // The split-by-pipe leaves leading/trailing empty cells; the .filter above
-    // drops them. We want the original 1-based cell index.
-    const fullCells = rows[i].split('|').slice(1, -1).map((s) => s.trim());
-    if (fullCells.length <= modelIdx) continue;
-    const step = fullCells[stepIdx] || '';
-    const model = fullCells[modelIdx] || '';
-    if (!model || /^n\/a$/i.test(model) || /^—$/.test(model)) continue;
-    if (/review/i.test(step)) continue; // exclude review-row models
-    // Some rows have multiple comma-separated models in one cell.
-    for (const part of model.split(/[,/]/).map((s) => s.trim()).filter(Boolean)) {
+    const cells = rows[i].split('|').slice(1, -1).map((s) => s.trim());
+    if (cells.length <= Math.max(fieldIdx, valueIdx)) continue;
+    const field = cells[fieldIdx] || '';
+    const value = cells[valueIdx] || '';
+    if (!/^implementer\s+models$/i.test(field)) continue;
+    if (!value || /^n\/a$/i.test(value) || /^—$/.test(value)) continue;
+    for (const part of value.split(',').map((s) => s.trim()).filter(Boolean)) {
       result.add(part);
     }
   }
@@ -442,30 +472,67 @@ function parseModelAuditImplementers(prBody) {
 /**
  * Idempotently add a row to the PR body's `## Review log` section.
  *
- * The dedup key is `analyzed_head + verdict + reviewerModel`. If a row with
- * the same key already exists, no edit is made and `{ added: false }` is
- * returned. Otherwise a new row is appended and the body is written back via
- * `gh pr edit --body-file`.
+ * Emits a row matching the canonical 6-column schema per REVIEWS.md §2.7
+ * (also enforced by check-review-evidence.mjs:55):
+ *
+ *   | timestamp | analyzed_head | actor | model | verdict | evidence_link |
+ *
+ * Dedup key: `analyzed_head + actor + model + verdict` (case-insensitive on
+ * SHA, exact on the others). The Review log table is parsed by column header
+ * to locate each cell — we don't rely on positional regex matching, because
+ * a future column reorder would silently break dedup.
  *
  * @param {object} opts
  * @returns {{ added: boolean, error?: string }}
  */
-function updatePrReviewLog({ repo, pr, analyzedHead, verdict, reviewerModel, reviewOutput }) {
-  const ghView = spawnSync('gh', ['pr', 'view', pr, '--repo', repo, '--json', 'body', '--jq', '.body'], { encoding: 'utf8' });
+function updatePrReviewLog({ repo, pr, analyzedHead, verdict, actor, reviewerModel, evidenceLink }) {
+  const ghView = runGh(['pr', 'view', pr, '--repo', repo, '--json', 'body', '--jq', '.body']);
   if (ghView.status !== 0) return { error: `gh pr view failed: ${ghView.stderr.trim()}` };
   const body = ghView.stdout;
   const reviewLogMatch = body.match(/(##\s+Review log\s*\r?\n[\s\S]*?)(\r?\n##\s|\r?\n#\s|$)/);
   if (!reviewLogMatch) return { error: `PR body has no ## Review log section` };
   const section = reviewLogMatch[1];
-  // Dedup: look for a row containing analyzedHead, verdict, and reviewerModel.
-  const dedupNeedle = new RegExp(
-    `\\|[^|]*${escapeRegex(analyzedHead)}[^|]*\\|[^|]*${escapeRegex(verdict)}[^|]*\\|`,
-    'i'
-  );
-  if (dedupNeedle.test(section)) return { added: false };
 
+  // Parse the existing table to identify the column ordering and existing rows.
+  const tableLines = section.split(/\r?\n/).filter((l) => /^\|/.test(l.trim()));
+  if (tableLines.length < 2) {
+    return { error: `## Review log table malformed: needs at least header + separator rows` };
+  }
+  const headerCells = tableLines[0].split('|').slice(1, -1).map((s) => s.trim().toLowerCase());
+  const colIdx = (name) => headerCells.indexOf(name);
+  const requiredCols = ['timestamp', 'analyzed_head', 'actor', 'model', 'verdict', 'evidence_link'];
+  const missingCols = requiredCols.filter((c) => colIdx(c) === -1);
+  if (missingCols.length > 0) {
+    return { error: `## Review log table missing required columns: ${missingCols.join(', ')} (canonical schema per REVIEWS.md §2.7)` };
+  }
+
+  // Walk data rows (skip header + separator) to detect dedup hit.
+  const dedupSha = analyzedHead.toLowerCase();
+  for (let i = 2; i < tableLines.length; i++) {
+    const cells = tableLines[i].split('|').slice(1, -1).map((s) => s.trim());
+    if (cells.length < requiredCols.length) continue;
+    const rowSha = (cells[colIdx('analyzed_head')] || '').toLowerCase();
+    const rowActor = cells[colIdx('actor')] || '';
+    const rowModel = cells[colIdx('model')] || '';
+    const rowVerdict = cells[colIdx('verdict')] || '';
+    if (rowSha === dedupSha && rowActor === actor && rowModel === reviewerModel && rowVerdict === verdict) {
+      return { added: false };
+    }
+  }
+
+  // Build the new row in canonical column order (matches the header literally
+  // so order-shifts do not produce mis-aligned cells).
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const newRow = `| ${timestamp} | check-review-output | tool | ${reviewerModel} | ${analyzedHead} | ${verdict} | ${reviewOutput} |`;
+  const valuesByCol = {
+    timestamp,
+    analyzed_head: analyzedHead,
+    actor,
+    model: reviewerModel,
+    verdict,
+    evidence_link: evidenceLink,
+  };
+  const orderedCells = headerCells.map((h) => valuesByCol[h] !== undefined ? valuesByCol[h] : '');
+  const newRow = `| ${orderedCells.join(' | ')} |`;
   const newSection = section.replace(/\s*$/, '\n' + newRow + '\n');
   const newBody = body.replace(section, newSection);
 
@@ -473,7 +540,7 @@ function updatePrReviewLog({ repo, pr, analyzedHead, verdict, reviewerModel, rev
   const tmpPath = path.join(os.tmpdir(), `check-review-output-pr-${pr}-${process.pid}.md`);
   fs.writeFileSync(tmpPath, newBody, 'utf8');
   try {
-    const ghEdit = spawnSync('gh', ['pr', 'edit', pr, '--repo', repo, '--body-file', tmpPath], { encoding: 'utf8' });
+    const ghEdit = runGh(['pr', 'edit', pr, '--repo', repo, '--body-file', tmpPath]);
     if (ghEdit.status !== 0) return { error: `gh pr edit failed: ${ghEdit.stderr.trim()}` };
     return { added: true };
   } finally {
@@ -481,4 +548,8 @@ function updatePrReviewLog({ repo, pr, analyzedHead, verdict, reviewerModel, rev
   }
 }
 
-function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeRegex(s) { // eslint-disable-line no-unused-vars
+  // Reserved for future use; canonical regex helper kept here so callers don't
+  // have to re-derive the metachar set if they need substring-match dedup.
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
