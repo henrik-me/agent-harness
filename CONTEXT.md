@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-13 (CS35b closed: plan-review-attestation linter merged in PR #154 [content, admin SHA 5fb9e68] + workboard-only close-out PR; GPT-5.5 plan-vs-impl R1 NEEDS-FIX → R2 GO at HEAD 1ca9309 with `--files` diff-scoped flag added in R1 amendments; LRN-108 filed status=applied. v0.4.0 queue: CS36 (next) → CS37 → CS38a → CS38b → CS39. CS35 closed via PR #151+152. Prior 18 CSs since CS22 summarized in the post-CS22 consolidated entry below; CS34 closed in PR #136.)
+> **Last updated:** 2026-05-13 (CS36 claimed and active: PR-evidence FS+git linters + `harness pr-evidence` entry point — third CS in v0.4.0 #145 enforcement-gap arc, lands B1/A3/A4/A6 mechanical PR-state gates that catch the doctrine violations PR #28 shipped through. CS35 + CS35b shipped via PRs #151/#152/#153/#154/#155. v0.4.0 queue: CS36 (active) → CS37 → CS38a → CS38b → CS39. Prior 18 CSs since CS22 summarized in the post-CS22 consolidated entry below; CS34 closed in PR #136.)
 
 > **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. This file (CONTEXT.md) covers current state only.
 
