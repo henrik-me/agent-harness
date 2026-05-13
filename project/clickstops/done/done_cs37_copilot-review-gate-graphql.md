@@ -1,10 +1,11 @@
 # CS37 — Copilot review gate via GraphQL (A5, A16) — HIGH RISK
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs37/copilot-review-gate-graphql
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
+**Merged at:** 9687e7d2d80f837433c547ee63b123c8706046f6 (PR #160)
 **Filed by:** Pre-CS37 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1 (gates A5, A16; #145 Change 6 GraphQL recipe). Authored 2026-05-12 by `yoga-ah`. Fifth CS in the v0.4.0 arc (counting CS35, CS35b, CS36 as the doctrine-and-FS-enforcement core; CS37 lands the live-PR / GraphQL surface) — **HIGH RISK** because it depends on Copilot's GitHub identity and the `requestReviews` mutation behaving as documented.
 **Depends on:** [CS36](../done/done_cs36_pr-evidence-fs-and-git-linters.md) (the `harness pr-evidence` entry point), [CS35](../done/done_cs35_enforcement-doctrine-and-planning-locality.md) (C35-9, C35-10).
 
@@ -101,13 +102,27 @@ CS37 close-out is permitted only when **all** of the following are true and reco
 | T9 | OPERATIONS.md § Copilot engagement procedure: capture the working invocation from spike (verbatim transcript); cross-link to new linter | done | orchestrator | Composed-blocks parity: root + template/composed must be byte-equivalent. |
 | T10 | CHANGELOG.md `[Unreleased] / Added` entry — for full PASS, lists all three (GraphQL primitive, A5 gate, A16 gate); for PARTIAL/FAIL, lists only what shipped + deferral note | done | orchestrator | Per C37-1b. Pre-validate body with `node scripts/validate-schemas.mjs`. |
 | T11 | Local validation: `harness lint --quiet` (27/0/3 baseline), `harness sync --mode=check` clean, `node --test tests/*.test.mjs` total ≥785 + new tests | done | orchestrator | Per Exit Criteria #4 + #5. |
-| T12 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (capped at 3 rounds per C35-2); admin-merge after CI green + Go | pending | orchestrator | PR body must include Summary/Changes/Testing + Model audit + Review log per CS35-CS36 pattern. R0 PENDING → R1 verdict → amendments → admin-merge. |
-| T13 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable, surface ESCALATION line if PARTIAL/FAIL so CS38a/b/CS39/CS41 are claimed with correct conditional state per C37-1b | pending | orchestrator | If PARTIAL/FAIL: ESCALATION line is mandatory. |
+| T12 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (capped at 3 rounds per C35-2); admin-merge after CI green + Go | done | orchestrator | PR #160 opened with full Summary/Changes/Testing/Model audit/Review log. R1 verdict Go-with-amendments → 4 amendments applied (commit `bafb7b1`) → R2 verdict Go. Admin-merged at squash `9687e7d`. R1+R2 transcript posted as #issuecomment-4439793091. |
+| T13 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable, surface ESCALATION line if PARTIAL/FAIL so CS38a/b/CS39/CS41 are claimed with correct conditional state per C37-1b | done | orchestrator | active→done renamed; WORKBOARD pruned; CONTEXT refreshed. PASS branch — no ESCALATION line needed (CS38a/b/39/41 proceed with full A5+A16 enabled). LRN-110 filed re: Bot vs User reviewer-engagement primitive. |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **Spike outcome PASS** (recorded in `docs/adr/0004-copilot-graphql-spike.md`): full A5 + A16 enforcement ships. CS38a/CS38b/CS39/CS41 proceed with no degradation.
+- **ADR4-2 lockdown:** `requestReviews` GraphQL mutation REJECTS Bot reviewer IDs. Engagement primitive is `gh pr edit --add-reviewer copilot-pull-request-reviewer` (REST-backed). This corrected the procedure that had been documented in OPERATIONS.md since CS35.
+- **LRN-110 candidate:** GitHub's GraphQL `requestReviews` mutation requires `User` node IDs only; Bots (incl. `copilot-pull-request-reviewer`) must be engaged via the REST `/repos/:owner/:repo/pulls/:number/requested_reviewers` endpoint (which `gh pr edit --add-reviewer` wraps). Documented schemas/recipes that paint these as interchangeable are wrong — the spike is the source of truth.
+- **R1 caught a substantive defect** (reviews query window `first:100` → `last:20`) that all other gates green-lit. Re-validates LRN-064 (mandatory plan-vs-impl review gate) for the third consecutive arc CS (CS35b → CS36 → CS37).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** gpt-5.5
+**Date:** 2026-05-13
+**Outcome:** Go (R2 after Go-with-amendments at R1)
+
+### Transcript
+
+| round | reviewer | analyzed_head | verdict | summary |
+|---|---|---|---|---|
+| R1 | gpt-5.5 | ad78063d0b340abeaea64a5bbd2d7fb4abb52c0f | Go-with-amendments | 3 should-fix + 1 nice-to-have, 0 blocking. (1) `reviews(first:100)` should be `reviews(last:20)` to match OPERATIONS doc + avoid review-heavy-PR misses; (2) REVIEWS.md A5 row carried only the CS36 semantics; (3) OPERATIONS.md referenced a non-existent `harness check-copilot-review` subcommand; (4) top-level help omitted A5+A16 from the `pr-evidence` line. |
+| R2 | gpt-5.5 | bafb7b12ab94abd8c50a5dec54bbc2fb01ac4762 | Go | All 4 R1 findings addressed. No new findings. Validation re-confirmed: 35/0/0 new tests, lint 27/0/3, composed-blocks parity OK on touched sections. |
+
+Full transcript: PR #160 #issuecomment-4439793091.
