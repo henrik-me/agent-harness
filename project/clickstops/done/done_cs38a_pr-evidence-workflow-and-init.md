@@ -1,10 +1,10 @@
 # CS38a — `pr-evidence-lint.yml` workflow + composed PR template + `--enable-review-gates` init
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
-**Branch:** cs38a/pr-evidence-workflow-and-init
+**Branch:** cs38a/pr-evidence-workflow-and-init (merged via PR [#163](https://github.com/henrik-me/agent-harness/pull/163), squash commit `528d1c7eec41d191f859151af9c02056f5331811`)
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS38a disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1. Authored 2026-05-12 by `yoga-ah`. Sixth CS in the v0.4.0 arc (counting CS35, CS35b, CS36, CS37 as the doctrine-and-linter core; CS38a lands the CI surface that wires CS36+CS37's gates into every consumer PR).
 **Depends on:** [CS36](../done/done_cs36_pr-evidence-fs-and-git-linters.md), [CS37](../done/done_cs37_copilot-review-gate-graphql.md), [CS35](../done/done_cs35_enforcement-doctrine-and-planning-locality.md) (C35-7/8/9/15).
 
@@ -100,6 +100,12 @@ Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
 (filled during execution)
 
 ## Plan-vs-implementation review
+
+**Reviewer:** gpt-5.5
+**Date:** 2026-05-13
+**Outcome:** Go (R2 after R1 Needs-Fix)
+
+### Transcript
 
 | Round | Reviewer model | Branch HEAD SHA | R-round | Verdict | Evidence link |
 |---|---|---|---|---|---|

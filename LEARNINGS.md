@@ -2123,6 +2123,46 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-111
+
+```yaml
+id: LRN-111
+date: 2026-05-13
+category: process
+source_cs: CS38a
+status: applied
+tags: [sub-agent-verification, plan-fidelity, test-design, LRN-064-revalidated]
+claim_area: sub-agent-dispatch
+```
+
+**Problem:** CS38a's R1 GPT-5.5 plan-vs-implementation review (at HEAD `685b936`) returned **NEEDS-FIX** with 4 BLOCKING findings spanning 4 distinct surface areas of the deliverable:
+
+- **B1** (workflow shape): the `pr-evidence-lint.yml` workflow had a single `pr-evidence` step that invoked the full aggregator with `--repo`/`--pr` — would fail on the first run for any fork-source PR because the Copilot mutation gate (A16) requires `pull-requests: write` which forks don't get. Plan C38a-9 specified split steps with `continue-on-error: true` on the Copilot gate + a separate annotate step.
+- **B2** (PR template labels): the `## Model audit` block used outdated `Models used` label instead of the canonical `Implementer models` / `Reviewer model` rows that REVIEWS.md §2.8 defines.
+- **B3** (sync wiring): `lib/sync.mjs` did not actually dispatch on `composed.overrides[target]._inherited_class === 'managed'`. The plan's C38a-4 migration shape ("the file moves from managed.files to composed.files; an entry is added to composed.overrides with `{ _inherited_class: 'managed', local_blocks: [...] }`") was implemented in config schema + migration helper but the runtime sync engine never branched on the flag — so the migration metadata was structurally valid but functionally inert.
+- **B4** (gate constant): `DEFAULT_REVIEW_GATE_SET` included `'A6'`. A6 (plan-review attestation) is dispatched independently by CS35b's `--mode=pr-evidence` via the aggregator and should NOT be in the init-time default set per C38a-6.
+
+All 4 BLOCKING findings landed locally-test-clean: 863 tests passed at `685b936` (the deliverable was self-consistent), `harness lint` was 27/0/3, sync `--mode=check` was clean. The defects were detectable only by reading the deliverable against the CS plan's Decisions and against authoritative docs (REVIEWS.md §2.8 for B2). The sub-agent test suite verified internal behavior (workflow YAML parses, template renders, config writes), not plan-fidelity (does the workflow behave correctly for forks, do the labels match REVIEWS.md, does sync actually consume the new override key, does the gate set match C38a-6).
+
+**Finding:** **Sub-agent deliverable tests verify behavior; they do not verify plan-fidelity unless tests are explicitly derived from plan Decisions.** When a sub-agent owns a multi-surface deliverable (workflow + template + sync engine + constant), each surface area needs at least one test whose assertion text references a plan Decision ID (e.g. `// C38a-9: workflow MUST split read-only-gates and Copilot mutation step`) — otherwise the deliverable can be self-consistent yet plan-divergent. The orchestrator-side discipline derived from this:
+
+1. **Briefing-time:** for every Decision row in the CS plan that a sub-agent owns, the briefing's `Deliverables → tests required` line MUST cite the Decision ID and the testable predicate. The sub-agent's exit-criteria report should map Decision IDs → test names.
+2. **Self-review-time:** before the sub-agent reports `STATUS: complete`, it should re-read its briefing's Decision IDs and confirm each has at least one assertion that would fail if the Decision were violated.
+3. **Plan-vs-impl review-time:** the reviewer should not just check "do the listed deliverables exist?" but also "for each Decision ID in the plan, is there a behavioral test whose assertion would fail if the Decision were silently undone?"
+
+This is a **generalisation** of LRN-064 (mandatory plan-vs-impl gate) and **complements** LRN-109 (briefings must not paraphrase authoritative schemas) and LRN-068 (canonical preamble verbatim paste): all three are instances of the same root cause — sub-agent deliverables drift from authoritative spec when the bridge between spec and verification is implicit. The remedy across all three is "make the bridge explicit and machine-verifiable."
+
+CS38a is the fifth consecutive arc CS (CS35 → CS35b → CS36 → CS37 → CS38a) where plan-vs-impl R1 caught a substantive defect that all other gates (lint, tests, sync, CI) missed. The pattern is now strong enough to treat as a structural fact about the workflow rather than a one-off — without the C35-2 ladder + GPT-5.5 R1 dispatch, CS38a would have shipped a workflow that fails on every fork-source PR, a template that fails REVIEWS.md A3 validation, a sync engine that ignores the migration flag it pretends to support, and an init-default that double-counts A6.
+
+**Evidence:**
+
+- `project/clickstops/done/done_cs38a_pr-evidence-workflow-and-init.md § Plan-vs-implementation review` — R1 NEEDS-FIX row at HEAD `685b936` with 4 BLOCKING findings linked to PR #163 comment `#issuecomment-4441566368`; R2 GO row at HEAD `4ec7b07` linked to PR #163 comment `#issuecomment-4441568806`.
+- R2 reviewer transcript: "all 4 R1 BLOCKING findings verified fixed with file:line citations; reviewer independently ran 4 targeted test files (36 pass / 0 fail)."
+- Commit `4ec7b07e4d1a2484afa8740e49f950fe678a7e23` (R2 amendments): the fixes spanned `template/managed/.github/workflows/pr-evidence-lint.yml` (B1, 3-step split), `template/composed/.github/pull_request_template.md` (B2, canonical labels), `lib/sync.mjs:887-908` + new `lib/composed.mjs:mergeComposedFromManaged()` (B3), `bin/harness.mjs:38` (B4) — 4 distinct surface areas, 4 distinct fixes.
+- LRN-064 chain: CS35-R1 (defect 1) → CS35b-R1 (defect 2, "LRN-108 re-validates LRN-064") → CS36-R1 (3 BLOCKING) → CS37-R1 (`reviews(first:100)` defect, "third consecutive arc CS") → CS38a-R1 (4 BLOCKING, this LRN). Five consecutive arc CSs, five substantive defects caught by R1, zero caught by any other gate.
+
+**Disposition:** Applied. The orchestrator-side discipline (briefing's `Deliverables → tests required` cites Decision IDs; sub-agent self-review maps Decision IDs → test names; plan-vs-impl reviewer checks for one-assertion-per-Decision) is in effect from CS38b onward. The plan-vs-impl R1 dispatch remains mandatory per LRN-064; this LRN strengthens its expected output by giving R1 reviewers an explicit checklist item: "for each Decision row in the CS plan, identify the test(s) that would fail if the Decision were silently violated."
+
 ### LRN-110
 
 ```yaml
