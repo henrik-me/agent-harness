@@ -1,9 +1,9 @@
 # CS38b — Retroactive PR #28 self-test + harness self-host opt-in
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs38b/retro-pr28-and-self-host-optin
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS38b disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1 acceptance criteria. Authored 2026-05-12 by `yoga-ah`. Fifth CS in the v0.4.0 arc.
 **Depends on:** [CS38a](planned_cs38a_pr-evidence-workflow-and-init.md) (workflow + init flag must exist), [CS36](planned_cs36_pr-evidence-fs-and-git-linters.md), [CS37](planned_cs37_copilot-review-gate-graphql.md).
@@ -95,7 +95,15 @@ Orchestrator owns: self-host opt-in commits (Deliverable 3); latent-violation tr
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T1 — Run retroactive `harness pr-evidence` against SI PR #28 + capture transcript | planned | yoga-ah | Per C38b-1; produces `docs/cs38b-retro-pr28-transcript.md`. |
+| T2 — Build SI PR #28 fixture bundle + regression test | planned | bot38b-retro | Per C38b-2/2b; `tests/fixtures/si-pr28/` (repo.bundle + pr.json + body.md + expected-evidence.json) + `tests/retro-si-pr28.test.mjs`. |
+| T3 — Self-host opt-in: run `harness init --enable-review-gates` on harness repo | planned | yoga-ah | Per C38b-4; lands `pr-evidence-lint.yml` + `harness.config.json` `review_gates` block via `harness sync`. |
+| T4 — Latent-violation triage on harness's last 10 PRs + classify (a) fix-in-place, (b) grandfather-LRN, (c) follow-up CS | planned | yoga-ah | Per C38b-3; outcome documented in close-out notes. |
+| T5 — CHANGELOG `[Unreleased] / Added` entry: "harness self-host opted in to pr-evidence-lint" | planned | yoga-ah | Per Deliverable 5. |
+| T6 — Validation: `harness lint`, `node --test tests/**/*.test.mjs`, `harness sync --mode=check` | planned | yoga-ah | Exit Criterion 6+7. |
+| T7 — Plan-vs-implementation review (GPT-5.5 R1) before close-out | planned | yoga-ah | Per LRN-064 + LRN-111 (briefing must cite Decision IDs); record in `## Plan-vs-implementation review`. |
+| T8 — Close-out docs: refresh CONTEXT.md + WORKBOARD.md; rename active→done | planned | yoga-ah | Per OPERATIONS.md close-out procedure. |
+| T9 — Close-out learnings: file follow-up CSs / LRN entries from T4 triage | planned | yoga-ah | Per RETROSPECTIVES.md + OPERATIONS.md close-out. |
 
 ## Notes / Learnings
 
