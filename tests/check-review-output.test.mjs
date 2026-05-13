@@ -123,6 +123,26 @@ describe('check-review-output linter (CS40)', () => {
     assert.match(r.stdout, /0 errors/);
   });
 
+  it('R1 root-level extensionless files (Makefile, LICENSE, Dockerfile) are captured in enumeration', () => {
+    // Regression: previously a `/[/.]/.test(filePath)` heuristic dropped any
+    // path lacking `/` or `.`, causing root-level extensionless files to be
+    // mis-flagged as missing. Section context (inFindingsSection) is now the
+    // sole disambiguator.
+    const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'Makefile', 'LICENSE', 'Dockerfile']);
+    repos.push(dir);
+    const review = buildReviewOutput({
+      analyzedHead: head,
+      files: ['a.txt', 'Makefile', 'LICENSE', 'Dockerfile'],
+    });
+    const reviewFile = path.join(scratch, 'r1-extensionless.md');
+    fs.writeFileSync(reviewFile, review);
+
+    const r = runLinter(['--review-output', reviewFile, '--round', 'R1', '--base', base, '--head', head], dir);
+    assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}; stderr: ${r.stderr}`);
+    // No "missing file" errors should appear.
+    assert.doesNotMatch(r.stderr, /R1 enumeration missing file/, `stderr: ${r.stderr}`);
+  });
+
   it('R1 missing file: reviewer omits a changed file → exit 1', () => {
     const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
     repos.push(dir);
@@ -298,8 +318,10 @@ describe('check-review-output linter (CS40)', () => {
     assert.match(r.stderr, /gpt-5\.5/);
   });
 
-  it('independence-invariant guard skipped without --reviewer-model → warning, exit 0', () => {
-    // Sanity check that omitting --reviewer-model still cleanly skips.
+  it('independence-invariant guard skipped without --repo/--pr → no guard run, exit 0', () => {
+    // Sanity check: omitting --repo/--pr (the gh-fetch-required pair) cleanly
+    // skips the guard. --reviewer-model alone does not trigger the guard
+    // because the guard branch is `if (repo && pr)`.
     const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
     repos.push(dir);
     const review = buildReviewOutput({ analyzedHead: head, files: ['a.txt', 'b.txt'] });
@@ -403,6 +425,84 @@ describe('check-review-output linter (CS40)', () => {
     // Body must be byte-identical after the no-op second run.
     const afterSecond = fs.readFileSync(stateFile, 'utf8');
     assert.strictEqual(afterSecond, afterFirst, 'idempotent second run must not alter body');
+  });
+
+  it('--update-pr: PR body containing $-patterns is preserved byte-exact (regression for String.replace `$&` interpretation)', () => {
+    // Regression for the bug where `body.replace(section, newSection)` would
+    // interpret `$&`, `$$`, `$<n>`, `` $` ``, and `$'` patterns in the
+    // *replacement* string. If the existing PR body section contains `$`
+    // characters (e.g. evidence_link URLs with query strings, finding
+    // descriptions copied into earlier rows, or the dollar-sign in stub
+    // section content), index-based splicing must be used instead.
+    const { dir, base, head } = initGitRepo(['a.txt'], ['a.txt', 'b.txt']);
+    repos.push(dir);
+    const review = buildReviewOutput({ analyzedHead: head, files: ['a.txt', 'b.txt'] });
+    const reviewFile = path.join(scratch, 'update-pr-dollars.md');
+    fs.writeFileSync(reviewFile, review);
+
+    const stateFile = path.join(dir, 'pr-body-dollars.md');
+    // Embed multiple `$`-patterns in the existing PR body content to trip the
+    // String.prototype.replace interpretation if the bug regresses.
+    const initialBody = [
+      '## Summary', '', 'Test PR with $$ and $& and $1 sentinels', '',
+      '## Changes', '', '- a.txt', '- b.txt', '',
+      '## Testing', '', 'manual', '',
+      '## Review log',
+      '',
+      '| timestamp | analyzed_head | actor | model | verdict | evidence_link |',
+      '|---|---|---|---|---|---|',
+      // Existing data row whose evidence_link cell contains literal `$&`
+      // tokens — must survive the splice unchanged.
+      '| 2026-05-13T20:00:00Z | abc1234 | yoga-ah | claude-haiku-4.5 | Go | https://example.com/x?ref=$&y=$1 |',
+      '',
+    ].join('\n');
+    fs.writeFileSync(stateFile, initialBody);
+
+    const fakeGh = path.join(dir, 'fake-gh-dollars.mjs');
+    fs.writeFileSync(fakeGh, [
+      '#!/usr/bin/env node',
+      'import fs from "node:fs";',
+      'const args = process.argv.slice(2);',
+      `const stateFile = ${JSON.stringify(stateFile)};`,
+      'if (args[0] === "pr" && args[1] === "view") {',
+      '  process.stdout.write(fs.readFileSync(stateFile, "utf8"));',
+      '  process.exit(0);',
+      '}',
+      'if (args[0] === "pr" && args[1] === "edit") {',
+      '  const bf = args.indexOf("--body-file");',
+      '  const newBody = fs.readFileSync(args[bf + 1], "utf8");',
+      '  fs.writeFileSync(stateFile, newBody);',
+      '  process.exit(0);',
+      '}',
+      'process.exit(1);',
+    ].join('\n'));
+
+    const r = spawnSync('node', [
+      SCRIPT,
+      '--review-output', reviewFile,
+      '--round', 'R1',
+      '--base', base,
+      '--head', head,
+      '--repo', 'henrik-me/agent-harness',
+      '--pr', '999',
+      '--reviewer-model', 'gpt-5.5',
+      '--actor', 'yoga-ah',
+      // Note: evidence_link contains $-patterns too — must round-trip literally.
+      '--evidence-link', 'https://example.com/r2?$&val=$1',
+      '--update-pr',
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, CHECK_REVIEW_OUTPUT_GH_BIN: fakeGh },
+    });
+    assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}; stderr: ${r.stderr}`);
+
+    const after = fs.readFileSync(stateFile, 'utf8');
+    // The pre-existing $-patterns must be preserved byte-exact.
+    assert.ok(after.includes('Test PR with $$ and $& and $1 sentinels'), 'Summary $-patterns must survive splice');
+    assert.ok(after.includes('https://example.com/x?ref=$&y=$1'), 'Existing evidence_link $-patterns must survive splice');
+    // The newly appended evidence_link must contain literal `$&` and `$1`.
+    assert.ok(after.includes('https://example.com/r2?$&val=$1'), 'New evidence_link $-patterns must round-trip literally');
   });
 
   it('--json output: emits structured JSON with errors/warnings/findings/enumerated_files', () => {

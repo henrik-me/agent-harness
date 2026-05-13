@@ -271,15 +271,17 @@ for (const rawLine of lines) {
       malformedFindingsCandidates.push(line);
     }
   } else if (!inFindingsSection && /^-\s+/.test(line)) {
-    // Outside findings: try to extract a per-file enumeration row.
+    // Outside findings: try to extract a per-file enumeration row. We rely
+    // exclusively on section context (inFindingsSection) for the
+    // findings-vs-enumeration disambiguation; we no longer apply a
+    // path-shape heuristic so that root-level files without a `/` or `.`
+    // (Makefile, LICENSE, Dockerfile, CHANGELOG, …) are still captured.
+    // Reviewers who include non-file prose bullets outside the findings
+    // section will produce 'extra-file' warnings (not errors) per C40-3.
     const m = line.match(FILE_ENUM_ROW_RE);
     if (m) {
       const filePath = m[1] || m[2] || m[3];
-      // Skip obviously non-file bullets (sentences, etc.). Heuristic: must
-      // contain a `/` OR `.` (file extension or path separator) to be a path.
-      if (filePath && (/[/.]/.test(filePath))) {
-        enumeratedFiles.add(filePath);
-      }
+      if (filePath) enumeratedFiles.add(filePath);
     }
   }
 }
@@ -533,8 +535,16 @@ function updatePrReviewLog({ repo, pr, analyzedHead, verdict, actor, reviewerMod
   };
   const orderedCells = headerCells.map((h) => valuesByCol[h] !== undefined ? valuesByCol[h] : '');
   const newRow = `| ${orderedCells.join(' | ')} |`;
-  const newSection = section.replace(/\s*$/, '\n' + newRow + '\n');
-  const newBody = body.replace(section, newSection);
+  // Build the new section without using String.prototype.replace(string,string),
+  // because `$&`, `$$`, `$<n>`, etc. in the replacement are interpreted as
+  // backreference patterns — silently corrupting evidence_link cells, finding
+  // descriptions, or any cell that happens to contain `$`. We strip trailing
+  // whitespace from the section by index, then concatenate.
+  const trimmedSection = section.replace(/\s*$/, ''); // regex-only side: safe (no replacement string)
+  const newSection = trimmedSection + '\n' + newRow + '\n';
+  // Likewise, splice the new section into the body by index.
+  const sectionStart = body.indexOf(section);
+  const newBody = body.slice(0, sectionStart) + newSection + body.slice(sectionStart + section.length);
 
   // Write to a temp file and pass via --body-file.
   const tmpPath = path.join(os.tmpdir(), `check-review-output-pr-${pr}-${process.pid}.md`);
@@ -546,10 +556,4 @@ function updatePrReviewLog({ repo, pr, analyzedHead, verdict, actor, reviewerMod
   } finally {
     try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
   }
-}
-
-function escapeRegex(s) { // eslint-disable-line no-unused-vars
-  // Reserved for future use; canonical regex helper kept here so callers don't
-  // have to re-derive the metachar set if they need substring-match dedup.
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
