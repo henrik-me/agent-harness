@@ -736,36 +736,66 @@ invariants may require 5–8 rounds ([LRN-024](LEARNINGS.md#lrn-024)).
 
 ---
 
-## Copilot engagement procedure (CS35 C35-10)
+## Copilot engagement procedure (CS35 C35-10, updated CS37)
 
 GitHub Copilot review engagement on a content PR (gate A16 in REVIEWS.md
 PR-evidence list) is performed locally by the orchestrator using
 `harness copilot-engage` (lands in CS41). The CI workflow only VERIFIES
-the engagement happened (PR-evidence gate); CI never mutates the PR.
+the engagement happened (PR-evidence gate `harness check-copilot-review`
+from CS37); CI never mutates the PR.
+
+**Spike outcome (CS37, ADR-0004):** the `requestReviews` GraphQL mutation
+REJECTS the Copilot reviewer ID with "Could not resolve to User node"
+because the Copilot reviewer is `__typename: Bot`, not `User`. The
+documented engagement primitive is therefore the REST-backed
+`gh pr edit --add-reviewer` invocation below — NOT a GraphQL mutation.
+See `docs/adr/0004-copilot-graphql-spike.md` for the full transcript.
 
 Manual engagement recipe (until CS41 lands the wrapper):
 
-1. Request review from Copilot via the GraphQL mutation:
+1. Request a Copilot review with the maintainer's `gh` auth:
+   ```
+   gh pr edit <pr-number> --add-reviewer copilot-pull-request-reviewer
+   ```
+2. Wait 3–5 minutes; Copilot's review pipeline is asynchronous (typically
+   delivers within ~3 minutes per spike S3).
+3. Verify the review was submitted AND is on the current HEAD:
    ```
    gh api graphql -f query='
-     mutation($pr: ID!, $rev: ID!) {
-       requestReviews(input: {pullRequestId: $pr, userIds: [$rev]}) {
-         pullRequest { id }
+     query($owner: String!, $name: String!, $pr: Int!) {
+       repository(owner: $owner, name: $name) {
+         pullRequest(number: $pr) {
+           headRefOid
+           reviews(last: 20) {
+             nodes {
+               state
+               submittedAt
+               commit { oid }
+               author { __typename ... on Bot { login } ... on User { login } }
+             }
+           }
+         }
        }
-     }' -f pr="<pr-node-id>" -f rev="<copilot-user-node-id>"
+     }' -F owner=<owner> -F name=<repo> -F pr=<pr-number>
    ```
-2. Wait at least 5 minutes; Copilot's review pipeline is asynchronous.
-3. Verify the review was requested AND a review (or comment) is on the PR:
-   ```
-   gh pr view <pr-number> --json reviewRequests,reviews \
-     -q '{reviewRequests: .reviewRequests, reviews: [.reviews[] | {state, author: .author.login}]}'
-   ```
+   The CS37 verifier `scripts/check-copilot-review.mjs` runs the same
+   query and enforces A5 + A16 (state, currency, ordering vs local Go).
 4. Address every Blocking finding before merge per REVIEWS.md § 2.7.
 
-Decision authority: mutation (1) requires maintainer credentials; the
-harness CLI MUST run mutation only under the maintainer's `gh` auth, never
-under a CI `GITHUB_TOKEN` (which is read-only on fork PRs anyway per
-Decision C35-9).
+Decision authority: step (1) requires maintainer credentials; the
+harness CLI MUST run engagement only under the maintainer's `gh` auth,
+never under a CI `GITHUB_TOKEN` (which is read-only on fork PRs anyway
+per Decision C35-9).
+
+CI implication (ADR4-8): an engage-and-verify workflow run will always
+fail the verify step on first execution because the review is delivered
+asynchronously after the workflow completes. CS38a CI MUST split engage
+and verify into separate jobs/events (e.g. engage on `pull_request`,
+verify on a later `pull_request_review` or scheduled rerun).
+
+Fork PR caveat (ADR4-6): on `pullRequest.isCrossRepository == true`, the
+`check-copilot-review` gate exits 2 with a maintainer-rerun hint —
+forks cannot self-engage Copilot under their own token.
 
 ---
 

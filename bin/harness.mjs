@@ -254,17 +254,21 @@ Run mechanical PR-state evidence gates against the given PR's commit graph +
 PR body markdown (CS36). Aggregates the following gates and exits non-zero
 on any failure:
 
-  B1 (commit-trailers)         — every commit in <base>..<head> carries the
+  B1 (commit-trailers)          — every commit in <base>..<head> carries the
                                  Co-authored-by: Copilot trailer.
   A3 (model-audit-independence) — PR body's "## Model audit" rows have no
                                  implementer-vs-reviewer model overlap.
-  A4 (review-log-currency)     — PR body's "## Review log" latest Go row's
+  A4 (review-log-currency)      — PR body's "## Review log" latest Go row's
                                  analyzed_head equals --head (full SHA).
-  A6 (plan-review-attestation) — diff-scoped: any planned/active CS file in
+  A6 (plan-review-attestation)  — diff-scoped: any planned/active CS file in
                                  the PR diff carries a fresh "## Plan review"
                                  row with verdict in {Go, Go-with-amendments}
                                  (predicate from CS35b, --files diff-scoped
                                  invocation from CS36 aggregator).
+  A5+A16 (copilot-review)       — CS37: Copilot review present at --head with
+                                 acceptable state, AND submitted after the
+                                 latest local Go in the PR body. Requires
+                                 --repo + --pr; skipped with notice otherwise.
 
 Required flags:
   --base <sha>           Merge-base SHA (full or short)
@@ -272,13 +276,14 @@ Required flags:
   --pr-body <file>       Path to a markdown file containing the PR body
 
 Optional flags:
-  --repo <slug>          Repository slug (owner/repo) — reserved for CS37 GraphQL gates
-  --pr <num>             PR number — reserved for CS37 GraphQL gates
+  --repo <slug>          Repository slug (owner/repo) — required for A5+A16
+  --pr <num>             PR number — required for A5+A16
   --skip-reasons <csv>   workboard-only | bot-author | fork-source (per C35-19/C36-5).
                          "workboard-only" short-circuits ALL gates to a pass.
-                         "bot-author" skips B1/A3/A4 (gates that fail naturally on
-                         bot commits without trailers/audits); A6 still runs.
-                         "fork-source" runs all read-only gates; A16 (CS41) exits 2.
+                         "bot-author" skips B1/A3/A4/A5+A16 (gates that fail naturally
+                         on bot commits/reviews); A6 still runs.
+                         "fork-source" runs all read-only gates; A5+A16 exits 2 with
+                         maintainer-rerun hint.
   --json                 Emit structured JSON {gates: [{name, status, exitCode}]}
   --quiet                Suppress per-gate output; print only the summary line
   --help                 Print this help
@@ -2026,6 +2031,21 @@ async function cmdPrEvidence(args, _global) {
       `harness pr-evidence: warning — could not compute planned/active diff ` +
       `(git exit ${diffResult.status}); A6 not registered. ` +
       `Ensure both base and head SHAs are fetched locally.\n`
+    );
+  }
+
+  // A5 + A16 (Copilot review gate) — CS37. Requires --repo + --pr to query GitHub
+  // GraphQL. Skip with a notice when either is missing (e.g. local dogfood without
+  // a real PR context).
+  if (repo && pr) {
+    gates.push({
+      name: 'A5+A16 copilot-review',
+      script: 'check-copilot-review.mjs',
+      args: ['--repo', repo, '--pr', pr, '--head', head, '--pr-body', prBody, ...skipArgs],
+    });
+  } else if (!quiet && !json) {
+    process.stdout.write(
+      'A5+A16 copilot-review: skipped (--repo and --pr are required to query GitHub GraphQL)\n',
     );
   }
 
