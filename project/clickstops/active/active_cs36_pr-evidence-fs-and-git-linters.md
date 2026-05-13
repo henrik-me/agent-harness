@@ -1,9 +1,9 @@
 # CS36 — `harness pr-evidence` entry point + filesystem/git-log linters (B1, A3, A4, A6)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs36/pr-evidence-aggregator
+**Started:** 2026-05-13
 **Closed:** —
 **Filed by:** Pre-CS36 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1 (gates B1, A3, A4). Authored 2026-05-12 by `yoga-ah`. Second CS in the v0.4.0 arc.
 **Depends on:** [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine + schemas — C35-3, C35-4, C35-5, C35-6, C35-17 in particular).
@@ -89,7 +89,19 @@ CS36 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T1 | Read CS36 plan + CS35 doctrine + CS35b's check-clickstop-plan-review.mjs (predicate dependency) + existing scripts/check-commit-trailers.mjs (B1 base) + lib/doc-schema.mjs (PR-body parsing primitives) | pending | orchestrator | — |
+| T2 | Implement scripts/check-pr-commits.mjs (B1 per C36-3/4/5): git-log walk over <base>..<head>, exact-trailer regex, --skip-reasons handling | pending | sub-agent SA-2 | ~200-300 LOC |
+| T3 | Implement scripts/check-review-evidence.mjs (A3 + A4 per C36-6/7/8): markdown parser for ## Review log + ## Model audit, currency check, independence check, --skip-reasons handling | pending | sub-agent SA-3 | ~300-400 LOC; reuses lib/doc-schema.mjs |
+| T4 | Implement bin/harness.mjs pr-evidence subcommand (per C36-1/2/10): --base/--head/--pr-body/--repo/--pr/--json/--quiet flags; aggregates exit codes from all gates including A6 wire-up; --skip-reasons short-circuits | pending | orchestrator (SA-1) | ~200 LOC including A6 wire-up |
+| T5 | Wire A6 (per C36-11): aggregator computes git diff --name-only of planned/active CS files, dispatches scripts/check-clickstop-plan-review.mjs --mode=pr-evidence --files <csv>, skip when diff empty, STRICT regardless of standalone --strict default | pending | orchestrator (SA-4 scope merged into orchestrator since it's tightly coupled to CLI route) | reuses CS35b predicate |
+| T6 | Tests: tests/check-pr-commits.test.mjs (≥6 cases), tests/check-review-evidence.test.mjs (≥8 cases), tests/cli-pr-evidence.test.mjs (≥4 cases) | pending | sub-agents own their own tests; SA-1 owns CLI tests | os.tmpdir() per LRN-094 |
+| T7 | OPERATIONS.md (root + template/composed lockstep): § Sub-agent dispatch — append "PR-evidence linter usage" subsection showing canonical local + CI invocation | pending | orchestrator | — |
+| T8 | CONVENTIONS.md (root + template/composed lockstep): cross-link to the new gates per CS35 Deliverable 4 | pending | orchestrator | — |
+| T9 | CHANGELOG.md [Unreleased]/Added entries: pr-evidence subcommand + check-pr-commits + check-review-evidence linters | pending | orchestrator | — |
+| T10 | Self-checks: harness lint --quiet (still 27/0/3 — pr-evidence linters NOT wired into lint per C35-17), node --test tests/*.test.mjs (prior 747 + ≥18), harness sync --mode=check, text-encoding | pending | orchestrator | — |
+| T11 | Dogfood: harness pr-evidence --base <merge-base> --head <head> --pr-body <body.md> exits 0 against CS36 content PR itself, including A6 passing on CS36 plan file's ## Plan review row | pending | orchestrator | per Exit criterion #5 |
+| T12 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (capped at 3 rounds); admin-merge after CI green + Go | pending | orchestrator | — |
+| T13 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable | pending | orchestrator | — |
 
 ## Notes / Learnings
 
