@@ -11,6 +11,9 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS35:** Planning-locality linter (`scripts/check-planning-locality.mjs`) — bans repo-root scratch planning files (`PLAN.md`, `ROADMAP.md`, `TODO.md`, `NOTES.md`, `STRATEGY.md`) outside `project/clickstops/{planned,active,done}/`, `template/`, `node_modules/`, `.git/`, `tests/fixtures/`. Wired into `harness lint`. Strategic planning content must live in the canonical CS arc; session storage is non-durable. (Per Decisions C35-11, C35-12.)
+- **CS35:** Reviewer-doctrine front-load — `REVIEWS.md` review-log + model-audit schemas made explicit (C35-3, C35-4); R1/Rn distinction and stale-diff doctrine documented; PR-evidence gate names A1..A6 introduced as a reference table so CS36..CS41 can refer to gates by short name. (Per Decisions C35-3, C35-4, C35-5.)
+- **CS35:** Reviewer-model fallback ladder (`OPERATIONS.md` § Sub-agent dispatch + `REVIEWS.md` § 2.2) — GPT-highest-available → Sonnet-highest → orchestrator's-own with independence invariant. Canonical reviewer preamble between `<!-- harness:reviewer-preamble:start/end -->` markers; orchestrator pastes verbatim per LRN-068 pattern. Copilot engagement procedure documented for v0.4.0 (manual until CS41's `harness copilot-engage` wrapper). (Per Decisions C35-1, C35-2, C35-10.)
 - **`harness lint --explain` covers all 18 shipped linters** (was 3 in
   v0.3.1: `architecture`, `text-encoding`, `workboard`). New entries:
   `clickstop`, `commit-trailers`, `compose-v2`, `composed-blocks`,

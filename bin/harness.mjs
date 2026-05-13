@@ -1062,6 +1062,25 @@ inadvertently keep harness-perspective paths (e.g. "edit template/composed/CONVE
 that don't exist in the consumer; sub-agents then look in the wrong place
 and waste a round-trip. LRN-105 documents the SI-CS01 trigger case.
 `.trim(),
+  'planning-locality': `
+**Linter:** check-planning-locality (scripts/check-planning-locality.mjs)
+**Target:** repo working tree (file set comes from \`git ls-files\`).
+**Rules:**
+  - No tracked file may have a basename matching one of the banned planning-file
+    names (case-insensitive): PLAN.md, ROADMAP.md, TODO.md, NOTES.md, STRATEGY.md.
+  - Allow-listed path prefixes (POSIX, repo-root-relative) where banned names
+    are accepted: project/clickstops/, template/, node_modules/, .git/,
+    tests/fixtures/.
+  - Untracked / gitignored files are not scanned (only committed or staged
+    content can violate).
+**Why:** Per CS35 Decision C35-11, strategic planning content (multi-CS arcs,
+defaults outliving a session) MUST live in project/clickstops/{planned,active,
+done}/. Session storage (e.g. ~/.copilot/session-state/<id>/plan.md) is
+non-durable; any agent restart, model swap, or handoff must succeed from the
+repo alone. Banning the common scratch-file shapes (per C35-12) at lint time
+prevents drift toward repo-root planning files that fragment the canonical
+CS arc.
+`.trim(),
   fixtures: `
 **Linter:** check-fixtures (scripts/check-fixtures.mjs)
 **Target:** tests/fixtures/ (or any --dir).
@@ -1385,6 +1404,17 @@ async function cmdLint(args, _global) {
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
       ],
       target: path.join(cwd, 'project', 'clickstops'),
+    },
+    {
+      // CS35 (planning-locality): bans repo-root scratch planning files
+      // (PLAN.md, ROADMAP.md, TODO.md, NOTES.md, STRATEGY.md case-insensitive)
+      // outside the allow-list (project/clickstops/, template/, node_modules/,
+      // .git/, tests/fixtures/). Strategic planning content MUST live in the
+      // canonical CS arc per Decision C35-11 — session storage is non-durable.
+      name: 'planning-locality',
+      script: 'check-planning-locality.mjs',
+      args: ['--cwd', cwd],
+      target: cwd,
     },
     {
       // CS15d (CS08b): templates linter. Enforces LRN-049 (no dot-notation

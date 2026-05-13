@@ -75,6 +75,23 @@ workboard PR. It prompts the user only if stale `open` learnings tagged
 `claim_area` metadata for the current CS area. Resolve stale learnings
 before the workboard-claim PR lands.
 
+### Pre-claim planning-locality self-check (CS35 C35-11)
+
+Before claiming any CS, verify no strategic planning content lives outside
+the canonical `project/clickstops/{planned,active,done}/**` arc:
+
+1. Run `node scripts/check-planning-locality.mjs --cwd .` — must exit 0.
+   (Also runs as part of `harness lint` per CS35.)
+2. If the orchestrator's session-state plan file (`~/.copilot/session-state/<id>/plan.md`)
+   contains anything beyond (a) which CS this session is currently executing
+   and (b) ephemeral todos for that one CS, externalize the strategic content
+   into `project/clickstops/planned/planned_csNN_<slug>.md` BEFORE claiming.
+   Session storage is non-durable; any agent restart, model swap, or handoff
+   must succeed from the repo alone (per Decision C35-11).
+3. Issues filed by the agent are forbidden (Decision C35-13). GitHub issues
+   are an INBOUND channel from external contributors / the user; the agent
+   reads them as input to file CSs but never opens them.
+
 ### Plan-vs-implementation review (close-out gate)
 
 This gate is **mandatory** before opening the close-out PR and before
@@ -496,6 +513,56 @@ missing fields explicitly listed.
       - <what's needed to complete>
 ```
 
+### Canonical reviewer preamble (CS35 C35-1)
+
+When dispatching a rubber-duck reviewer (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
+the orchestrator MUST paste the block below verbatim into the dispatch.
+Reviewer dispatch ownership lives with the orchestrator — the harness CLI
+never emits prompts, never paste-protocols, never calls an LLM API
+(per Decision C35-1).
+
+The block is delimited by sentinel markers so `tests/operations-reviewer-preamble.test.mjs`
+can assert presence and required-field coverage:
+
+<!-- harness:reviewer-preamble:start -->
+## Reviewer dispatch — canonical preamble
+
+**role:** Independent rubber-duck reviewer for the active CS.
+
+**scope:** Review the diff at the current HEAD against the base branch,
+the active CS file (Decisions, Deliverables, Tasks), the test count delta,
+and any sub-agent reports. Produce findings classified per
+REVIEWS.md § 2.6 (Blocking | Non-blocking | Suggestion).
+
+**independence-invariant:** Your model MUST NOT appear in the active CS file's
+`## Model audit` `Implementer models` field. If it does, refuse the dispatch
+and instruct the orchestrator to escalate per the C35-2 fallback ladder.
+Beyond model independence, agent-identity independence (CS35 C35-18) also
+applies: your GitHub username MUST differ from the implementer agent's.
+
+**model-fallback-ladder (per CS35 C35-2):** GPT-highest-available
+(5.5 → 5.4 → ...) → Claude Sonnet-highest (4.7 → 4.6 → ...) → orchestrator's
+own model (last resort, requires explicit user waiver and is forbidden for
+HIGH-RISK CSs per REVIEWS.md § 2.3).
+
+**output-schema-link:** Your report MUST conform to REVIEWS.md § 2.6
+(Findings taxonomy) and § 2.7 (Finding disposition). For
+plan-vs-implementation reviews, also conform to OPERATIONS.md
+§ Plan-vs-implementation review (close-out gate). Always report a verdict:
+`Go` / `Needs-Fix` / `Block`.
+
+**required-output-fields:** Every plan-vs-implementation review row you (or the orchestrator on your behalf) record in the active CS file's `## Plan-vs-implementation review` table MUST contain these five fields, in this order:
+
+- `model:` the reviewer model identifier (e.g., `gpt-5.5`) — drawn from the C35-2 fallback ladder above; must satisfy the independence invariant against `Implementer models`.
+- `branch HEAD SHA:` the full 40-char SHA you reviewed against. Per CS35 C35-3 stale-diff doctrine, a verdict row whose SHA ≠ current HEAD at merge time is INVALID and forces a re-review (A4 enforces this mechanically in CS36).
+- `R-round:` `R1` / `R2` / `R3`. Capped at 3 rounds per C35-2; if R3 returns Needs-Fix, the orchestrator MUST escalate to the user rather than open R4.
+- `verdict:` exactly one of `Go` / `Needs-Fix` / `Block` (matches `output-schema-link` above and the A3/A4 PR-evidence parsers in CS36).
+- `evidence link:` a PR comment URL, commit SHA, or file:line reference that cites the primary artefact(s) supporting the verdict. No vibes-based verdicts.
+<!-- harness:reviewer-preamble:end -->
+
+After pasting the block, append CS-specific context (which CS, which files
+changed, which prior review rounds are on file). Do not modify the block itself.
+
 ### Sub-agent report shape (mandatory)
 
 Every sub-agent reports back with **exactly** this structure. A report
@@ -585,6 +652,39 @@ invariants may require 5–8 rounds ([LRN-024](LEARNINGS.md#lrn-024)).
 - Use `list_agents` to poll only when actively blocked on a result.
 - The orchestrator does **not** dispatch sub-agents speculatively — every
   dispatch maps to a parallelisation-table entry in the active CS plan.
+
+---
+
+## Copilot engagement procedure (CS35 C35-10)
+
+GitHub Copilot review engagement on a content PR (gate A16 in REVIEWS.md
+PR-evidence list) is performed locally by the orchestrator using
+`harness copilot-engage` (lands in CS41). The CI workflow only VERIFIES
+the engagement happened (PR-evidence gate); CI never mutates the PR.
+
+Manual engagement recipe (until CS41 lands the wrapper):
+
+1. Request review from Copilot via the GraphQL mutation:
+   ```
+   gh api graphql -f query='
+     mutation($pr: ID!, $rev: ID!) {
+       requestReviews(input: {pullRequestId: $pr, userIds: [$rev]}) {
+         pullRequest { id }
+       }
+     }' -f pr="<pr-node-id>" -f rev="<copilot-user-node-id>"
+   ```
+2. Wait at least 5 minutes; Copilot's review pipeline is asynchronous.
+3. Verify the review was requested AND a review (or comment) is on the PR:
+   ```
+   gh pr view <pr-number> --json reviewRequests,reviews \
+     -q '{reviewRequests: .reviewRequests, reviews: [.reviews[] | {state, author: .author.login}]}'
+   ```
+4. Address every Blocking finding before merge per REVIEWS.md § 2.7.
+
+Decision authority: mutation (1) requires maintainer credentials; the
+harness CLI MUST run mutation only under the maintainer's `gh` auth, never
+under a CI `GITHUB_TOKEN` (which is read-only on fork PRs anyway per
+Decision C35-9).
 
 ---
 
