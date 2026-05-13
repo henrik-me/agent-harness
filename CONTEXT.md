@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-13 (CS36 done: PR-evidence aggregator + B1 commit-trailer gate + A3+A4 review-evidence gate + diff-scoped A6 wiring shipped via PR #157 admin SHA `68fe233`. v0.4.0 queue continues with CS37 (Copilot review GraphQL spike) → CS38a → CS38b → CS39. CS35 + CS35b + CS36 form the doctrine-and-enforcement core of the v0.4.0 #145 enforcement-gap arc; CS37 lands A5 + GraphQL surface that CS41 (`harness copilot-engage`) builds on.)
+> **Last updated:** 2026-05-13 (CS37 claimed and active: Copilot review gate via GraphQL (A5 + A16) — HIGH RISK, fifth CS in v0.4.0 #145 enforcement-gap arc; spike-first design per C37-1 means the first phase is a sandbox-PR verification of the `copilot-pull-request-reviewer` identity + `requestReviews` mutation before any linter code is written. CS35 + CS35b + CS36 done. v0.4.0 queue: CS37 (active) → CS38a → CS38b → CS39. CS35b retroactive grandfathering covered all in-arc planned/active files; CS36 PR-evidence aggregator surfaces the diff-scoped A6 gate that CS37 extends with A5+A16.)
 
 > **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. This file (CONTEXT.md) covers current state only.
 
