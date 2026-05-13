@@ -126,4 +126,10 @@ CS35 close-out is permitted only when **all** of the following are true and reco
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+> Per OPERATIONS.md § Plan-vs-implementation review (close-out gate), capped at 3 rounds. Each row records one round's verdict against the THEN-current branch HEAD; later rows supersede earlier rows for currency / merge eligibility.
+
+| Round | Date | Reviewer | Model | Branch HEAD | Verdict | Evidence |
+|---|---|---|---|---|---|---|
+| R1 | 2026-05-13 | copilot | gpt-5.5 | `39e01e1` | NEEDS-FIX | 3 BLOCKING findings: (1) A-gate taxonomy in REVIEWS.md A1–A6 inconsistent with planned CS36/37/38a/38b which use B1+A2+A3+A4+A5+A6+A16 with different A3 semantics; (2) D8 / Decision C35-16 LRN-XXX entry missing from `LEARNINGS.md`; (3) `## Model audit` rendered as bullets, not the strict markdown table C35-4 specifies. EC7 partial: CS39/CS40 reference CS35 generically (range shorthand `CS35-CS38b` and dep arrows; deemed acceptable on re-inspection). PR #151. |
+| R2 | _(pending)_ | copilot | gpt-5.5 | `98f2461` | _(pending)_ | _(R1 fixes committed in `98f2461`: REVIEWS.md+template re-aligned to B1+A2+A3+A4+A5+A6+A16 vocabulary; CONVENTIONS.md+template trailers bullet + skip predicates updated A1→B1; Model audit converted to four-row markdown table with explicit independence + agent-identity invariants; LRN-107 filed in LEARNINGS.md status=applied with cross-links to #145, R1 review, and CS36/37/38a/38b/41 enforcement arc. Lint 26/0/3, sync clean, tests 715/0/0/0.)_ |
+
