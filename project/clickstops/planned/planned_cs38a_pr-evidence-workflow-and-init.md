@@ -42,7 +42,7 @@ Two non-trivial wiring concerns:
 2. **`template/composed/.github/pull_request_template.md`** (new) + **classification change** in `harness.config.json` schema: file moves from `managed` to `composed` with marker block per C38a-5.
 3. **Schema**: `schemas/harness.config.schema.json` adds `review_gates` block per C38a-6. Includes JSON Schema validation + helpful descriptions.
 4. **`bin/harness.mjs`**: `init` gains `--enable-review-gates` per C38a-7; emits instruction block per C38a-8.
-5. **Migration**: `lib/file-class-migration.mjs` (new, or extend existing sync logic) handles `managed → composed` transition for the PR template; sync writes `composed.overrides[]` entry on first encounter; doesn't overwrite consumer content within markers on subsequent syncs.
+5. **Migration**: `lib/file-class-migration.mjs` (new, or extend existing sync logic) handles `managed → composed` transition for the PR template; sync writes a key into the `composed.overrides` OBJECT MAP (per C38a-4 + `schemas/harness.config.schema.json:285-300`) — specifically `composed.overrides[".github/pull_request_template.md"] = { "_inherited_class": "managed", "local_blocks": ["pull-request.body"] }` — on first encounter; doesn't overwrite consumer content within markers on subsequent syncs.
 6. **Tests**:
    - `tests/template-pr-evidence-workflow.test.mjs`: workflow YAML shape (jobs, triggers, permissions, `if:` predicates) — pattern from `tests/cs12-workflows.test.mjs`.
    - `tests/init-enable-review-gates.test.mjs`: `harness init --enable-review-gates` writes config + workflow + emits instructions.
@@ -55,7 +55,7 @@ Two non-trivial wiring concerns:
 
 2 sub-agents:
 
-- **SA-1 (`bot38a-workflow`)** — owns `template/managed/.github/workflows/pr-evidence-lint.yml` + `tests/template-pr-evidence-workflow.test.mjs`. Coordination: must use `npx harness pr-evidence` invocation pattern (CS36).
+- **SA-1 (`bot38a-workflow`)** — owns `template/managed/.github/workflows/pr-evidence-lint.yml` + `tests/template-pr-evidence-workflow.test.mjs`. Coordination: MUST use the canonical clone-then-`node bin/harness.mjs pr-evidence` pattern documented in Deliverable #1 above (reference workflows: `.github/workflows/harness-checks.yml:104-120` and `.github/workflows/private-smoke.yml:75-105`). MUST NOT use bare `npx harness pr-evidence` — the package is private.
 - **SA-2 (`bot38a-init-and-migration`)** — owns `bin/harness.mjs init` flag + `lib/file-class-migration.mjs` + schema update + the three init/migration/schema tests + `template/composed/.github/pull_request_template.md`.
 
 Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
