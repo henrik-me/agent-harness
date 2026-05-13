@@ -2123,6 +2123,32 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-108
+
+```yaml
+id: LRN-108
+date: 2026-05-13
+category: process
+source_cs: CS35b
+status: applied
+tags: [linter-design, pr-evidence, diff-scoping, grandfathering, plan-vs-impl-review-validates]
+claim_area: linter-architecture
+```
+
+**Problem:** When the planned A6 plan-review attestation gate (`scripts/check-clickstop-plan-review.mjs --mode=pr-evidence`) was first implemented in CS35b, the script walked the entire planned/active subdir tree on every invocation. CS36 was specced to dispatch this script as the A6 gate; without further filtering, A6 would have failed every PR whose diff did NOT touch the pre-arc grandfathered planned files (CS21/CS22b/CS23/CS24/CS26/CS27 — files that pre-date the `## Plan review` requirement and were intentionally left without attestations per C35b-13). The defect was caught by the GPT-5.5 R1 plan-vs-impl reviewer on PR #154, who noted: "C35b's intended closure relies on A6 being strict only for planned/active CS files in the PR diff. But the landed script's pr-evidence mode scans all planned/active files, including grandfathered pre-arc planned files that intentionally lack attestations. CS36's planned A6 dispatch currently names this full-dir invocation, so wiring it as written would fail unrelated PRs and undermine the strictness-asymmetry design." (R1 NEEDS-FIX, commit `a4256a1`.)
+
+**Finding:** **When a planned PR-evidence gate is meant to fire on PR-diff-scoped files, the predicate script MUST expose an explicit file-list interface (e.g. `--files <csv>`) — not just a directory walk.** Otherwise pre-arc grandfathered files in the same directory will fail unrelated PRs and undermine the gate's intent. The orchestrator (or aggregator) is responsible for computing the diff (`gh pr diff --name-only` / `git diff --name-only $base..$head -- <subdirs>`) and passing the result; the predicate is responsible for silently skipping out-of-scope paths so the caller can pass the full diff without pre-filtering. This is a generalisation of CS35-19's skip-semantics-centralization principle: PR-context-dependent narrowing belongs in the aggregator, never inside the predicate.
+
+The R1 review also re-validated **LRN-064** (mandatory plan-vs-implementation review gate): an independent GPT-5.5 reviewer caught a substantive design defect that the implementer had not seen during self-review, on a CS that also looked clean to all the other gates (lint 27/0/3, tests 744/744, sync clean, all CI green). Without the C35-2 ladder + GPT-5.5 R1 dispatch, the defect would have shipped and CS36's wiring would have failed at the first non-arc PR.
+
+**Evidence:**
+- PR #154 R1 review verdict (GPT-5.5, 2026-05-13, commit `a4256a1`): NEEDS-FIX with the diff-scoping defect as the BLOCKING finding. Full transcript in this CS's `## Plan-vs-implementation review` section.
+- R1 amendment commit `1ca9309`: added `--files <csv>` flag + `isUnderLintedSubdir` helper + branched walk in `scripts/check-clickstop-plan-review.mjs`; added 3 regression test cases (in-scope passes alongside grandfathered; out-of-scope silently skipped; in-scope still strict on missing section).
+- PR #154 R2 review verdict (GPT-5.5, 2026-05-13, commit `1ca9309`): GO. R2 reviewer ran the diff-scoped invocation locally and confirmed: full walk → 6 errors (grandfathered files); diff-scoped to one CS36 file → 0 errors. Behavior matches the design intent.
+- CS36 plan amendments (C36-11 + SA-4): now explicitly state that the aggregator computes `git diff --name-only $base..$head -- project/clickstops/planned/ project/clickstops/active/` and dispatches `--files <csv>`. CS35b owns the predicate (`--files`); CS36 owns the wiring (diff computation + dispatch).
+
+**Disposition:** Applied via CS35b R1 amendments (commit `1ca9309` in PR #154, admin-merged at squash `5fb9e68`). Status: applied. Future planned PR-evidence gates SHOULD follow the same pattern: predicate exposes `--files <csv>`; aggregator computes the diff. Filed as a doctrine note in OPERATIONS.md `## Plan review attestation procedure (CS35b)` for the specific A6 case; the broader pattern (predicate + diff-scoping) is documented here and should propagate to CS37+ via review.
+
 ### LRN-107
 
 ```yaml
