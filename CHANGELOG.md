@@ -9,6 +9,12 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+### Added
+
+- **CS40:** `harness review-output` subcommand + `scripts/check-review-output.mjs` linter — validates a reviewer's output markdown against the CS40 schema (Analyzed-HEAD line, R1/Rn per-file enumeration vs `git diff --name-only`, finding-row shape `[Blocking|Non-blocking|Suggestion] <file>:<line>: <desc>`, verdict line). Closes [#145](https://github.com/henrik-me/agent-harness/issues/145) gap #3 (PR #28's reviewer summary-passed YAML / package.json without per-file analysis). Exit codes: 0 pass / 1 error / 2 bad usage. Optional `--update-pr` flag idempotently posts the parsed output as a row in the PR body's `## Review log` (canonical 6-column schema per REVIEWS.md §2.7: `timestamp | analyzed_head | actor | model | verdict | evidence_link`; dedup key `analyzed_head + actor + model + verdict`; columns parsed by header so a future column reorder won't silently break it). New `--actor` and `--evidence-link` flags expose the canonical row's actor / evidence_link cells. Optional independence-invariant guard (`--repo`/`--pr`/`--reviewer-model`) parses the PR body's `## Model audit` (canonical `| Field | Value |` schema per REVIEWS.md §2.8) and re-asserts that the reviewer model is NOT in the implementer set, case-insensitive. Per C40-8, this linter is NOT registered with `harness pr-evidence` — it requires the reviewer-output file which is unavailable in CI; orchestrators invoke it locally after capturing reviewer output.
+- **CS40:** OPERATIONS.md § Reviewer dispatch gains a new `### Post-review validation` subsection documenting the `harness review-output` invocation contract.
+- **CS40:** Tests — `tests/check-review-output.test.mjs` (16 cases) + `tests/cli-review-output.test.mjs` (4 cases) covering R1 happy path, R1 missing/extra files, R1 root-level extensionless files (Makefile/LICENSE/Dockerfile), Rn delta semantics with/without `--prev-head`, malformed verdict line, malformed finding row, missing Analyzed-HEAD, Verdict-Needs-Fix-without-findings, Analyzed-HEAD mismatch warning, JSON output, independence-invariant guard violation (with injected fake-`gh`), `--update-pr` idempotency (with injected fake-`gh` round-trip), `--update-pr` byte-exact preservation of `$`-patterns in PR body (regression for `String.prototype.replace` `$&` interpretation), CLI route + help dispatch.
+
 ## [0.4.0] — 2026-05-13
 
 ### Added
