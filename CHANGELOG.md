@@ -9,6 +9,12 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+### Added
+
+- **CS40:** `harness review-output` subcommand + `scripts/check-review-output.mjs` linter — validates a reviewer's output markdown against the CS40 schema (Analyzed-HEAD line, R1/Rn per-file enumeration vs `git diff --name-only`, finding-row shape `[Blocking|Non-blocking|Suggestion] <file>:<line>: <desc>`, verdict line). Closes [#145](https://github.com/henrik-me/agent-harness/issues/145) gap #3 (PR #28's reviewer summary-passed YAML / package.json without per-file analysis). Exit codes: 0 pass / 1 error / 2 bad usage. Optional `--update-pr` flag idempotently posts the parsed output as a row in the PR body's `## Review log`. Optional independence-invariant guard (`--repo`/`--pr`/`--reviewer-model`) re-asserts that the reviewer model is NOT in the implementer set per the PR's `## Model audit`. Per C40-8, this linter is NOT registered with `harness pr-evidence` — it requires the reviewer-output file which is unavailable in CI; orchestrators invoke it locally after capturing reviewer output.
+- **CS40:** OPERATIONS.md § Reviewer dispatch gains a new `### Post-review validation` subsection documenting the `harness review-output` invocation contract.
+- **CS40:** Tests — `tests/check-review-output.test.mjs` (12 cases) + `tests/cli-review-output.test.mjs` (4 cases) covering R1 happy path, R1 missing/extra files, Rn delta semantics with/without `--prev-head`, malformed verdict line, malformed finding row, missing Analyzed-HEAD, Verdict-Needs-Fix-without-findings, Analyzed-HEAD mismatch warning, JSON output, CLI route + help dispatch.
+
 ## [0.4.0] — 2026-05-13
 
 ### Added

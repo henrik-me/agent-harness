@@ -75,14 +75,14 @@ Orchestrator owns OPERATIONS.md + CHANGELOG.md.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 | claim PR (workboard/cs40-claim) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | active | yoga-ah | this PR |
-| T2 | branch `cs40/check-review-output` from main | planned | yoga-ah | — |
-| T3 | implement `scripts/check-review-output.mjs` per C40-2/3/4/5/6/7 (parser, R1/Rn enumeration, finding-row schema, independence-invariant guard, --update-pr idempotency) | planned | yoga-ah | self-implementation per autonomous-execution decision #3 |
-| T4 | implement `tests/check-review-output.test.mjs` (≥10 cases per Deliverable 2) | planned | yoga-ah | — |
-| T5 | register `harness review-output` subcommand in `bin/harness.mjs` + `tests/cli-review-output.test.mjs` | planned | yoga-ah | — |
-| T6 | OPERATIONS.md § Reviewer dispatch — append post-review block per Deliverable 4 | planned | yoga-ah | — |
-| T7 | CHANGELOG.md `[Unreleased] / Added` entry per Deliverable 5 | planned | yoga-ah | — |
-| T8 | validate (`harness lint` + tests + sync clean) | planned | yoga-ah | expect 29/0/3 lint with new linter |
+| T1 | claim PR (workboard/cs40-claim) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | done | yoga-ah | merged in PR #171 |
+| T2 | branch `cs40/check-review-output` from main | done | yoga-ah | this branch |
+| T3 | implement `scripts/check-review-output.mjs` per C40-2/3/4/5/6/7 (parser, R1/Rn enumeration, finding-row schema, independence-invariant guard, --update-pr idempotency) | done | yoga-ah | self-implementation; all C40-1 flags wired; gh pr view + edit pass-throughs for guard + update |
+| T4 | implement `tests/check-review-output.test.mjs` (≥10 cases per Deliverable 2) | done | yoga-ah | 12 cases passing — R1 happy/missing/extra, Rn with/without --prev-head, malformed verdict/finding/Analyzed-HEAD, Verdict-Needs-Fix-without-findings, --json output, stale-head warning |
+| T5 | register `harness review-output` subcommand in `bin/harness.mjs` + `tests/cli-review-output.test.mjs` | done | yoga-ah | dispatch entry + SUBCOMMAND_HELP + cmdReviewOutput thin pass-through to script; 4 CLI tests passing |
+| T6 | OPERATIONS.md § Reviewer dispatch — append post-review block per Deliverable 4 | done | yoga-ah | added `### Post-review validation (CS40 — harness review-output)` subsection in both root + composed copies |
+| T7 | CHANGELOG.md `[Unreleased] / Added` entry per Deliverable 5 | done | yoga-ah | three bullets covering CLI + linter, OPERATIONS update, test inventory |
+| T8 | validate (`harness lint` + tests + sync clean) | done | yoga-ah | lint 28/0/3; tests 886 (885 pass / 1 skipped / 0 fail); +16 from CS40; sync clean |
 | T9 | dispatch GPT-5.5 R1 plan-vs-impl review (sync rubber-duck) | planned | yoga-ah | per LRN-064 |
 | T10 | amendments per R1 + dispatch R2 | planned | yoga-ah | — |
 | T11 | open content PR; engage Copilot via `gh pr edit --add-reviewer`; CI green; admin-merge | planned | yoga-ah | — |

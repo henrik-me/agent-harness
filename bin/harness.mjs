@@ -76,6 +76,8 @@ Subcommands:
   pack              Run npm pack --dry-run and verify file whitelist
   pr-evidence       Run PR-state evidence gates (B1, A3, A4, A5+A16, A6) against
                     a PR's commit graph + body markdown (CS36 + CS37)
+  review-output     Validate reviewer-output markdown shape (CS40): Analyzed-HEAD,
+                    R1/Rn enumeration vs git diff, finding-row schema, verdict
   plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
                     Decisions+Deliverables (used to fill plan review rows)
   version           Print package version
@@ -321,6 +323,57 @@ Exit codes:
   0  all gates passed (or skipped via --skip-reasons workboard-only)
   1  at least one gate failed
   2  bad usage (missing required flag, unknown flag)
+`.trimStart(),
+
+  'review-output': `
+Usage: harness review-output --review-output <file> --round R1|Rn --base <sha> --head <sha> [options]
+
+Validate a reviewer's output markdown (CS40 — closes #145 gap #3). Parses the
+reviewer's markdown content and validates it against three predicates:
+
+  (a) Analyzed HEAD: <40-char-sha> line is present near top.
+  (b) For --round R1, the per-file enumeration exactly equals the file set
+      of \`git diff --name-only <base>..<head>\` (missing files = error;
+      extra files = warning). For --round Rn, the enumeration is checked
+      against \`git diff --name-only <prev-head>..<head>\` if --prev-head
+      is provided; otherwise warn-skipped.
+  (c) Each finding row matches '- [Blocking|Non-blocking|Suggestion] <file>:<line>: <desc>'.
+      Verdict line 'Verdict: {Go|Needs-Fix|Block}' is present near the end.
+      Verdict ≠ Go requires at least one finding row.
+
+Optional independence-invariant guard: if --repo + --pr + --reviewer-model
+are all provided, fetches the PR body via gh and asserts the reviewer model
+is NOT in the implementer model set per the PR's ## Model audit table.
+
+Optional --update-pr posts the parsed structured output as a new row in the
+PR body's ## Review log section via 'gh pr edit --body-file'. Idempotent:
+re-running with the same --review-output produces the same single row
+(deduplicated by analyzed_head + verdict + reviewer-model).
+
+Per CS40 C40-8, this subcommand is NOT registered with 'harness pr-evidence' —
+it requires the reviewer output file which is not available in CI. It is a
+standalone linter invoked by the orchestrator after capturing reviewer output.
+
+Required flags:
+  --review-output <file>       Path to markdown file with reviewer output
+  --round R1|Rn                Review round
+  --base <sha>                 Base SHA for diff computation
+  --head <sha>                 Head SHA for diff computation
+
+Optional flags:
+  --prev-head <sha>            Required for Rn enumeration check (warn-skip if absent)
+  --repo <owner/repo>          For PR-body fetch (independence guard + --update-pr)
+  --pr <number>                For PR-body fetch (independence guard + --update-pr)
+  --reviewer-model <model-id>  Reviewer model (required when independence guard runs)
+  --update-pr                  Post parsed output as new ## Review log row (idempotent)
+  --json                       Emit machine-readable JSON instead of text
+  --quiet                      Suppress per-finding output; print summary only
+  --help                       Print this help
+
+Exit codes:
+  0  pass (warnings allowed)
+  1  at least one error (missing/malformed shape, R1 missing files, etc.)
+  2  bad usage
 `.trimStart(),
 
   version: `
@@ -2074,6 +2127,31 @@ async function cmdPlanReviewHash(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: review-output (CS40 — closes #145 gap #3)
+// ---------------------------------------------------------------------------
+//
+// Thin pass-through to scripts/check-review-output.mjs. All flags forwarded
+// verbatim. Per C40-8, this is a STANDALONE entry point — it is NOT part of
+// the `harness pr-evidence` aggregator because the reviewer-output file is
+// not available in CI. It is invoked by orchestrators after capturing the
+// reviewer's output (typically via the dispatched-reviewer pattern in
+// OPERATIONS.md § Reviewer dispatch).
+
+async function cmdReviewOutput(args, _global) {
+  // --help is forwarded verbatim to the script which prints its own HELP.
+  // We surface SUBCOMMAND_HELP['review-output'] only when invoked via
+  // `harness review-output --help` at the top level (i.e. before reaching
+  // the script), to keep the "harness <subcmd> --help" UX consistent.
+  if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
+    process.stdout.write(SUBCOMMAND_HELP['review-output']);
+    process.exit(0);
+  }
+  const scriptPath = path.join(REPO_ROOT, 'scripts', 'check-review-output.mjs');
+  const r = spawnSync('node', [scriptPath, ...args], { stdio: 'inherit' });
+  process.exit(r.status ?? 1);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: pr-evidence (CS36 — B1, A3, A4, A6)
 // ---------------------------------------------------------------------------
 //
@@ -2380,6 +2458,7 @@ async function main() {
     'composed-audit': cmdComposedAudit,
     pack: cmdPack,
     'pr-evidence': cmdPrEvidence,
+    'review-output': cmdReviewOutput,
     'plan-review-hash': cmdPlanReviewHash,
     version: cmdVersion,
     whoami: cmdWhoami,

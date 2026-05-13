@@ -644,6 +644,43 @@ plan-vs-implementation reviews, also conform to OPERATIONS.md
 After pasting the block, append CS-specific context (which CS, which files
 changed, which prior review rounds are on file). Do not modify the block itself.
 
+### Post-review validation (CS40 — `harness review-output`)
+
+After the dispatched reviewer returns its markdown output, the orchestrator
+MUST validate the output's content shape via `harness review-output` before
+recording the verdict in the active CS file's `## Plan-vs-implementation
+review` table or in the PR body's `## Review log`. This closes #145 gap #3
+(PR #28's reviewer summary-passed YAML / package.json without per-file
+enumeration; the linter would have caught that).
+
+```
+harness review-output \
+  --review-output <path-to-reviewer-markdown> \
+  --round R1 \
+  --base <merge-base-sha> \
+  --head <pr-head-sha> \
+  [--prev-head <prior-head-sha>]   # required for --round Rn
+  [--repo <owner/repo> --pr <num> --reviewer-model <id>]   # independence guard
+  [--update-pr]   # idempotently appends a row to the PR body's ## Review log
+```
+
+What the linter checks (per CS40 C40-2/3/5):
+
+- Reviewer output has an `Analyzed HEAD: <40-char-sha>` line near top.
+- For `--round R1`, the per-file enumeration exactly matches `git diff
+  --name-only <base>..<head>` (missing files = error; extras = warning).
+- Each finding row matches `- [Blocking|Non-blocking|Suggestion] <file>:<line>: <desc>`.
+- Verdict line `Verdict: {Go|Needs-Fix|Block}` is present near end. Verdicts
+  ≠ Go require at least one finding row.
+- Optional independence-invariant guard: if `--repo`/`--pr`/`--reviewer-model`
+  are all provided, fetches the PR body via `gh` and asserts the reviewer
+  model is NOT in the implementer model set.
+
+Exit 0 = pass (warnings allowed); exit 1 = at least one error; exit 2 = bad
+usage. The aggregator `harness pr-evidence` does NOT include this gate (per
+C40-8 — it requires the reviewer-output file which is not available in CI);
+this is a standalone orchestrator-side step.
+
 ### Sub-agent report shape (mandatory)
 
 Every sub-agent reports back with **exactly** this structure. A report
