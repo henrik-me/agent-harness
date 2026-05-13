@@ -1,10 +1,10 @@
 # CS35b — Plan-review attestation linter (`check-clickstop-plan-review`) + retroactive grandfathering
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs35b/plan-review-attestation-linter
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS35b disposition. Authored 2026-05-12 by `yoga-ah`. New CS inserted between CS35 and CS36 in the v0.4.0 arc to close a gap exposed when PR #147 (the original 9-file CS arc filing) merged without any documented GPT-5.5 review of the planned files. The user observed: "I thought there was a linter in place to ensure and guard against plans going into the repo without GPT-5.5 review" — confirmed missing; this CS lands it.
 **Depends on:** [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine front-load + planning-locality linter must already exist; CS35b extends the same enforcement layer).
 
@@ -118,24 +118,54 @@ Orchestrator owns: OPERATIONS.md + REVIEWS.md docs (Deliverables 4, 5); retroact
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 | Read full CS35b plan + CS35 R3 GO context (PR #151) + existing scripts/check-clickstop.mjs structure for re-use patterns | pending | orchestrator | — |
-| T2 | Implement `lib/plan-review-hash.mjs` (computes 12-char SHA-256 prefix over concatenated trimmed `## Decisions` + `## Deliverables` section bodies) per C35b-2 | pending | orchestrator | dependency-free; reuse extractSection from lib/doc-schema.mjs |
-| T3 | Implement `bin/harness.mjs plan-review-hash <file>` subcommand wrapping the helper from T2 per C35b-2 | pending | orchestrator | mirror existing `harness sync` / `harness lint` flag patterns |
-| T4 | Implement `scripts/check-clickstop-plan-review.mjs` per C35b-6/7 (schema, independence per C35b-4, hash-freshness per C35b-3, verdict gate per C35b-5, --strict + --mode=standalone\|pr-evidence per C35b-9/10) | pending | orchestrator | ~250-350 LOC; reuses lib/doc-schema.mjs assertHeadings + extractSectionBody |
-| T5 | Register `check-clickstop-plan-review` in `bin/harness.mjs` cmdLint linters list + LINTER_EXPLANATIONS entry per C35b-8 | pending | orchestrator | bump test count: tests/cs15d-aggregator.test.mjs:129 19→20 |
-| T6 | Add tests/check-clickstop-plan-review.test.mjs (≥10 cases: schema-pass, missing-section, malformed-table, model-overlap-rejected, hash-mismatch-rejected, verdict-needs-fix-rejected, warn-vs-strict modes, pr-evidence-strict-overrides, skip-reasons handling) + tests/lib-plan-review-hash.test.mjs (helper unit tests) | pending | orchestrator | tmp dirs via os.tmpdir() per LRN-094 |
-| T7 | Update OPERATIONS.md + template/composed/OPERATIONS.md (lockstep) with new H2 § "Plan review attestation procedure" containing the section template + procedure per C35b-12/15 | pending | orchestrator + sub-agent? | placement: immediately after Plan-vs-implementation review (close-out gate) |
-| T8 | Retroactive `## Plan review` rows on all 10 planned CS files + the now-active CS35b file per C35b-13: CS35 (done — backfill into done CS file as historical), CS35b (R1+R2 already drafted), CS36, CS37, CS38a, CS38b, CS39, CS40, CS41, CS42 | pending | orchestrator | each gets R1 (2026-05-12 GPT-5.5 review per #147 cycle) + R2 (2026-05-13 amendment review per #148+#149); R3-attestation for THIS PR happens at plan-vs-impl review time |
-| T9 | CHANGELOG.md `[Unreleased] / Added` entries: plan-review attestation linter + harness plan-review-hash CLI + retroactive grandfathering | pending | orchestrator | 2-3 bullets |
-| T10 | Self-checks: `node bin/harness.mjs lint --quiet` (27 passed / 0 failed / 3 skipped), `node --test tests/*.test.mjs`, `harness sync --mode=check`, `check-text-encoding` | pending | orchestrator | linter count bumps once |
-| T11 | Open content PR on cs35b/plan-review-attestation-linter; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder (capped at 3 rounds); merge after CI green + R3 Go | pending | orchestrator | A4/A5 stale-diff + A6 (CS35b's own gate from CS36) eventually applies |
-| T12 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | pending | orchestrator | per OPERATIONS.md § Close-out |
-| T13 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` recording the gap + closure; surface any new follow-up CS candidates) | pending | orchestrator | per OPERATIONS.md close-out procedure |
+| T1 | Read full CS35b plan + CS35 R3 GO context (PR #151) + existing scripts/check-clickstop.mjs structure for re-use patterns | done | orchestrator | done — read 5 sibling files |
+| T2 | Implement `lib/plan-review-hash.mjs` (computes 12-char SHA-256 prefix over concatenated trimmed `## Decisions` + `## Deliverables` section bodies) per C35b-2 | done | orchestrator | landed in PR #154 |
+| T3 | Implement `bin/harness.mjs plan-review-hash <file>` subcommand wrapping the helper from T2 per C35b-2 | done | orchestrator | landed in PR #154 |
+| T4 | Implement `scripts/check-clickstop-plan-review.mjs` per C35b-6/7 (schema, independence per C35b-4, hash-freshness per C35b-3, verdict gate per C35b-5, --strict + --mode=standalone\|pr-evidence per C35b-9/10) | done | orchestrator | landed in PR #154 with `--files` flag added in R1 amendments |
+| T5 | Register `check-clickstop-plan-review` in `bin/harness.mjs` cmdLint linters list + LINTER_EXPLANATIONS entry per C35b-8 | done | orchestrator | linter count 19→20 in cs15d-aggregator test; lint baseline 26/0/3 → 27/0/3 |
+| T6 | Add tests/check-clickstop-plan-review.test.mjs (≥10 cases) + tests/lib-plan-review-hash.test.mjs | done | orchestrator | 22 cases (R1 had 19; +3 diff-scoped regression cases for `--files`) + 10 helper unit tests |
+| T7 | Update OPERATIONS.md + template/composed/OPERATIONS.md (lockstep) with new H2 § "Plan review attestation procedure" containing the section template + procedure per C35b-12/15 | done | orchestrator | landed in PR #154 |
+| T8 | Retroactive `## Plan review` rows on all 10 planned CS files + the now-active CS35b file per C35b-13 | done | orchestrator | landed in PR #154 — 9 in-arc files (CS35b active + CS36..CS42 planned) + CS35 done file backfilled in R1 amendments |
+| T9 | CHANGELOG.md `[Unreleased] / Added` entries: plan-review attestation linter + harness plan-review-hash CLI + retroactive grandfathering | done | orchestrator | landed in PR #154 |
+| T10 | Self-checks: `node bin/harness.mjs lint --quiet` (27 passed / 0 failed / 3 skipped), `node --test tests/*.test.mjs`, `harness sync --mode=check`, `check-text-encoding` | done | orchestrator | 27/0/3 lint, 747/747 tests at merge, sync clean, encoding clean |
+| T11 | Open content PR on cs35b/plan-review-attestation-linter; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder (capped at 3 rounds); merge after CI green + Go | done | orchestrator | PR #154 — R1 NEEDS-FIX (`--mode=pr-evidence` walked full tree, would fail unrelated PRs); R2 GO at 1ca9309; admin-merged at 5fb9e68 |
+| T12 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | done | orchestrator | this PR |
+| T13 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` recording the gap + closure; surface any new follow-up CS candidates) | done | orchestrator | LRN-108 filed |
 
 ## Notes / Learnings
 
-(filled during execution)
+**R1 finding (BLOCKING) → R1-amendment commit `1ca9309`:** GPT-5.5 R1 reviewer correctly identified that `--mode=pr-evidence` walked the entire planned/active tree, which would have made CS36's planned A6 wiring fail any PR whose diff didn't intersect the grandfathered files (CS21/CS22b/CS23/CS24/CS26/CS27 lack `## Plan review` per C35b-13's intentional grandfathering). Fix: added `--files <csv>` flag restricting linting to an explicit file list (typically the PR diff). Files outside `LINTED_SUBDIRS` are silently skipped, so callers can pass the full `gh pr diff --name-only` output. C36-11 + SA-4 updated to document the diff-narrowing aggregator pattern; CS35b ships the predicate (`--files`), CS36 ships the wiring (compute diff + dispatch).
+
+**Cosmetic R1 findings addressed:** CS35 done file backfilled with informational `## Plan review` per C35b-13 (linter skips done/, but spec demanded backfill for documentation completeness). Active CS Exit Criterion #2 baseline corrected (`26/0/3` → `27/0/3`).
+
+**LRN-108 (filed in this close-out):** When a planned CS gate is meant to fire on PR-diff-scoped files, the predicate script MUST expose an explicit file-list interface (`--files`), not just a directory walk. Otherwise pre-arc grandfathered files in the same dir will fail unrelated PRs and undermine the gate's intent. Caught at R1 plan-vs-impl review by independent GPT-5.5 reviewer — strong validation of the C35-2 ladder and LRN-064 (mandatory plan-vs-impl review gate).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** gpt-5.5 (rubber-duck dispatched by orchestrator yoga-ah, R1 + R2)
+**Date:** 2026-05-13
+**Outcome:** **GO** at R2 (commit `1ca9309a21c4d651a12a3d86c919867e15282803`)
+
+### R1 — NEEDS-FIX (commit `a4256a1`)
+
+- **Reviewer model:** gpt-5.5
+- **Branch HEAD SHA:** `a4256a1a469237ec7ef828f529ba469700c29456`
+- **Round:** R1
+- **Verdict:** NEEDS-FIX
+- **Findings recap:** `--mode=pr-evidence` walked the full planned/active tree, would fail unrelated PRs because pre-arc grandfathered files lack `## Plan review` sections. CS36 A6 wiring would inherit this defect. Two non-blocking divergences: CS35 done file lacked retroactive section (per C35b-13); active Exit #2 said 26/0/3 vs actual 27/0/3.
+
+### R2 — GO (commit `1ca9309`)
+
+- **Reviewer model:** gpt-5.5
+- **Branch HEAD SHA:** `1ca9309a21c4d651a12a3d86c919867e15282803`
+- **Round:** R2
+- **Verdict:** GO
+- **Findings recap:** R1 BLOCKING resolved; `--files` flag correctly branches the walk; explicit-file mode does not walk full tree; out-of-scope paths silently skipped; new tests cover the regression scenario; CS36 plan amendment unambiguous; CS36 R2 hash matches current content (`8ef81c90212d`); cosmetic fixes applied; no new blocking issues introduced. Single non-blocking suggestion: `--files` relative-path resolution assumes invocation from repo root (matches documented usage).
+
+### Independence check
+
+Reviewer model = `gpt-5.5`; plan author model = `claude-opus-4.7-xhigh`. No model overlap. Reviewer agent = `rubber-duck-{r1,r2}`; orchestrator agent = `yoga-ah`. No agent-identity overlap.
+
+### Merge
+
+PR #154 admin-merged at squash commit `5fb9e685e06b34e7c22ca74a60282dda8f99f7f3` after R2 GO + all CI checks green (validate, smoke, harness-lint, npm-pack-dry-run, secret-scan, validate-schemas, commit-trailers, pr-body, check-workflow-pins, check-public-artifact).
