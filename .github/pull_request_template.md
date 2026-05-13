@@ -33,3 +33,22 @@ _(Describe how this was tested. Include at minimum:)_
 _(Optional. Use this section for caveats, follow-up items, or anything a
 reviewer should know that doesn't fit above. Delete this section entirely
 if there is nothing to add.)_
+
+
+<!-- harness:local-start id=pull-request.review-evidence -->
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | _(comma-separated, e.g. claude-opus-4.7-xhigh, gpt-5.4)_ |
+| Reviewer model | _(single id from C35-2 ladder, e.g. gpt-5.5)_ |
+| Implementer agent | _(e.g. yoga-ah)_ |
+| Reviewer agent | _(e.g. rubber-duck)_ |
+| Notes | _(optional)_ |
+
+## Review log
+
+| timestamp | analyzed_head | actor | model | verdict | evidence_link |
+|---|---|---|---|---|---|
+| _(YYYY-MM-DDTHH:MM:SSZ)_ | _(40-char SHA)_ | _(actor)_ | _(model)_ | _(Go / Go-with-amendments / Needs-Fix)_ | _(URL or note)_ |
+<!-- harness:local-end id=pull-request.review-evidence -->
