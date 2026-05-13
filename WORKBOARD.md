@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-13 (CS36 claimed: PR-evidence FS+git linters + `harness pr-evidence` entry point — third CS in v0.4.0 #145 enforcement-gap arc, lands B1/A3/A4/A6 mechanical PR-state gates; orchestrator yoga-ah active)
+> **Last updated:** 2026-05-13 (CS36 done: PR-evidence aggregator + B1/A3+A4 gate scripts shipped, A6 diff-scoped wiring landed via PR #157 squash 68fe233 — fourth CS in v0.4.0 #145 enforcement-gap arc; CS37 next, blocked only by claim)
 
 ## Orchestrators
 
@@ -16,6 +16,6 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS36 | PR-evidence FS+git linters (B1, A3, A4, A6) + `harness pr-evidence` entry point | active | yoga-ah | cs36/pr-evidence-aggregator | 2026-05-13 | — |
+| — | no active CS — CS37 ready to claim from `project/clickstops/planned/` | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

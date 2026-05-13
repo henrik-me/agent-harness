@@ -1,10 +1,10 @@
 # CS36 — `harness pr-evidence` entry point + filesystem/git-log linters (B1, A3, A4, A6)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs36/pr-evidence-aggregator
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS36 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1 (gates B1, A3, A4). Authored 2026-05-12 by `yoga-ah`. Second CS in the v0.4.0 arc.
 **Depends on:** [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine + schemas — C35-3, C35-4, C35-5, C35-6, C35-17 in particular).
 
@@ -100,13 +100,37 @@ CS36 close-out is permitted only when **all** of the following are true and reco
 | T9 | CHANGELOG.md [Unreleased]/Added entries: pr-evidence subcommand + check-pr-commits + check-review-evidence linters | done | orchestrator | Added consolidated CS36 [Unreleased]/Added entry with sub-bullets for the aggregator, B1 (check-pr-commits), A3+A4 (check-review-evidence), and A6 diff-scoping per C36-11 + LRN-108. |
 | T10 | Self-checks: harness lint --quiet (still 27/0/3 — pr-evidence linters NOT wired into lint per C35-17), node --test tests/*.test.mjs (prior 747 + ≥18), harness sync --mode=check, text-encoding | done | orchestrator | `harness lint --quiet`: 27/0/3 (unchanged — PR-evidence linters NOT in lint per C35-17). `node --test tests/*.test.mjs`: 781 pass + 1 deferred (was 747; +35 = +25 above the +18 minimum). `harness sync --mode=check`: clean. Text-encoding: all new files normalized LF/no-BOM. |
 | T11 | Dogfood: harness pr-evidence --base <merge-base> --head <head> --pr-body <body.md> exits 0 against CS36 content PR itself, including A6 passing on CS36 plan file's ## Plan review row | done | orchestrator | Local dogfood with full-SHA `--base 8652fa3 --head <HEAD-on-cs36-branch>` and a fixture body containing valid `## Model audit` + `## Review log`: B1 ✓, A3+A4 ✓, A6 ✓ (scanned 8 planned/active files in PR diff). Stale-SHA dogfood with malformed analyzed_head correctly fails A4. |
-| T12 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (capped at 3 rounds); admin-merge after CI green + Go | pending | orchestrator | — |
-| T13 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable | pending | orchestrator | — |
+| T12 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (capped at 3 rounds); admin-merge after CI green + Go | done | orchestrator | PR #157 opened on cs36/pr-evidence-aggregator with full Summary/Changes/Testing/Model audit/Review log body. R1 (head bd37a77) GPT-5.5: NEEDS-FIX with 3 BLOCKING (JSON corruption, missing timestamp/required-column validation, errors not C36-9-actionable). Amendments applied in commit 6ff2bd7. R2 (head 6ff2bd7) GPT-5.5: GO-with-amendments (only cosmetic test-count drift in my prompt, no real findings). PR comment with full R1+R2 transcript posted. Admin-merged at squash 68fe233. |
+| T13 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable | done | orchestrator | Renamed active_cs36_*.md → done_cs36_*.md; Status active→done; Closed=2026-05-13; T1-T13 receipts populated; ## Plan-vs-implementation review section filled with R1+R2 verdicts. WORKBOARD active row pruned; CONTEXT banner refreshed to "CS36 done; CS37 next". LRN-109 (sub-agent briefings must not paraphrase authoritative schemas) was filed during the content PR; no new LRN at close-out. |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **LRN-109 filed (status=applied, source_cs=CS36):** Sub-agent briefings must NOT paraphrase authoritative schemas. SA-3 surfaced this when the briefing's `## Model audit` "schema reference" paraphrase contradicted REVIEWS.md §2.8 (key-value `| Field | Value |` format). SA-3 correctly resolved per the briefing's own decision-authority section, but the discrepancy cost a read-cycle. Future briefings on REVIEWS.md / OPERATIONS.md / INSTRUCTIONS.md / `schemas/`-owned formats MUST cite the authoritative section by file + heading and paste canonical blocks verbatim — no paraphrase.
+
+- **R1 amendment leverage of LRN-064:** GPT-5.5 R1 caught 3 substantive defects (JSON output corruption, missing timestamp validation, non-actionable errors) that the implementer's self-review and 781 passing tests had not surfaced. Re-validates LRN-064 (mandatory plan-vs-impl review gate): independent reviewer caught defects on a CS that looked clean to all gates (lint 27/0/3, 781 tests pass, sync clean, CI green). Without C35-2 ladder + GPT-5.5 dispatch, the defects would have shipped.
+
+- **Aggregator vs predicate skip semantics held:** The C35-19 / C36-5 centralization principle (skip-reasons computed by caller, not predicate) survived contact with reality. The aggregator's `--skip-reasons workboard-only` short-circuit is the ONLY place that needs to know the all-skip semantics; per-script handling stays minimal.
+
+- **Diff-scoped A6 dogfood validation:** With a fixture body shaped per REVIEWS.md against the CS36 PR's own SHA range, the aggregator scanned 8 planned/active CS files in the diff (the CS36 file itself + the entire post-CS35b planned arc in `## Plan review` parity check) — all 8 carry fresh attestations from the CS35b retroactive grandfathering, so A6 passed cleanly. Confirms the LRN-108 design pattern (predicate exposes `--files`; aggregator computes diff) works end-to-end.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** GPT-5.5 (copilot agent — `gpt-5.5`), independent of the implementer (Claude Sonnet 4.5 / Claude Opus 4.7) per REVIEWS.md independence invariant.
+**Date:** 2026-05-13
+**Outcome:** Go-with-amendments (R2). R1 NEEDS-FIX (3 BLOCKING) → R1 amendments at commit `6ff2bd7` → R2 GO (no real findings; only cosmetic test-count drift in the prompt). Per C35-2 ladder, R2 GO sufficient to merge — no R3 required.
+
+| Round | Reviewer model | Reviewer agent | analyzed_head | timestamp | verdict | findings_recap |
+|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | copilot | bd37a77aee7fee0f0d83ea4c6ccf0945e834eb73 | 2026-05-13T20:00:00Z | Needs-Fix | 3 BLOCKING: JSON+workboard-only emits invalid JSON; A3/A4 missing timestamp/required-column validation; A3/A4 errors not C36-9-actionable (no file:line/Fix). |
+| R2 | gpt-5.5 | copilot | 6ff2bd75b4d6c1ac82dc4b6a0db0caf3e3b8d4a5 | 2026-05-13T22:30:00Z | Go-with-amendments | All 3 R1 BLOCKINGS closed; all gates pass; only non-blocking is test-count drift in my R2 prompt (39 vs actual 38+1 deferred), which is a prompt error not a code defect. |
+
+**R1 transcript:** 3 BLOCKING findings reported. See PR #157 comment thread (https://github.com/henrik-me/agent-harness/pull/157#issuecomment-4439408887) for full transcript.
+
+**R1 amendments (commit 6ff2bd7):**
+1. `bin/harness.mjs:1965-1976` — gated the human summary line behind `!json` in the workboard-only short-circuit.
+2. `scripts/check-review-evidence.mjs` — added REVIEW_LOG_REQUIRED_COLS check (timestamp | analyzed_head | actor | model | verdict | evidence_link per REVIEWS.md §2.7) + ISO_TIMESTAMP_RE per-row validation. Test cases 9 (malformed timestamp) + 10 (missing required column).
+3. `scripts/check-review-evidence.mjs` — replaced extractSectionBody with inline extractSectionWithLineNumber; parseMarkdownTable now returns rowLineOffsets; every error starts with `<prBodyFile>:<line>:` and ends with `Fix: ...`. Test cases 11 (stale-head actionable) + 12 (A3 actionable).
+
+**R2 transcript:** GO-with-amendments. R1-FOLLOWUP all 3 closed; new BLOCKING none; new NON-BLOCKING: cosmetic test-count drift in R2 prompt (no fix required). Per C35-2 ladder, R2 GO is sufficient — no R3 required.
+
+**Close-out gate per § Plan-vs-implementation review (close-out gate):** R2 verdict = Go-with-amendments. ✓ Sufficient to merge per the C35-2 ladder.
