@@ -1,10 +1,10 @@
 # CS39 — Release v0.4.0 + file SI pin-bump SUB-CS
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs39/release-v0.4.0
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS39 disposition. Authored 2026-05-12 by `yoga-ah`. Sixth (final) CS in the v0.4.0 arc; release-cut.
 **Depends on:** [CS38b](planned_cs38b_retro-pr28-and-self-host-optin.md) (and transitively CS35–CS38a).
 
@@ -70,18 +70,18 @@ None. Release-cut is orchestrator-only.
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T0 — Claim PR (this PR) | done | yoga-ah | Rename planned→active; populate Tasks; update WORKBOARD; workboard-only PR. |
-| T1 — Content branch from main | pending | yoga-ah | `cs39/release-v0.4.0` from current `main`. |
-| T2 — Read CS37 close-out for spike outcome (C39-3 conditional branch select) | pending | yoga-ah | Per C37 close-out notes: spike outcome = PASS → release notes include A5+A16 as enforced. |
-| T3 — CHANGELOG version bump | pending | yoga-ah | Replace `## [Unreleased]` with `## [0.4.0] — 2026-05-13` (em-dash U+2014 per C39-2; required by `release.yml` awk extractor). Verify all CS35–CS38b entries captured. |
-| T4 — package.json version bump | pending | yoga-ah | `0.0.0-pre` → `0.4.0` per C39-1. Run `npm install --package-lock-only` if needed for lockfile coherence. |
-| T5 — Local validation pre-PR | pending | yoga-ah | `harness lint --quiet`, `node --test tests/**/*.test.mjs`, `harness sync` clean drift. CHANGELOG dry-run via `awk '/^## \[0\.4\.0\]/' CHANGELOG.md` per C39-R1 mitigation. |
-| T6 — Open content PR + R1 plan-vs-impl review (release-cut convention) | pending | yoga-ah | Open PR; engage Copilot via `gh pr edit --add-reviewer copilot-pull-request-reviewer`; dispatch GPT-5.5 R1 plan-vs-impl review per C35-2. Wait for CI green + Copilot review. |
-| T7 — Close-out docs/restart-state task | pending | yoga-ah | Rename active→done; populate `## Plan-vs-implementation review` H2 with R1 transcript; refresh WORKBOARD (drop CS39 → no active CS, v0.4.0 arc complete) + CONTEXT (CS39-done bullet, queue moves to v0.5.0 arc CS40). |
-| T8 — Admin merge content PR | pending | yoga-ah | After CI green + R1 GO + Copilot review present, admin squash-merge. Capture squash SHA. |
-| T9 — Tag push v0.4.0 | pending | yoga-ah | `git tag v0.4.0 <squash-sha>` then `git push origin v0.4.0`. Triggers `release.yml` workflow. |
-| T10 — Verify GitHub Release page | pending | yoga-ah | Per C39-6: title `v0.4.0`; body matches CHANGELOG section; no asset requirements. |
-| T11 — Cross-repo SI pin-bump SUB-CS PR | pending | yoga-ah | Per C39-4/5 (R1-amended): open PR against `henrik-me/sub-invaders` filing `planned_cs10_pin-harness-v0.4.0.md` (next available — SI uses `planned_csNN_*` convention not `planned_subNN_*`; verified live via gh api 2026-05-13). |
-| T12 — Close-out PR (workboard-only) for CS39 + close-out learnings task | pending | yoga-ah | Standard close-out PR. File any LRNs surfaced during release-cut. |
+| T1 — Content branch from main | done | yoga-ah | Branched `cs39/release-v0.4.0` from `main` at SHA `56e812f`. |
+| T2 — Read CS37 close-out for spike outcome (C39-3 conditional branch select) | done | yoga-ah | Verified CS37 spike outcome = PASS via `docs/adr/0004-copilot-graphql-spike.md` + done_cs37 references. CHANGELOG `## [0.4.0]` describes A5+A16 as ENFORCED per PASS branch. |
+| T3 — CHANGELOG version bump | done | yoga-ah | `## [Unreleased]` → `## [0.4.0] — 2026-05-13` (em-dash codepoint verified `0x2014`). All CS35-CS38b entries captured. |
+| T4 — package.json version bump | done | yoga-ah | `0.3.1` → `0.4.0`. `npm install --package-lock-only` synced lockfile (root + `packages.""` both `0.4.0`). |
+| T5 — Local validation pre-PR | done | yoga-ah | `harness lint`: 28/0/3. `node --test`: 870 (869/0/1). `harness sync`: clean (mid-CS warning). CHANGELOG awk extractor compatibility verified by R1. |
+| T6 — Open content PR + R1 plan-vs-impl review (release-cut convention) | done | yoga-ah | PR #169 opened. Copilot engaged via `gh pr edit --add-reviewer`. R1 returned Go-with-amendments at HEAD `73a3b77` (1 MAJOR finding on SI SUB-CS naming); R2 returned Go at HEAD `b45ff44` after amendment. |
+| T7 — Close-out docs/restart-state task | done | yoga-ah | Renamed active→done; populated `## Plan-vs-implementation review` with R1+R2 transcripts; WORKBOARD dropped CS39 → `_no active CS_`; CONTEXT refreshed with CS39-done bullet + v0.4.0 arc complete + queue advances to v0.5.0 arc (CS40). |
+| T8 — Admin merge content PR | done | yoga-ah | PR #169 admin-squash-merged at SHA `782742cc1a9ef9a6b8e04599aa13e1112725998e`. All 11 checks green pre-merge. |
+| T9 — Tag push v0.4.0 | done | yoga-ah | `git tag v0.4.0 782742c -m "Release v0.4.0 — #145 enforcement-gap arc complete (CS35-CS38b)"` then `git push origin v0.4.0`. `release.yml` workflow run 25829299114 succeeded. |
+| T10 — Verify GitHub Release page | done | yoga-ah | Per C39-6 verified: title `v0.4.0`, body = `## [0.4.0] — 2026-05-13` CHANGELOG section, createdAt 22:09:01Z, no assets required. |
+| T11 — Cross-repo SI pin-bump SUB-CS PR | done | yoga-ah | Per C39-4/5 (R1-amended): SI PR [#48](https://github.com/henrik-me/sub-invaders/pull/48) opened on branch `docs/file-planned-cs10-pin-harness-v0.4.0` adding `planned_cs10_pin-harness-v0.4.0.md`. SI orchestrator implements pin-bump under their own workflow. |
+| T12 — Close-out PR (workboard-only) + close-out learnings task | done | yoga-ah | Workboard-only close-out PR (this PR). LRN-113 filed for "release-cut should verify cross-repo naming conventions before plan freeze" (the R1 MAJOR finding). |
 
 ## Notes / Learnings
 
@@ -89,4 +89,33 @@ None. Release-cut is orchestrator-only.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** gpt-5.5 (dispatched by yoga-ah)
+**Date:** 2026-05-13
+**Outcome:** Go (R1 Go-with-amendments → fixes applied → R2 Go)
+
+### Transcript
+
+**R1 — Go-with-amendments at HEAD `73a3b7706c46ca8986308bd212a1ad7ce6fab7cb`** (2026-05-13T21:55:00Z)
+
+GPT-5.5 verified the release-cut against all six Decisions + seven Exit Criteria with a 12-row verification matrix. Release-cut content (CHANGELOG section + em-dash + package.json bump + lockfile coherence + release.yml extractor compatibility + sibling-CS closure + tag-collision safety + scope-tightness + validation suite) all green. Verdict downgraded from Go to Go-with-amendments by 1 MAJOR finding:
+
+- **MAJOR** — Cross-repo SUB-CS filename convention wrong. CS39 plan said to file `planned_subNN_pin-harness-v0.4.0.md`, but live `henrik-me/sub-invaders` uses `planned_csNN_*` convention (verified via `gh api repos/henrik-me/sub-invaders/contents/project/clickstops/{planned,active,done}` 2026-05-13: existing csNN range cs01-cs09; next available cs10). C39-4/C39-5/Deliverable 4/T11 needed amendment to `planned_cs10_pin-harness-v0.4.0.md`.
+
+R1 also surfaced two learning candidates: (a) cross-repo coordination should verify naming conventions against the target repo before hard-coding paths, (b) dry-running the changelog extractor before tag push is a useful release-cut invariant.
+
+**R1-fixes-applied at HEAD `b45ff445fbe419096ed2b62c2ba08cd4df86182a`** (2026-05-13T22:05:00Z)
+
+C39-4, C39-5, Deliverable 4, and T11 amended to reference `planned_cs10_pin-harness-v0.4.0.md` (verified live via `gh api`). R3 attestation row added to `## Plan review` section (hash `9155928aa51e`). Release-cut content (CHANGELOG + version bumps) untouched by amendment — R2 verified this invariant.
+
+**R2 — Go at HEAD `b45ff445fbe419096ed2b62c2ba08cd4df86182a`** (2026-05-13T22:02:07Z)
+
+GPT-5.5 verified all 5 R2 verification points pass: (1) amendment edits exist + correct, (2) no other files changed, (3) SI naming convention re-verified live, (4) R3 hash matches current Decisions+Deliverables hash, (5) `harness lint --quiet` exit 0 (28/0/3). No new findings. Approval: "the R1 amendment was correctly applied, introduced no unrelated file changes, has a current matching attestation hash, and passes lint."
+
+**Bootstrap-CI iteration:** First CI run after R2 Go (run 25829027632 at 22:02:52Z) failed `read-only-gates` because (a) my Review log Go row had an analyzed_head ending in `73a3b77b` instead of the full 40-char SHA — actually, more accurately, the failure was A3+A4 because I initially wrote verdict cells like `Go (self-impl)` and `Go (R1-fixes-applied)` instead of the linter-required exact `Go` (the check uses `=== 'Go'` strict equality at `scripts/check-review-evidence.mjs:364`). After fixing verdict cells to exact `Go` (with qualifiers moved into the evidence_link column) + filling in full 40-char SHAs in analyzed_head, then re-running CI: also Copilot's first review at 22:01:56Z was BEFORE my latest local Go at 22:02:07Z, so A5 ordering would have failed — Copilot's second review at 22:05:42Z resolved that. Re-ran CI; all 11 checks green. Admin-merged at squash SHA `782742cc1a9ef9a6b8e04599aa13e1112725998e`.
+
+**Tag + release:** Pushed `v0.4.0` tag at squash SHA `782742c`. `release.yml` workflow run 25829299114 succeeded; GitHub Release `v0.4.0` created at 22:09:01Z with the `## [0.4.0] — 2026-05-13` CHANGELOG section as the body. Em-dash extractor verified working end-to-end against a real release.
+
+**Cross-repo SUB-CS:** Filed `henrik-me/sub-invaders` PR [#48](https://github.com/henrik-me/sub-invaders/pull/48) `docs/file-planned-cs10-pin-harness-v0.4.0` adding `project/clickstops/planned/planned_cs10_pin-harness-v0.4.0.md`. SI orchestrator implements the actual pin-bump under their own workflow.
+
+**Merged:** content squash SHA `782742cc1a9ef9a6b8e04599aa13e1112725998e` (PR #169); v0.4.0 tag pushed; GitHub Release published; SI cross-repo PR #48 opened (awaiting SI orchestrator to claim CS10).
+
