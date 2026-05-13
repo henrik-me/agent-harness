@@ -1,10 +1,10 @@
 # CS35 — Enforcement doctrine + planning-locality (front-load for v0.4.0 arc)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs35/enforcement-doctrine-and-planning-locality
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS35 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145), [#142](https://github.com/henrik-me/agent-harness/issues/142), [#139](https://github.com/henrik-me/agent-harness/issues/139), and a planning-locality concern surfaced 2026-05-12 (session-state `~/.copilot/session-state/<id>/plan.md` was holding strategic content; non-durable; agent-handoff failure mode). Authored 2026-05-12 by `yoga-ah`. First CS in the v0.4.0 enforcement-gap arc; precedes [CS36](planned_cs36_pr-evidence-fs-and-git-linters.md), [CS37](planned_cs37_copilot-review-gate-graphql.md), [CS38a](planned_cs38a_pr-evidence-workflow-and-init.md), [CS38b](planned_cs38b_retro-pr28-and-self-host-optin.md), [CS39](planned_cs39_release-v0.4.0.md).
 **Depends on:** None. CS36–CS39 depend on the doctrine + schemas + planning-locality controls landed here.
 
@@ -116,9 +116,9 @@ CS35 close-out is permitted only when **all** of the following are true and reco
 | T7 | Add tests/check-planning-locality.test.mjs (≥3 cases) + tests/operations-reviewer-preamble.test.mjs (markers + required fields) | done | orchestrator + sub-agent | 10 + 2 tests; total 715/715 pass |
 | T8 | CHANGELOG.md `[Unreleased] / Added` entries: planning-locality linter + reviewer doctrine + reviewer fallback ladder | done | sub-agent | 3 bullets prepended under [Unreleased] § Added |
 | T9 | Self-checks: harness lint --quiet, node --test tests/*.test.mjs, harness sync --mode=check, check-text-encoding | done | orchestrator | 26/0/3 lint; 715/715 tests; No drift detected; LF-clean |
-| T10 | Open content PR on cs35/enforcement-doctrine-and-planning-locality; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder; merge after CI green + review Go | pending | orchestrator | A4/A5 stale-diff invariant applies |
-| T11 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | pending | orchestrator | per OPERATIONS.md § Close-out |
-| T12 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` per C35-16; surface any new follow-up CS candidates) | pending | orchestrator | per RETROSPECTIVES.md and OPERATIONS.md close-out procedure |
+| T10 | Open content PR on cs35/enforcement-doctrine-and-planning-locality; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder; merge after CI green + review Go | done | orchestrator | PR #151 opened SHA 39e01e1; R1 NEEDS-FIX → R2 NEEDS-FIX → R3 GO at SHA 4921a94 (all rows recorded above); admin-merged at 8652fa3 per repo precedent (#137). |
+| T11 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | done | orchestrator | This close-out PR: rename, WORKBOARD Active Work row pruned, CONTEXT.md banner refreshed. |
+| T12 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` per C35-16; surface any new follow-up CS candidates) | done | orchestrator | LRN-107 filed status=applied during R1 fixes (commit 98f2461); follow-up candidates: (a) factor LINTER_COUNT constant to avoid manual cs15d-aggregator bumps; (b) extend planning-locality allow-list config for consumers per OQ-R2; (c) extend composed-blocks linter scope beyond `harness:local-` to guard new sentinel prefixes. |
 
 ## Notes / Learnings
 
@@ -126,7 +126,11 @@ CS35 close-out is permitted only when **all** of the following are true and reco
 
 ## Plan-vs-implementation review
 
-> Per OPERATIONS.md § Plan-vs-implementation review (close-out gate), capped at 3 rounds. Each row records one round's verdict against the THEN-current branch HEAD; later rows supersede earlier rows for currency / merge eligibility.
+**Reviewer:** copilot
+**Date:** 2026-05-13
+**Outcome:** Go (R3 of capped-3-rounds; per OPERATIONS.md § Plan-vs-implementation review (close-out gate)). R1 NEEDS-FIX → R2 NEEDS-FIX → R3 GO at HEAD `4921a94`. PR #151 admin-merged at SHA `8652fa3`.
+
+> Multi-round detail per OPERATIONS.md § Plan-vs-implementation review (close-out gate), capped at 3 rounds. Each row records one round's verdict against the THEN-current branch HEAD; later rows supersede earlier rows for currency / merge eligibility.
 
 | Round | Date | Reviewer | Model | Branch HEAD | Verdict | Evidence |
 |---|---|---|---|---|---|---|
