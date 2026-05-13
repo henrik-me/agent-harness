@@ -30,6 +30,12 @@ Standard release-cut CS following the harness's existing pattern (see [done_cs29
 | C39-5 | Pin-bump SUB-CS content | The planned SUB-CS file documents: target version `v0.4.0`; what changes (composed PR template marker block; new sync warnings about `review_gates`; option to immediately opt in via `harness init --enable-review-gates`); recommended path (opt in immediately to derive value); risks (existing PRs need re-trigger to pick up the new gate). | Self-contained plan for SI orchestrator. |
 | C39-6 | Release-trigger verification | Manually verify the GitHub Release page after the tag push: title `v0.4.0`; body matches CHANGELOG section; assets (none required for this release). | Standard release-day check. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS39 plan: v0.4.0 release-cut. R1 surfaced CHANGELOG / SBOM / smoke-verify ordering; addressed in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 89da6676b7e3 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **CHANGELOG.md** updates: replace `## [Unreleased]` with `## [0.4.0] — <date>`; ensure all CS35–CS38b entries are captured.

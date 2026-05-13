@@ -143,6 +143,87 @@ branch and re-run the gate before proceeding.
 `## Plan-vs-implementation review` section and its required content for all
 `done/` files. The linter is wired into `harness lint` and runs on every PR.
 
+### Plan review attestation procedure (CS35b)
+
+This procedure is the **planning-phase counterpart** of the close-out gate
+above. Per CS35b decisions C35b-1 through C35b-15, every clickstop file in
+`project/clickstops/planned/` and `project/clickstops/active/` MUST carry a
+`## Plan review` H2 section recording one or more independent plan reviews.
+Done files are exempt — the close-out gate above already covers that surface.
+
+**Reviewer:** GPT-5.5 (rubber-duck). Fallback rules from [REVIEWS.md](REVIEWS.md)
+apply (independence invariant per C35b-4: reviewer model MUST NOT appear in
+the row's `Plan author model(s)` column or in any earlier row's
+`Plan author model(s)`).
+
+**Inputs the reviewer must consume:**
+
+- The full plan file: Background, Decisions, Deliverables, Sub-agent fan-out,
+  Exit criteria, Risks + open questions.
+- Any cross-CS dependencies the plan declares.
+
+**Required outputs the reviewer must produce:**
+
+- A verdict from the enum `Go` | `Go-with-amendments` | `Needs-Fix` (C35b-5).
+- A findings recap ≤ 200 characters suitable for the table cell.
+
+**Recording the review:**
+
+The orchestrator records the review verbatim in the plan file's
+`## Plan review` section, placed after `## Decisions` and before
+`## Deliverables` (per C35b-1). Section template (paste-ready, fill the
+eight cells; compute the hash via `harness plan-review-hash <file>`):
+
+```
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | <reviewer-model-id> | <author-model-id-1,author-model-id-2,...> | <agent-id (or "rubber-duck dispatched")> | <12-char-hash from `harness plan-review-hash <file>`> | YYYY-MM-DDThh:mm:ssZ | Go | <short summary, ≤200 chars> |
+```
+
+Subsequent amendment rounds append `R2`, `R3`, ... rows below `R1`. The
+latest row's `Reviewed sections hash` MUST equal the SHA-256-prefix-12 of
+the file's current `## Decisions` + `## Deliverables` bodies (per C35b-3 —
+the linter computes this on every run via `lib/plan-review-hash.mjs`).
+
+**Blocking behaviour:**
+
+A `Needs-Fix` latest verdict blocks merge. Apply the requested amendments
+on the same branch, re-dispatch the reviewer, and append a new attestation
+row with the post-amendment hash. The plan-vs-implementation review ladder
+in [REVIEWS.md](REVIEWS.md) (3-round cap, escalate on R3 Needs-Fix) applies
+identically to the planning-phase ladder.
+
+**Strictness asymmetry (C35b-9 / C35b-10):**
+
+- `harness lint` (standalone, pre-PR convenience) runs the linter with
+  `--strict=false` in v0.4.0 (warn-only on missing-section). CS42 flips
+  the default to `true` for v0.5.0 (per C42-7).
+- The PR-time A6 gate dispatched by `harness pr-evidence` (CS36) ALWAYS
+  runs in `--mode=pr-evidence`, which is STRICT regardless of `--strict`.
+  This asymmetry means developers get a friendly local warning while
+  editing, but PR merge is blocked without a fresh attestation.
+- Schema / independence / hash / verdict violations are ALWAYS errors,
+  regardless of mode or `--strict`. Only the "section entirely absent"
+  case is governed by the warn-vs-strict toggle.
+
+**Mechanical enforcement:**
+
+`scripts/check-clickstop-plan-review.mjs` (registered as
+`check-clickstop-plan-review` in `harness lint` per CS35b decision C35b-8)
+parses the table, validates the schema, enforces independence, verifies
+hash freshness, and gates on the latest verdict. The CS36 PR-evidence
+aggregator dispatches the same script in strict pr-evidence mode (A6).
+
+**Honor-system caveat (C35b-14):**
+
+The linter cannot verify the claimed reviewer model actually ran. As with
+B1 commit trailers, this is honor-system attestation: the schema enforces
+deliberation; orchestrator discipline + the close-out plan-vs-implementation
+review catch lies. Future CS may add cryptographic evidence; this is
+documented in [LEARNINGS.md](LEARNINGS.md).
+
 ### Enforcement model
 
 **CS01–CS14 (private repo, discipline-only):** GitHub branch protection

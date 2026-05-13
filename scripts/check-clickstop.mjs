@@ -12,6 +12,13 @@
  *   - Required header fields: Status, Owner, Branch, Started, Closed, Depends on
  *   - Lifecycle status invariant: directory name matches **Status:** value
  *
+ * NOTE (CS35b): the planning-phase counterpart of the close-out
+ * `## Plan-vs-implementation review` gate enforced here lives in
+ * `scripts/check-clickstop-plan-review.mjs`. That script enforces the
+ * `## Plan review` attestation section on planned/*.md and active/*.md
+ * files; this script remains responsible for the close-out gate and the
+ * core lifecycle invariants.
+ *
  * Usage:
  *   node scripts/check-clickstop.mjs --dir <path> [--quiet] [--help]
  *

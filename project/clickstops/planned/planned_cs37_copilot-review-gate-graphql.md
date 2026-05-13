@@ -41,6 +41,12 @@ The Copilot reviewer node ID is resolved via `gh api graphql -F query='query { u
 | C37-6 | Fork PR behavior | If `--repo` ≠ origin (detected via `gh pr view <pr> --json headRepository,baseRepository`), A16 fails with exit code 2 and a message: "Copilot review gate cannot run on fork PRs (`GITHUB_TOKEN` is read-only). Maintainer must rerun `harness copilot-engage <pr>` after pulling the branch locally." | Per C35-9. Distinct exit code (2) so CI workflows can route fork PRs to a separate manual-approval path. |
 | C37-7 | Auth failure contract | Single actionable error message: "GitHub API access requires `gh auth status` to show authenticated, OR a `GITHUB_TOKEN`/`GH_TOKEN` environment variable with `repo` and `read:user` scopes. See `lib/github-graphql.mjs` for the resolution order." | Per rubber-duck non-blocking 2. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS37 plan: A2 Copilot review GraphQL spike. R1 review surfaced GraphQL pagination + freshness ordering questions; addressed via A2-currency clarifications in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 1f054f7c79d5 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **`docs/adr/ADR-NNN-copilot-graphql-spike.md`** (new): Records spike outcome (success/failure/partial), Copilot identity confirmed, mutation payload + response captured, review-state lifecycle observed, recommendation. **Hard go/no-go gate before any linter code is written.**

@@ -52,8 +52,8 @@ The user-stated requirement: "this is the same as the harness needs to ship with
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | (filled by `harness plan-review-hash` at attestation time) | 2026-05-12T00:00:00Z | Needs-Fix | New CS authored 2026-05-12 in response to user-identified gap; R1 review of THIS file in PR #148 review cycle returned Needs-Fix with hash/strict/independence/CS42-flip findings. |
-| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | (filled by `harness plan-review-hash` at attestation time, post-amendment) | (filled at R3 review time) | (Go expected) | Post-amendment review: schema redesigned with `Plan author model(s)` + `Reviewed sections hash` columns; A6 strict-mode asymmetry made explicit; CS42 flip-decision added as C42-7. |
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | New CS authored 2026-05-12 in response to user-identified gap; R1 review of THIS file in PR #148 review cycle returned Needs-Fix with hash/strict/independence/CS42-flip findings. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 91028bc9deab | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review: schema redesigned with author-models + sections-hash columns; A6 strict-mode asymmetry made explicit; CS42 flip added as C42-7. R3 due at plan-vs-impl review. |
 
 ## Deliverables
 
@@ -95,7 +95,7 @@ Orchestrator owns: OPERATIONS.md + REVIEWS.md docs (Deliverables 4, 5); retroact
 ## Exit criteria
 
 1. `harness lint --help` lists `check-clickstop-plan-review`.
-2. `harness lint --quiet` baseline = `26/0/3` (one new linter passing on the harness's own planned/active files thanks to retroactive attestations).
+2. `harness lint --quiet` baseline = `27/0/3` (one new linter passing on the harness's own planned/active files thanks to retroactive attestations).
 3. `node --test tests/check-clickstop-plan-review.test.mjs` passes all 12+ cases.
 4. `node --test tests/*.test.mjs` total = prior + ≥12.
 5. All 10 already-filed planned CS files contain a `## Plan review` section with at least one row whose verdict is `Go` or `Go-with-amendments`.
