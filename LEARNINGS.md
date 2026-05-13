@@ -2123,6 +2123,33 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-110
+
+```yaml
+id: LRN-110
+date: 2026-05-13
+category: tooling
+source_cs: CS37
+status: applied
+tags: [graphql, github-api, copilot-engagement, bot-vs-user, ADR-0004]
+claim_area: copilot-engagement
+```
+
+**Problem:** Through CS35 → CS36 the "manual Copilot engagement recipe" documented in OPERATIONS.md (and originally in #145 Change 6) called for the GraphQL `requestReviews` mutation: `mutation($pr: ID!, $rev: ID!) { requestReviews(input: {pullRequestId: $pr, userIds: [$rev]}) { ... } }`. The CS37 spike (S2) executed this mutation against a real PR with the real Copilot reviewer node ID and it was REJECTED with `Could not resolve to User node`. Root cause: the Copilot reviewer is `__typename: Bot` (not `User`), and the `requestReviews` mutation's `userIds` input field is typed `[ID!]!` resolving to the `User` interface only — Bots cannot be passed through it.
+
+**Finding:** Bot reviewers (incl. `copilot-pull-request-reviewer`, `dependabot[bot]`, `github-advanced-security[bot]`, etc.) MUST be engaged via the REST endpoint `POST /repos/:owner/:repo/pulls/:number/requested_reviewers` (via the `team_reviewers` array for teams, or — for Bot users — through the convenience wrapper `gh pr edit <pr> --add-reviewer <bot-login>` which the `gh` CLI translates to a Bot-aware REST call). The GraphQL `requestReviews` mutation does NOT work for Bots; documented schemas/recipes that paint these as interchangeable are wrong.
+
+The reverse direction (querying Bot reviewer state) DOES work via GraphQL — `pullRequest.reviews.nodes[].author { __typename ... on Bot { login } ... on User { login } }` correctly returns `__typename: Bot` with the login field — so the read-side primitive in `lib/github-graphql.mjs` is fine.
+
+**Evidence:**
+- `docs/adr/0004-copilot-graphql-spike.md` § S2 — full transcript of the failed `requestReviews` mutation (response captured verbatim).
+- `docs/adr/0004-copilot-graphql-spike.md` § ADR4-2 — locks the engagement primitive as `gh pr edit --add-reviewer copilot-pull-request-reviewer`.
+- `lib/github-graphql.mjs` `requestCopilotReview()` — implements ADR4-2 by shelling out to `gh pr edit`, NOT a GraphQL mutation.
+- `OPERATIONS.md § Copilot engagement procedure (CS35 C35-10, updated CS37)` + `template/composed/OPERATIONS.md` (lockstep) — corrected procedure.
+- GitHub API docs: GraphQL `RequestReviewsInput.userIds` is `[ID!]!` → resolves only to `User`. Bot reviewers go through the REST `requested_reviewers` endpoint.
+
+**Disposition:** Applied. The CS37 implementation, OPERATIONS.md update (root + lockstep template), and CS41's planned `harness copilot-engage` wrapper all use the corrected REST-via-`gh-pr-edit` primitive. Any future doctrine that needs to engage a Bot reviewer (release-bot, CI-bot, etc.) must follow the same pattern.
+
 ### LRN-109
 
 ```yaml
