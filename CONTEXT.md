@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-13 (CS37 closed at PR #160 merge `9687e7d`; spike PASS, full A5+A16 enforcement shipped via `harness pr-evidence` + `scripts/check-copilot-review.mjs` (CS37) + `lib/github-graphql.mjs` (CS37) + `docs/adr/0004-copilot-graphql-spike.md` + lockstep OPERATIONS.md update with corrected `gh pr edit --add-reviewer` recipe (replaces the broken-since-CS35 `requestReviews` GraphQL mutation, ADR4-2). REVIEWS.md A5+A16 rows tightened. v0.4.0 arc continues: CS35 + CS35b + CS36 + CS37 done; next claimable: CS38a (PR-evidence CI workflow) → CS38b → CS39 (release v0.4.0). No degradation propagating to downstream CSs.)
+> **Last updated:** 2026-05-13 (CS38a claimed and active: PR-evidence CI workflow + composed PR template + `--enable-review-gates` init flag — sixth CS in v0.4.0 #145 enforcement-gap arc; wires CS36+CS37 gates into every consumer PR via GitHub Actions. Per ADR4-8 (CS37 spike): workflow MUST split engage and verify into separate jobs/events because Copilot's review pipeline is asynchronous (~3 min). v0.4.0 queue: CS38a (active) → CS38b → CS39 (release). CS35+CS35b+CS36+CS37 done.)
 
 > **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. This file (CONTEXT.md) covers current state only.
 
