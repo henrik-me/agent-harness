@@ -2123,6 +2123,51 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-112
+
+```yaml
+id: LRN-112
+date: 2026-05-13
+category: process
+source_cs: CS38b
+status: applied
+tags: [grandfathering, in-arc, latent-violations, retroactive-enforcement]
+claim_area: gate-rollout
+```
+
+**Problem:** When a new doctrine gate (`pr-evidence-lint.yml` enforcing B1, A3, A4, A5, A16) lands mid-arc and is enabled on the harness repo's own `.github/workflows/`, the immediately-preceding merged PRs that established the gate (or hardened the schemas it checks) are themselves non-compliant against the final shape. CS38b's T4 latent-violation triage on the last 7 content PRs (#157–#163) on `main` produced:
+
+| PR | B1 | A3 | A4 | A5 | A16 | Disposition |
+|---|---|---|---|---|---|---|
+| #157 (CS35) | ✓ | ✓ | ✓ | ✗ | ✗ | grandfather |
+| #158 (CS35b) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+| #159 (CS36) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+| #160 (CS37) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+| #161 (CS37b) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+| #162 (CS38a R1) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+| #163 (CS38a R2) | ✓ | ✗ | ✗ | ✗ | ✗ | grandfather |
+
+7/7 pass B1 (commit-trailer doctrine has been stable since LRN-068 ratification). 6/7 fail A3+A4 because the REVIEWS.md `## Review log` and `## Model audit` table schemas were hardened iteratively across CS36 (A3 schema) and CS37 (A4 cross-validation) and only stabilised at CS38a R2; bodies merged before that timestamp use earlier shapes (e.g. paragraph-form audit, missing `analyzed_head` column) that the now-canonical regex matchers reject. 7/7 fail A5+A16 because the Copilot stale-review gate did not exist before PR #160 (CS37) and was not wired into the workflow until PR #163 (CS38a) — so the artifact that A5+A16 inspect (a non-stale Copilot review on the final commit) was never produced for any of these PRs.
+
+**Finding:** **In-arc retroactive grandfathering is the correct disposition for latent violations on PRs that landed during the gate's own arc.** Three categorical cases of latent violation, each with the appropriate disposition:
+
+1. **Doctrinally latent** (the gate enforces a rule that didn't exist when the PR merged): grandfather. Re-asserting the rule retroactively against PRs that pre-date it would invert the "rule from the date it landed" doctrine. Track via this LRN; do not file remediation CSes.
+2. **Schematically latent** (the gate enforces a shape that has been iteratively hardened across the arc): grandfather. Re-running the gate on every prior PR would produce churn-PRs that don't change behavior. The acceptance criterion is that **the next PR after the gate stabilises** complies — and CS38b's own PR (#166) is that PR.
+3. **Substantively non-compliant** (the gate would have failed even at the time the PR merged): file a follow-up CS for remediation. None of #157–#163 fall in this category — all 7 are mixes of (1) and (2).
+
+The harness must be self-hosting under its own gates from the first PR after the gate's arc closes, but **must not require retroactive cleanup of the arc's own artefacts.** This is a structural property of any iterative gate-rollout workflow — the act of building the gate produces work-product that the gate itself wouldn't pass, and that's expected.
+
+For this CS38b's own PR (#166) and all subsequent harness PRs, full compliance with `pr-evidence-lint.yml` is required. The grandfathering ends at the close of the gate's arc.
+
+**Evidence:**
+
+- CS38b active file `project/clickstops/active/active_cs38b_retro-pr28-and-self-host-optin.md § Notes / Learnings` — full triage table with per-PR per-gate verdicts (the same table reproduced above) captured 2026-05-13 by `yoga-ah` running `harness pr-evidence --quiet` against each merged PR.
+- C38b-3 PASS branch ("if ≤2 PRs are substantively non-compliant, grandfather all in-arc PRs in a single LRN") — 0 substantively non-compliant; threshold met.
+- CS38b PR #166 (HEAD `01f13adc9996620b40921a728934f9f301f1f677`) is the first harness PR with `pr-evidence-lint.yml` live in `.github/workflows/`; passing CI on #166 is the live opt-in proof for §3 of this finding.
+- Cross-reference LRN-068 (commit-trailer doctrine) for why B1 was already universally satisfied before CS38b.
+
+**Disposition:** Applied. Grandfathered all 7 in-arc PRs. No remediation CSes filed. CS38b's own PR (#166) and every subsequent harness PR is in the **non-grandfathered window** — full compliance enforced. Future gate-rollout arcs (e.g., the post-v0.4.0 A2 ordering enforcement spike if it lands as a CS) should reuse this LRN's disposition pattern: triage at close-out, file as a single LRN-style entry citing the disposition rule, do not file remediation CSes for in-arc PRs.
+
 ### LRN-111
 
 ```yaml
