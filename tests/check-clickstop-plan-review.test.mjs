@@ -22,6 +22,9 @@
  *   - hash unchanged after Background-only edit passes
  *   - done file is skipped entirely (linter no-op on done/)
  *   - --skip-reasons workboard-only short-circuits in pr-evidence mode
+ *   - --files restricts linting to listed files (grandfathered file ignored)
+ *   - --files silently skips files outside planned/active subdirs
+ *   - --files still enforces strict pr-evidence on listed in-scope file
  */
 
 import { describe, it, before, after } from 'node:test';
@@ -343,6 +346,42 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
     fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--skip-reasons', 'bot-author']);
     assert.equal(r.status, 1, `expected fail — bot-author does not skip A6; stdout=\n${r.stdout}`);
+  });
+
+  it('--files restricts linting to the listed files (in-scope file passes when grandfathered file exists)', () => {
+    clearScratch();
+    // Grandfathered planned file with NO ## Plan review section (would normally
+    // fail in pr-evidence mode). It must NOT be linted because it's not in --files.
+    fs.writeFileSync(
+      path.join(scratch, 'planned', 'planned_cs01_grandfathered.md'),
+      planBody(),
+      'utf8'
+    );
+    // The PR-changed file with valid attestation.
+    const changed = writeFile('planned', 'planned_cs99_in_pr.md',
+      compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'ok']])
+    );
+    const r = runLinter(scratch, ['--mode', 'pr-evidence', '--files', changed]);
+    assert.equal(r.status, 0, `expected pass — only changed file in scope; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+  });
+
+  it('--files silently skips files outside planned/active subdirs (e.g. lib/ or done/ paths)', () => {
+    clearScratch();
+    // Caller passes a superset of paths from `gh pr diff --name-only` — the
+    // linter should silently ignore files not under planned/ or active/.
+    const r = runLinter(scratch, [
+      '--mode', 'pr-evidence',
+      '--files', 'lib/foo.mjs,scripts/bar.mjs,README.md',
+    ]);
+    assert.equal(r.status, 0, `expected pass — no in-scope files; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+  });
+
+  it('--files still enforces strict pr-evidence when a listed in-scope file lacks ## Plan review', () => {
+    clearScratch();
+    const target = path.join(scratch, 'planned', 'planned_cs99_no_section.md');
+    fs.writeFileSync(target, planBody(), 'utf8');
+    const r = runLinter(scratch, ['--mode', 'pr-evidence', '--files', target]);
+    assert.equal(r.status, 1, `expected fail — listed file missing section is strict; stdout=\n${r.stdout}`);
   });
 
   it('exits 2 on bad usage (unknown flag)', () => {

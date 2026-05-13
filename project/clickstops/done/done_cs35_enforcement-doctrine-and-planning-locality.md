@@ -51,6 +51,21 @@ In addition: 2026-05-12 surfaced a planning-locality concern. Strategic planning
 | C35-18 | Agent-identity independence (separate from model independence) | `## Model audit` SHOULD include `Implementer agent` and `Reviewer agent` columns naming the GitHub usernames of the agents involved. Independence MUST hold on both axes: (a) model independence per C35-4 (no model overlap); (b) agent-identity independence (Implementer agent ≠ Reviewer agent). The columns are added to the schema in CS41 (where the enforcement linter `check-clickstop-implementer-not-reviewer` ships). v0.4.0 PRs without the agent columns produce a warning (not error); v0.5.0 may upgrade to error per C42-6. | Per GPT-5.5 review of CS41: the doctrine ("same agent shouldn't review their own work") was implicit in CS35 but not stated. Added here so CS41's enforcement linter has a doctrinal anchor in CS35 (per the "doctrine first, enforcement later" invariant). |
 | C35-19 | Skip-semantics centralization | `harness pr-evidence` accepts a `--skip-reasons <comma-list>` flag (values: `workboard-only`, `bot-author`, `fork-source`). The orchestrator (or CI workflow) is responsible for computing these and passing them in; `harness pr-evidence` itself MUST NOT call `gh pr view` to determine skip applicability. CS36's CLI route reads the flag; CS38a's workflow computes the reasons from the GitHub event payload. | Per GPT-5.5 review of CS36 vs CS38a: CS36 was specced to call `gh pr view` (contradicting "pure fs/git-log") AND CI/local skip semantics could diverge. Centralization fixes both. |
 
+## Plan review
+
+> Backfilled retroactively per C35b-13 (this CS pre-dates the CS35b
+> attestation requirement). Linter skips done/ entirely (CS35b-7), so this
+> section is informational — it documents the GPT-5.5 reviews that DID
+> happen on PR #135 (R1) and the amendment loop on PR #135 (R2). The
+> Reviewed sections hash recorded here is the current content hash of this
+> file; historical hashes against pre-merge content are not recoverable
+> after squash-merge but are documented in PR #135's review thread.
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck-r1 | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | Initial CS35 plan needed multiple amendments (added CS35-17, 18, 19) before merge. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck-r2 | b3bdafbcf445 | 2026-05-12T18:00:00Z | Go-with-amendments | Amendments addressed; doctrine-first / enforcement-later split accepted; merged in PR #135. |
+
 ## Deliverables
 
 1. **REVIEWS.md** + **template/composed/REVIEWS.md** updates (per C35-2/3/4):

@@ -95,7 +95,7 @@ Orchestrator owns: OPERATIONS.md + REVIEWS.md docs (Deliverables 4, 5); retroact
 ## Exit criteria
 
 1. `harness lint --help` lists `check-clickstop-plan-review`.
-2. `harness lint --quiet` baseline = `26/0/3` (one new linter passing on the harness's own planned/active files thanks to retroactive attestations).
+2. `harness lint --quiet` baseline = `27/0/3` (one new linter passing on the harness's own planned/active files thanks to retroactive attestations).
 3. `node --test tests/check-clickstop-plan-review.test.mjs` passes all 12+ cases.
 4. `node --test tests/*.test.mjs` total = prior + ≥12.
 5. All 10 already-filed planned CS files contain a `## Plan review` section with at least one row whose verdict is `Go` or `Go-with-amendments`.

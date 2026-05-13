@@ -56,7 +56,13 @@
  * Usage:
  *   node scripts/check-clickstop-plan-review.mjs --dir <path> \
  *     [--mode standalone|pr-evidence] [--strict true|false] \
- *     [--skip-reasons <csv>] [--quiet] [--help]
+ *     [--skip-reasons <csv>] [--files <csv>] [--quiet] [--help]
+ *
+ * The `--files` flag (added per PR #154 R1 review) restricts linting to an
+ * explicit list of files (typically the PR diff). Files outside the
+ * planned/active subdirs are silently skipped, so the caller can pass the
+ * full diff via `gh pr diff --name-only` without any pre-filtering.
+ * Without `--files`, every file in <dir>/planned/ + <dir>/active/ is scanned.
  *
  * Exit codes:
  *   0 — all files pass (or warn-only on missing-section in standalone mode)
@@ -123,6 +129,13 @@ let strict = false;
 let strictExplicit = false;
 let skipReasons = new Set();
 let quiet = false;
+// When provided, restrict linting to this explicit file list (typically the
+// PR's changed files). Files outside planned/ or active/ are silently
+// skipped — the caller is expected to pass a superset (e.g. `gh pr diff
+// --name-only`) and let the linter filter. Per CS35b R2 review (PR #154):
+// without this flag the linter walks every planned/active file in the repo,
+// which would fail unrelated PRs because of pre-arc grandfathered files.
+let filesFilter = null;
 
 const HELP = [
   'Usage: check-clickstop-plan-review.mjs --dir <path> [options]',
@@ -140,6 +153,12 @@ const HELP = [
   '                         hash / verdict violations are always errors.',
   '  --skip-reasons <csv>   In pr-evidence mode, "workboard-only" short-circuits',
   '                         to a pass. Other reasons do not skip this gate.',
+  '  --files <csv>          Restrict linting to this explicit list of files',
+  '                         (paths relative to repo root or absolute). Files',
+  '                         not under <dir>/planned/ or <dir>/active/ are',
+  '                         silently skipped. Intended for PR-evidence mode',
+  '                         driven by `gh pr diff --name-only`. Without this',
+  '                         flag, every planned/active file is scanned.',
   '  --quiet                Suppress per-finding output; print only the summary',
   '  --help                 Print this help text',
   '',
@@ -189,6 +208,10 @@ for (let i = 0; i < argv.length; i++) {
   } else if (a === '--skip-reasons') {
     const csv = requireValue(argv, i, '--skip-reasons');
     skipReasons = new Set(csv.split(',').map((s) => s.trim()).filter(Boolean));
+    i++;
+  } else if (a === '--files') {
+    const csv = requireValue(argv, i, '--files');
+    filesFilter = csv.split(',').map((s) => s.trim()).filter(Boolean);
     i++;
   } else if (a === '--quiet') {
     quiet = true;
@@ -523,18 +546,44 @@ function checkFile(filePath, subdir) {
 
 let filesChecked = 0;
 
-for (const subdir of LINTED_SUBDIRS) {
-  const dir = path.join(clickstopsDir, subdir);
-  if (!fs.existsSync(dir)) continue;
-  const entries = fs.readdirSync(dir);
-  for (const entry of entries) {
-    if (!entry.endsWith('.md')) continue;
-    if (entry === '.gitkeep') continue;
-    const full = path.join(dir, entry);
+function isUnderLintedSubdir(absFile) {
+  for (const subdir of LINTED_SUBDIRS) {
+    const root = path.resolve(path.join(clickstopsDir, subdir)) + path.sep;
+    const f = path.resolve(absFile);
+    if ((f + path.sep).startsWith(root)) return subdir;
+  }
+  return null;
+}
+
+if (filesFilter !== null) {
+  // Explicit-file mode: lint only the supplied list (typically the PR diff).
+  // Files outside planned/ or active/ are silently skipped — the caller can
+  // safely pass the full diff (`gh pr diff --name-only`) without filtering.
+  for (const rel of filesFilter) {
+    if (!rel.endsWith('.md')) continue;
+    const full = path.isAbsolute(rel) ? rel : path.resolve(rel);
+    if (!fs.existsSync(full)) continue;
     const stat = fs.statSync(full);
     if (!stat.isFile()) continue;
+    const subdir = isUnderLintedSubdir(full);
+    if (!subdir) continue;
     filesChecked++;
     checkFile(full, subdir);
+  }
+} else {
+  for (const subdir of LINTED_SUBDIRS) {
+    const dir = path.join(clickstopsDir, subdir);
+    if (!fs.existsSync(dir)) continue;
+    const entries = fs.readdirSync(dir);
+    for (const entry of entries) {
+      if (!entry.endsWith('.md')) continue;
+      if (entry === '.gitkeep') continue;
+      const full = path.join(dir, entry);
+      const stat = fs.statSync(full);
+      if (!stat.isFile()) continue;
+      filesChecked++;
+      checkFile(full, subdir);
+    }
   }
 }
 
