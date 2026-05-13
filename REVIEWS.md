@@ -193,17 +193,33 @@ Every content PR body must record the following fields before merge:
 | timestamp | analyzed_head | actor | model | verdict | evidence_link |
 |---|---|---|---|---|---|
 | 2026-05-14T10:32:00Z | a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 | yoga-ah | gpt-5.5 | Go | https://github.com/henrik-me/agent-harness/pull/150#issuecomment-123456 |
-
-## Model audit
-- Implementer models: claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5
-- Reviewer model: gpt-5.5
-- Independence invariant: intersection({claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5}, {gpt-5.5}) = ∅ ✓
-- Implementer agent: yoga-ah (optional — warn if absent in v0.4.0, error in v0.5.0 per C42-6)
-- Reviewer agent: copilot (optional — same lifecycle)
 ```
 
-The model audit enables future review-of-review audits to verify the
-independence invariant was respected.
+## Model audit
+
+| Field | Required | Description |
+|---|---|---|
+| `Implementer models` | yes | Comma-separated list of every model that materially implemented any code/doc/config in the CS (orchestrator + all sub-agents). Case-insensitive on the family + version pair (e.g. `claude-opus-4.7` ≡ `Claude Opus 4.7`). |
+| `Reviewer model` | yes | Single model identifier from the C35-2 fallback ladder. |
+| `Implementer agent` | optional in v0.4.0; required in v0.5.0 per C42-6 | GitHub username of the implementing agent. Per CS35 C35-18 (agent-identity independence). |
+| `Reviewer agent` | optional in v0.4.0; required in v0.5.0 per C42-6 | GitHub username of the reviewing agent. Per CS35 C35-18. |
+
+**Independence invariant (MUST):** `intersection({Implementer models}, {Reviewer model})` = ∅. Comparison is case-insensitive on the family + version pair. Violation blocks merge per A3.
+
+**Agent-identity independence (MUST per CS35 C35-18):** `Implementer agent` ≠ `Reviewer agent` (case-insensitive). v0.4.0 issues a warning when columns are absent; v0.5.0 may upgrade to error per C42-6.
+
+Example block (paste into the active CS file):
+
+```
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | copilot |
+```
 
 **Stale-diff doctrine (CS35 C35-3 + A4 gate):** A `Go` row whose
 `analyzed_head` ≠ current HEAD is INVALID — re-review is required before
@@ -214,25 +230,26 @@ HEAD; reviewer must enumerate every file under review. Rn = follow-up review
 on a delta from the previous round; reviewer may enumerate ONLY the changed
 files (delta-only enumeration permitted).
 
-## PR-evidence gates (A1–A6 reference)
+## PR-evidence gates (B1, A2–A6, A16 reference)
 
 The PR-evidence subcommand (lands in CS36, wired to CI in CS38a) runs a fixed
 set of mechanical gates against the diff + git log + PR body of a content PR.
-Each gate is named A1..A6 so CS plans, review log entries, and bug reports
-can reference them by short name. The gates are layered: failure of an
+Each gate is named (B1, A2..A6, A16) so CS plans, review log entries, and bug
+reports can reference them by short name. The gates are layered: failure of an
 earlier gate may shadow later gates' findings, but every reachable gate
 reports independently.
 
 | Gate | Name | Source CS | What it checks | C35 anchor |
 |---|---|---|---|---|
-| A1 | per-commit trailer | CS36 | Every commit in `git log <base>..<head>` (NOT squash-only) carries the `Co-authored-by: Copilot` trailer. | C35-5 |
+| B1 | per-commit trailer | CS36 | Every commit in `git log <base>..<head>` (NOT squash-only) carries the `Co-authored-by: Copilot` trailer. The B-prefix is intentional: B-gates inspect the git **branch** / commit graph; A-gates inspect the active CS **audit** artefacts. | C35-5 |
 | A2 | per-file enumeration | CS36 | The PR body's "Changes" section enumerates every changed file by path; no summary-pass on YAML/package.json bundles. | #145 PR #28 evidence |
-| A3 | review-log presence + schema | CS36 | The active CS file contains a `## Review log` table conforming to the C35-3 column schema with at least one row whose verdict is `Go` against the current HEAD. | C35-3 |
-| A4 | stale-diff currency | CS36 | The latest `Go` row's `analyzed_head` SHA equals the current HEAD SHA of the PR (per C35-3 stale-diff doctrine). | C35-3 / C35-6 |
+| A3 | model-audit independence | CS36 | The active CS file's `## Model audit` block satisfies the independence invariant: `intersection({Implementer models}, {Reviewer model})` = ∅, case-insensitive on family + version. (Schema presence is implicit — if the table is missing or unparseable, A3 fails with a parse error.) | C35-4 |
+| A4 | stale-diff currency | CS36 | The latest `Go` row in `## Review log` has `analyzed_head` equal to the current HEAD SHA of the PR. | C35-3 / C35-6 |
 | A5 | review-after-implementation timestamp | CS36 | The latest `Go` row's `timestamp` is AFTER the latest commit's authored timestamp on the branch (no review-before-fix patterns). | C35-6 |
 | A6 | plan-review attestation (PR-time) | CS35b | Every planned/active CS file touched by the PR carries a `## Plan review` row whose `Reviewed sections hash` matches the current content hash AND whose `Reviewer model` ∉ `Plan author model(s)`. STRICT in v0.4.0+v0.5.0 — no `--strict` ramp on this gate (per CS35b C35b-9). | CS35b C35b-2..C35b-9 |
+| A16 | Copilot review engagement | CS41 | A Copilot review (state ∈ `APPROVED`/`COMMENTED`/`CHANGES_REQUESTED`) is present on the PR per the Copilot engagement procedure (OPERATIONS.md § Copilot engagement procedure). Verification-only on CI; mutation lives in `harness copilot-engage` per C35-10. | C35-10 |
 
-Skip-semantics for A1..A6 are centralized via `--skip-reasons <comma-list>`
+Skip-semantics for B1, A2..A6, A16 are centralized via `--skip-reasons <comma-list>`
 on `harness pr-evidence` (per C35-19); valid reasons: `workboard-only`,
 `bot-author` (C35-8), `fork-source` (C35-9). The CI workflow computes the
 reasons from the GitHub event payload; `harness pr-evidence` itself MUST

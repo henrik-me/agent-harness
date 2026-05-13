@@ -2123,7 +2123,36 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
-### LRN-106
+### LRN-107
+
+```yaml
+id: LRN-107
+date: 2026-05-13
+category: process
+source_cs: CS35
+status: applied
+tags: [self-host, doctrine-vs-enforcement, consumer-coverage, gap-class]
+claim_area: process-doctrine
+```
+
+**Problem:** PR #28 in `henrik-me/sub-invaders` (the harness's first non-self-host consumer) shipped with multiple doctrine violations that the harness's own `harness lint` + `harness sync --mode=check` + CI green-light all permitted: missing `Co-authored-by` trailers on most non-squash commits, a PR body with summarised file listings (not per-file enumeration), a `## Review log` whose `analyzed_head` was stale by ten commits, a `## Model audit` block whose Implementer and Reviewer columns intersected, and no Copilot review on the PR at all. Each of these was forbidden by `CONVENTIONS.md` / `REVIEWS.md` / `OPERATIONS.md` doctrine that the SI repo had already inherited via `harness init`. The harness self-hosts cleanly because its own operating envelope — small PRs, an attentive orchestrator, the orchestrator manually pasting trailers — papers over the gap. SI's larger PRs and looser orchestrator made the gap reachable. Filed as issue #145.
+
+**Finding:** **Self-host green is necessary but not sufficient.** A consumer with a different operating profile (larger PRs, less-attentive orchestrator, less-aggressive Copilot engagement, parallel sub-agent fan-out) will reach failure modes the harness's own development never exercises. Doctrine that is enforced only by "the orchestrator should remember to do X" is not enforced — it is a manual checklist masquerading as a gate. Every doctrine clause shipped to consumers must have one of:
+
+- a mechanical pre-merge linter that fails CI on violation, OR
+- a mechanical PR-evidence gate (B1, A2..A6, A16) that fails CI on violation, OR
+- an explicit manual-procedure entry in `OPERATIONS.md` whose absence the harness can detect via doctrine-consistency tests.
+
+Otherwise the doctrine is silently optional in consumers regardless of how rigorously the harness self-hosts.
+
+**Evidence:**
+- Issue #145 (consolidated gap list compiled by the SI orchestrator after PR #28 close-out review).
+- CS35 plan-vs-implementation review (R1, GPT-5.5, 2026-05-13): the review found the existing harness self-host produced no signal that B1/A2/A3/A4/A5/A16 were missing from CI because the harness's own commits happened to satisfy them by orchestrator habit.
+- `done_cs15d_*.md` § Plan-vs-implementation review: the cs15d-aggregator linter count test (`tests/cs15d-aggregator.test.mjs:129`) is the only mechanical signal that "a new linter was added" — itself a manual-bump pattern that is the same class of gap (LRN candidate already noted in CS35).
+
+**Disposition:** Applied via [CS35](project/clickstops/active/active_cs35_enforcement-doctrine-and-planning-locality.md) Decision C35-16 (the gap-class doctrine itself), and operationalised across CS36 (PR-evidence FS+git linters), CS37 (Copilot review GraphQL spike), CS38a (CI workflow + `harness init` wiring), CS38b (retroactive PR #28 self-test), CS41 (Copilot engagement procedure + `harness copilot-engage`). v0.4.0 ships the verification half (B1/A2/A3/A4/A5/A6/A16-verify); v0.5.0 ships the engagement half (A16-engage). Status: applied.
+
+
 
 ```yaml
 id: LRN-106
