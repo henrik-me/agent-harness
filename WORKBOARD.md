@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-13 (CS37 closed at PR #160 merge `9687e7d`; spike PASS, full A5+A16 enforcement shipped via `harness pr-evidence` — no degradation propagating to CS38a/CS38b/CS39/CS41. Next claimable in v0.4.0 arc: CS38a.)
+> **Last updated:** 2026-05-13 (CS38a claimed: PR-evidence CI workflow + composed PR template + `--enable-review-gates` init flag — sixth CS in v0.4.0 #145 enforcement-gap arc; wires CS36+CS37 gates into every consumer PR via GitHub Actions. Per ADR4-8 (CS37): workflow MUST split engage and verify into separate jobs/events. Orchestrator yoga-ah active. CS35+CS35b+CS36+CS37 done.)
 
 ## Orchestrators
 
@@ -16,6 +16,6 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | no active CS — next claimable: CS38a (PR-evidence CI workflow) | — | — | — | 2026-05-13 | — |
+| CS38a | PR-evidence CI workflow + composed PR template + `--enable-review-gates` init | active | yoga-ah | cs38a/pr-evidence-workflow-and-init | 2026-05-13 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

@@ -1,12 +1,12 @@
 # CS38a — `pr-evidence-lint.yml` workflow + composed PR template + `--enable-review-gates` init
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs38a/pr-evidence-workflow-and-init
+**Started:** 2026-05-13
 **Closed:** —
-**Filed by:** Pre-CS38a disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1. Authored 2026-05-12 by `yoga-ah`. Fourth CS in the v0.4.0 arc.
-**Depends on:** [CS36](planned_cs36_pr-evidence-fs-and-git-linters.md), [CS37](planned_cs37_copilot-review-gate-graphql.md), [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (C35-7/8/9/15).
+**Filed by:** Pre-CS38a disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1. Authored 2026-05-12 by `yoga-ah`. Sixth CS in the v0.4.0 arc (counting CS35, CS35b, CS36, CS37 as the doctrine-and-linter core; CS38a lands the CI surface that wires CS36+CS37's gates into every consumer PR).
+**Depends on:** [CS36](../done/done_cs36_pr-evidence-fs-and-git-linters.md), [CS37](../done/done_cs37_copilot-review-gate-graphql.md), [CS35](../done/done_cs35_enforcement-doctrine-and-planning-locality.md) (C35-7/8/9/15).
 
 ## Goal
 
@@ -86,7 +86,14 @@ Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T1 | Update planned_cs38a header references — Depends-on links now point to `../done/`; ordinal updated to "Sixth CS"; CS37 outcome (PASS) wired into C38a-6's gate_set selection (use ["B1","A3","A4","A5","A16"] — full set per C37-1b PASS branch) | done | orchestrator | Header fix per LRN equivalent of CS37's link-staleness pattern. |
+| T2 | Dispatch SA-1 (`bot38a-workflow`) — owns `template/managed/.github/workflows/pr-evidence-lint.yml` + `tests/template-pr-evidence-workflow.test.mjs` | pending | orchestrator → SA-1 | Per C38a-2/3/10. Canonical clone-then-`node bin/harness.mjs pr-evidence` invocation (NOT npx). Reference workflows: `.github/workflows/harness-checks.yml`, `private-smoke.yml`. ADR4-8: engage and verify MUST be separate jobs/events (read-only on `pull_request`, mutation on `workflow_dispatch` only). |
+| T3 | Dispatch SA-2 (`bot38a-init-and-migration`) — owns `bin/harness.mjs init --enable-review-gates` + `lib/file-class-migration.mjs` + schema update + `template/composed/.github/pull_request_template.md` + 3 init/migration/schema tests | pending | orchestrator → SA-2 | Per C38a-4/5/6/7/8/9. Schema change is breaking-shape additive only (gate is opt-in v0.4.0 per C35-15). |
+| T4 | OPERATIONS.md § Init: document `--enable-review-gates` opt-in path; § Sync: document v0.4.0 warn → v0.5.0 error escalation. Lockstep parity with template/composed | pending | orchestrator | Per Deliverable #7. |
+| T5 | CHANGELOG.md `[Unreleased] / Added` (workflow + init flag + schema + composed PR template) + `[Unreleased] / Changed` (PR template managed→composed) | pending | orchestrator | Per Deliverable #8. |
+| T6 | Local validation: `harness lint --quiet` (27/0/3 baseline + new linters), `harness sync --mode=check` clean, `node --test tests/*.test.mjs` total ≥820 + ≥10 new | pending | orchestrator | Per Exit Criteria #4-6. |
+| T7 | Open content PR; dispatch GPT-5.5 plan-vs-impl review (C35-2 ladder, cap 3); admin-merge after CI green + Go | pending | orchestrator | Per Exit Criterion #7. |
+| T8 | Close-out: rename active→done, prune WORKBOARD, refresh CONTEXT, file LRN if applicable | pending | orchestrator | Standard. |
 
 ## Notes / Learnings
 
