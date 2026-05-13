@@ -1,4 +1,4 @@
-# CS36 — `harness pr-evidence` entry point + filesystem/git-log linters (B1, A3, A4)
+# CS36 — `harness pr-evidence` entry point + filesystem/git-log linters (B1, A3, A4, A6)
 
 **Status:** planned
 **Owner:** —
@@ -10,7 +10,7 @@
 
 ## Goal
 
-Introduce the `harness pr-evidence` CLI entry point and ship the first three mechanical PR-state gates: B1 (per-commit trailer enforcement on the PR commit graph), A3 (review log + model audit independence), A4 (Analyzed-HEAD currency vs current HEAD). All three are pure filesystem / git-log work — no GitHub API. Sets up the surface that CS37 extends with GraphQL-backed gates (A5, A16).
+Introduce the `harness pr-evidence` CLI entry point and ship the first four mechanical PR-state gates: B1 (per-commit trailer enforcement on the PR commit graph), A3 (review log + model audit independence), A4 (Analyzed-HEAD currency vs current HEAD), **A6 (plan-review attestation present + fresh on planned/active CS files in the PR diff — predicate from CS35b's `scripts/check-clickstop-plan-review.mjs`, run in `--mode=pr-evidence` strict regardless of the standalone `--strict` default)**. All four are pure filesystem / git-log work — no GitHub API. Sets up the surface that CS37 extends with GraphQL-backed gates (A5, A16).
 
 ## Background
 
@@ -34,9 +34,16 @@ Per C35-17, these gates land on a NEW `harness pr-evidence` subcommand, NOT on `
 | C36-6 | A3 / A4 PR body parser | Custom markdown parser (no library) reading `## Review log` and `## Model audit` H2 sections. Tolerant to surrounding content (other H2s allowed). Strict on column shape. | Existing harness scripts already do bespoke markdown parsing; consistent style; zero new deps. |
 | C36-7 | A4 currency definition | The `analyzed_head` value of the latest `verdict ∈ {Go}` row in `## Review log` MUST equal `--head` (full 40-char SHA). | Per C35-3 schema. Anything else = stale Go = fail. |
 | C36-8 | A3 independence check | Parse `## Model audit` rows; for each, `Implementer models` set ∩ `Reviewer model` set = ∅ (case-insensitive, comma-split). At least one row required if any commits exist. | Per C35-4 schema. |
+| C36-11 | A6 plan-review attestation gate | Aggregator dispatches `scripts/check-clickstop-plan-review.mjs --dir project/clickstops --mode=pr-evidence` (predicate landed in CS35b). The script returns exit-1 if any planned/active CS file in the PR diff lacks a fresh `## Plan review` row whose latest verdict ∈ {Go, Go-with-amendments} and whose Reviewed sections hash matches the current Decisions+Deliverables content. The aggregator skips A6 when no planned/active CS file is in the diff (computed via `git diff --name-only $base..$head -- project/clickstops/planned/ project/clickstops/active/`). The `--skip-reasons workboard-only` flag short-circuits A6 to a pass; `bot-author` and `fork-source` do NOT skip A6 (read-only gate). **STRICT in v0.4.0 + v0.5.0**, regardless of CS35b's standalone-mode `--strict` default — the asymmetry is intentional per CS35b-9. | Closes the gap exposed by PR #147 (planned files merging without independent review). Predicate ownership: CS35b ships `scripts/check-clickstop-plan-review.mjs` and exposes the predicate; CS36 wires it into the aggregator. |
 | C36-9 | (removed) | Replaced by C36-5 above. Skip semantics are centralized via `--skip-reasons` flag per C35-19. | Removes the prior `gh pr view` dependency from inside the linter. |
 | C36-10 | Output format | Default: human-readable per-gate summary + final aggregate line. With `--json`: structured `{gate: {status, message, evidence}[]}`. With `--quiet`: only failures printed. | Consistent with `harness lint` flags. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS36 plan: PR-evidence FS+git linters (B1, A3, A4). R1 review identified gate-naming, A4 stale-diff, and bot-author skip semantics issues; addressed in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | f247730fd980 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **`bin/harness.mjs`** updates: register `pr-evidence` subcommand; route to aggregator; document flags via `--help`.
@@ -55,6 +62,7 @@ Per C35-17, these gates land on a NEW `harness pr-evidence` subcommand, NOT on `
 - **SA-1 (`bot36-cli`)** — owns `bin/harness.mjs` route + `tests/cli-pr-evidence.test.mjs`. NOT touching the gate scripts.
 - **SA-2 (`bot36-trailers`)** — owns `scripts/check-pr-commits.mjs` + `tests/check-pr-commits.test.mjs`. NOT touching the entry point.
 - **SA-3 (`bot36-evidence`)** — owns `scripts/check-review-evidence.mjs` + `tests/check-review-evidence.test.mjs`. NOT touching the entry point.
+- **SA-4 (`bot36-a6-wire`)** — owns the A6 wire-up: aggregator dispatch to `scripts/check-clickstop-plan-review.mjs --mode=pr-evidence` + git-diff narrowing predicate (only run when planned/active CS files in diff) + tests asserting the strict-mode override and skip-reason behavior. NOT touching the predicate script (CS35b owns that).
 
 Orchestrator owns OPERATIONS.md / CONVENTIONS.md / CHANGELOG.md edits and merges sub-agent outputs.
 
@@ -67,8 +75,9 @@ CS36 close-out is permitted only when **all** of the following are true and reco
 3. `node --test tests/*.test.mjs` total = prior + ≥18.
 4. `node bin/harness.mjs lint --quiet` exits 0 unchanged (the new linters are NOT wired into `lint` per C35-17).
 5. `node bin/harness.mjs pr-evidence --base <merge-base of CS36 PR> --head <head of CS36 PR> --pr-body <body.md>` exits 0 against the CS36 content PR itself (eat own dogfood).
-6. Sync drift check passes.
-7. Plan-vs-implementation review verdict `Go` per C35-2 ladder.
+6. **A6 (plan-review attestation gate per C36-11) is wired into the aggregator and runs in STRICT pr-evidence mode** regardless of the standalone `--strict` default; CS36 dogfooding above includes A6 passing on the CS36 plan file's `## Plan review` row.
+7. Sync drift check passes.
+8. Plan-vs-implementation review verdict `Go` per C35-2 ladder.
 
 ## Risks + open questions
 

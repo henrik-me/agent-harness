@@ -6,7 +6,7 @@
  * Plan:   project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md § CS04
  *
  * Subcommands: init | sync | check | lint | harvest | check-migration |
- *              composed-audit | pack | version | whoami
+ *              composed-audit | pack | plan-review-hash | version | whoami
  *
  * Exit codes:
  *   0 — success (or no drift in check/dry-run mode)
@@ -41,11 +41,13 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
-  lint              Run all harness structural + policy linters (13 linters)
+  lint              Run all harness structural + policy linters (14 linters)
   harvest           Run harvest procedure (STUB — full impl in later CS)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
   pack              Run npm pack --dry-run and verify file whitelist
+  plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
+                    Decisions+Deliverables (used to fill plan review rows)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -140,6 +142,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-workboard.mjs   (WORKBOARD.md)
   - check-architecture.mjs (ARCHITECTURE.md)
   - check-clickstop.mjs   (project/clickstops/)
+  - check-clickstop-plan-review.mjs (planned/active CS files; CS35b)
   - check-instructions.mjs (INSTRUCTIONS.md)
   - check-readme.mjs      (README.md)
   - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
@@ -222,6 +225,21 @@ Usage: harness pack [options]
 
 Runs npm pack --dry-run and prints the output.
 Verifies the file whitelist matches what package.json declares.
+
+Options:
+  --help  Print this help
+`.trimStart(),
+
+  'plan-review-hash': `
+Usage: harness plan-review-hash <file>
+
+Print the 12-character SHA-256 prefix computed over the trimmed bodies of
+the file's "## Decisions" and "## Deliverables" H2 sections. Used when
+filling the "Reviewed sections hash" cell of a "## Plan review" attestation
+row in a clickstop plan file (per CS35b decisions C35b-2 / C35b-3).
+
+The output is the same value the check-clickstop-plan-review linter compares
+against to detect stale attestations after plan amendments.
 
 Options:
   --help  Print this help
@@ -1001,6 +1019,32 @@ file-system-derived and would drift if duplicated here.
 done, or queued. Drift between filename, status, and content would silently
 corrupt orchestration.
 `.trim(),
+  'clickstop-plan-review': `
+**Linter:** check-clickstop-plan-review (scripts/check-clickstop-plan-review.mjs)
+**Target:** planned/*.md and active/*.md under project/clickstops/.
+**Rules:**
+  - Each file MUST contain a \`## Plan review\` H2 section with the 8-column
+    schema (Round | Reviewer model | Plan author model(s) | Reviewer agent |
+    Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap).
+  - At least one R1 row; rounds follow R<digit>+; latest verdict ∈
+    {Go, Go-with-amendments} (Needs-Fix blocks merge).
+  - Independence (per C35b-4): Reviewer model MUST NOT appear in any row's
+    Plan author model(s) (accumulated across all rows).
+  - Hash freshness (per C35b-3): the latest row's "Reviewed sections hash"
+    MUST equal the SHA-256-prefix-12 of the current Decisions+Deliverables
+    bodies (compute via \`harness plan-review-hash <file>\`).
+  - Done CS files are skipped — \`## Plan-vs-implementation review\`
+    (CS03b, scripts/check-clickstop.mjs) covers the close-out surface.
+**Strictness asymmetry (per C35b-9, C35b-10):**
+  - Standalone \`harness lint\` mode: \`--strict\` defaults to false in v0.4.0
+    (warn-only on missing section); CS42 flips the default to true for v0.5.0.
+  - PR-evidence A6 mode (CS36-aggregator): STRICT in both v0.4.0 and v0.5.0.
+  - Schema/independence/hash/verdict violations are ALWAYS errors,
+    regardless of mode or --strict.
+**Why:** prevents the "plan landed without independent review" gap exposed
+by PR #147 (issue #145 cluster). Mirrors the close-out gate's discipline
+(CS03b) for the planning surface where there is no PR-body Model-audit table.
+`.trim(),
   'commit-trailers': `
 **Linter:** check-commit-trailers (scripts/check-commit-trailers.mjs)
 **Target:** A git commit message file (e.g. .git/COMMIT_EDITMSG) supplied via --file.
@@ -1332,6 +1376,20 @@ async function cmdLint(args, _global) {
     {
       name: 'clickstop',
       script: 'check-clickstop.mjs',
+      args: ['--dir', path.join(cwd, 'project', 'clickstops')],
+      target: path.join(cwd, 'project', 'clickstops'),
+    },
+    {
+      // CS35b: plan-review attestation linter. Requires every planned/*.md and
+      // active/*.md to carry a `## Plan review` H2 section with at least one
+      // attestation row (Round/Reviewer model/Plan author model(s)/Reviewer
+      // agent/Reviewed sections hash/Timestamp/Verdict/Findings recap). In
+      // standalone mode (default), --strict=false in v0.4.0 — missing-section
+      // is warn-only — but schema/independence/hash/verdict violations are
+      // always errors. The pr-evidence A6 gate (CS36) runs the same script
+      // with --mode=pr-evidence which is STRICT regardless of --strict.
+      name: 'clickstop-plan-review',
+      script: 'check-clickstop-plan-review.mjs',
       args: ['--dir', path.join(cwd, 'project', 'clickstops')],
       target: path.join(cwd, 'project', 'clickstops'),
     },
@@ -1763,6 +1821,47 @@ async function cmdVersion(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: plan-review-hash (CS35b decision C35b-2)
+// ---------------------------------------------------------------------------
+
+async function cmdPlanReviewHash(args, _global) {
+  let filePath = null;
+
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['plan-review-hash']);
+      process.exit(0);
+    } else if (a.startsWith('-')) {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['plan-review-hash']}`, 2);
+    } else if (filePath === null) {
+      filePath = a;
+    } else {
+      die(
+        `harness plan-review-hash: too many positional arguments (got "${a}")\n` +
+        SUBCOMMAND_HELP['plan-review-hash'],
+        2
+      );
+    }
+  }
+
+  if (!filePath) {
+    die(
+      `harness plan-review-hash: <file> argument is required\n\n` +
+      SUBCOMMAND_HELP['plan-review-hash'],
+      2
+    );
+  }
+
+  if (!existsSync(filePath)) {
+    die(`harness plan-review-hash: file not found: ${filePath}`, 1);
+  }
+
+  const { computePlanReviewHash } = await import('../lib/plan-review-hash.mjs');
+  const hash = computePlanReviewHash(filePath);
+  process.stdout.write(`${hash}\n`);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: whoami
 // ---------------------------------------------------------------------------
 
@@ -1871,6 +1970,7 @@ async function main() {
     'check-migration': cmdCheckMigration,
     'composed-audit': cmdComposedAudit,
     pack: cmdPack,
+    'plan-review-hash': cmdPlanReviewHash,
     version: cmdVersion,
     whoami: cmdWhoami,
   };

@@ -31,6 +31,12 @@ Standard release-cut CS, mirroring [CS39](planned_cs39_release-v0.4.0.md). Two n
 | C42-5 | Pin-bump SUB-CS content | Documents: target version `v0.5.0`; what changes (default-opt-out for `review_gates` — SI must either accept the default or add explicit `_opt_out_reason`); REVIEWS.md schema migration (add agent columns to existing PRs going forward); recommended path (accept new default, no opt-out reason needed since SI has been on v0.4.0 with `enabled: true` since CS39). | Self-contained plan for SI orchestrator. |
 | C42-6 | Schema-migration upgrade decision | Decide at CS42 close-out: based on consumer adoption signal (number of consumer repos seen running v0.4.0 without the agent columns), either keep warn-not-error or file a follow-up CS to upgrade to error in v0.6.0. | Data-driven; defer the decision. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS42 plan: v0.5.0 release-cut. R1 raised CS42-7 strict-default-flip decision (added in PR #149); also tightened pre-flip dry-run window. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 24018bad0174 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments). C42-7 strict-flip added. Plan ready for claim. |
 ## Deliverables
 
 1. **CHANGELOG.md** updates: replace `## [Unreleased]` with `## [0.5.0] — <date>`; ensure CS40 + CS41 entries are captured.

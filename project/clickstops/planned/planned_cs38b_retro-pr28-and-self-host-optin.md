@@ -48,6 +48,12 @@ The self-host opt-in is the second half: applying the harness's own gates to its
 | C38b-4 | Self-host opt-in scope | Run `harness init --enable-review-gates` in the harness repo; land `.github/workflows/pr-evidence-lint.yml` + `harness.config.json` `review_gates` block; manually add the required status check via repo settings (instructions block emitted by init). | Live demonstration of the opt-in path. |
 | C38b-5 | Acceptance threshold (degradation-aware per C37-1b) | If CS37 spike = **PASS**: retroactive must produce ≥4 distinct gate failures matching #145 (B1 mismatched commits + A3 independence violation + A4 stale `analyzed_head` + A5 ordering + A16 missing/wrong Copilot review). If CS37 spike = **PARTIAL** (A16 only): ≥3 distinct failures (B1 + A3 + A4 + A16 expected; A5 absence is acceptable). If CS37 spike = **FAIL**: ≥3 distinct failures from `gate_set = ["B1","A3","A4"]`. The retro test asserts the conditional threshold by reading `harness.config.json.review_gates.gate_set` to determine the active set. | Per GPT-5.5 BLOCKING #1: threshold must align with the active gate set, not assume all 5 are enabled. Reading `gate_set` keeps the test self-consistent with the release. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS38b plan: retroactive PR #28 self-test + opt-in. R1 raised self-host vs consumer-flip ordering; clarified in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 35668362628e | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **`docs/cs38b-retro-pr28-transcript.md`** (new) per C38b-1.

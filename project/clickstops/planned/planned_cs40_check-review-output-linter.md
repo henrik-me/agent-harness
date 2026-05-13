@@ -33,6 +33,12 @@ This linter is the first piece of the v0.5.0 mechanical layer that complements t
 | C40-7 | Idempotent PR-body update | When `--update-pr` flag provided, the linter posts the parsed structured output as a new row in `## Review log` of the PR body via `gh pr edit --body-file <new-body>`. Idempotent: multiple invocations with the same `--review-output` produce the same single row (deduplicated by `analyzed_head + actor + verdict`). | Convenience for orchestrators; eliminates a manual `gh pr edit` step. |
 | C40-8 | Aggregator wiring | Add to `harness pr-evidence` aggregator alongside CS36/CS37 gates? **No** — `check-review-output` requires the reviewer output file which isn't available in CI. Standalone linter; orchestrator invokes locally after capturing reviewer output. | PR-state vs review-output are different surfaces. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS40 plan: check-review-output linter for v0.5.0. R1 raised line-length and verdict-row schema questions; addressed in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 2dad38fe33e2 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **`scripts/check-review-output.mjs`** (new) per C40-2/3/4/5/6/7.

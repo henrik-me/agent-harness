@@ -230,6 +230,59 @@ HEAD; reviewer must enumerate every file under review. Rn = follow-up review
 on a delta from the previous round; reviewer may enumerate ONLY the changed
 files (delta-only enumeration permitted).
 
+## Plan review (planned/active CS attestation)
+
+Every clickstop file in `project/clickstops/planned/` and
+`project/clickstops/active/` carries a `## Plan review` H2 section that
+records each independent plan-review round before the file can be merged.
+Done files are exempt (the close-out gate `## Plan-vs-implementation review`
+already covers that surface).
+
+This is the planning-phase counterpart of the close-out review gate.
+Mechanical enforcement: `scripts/check-clickstop-plan-review.mjs` (CS35b),
+wired into `harness lint` AND dispatched by the `harness pr-evidence`
+aggregator as gate A6 (C35b-9). Doctrine + procedure: see
+[OPERATIONS.md § Plan review attestation procedure (CS35b)](OPERATIONS.md).
+
+**Required columns (per CS35b C35b-2):**
+
+| Column | Description |
+|---|---|
+| Round | `R1`, `R2`, ... — first review then one row per amendment round |
+| Reviewer model | The model ID that performed the review (e.g. `gpt-5.5`) |
+| Plan author model(s) | Comma-separated model IDs the orchestrator used to author / amend |
+| Reviewer agent | Agent identity that ran the review (e.g. `rubber-duck dispatched (orchestrator: yoga-ah)`) |
+| Reviewed sections hash | 12-char SHA-256 prefix of trimmed Decisions + Deliverables bodies (`harness plan-review-hash <file>`) |
+| Timestamp (UTC) | ISO-8601 UTC, `YYYY-MM-DDThh:mm:ssZ` |
+| Verdict | `Go` / `Go-with-amendments` / `Needs-Fix` |
+| Findings recap (≤200 chars) | Short summary of the review outcome |
+
+**Independence invariant (C35b-4):** `Reviewer model` MUST NOT appear in
+`Plan author model(s)` of the same row OR any earlier row (accumulated
+across the file's history). The linter rejects any overlap.
+
+**Hash freshness (C35b-3):** The latest row's `Reviewed sections hash` MUST
+equal the current SHA-256-prefix-12 of the Decisions + Deliverables bodies.
+Pure prose edits to other sections (Background, Risks, Tasks, Notes) do
+NOT change the hash and do NOT require a fresh row. Material edits to
+Decisions or Deliverables flip the hash and demand a new attestation
+round before the file can be merged.
+
+**Gate (C35b-5):** Latest row's verdict MUST be `Go` or `Go-with-amendments`.
+A latest `Needs-Fix` blocks the merge of the plan file (file an amendment
+and a new attestation row to clear).
+
+Example block (paste into the plan file after `## Decisions`, before
+`## Deliverables`; compute the hash via `harness plan-review-hash <file>`):
+
+```
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: yoga-ah) | abcd1234ef56 | 2026-05-13T12:34:56Z | Go | Plan accepted on first round; no amendments. |
+```
+
 ## PR-evidence gates (B1, A2–A6, A16 reference)
 
 The PR-evidence subcommand (lands in CS36, wired to CI in CS38a) runs a fixed

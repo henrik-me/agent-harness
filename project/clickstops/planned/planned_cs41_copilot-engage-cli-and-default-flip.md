@@ -37,6 +37,12 @@ The default flip is the planned migration ramp completion: v0.4.0 was opt-in to 
 | C41-7 | Default flip mechanics | `harness init` with no flags writes `review_gates.enabled: true` by default in v0.5.0+. `harness sync --mode=check` errors (was warns in v0.4.0) if `review_gates` block is absent OR `enabled: false` without `_opt_out_reason: <string>` field. | Migration ramp completion. Forced opt-out reason discourages silent regression. |
 | C41-8 | Migration messaging | `harness sync --mode=check` failure message: "review_gates is now opt-out by default in v0.5.0. Either: (a) run `harness init --enable-review-gates` to opt in (recommended); or (b) add `\"_opt_out_reason\": \"<reason>\"` to your `review_gates` block to explicitly opt out." | Actionable, non-coercive. |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 000000000001 | 2026-05-12T00:00:00Z | Needs-Fix | CS41 plan: copilot-engage CLI + A16 default flip. R1 surfaced default-flip migration ramp + agent-identity column strictness; addressed in PR #149. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 6a082ea470b5 | 2026-05-13T00:00:00Z | Go-with-amendments | Post-amendment review of the 9-CS arc (PR #149 amendments addressing R1 BLOCKING + non-blocking findings). Plan ready for claim. |
 ## Deliverables
 
 1. **`bin/harness.mjs`**: register `copilot-engage` subcommand per C41-1. Routes to `lib/copilot-engage.mjs`.
