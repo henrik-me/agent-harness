@@ -1,0 +1,91 @@
+# CS36 — `harness pr-evidence` entry point + filesystem/git-log linters (B1, A3, A4)
+
+**Status:** planned
+**Owner:** —
+**Branch:** —
+**Started:** —
+**Closed:** —
+**Filed by:** Pre-CS36 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1 (gates B1, A3, A4). Authored 2026-05-12 by `yoga-ah`. Second CS in the v0.4.0 arc.
+**Depends on:** [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine + schemas — C35-3, C35-4, C35-5, C35-6, C35-17 in particular).
+
+## Goal
+
+Introduce the `harness pr-evidence` CLI entry point and ship the first three mechanical PR-state gates: B1 (per-commit trailer enforcement on the PR commit graph), A3 (review log + model audit independence), A4 (Analyzed-HEAD currency vs current HEAD). All three are pure filesystem / git-log work — no GitHub API. Sets up the surface that CS37 extends with GraphQL-backed gates (A5, A16).
+
+## Background
+
+Three of the six PR #28 failure modes are detectable purely from local repo state + the PR body:
+
+- **B1**: existing `scripts/check-commit-trailers.mjs` only validates `.git/COMMIT_EDITMSG` (single message). It cannot walk the PR commit graph. PR #28 had 4/11 commits without the `Co-authored-by: Copilot` trailer, undetected.
+- **A3**: REVIEWS.md `## Model audit` table requires implementer-vs-reviewer model independence (C35-4). PR #28 had the implementer model listed in both columns; no linter caught it.
+- **A4**: REVIEWS.md `## Review log` row's `analyzed_head` SHA must equal current HEAD at PR-evaluation time. PR #28 had a `Verdict=Go` row whose `analyzed_head` was 3 commits behind. No linter caught it.
+
+Per C35-17, these gates land on a NEW `harness pr-evidence` subcommand, NOT on `harness lint`. PR-state checks need PR context (`--base`, `--head`, `--pr-body`) and shouldn't fire on default `harness lint` runs.
+
+## Decisions
+
+| # | Decision | Choice | Rationale |
+|---|---|---|---|
+| C36-1 | Entry-point shape | `harness pr-evidence --base <sha> --head <sha> --pr-body <file> [--repo <slug>] [--pr <num>]`. `--repo` and `--pr` are needed only for the GraphQL gates (CS37); fs/git-log gates need only `--base/--head/--pr-body`. | Aligns with `harness lint` aggregator pattern (one entry point, multiple linters under it) but stays separate from `harness lint` per C35-17. |
+| C36-2 | Aggregator vs separate scripts | Each gate is its own `scripts/check-*.mjs` file (single-responsibility); `bin/harness.mjs pr-evidence` invokes them in series, aggregates results, exits with non-zero on any failure. | Mirrors existing `scripts/check-*.mjs` pattern; preserves single-purpose testability. |
+| C36-3 | B1 commit-graph source | `git log <base>..<head> --format='%H %s%n%b'`. No `--no-merges` (merge commits MUST also carry the trailer if they're in PR commit graph). | Captures every commit that will land on `main` after squash-merge; trailer presence is squash-merge-text level discipline. |
+| C36-4 | B1 trailer pattern | Exact regex: `^Co-authored-by: Copilot <223556219\+Copilot@users\.noreply\.github\.com>$` matched at end of any commit message body (per existing `Co-authored-by` git-trailer convention). | Matches the trailer documented in `template/composed/AGENTS.md` and across the repo. |
+| C36-5 | B1 author allowlist | Skip B1 if `git log --format='%an'` for the commit matches `dependabot[bot]` OR `github-actions[bot]` (per C35-8). | Bot commits don't carry the agent trailer. |
+| C36-6 | A3 / A4 PR body parser | Custom markdown parser (no library) reading `## Review log` and `## Model audit` H2 sections. Tolerant to surrounding content (other H2s allowed). Strict on column shape. | Existing harness scripts already do bespoke markdown parsing; consistent style; zero new deps. |
+| C36-7 | A4 currency definition | The `analyzed_head` value of the latest `verdict ∈ {Go}` row in `## Review log` MUST equal `--head` (full 40-char SHA). | Per C35-3 schema. Anything else = stale Go = fail. |
+| C36-8 | A3 independence check | Parse `## Model audit` rows; for each, `Implementer models` set ∩ `Reviewer model` set = ∅ (case-insensitive, comma-split). At least one row required if any commits exist. | Per C35-4 schema. |
+| C36-9 | Workboard-only short-circuit | If `--pr` is provided AND `gh pr view <pr> --json labels` returns `workboard-only` in labels, exit 0 with skip notice (per C35-7). If `--pr` not provided, no skip (local-only invocation). | Allows local invocation against any PR-shaped diff without requiring labels. |
+| C36-10 | Output format | Default: human-readable per-gate summary + final aggregate line. With `--json`: structured `{gate: {status, message, evidence}[]}`. With `--quiet`: only failures printed. | Consistent with `harness lint` flags. |
+
+## Deliverables
+
+1. **`bin/harness.mjs`** updates: register `pr-evidence` subcommand; route to aggregator; document flags via `--help`.
+2. **`scripts/check-pr-commits.mjs`** (new): B1 implementation per C36-3/4/5.
+3. **`scripts/check-review-evidence.mjs`** (new): A3 + A4 implementation per C36-6/7/8 (single script because both parse the same PR body).
+4. **`tests/check-pr-commits.test.mjs`** (new): minimum 6 cases — clean PR, missing trailer at HEAD, missing trailer mid-history, bot author skip, merge commit caught, empty range edge case.
+5. **`tests/check-review-evidence.test.mjs`** (new): minimum 8 cases — clean review log + audit, stale `analyzed_head`, missing `## Review log` section, missing `## Model audit` section, independence violation, multiple Go rows (latest used), Needs-Fix verdict ignored for currency, malformed timestamp.
+6. **`tests/cli-pr-evidence.test.mjs`** (new): minimum 4 cases — `--help` output stable, all-pass exits 0, single failure exits non-zero with summary, `--json` flag emits valid JSON.
+7. **OPERATIONS.md** updates: § Sub-agent dispatch — append "PR-evidence linter usage" subsection showing the canonical local + CI invocation. CONVENTIONS.md cross-link to the new gates per CS35 Deliverable 4.
+8. **CHANGELOG.md** `[Unreleased] / Added` entries for the new linters + entry point.
+
+## Sub-agent fan-out
+
+3 sub-agents, parallelisable:
+
+- **SA-1 (`bot36-cli`)** — owns `bin/harness.mjs` route + `tests/cli-pr-evidence.test.mjs`. NOT touching the gate scripts.
+- **SA-2 (`bot36-trailers`)** — owns `scripts/check-pr-commits.mjs` + `tests/check-pr-commits.test.mjs`. NOT touching the entry point.
+- **SA-3 (`bot36-evidence`)** — owns `scripts/check-review-evidence.mjs` + `tests/check-review-evidence.test.mjs`. NOT touching the entry point.
+
+Orchestrator owns OPERATIONS.md / CONVENTIONS.md / CHANGELOG.md edits and merges sub-agent outputs.
+
+## Exit criteria
+
+CS36 close-out is permitted only when **all** of the following are true and recorded in `## Plan-vs-implementation review`:
+
+1. `harness pr-evidence --help` documents `--base/--head/--pr-body/--repo/--pr/--json/--quiet` flags.
+2. `scripts/check-pr-commits.mjs` + `scripts/check-review-evidence.mjs` exist and pass their unit tests.
+3. `node --test tests/*.test.mjs` total = prior + ≥18.
+4. `node bin/harness.mjs lint --quiet` exits 0 unchanged (the new linters are NOT wired into `lint` per C35-17).
+5. `node bin/harness.mjs pr-evidence --base <merge-base of CS36 PR> --head <head of CS36 PR> --pr-body <body.md>` exits 0 against the CS36 content PR itself (eat own dogfood).
+6. Sync drift check passes.
+7. Plan-vs-implementation review verdict `Go` per C35-2 ladder.
+
+## Risks + open questions
+
+- **R1 (medium):** PR commits aren't always available locally (consumer may shallow-clone). Mitigation: linter checks for missing commits and emits an actionable error ("run `git fetch origin <base> <head>` first") rather than silently skipping.
+- **R2 (low):** Custom markdown parser may miss edge cases. Mitigation: extensive test fixtures including malformed cases.
+- **OQ1:** Should B1 also enforce a *specific* author email format (not just trailer presence)? **Default:** no — trailer presence is the doctrine; authorship is a separate concern.
+
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| (populated at claim time) | planned | — | — |
+
+## Notes / Learnings
+
+(filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out)_
