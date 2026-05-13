@@ -7,6 +7,42 @@
 
 ---
 
+## Hard rules (non-negotiable)
+
+These rules are mechanical — automated linters or workflow gates enforce them.
+Violating them is treated as a process bug to fix immediately, not a style preference.
+
+### Planning-locality (CS35 C35-11, C35-12)
+
+Strategic planning content (multi-CS arcs, decisions outliving the session)
+MUST live in `project/clickstops/{planned,active,done}/**`. Tactical session
+state (e.g. `~/.copilot/session-state/<id>/plan.md`) may track only:
+(a) which CS this session is currently executing,
+(b) ephemeral todos for that one CS.
+
+Banned filename shapes (case-insensitive) anywhere in the repo outside
+`project/clickstops/`, `template/`, `node_modules/`, `.git/`, `tests/fixtures/`:
+`PLAN.md`, `ROADMAP.md`, `TODO.md`, `NOTES.md`, `STRATEGY.md`.
+
+Enforced by `scripts/check-planning-locality.mjs` (in `harness lint`).
+Rationale: session storage is non-durable; any agent restart, model swap,
+or handoff must succeed from the repo alone.
+
+### Agent does not file issues (CS35 C35-13)
+
+GitHub issues are an INBOUND channel — external contributors and the user
+open them; the agent READS them as input to file CSs. The agent NEVER opens
+issues, even for follow-ups. If a follow-up is needed, file a planned CS
+under `project/clickstops/planned/`. Stand-alone issues from the agent
+fragment the canonical arc and create coordination drift.
+
+This rule is doctrine — not mechanically enforceable because the agent runs
+under the maintainer's `gh` credentials and is indistinguishable from the
+user at the GitHub-API level. Orchestrator self-check + visible code review
+is the only feasible enforcement.
+
+---
+
 ## Quick Reference Checklist
 
 Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not change.
@@ -34,6 +70,7 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   node --test tests/*.test.mjs                          # expect: all pass
   node bin/harness.mjs lint --quiet                     # expect: 0 failed
   node bin/harness.mjs sync --mode=check --cwd .        # expect: "No drift detected"
+  git ls-files project/clickstops/{planned,active}/ | sort   # show in-flight CS arc; resume rather than restart (CS35 C35-14)
   ```
 
 ### Claiming a CS

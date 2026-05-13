@@ -107,15 +107,15 @@ CS35 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 | Read full CS35 plan + REVIEWS.md / OPERATIONS.md / INSTRUCTIONS.md / CONVENTIONS.md baseline + LRN-068 canonical preamble pattern | pending | orchestrator | — |
-| T2 | Update REVIEWS.md + template/composed/REVIEWS.md per Deliverable 1 (review-log + model-audit schemas, R1/Rn distinction, stale-diff doctrine, gate names A1–A6) | pending | orchestrator | per C35-3/4/15 |
-| T3 | Update OPERATIONS.md + template/composed/OPERATIONS.md per Deliverable 2 (canonical reviewer preamble between markers, planning-locality pre-claim self-check, Copilot engagement procedure) | pending | orchestrator | per C35-1/10/11/14 |
-| T4 | Update INSTRUCTIONS.md per Deliverable 3 (bootstrap sanity check + planning-locality + agent-files-no-issues hard rules) | pending | orchestrator | per C35-11/13/14 |
-| T5 | Update CONVENTIONS.md per Deliverable 4 (per-commit trailer enforcement, workboard-only/bot/fork PR predicates) | pending | orchestrator | per C35-5/7/8/9 |
-| T6 | Implement scripts/check-planning-locality.mjs + register in bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS entry | pending | orchestrator | per C35-12, ~50 LOC |
-| T7 | Add tests/check-planning-locality.test.mjs (≥3 cases) + tests/operations-reviewer-preamble.test.mjs (markers + required fields) | pending | orchestrator | per Exit criteria #3, #5 |
-| T8 | CHANGELOG.md `[Unreleased] / Added` entries: planning-locality linter + reviewer doctrine + reviewer fallback ladder | pending | orchestrator | per LRN-101 policy |
-| T9 | Self-checks: harness lint --quiet, node --test tests/*.test.mjs, harness sync --mode=check, check-text-encoding | pending | orchestrator | per Exit criteria #2/3/4/9 |
+| T1 | Read full CS35 plan + REVIEWS.md / OPERATIONS.md / INSTRUCTIONS.md / CONVENTIONS.md baseline + LRN-068 canonical preamble pattern | done | orchestrator | — |
+| T2 | Update REVIEWS.md + template/composed/REVIEWS.md per Deliverable 1 (review-log + model-audit schemas, R1/Rn distinction, stale-diff doctrine, gate names A1–A6) | done | sub-agent | agent-id=cs35-doctrine \| role=implementer \| model=Claude Sonnet 4.6 \| report-status=complete |
+| T3 | Update OPERATIONS.md + template/composed/OPERATIONS.md per Deliverable 2 (canonical reviewer preamble between markers, planning-locality pre-claim self-check, Copilot engagement procedure) | done | sub-agent | same dispatch |
+| T4 | Update INSTRUCTIONS.md per Deliverable 3 (bootstrap sanity check + planning-locality + agent-files-no-issues hard rules) | done | sub-agent | same dispatch |
+| T5 | Update CONVENTIONS.md per Deliverable 4 (per-commit trailer enforcement, workboard-only/bot/fork PR predicates) | done | sub-agent | same dispatch |
+| T6 | Implement scripts/check-planning-locality.mjs + register in bin/harness.mjs cmdLint linters list + LINTER_EXPLANATIONS entry | done | orchestrator | per C35-12, ~150 LOC; tracked-files-only via `git ls-files` |
+| T7 | Add tests/check-planning-locality.test.mjs (≥3 cases) + tests/operations-reviewer-preamble.test.mjs (markers + required fields) | done | orchestrator + sub-agent | 10 + 2 tests; total 715/715 pass |
+| T8 | CHANGELOG.md `[Unreleased] / Added` entries: planning-locality linter + reviewer doctrine + reviewer fallback ladder | done | sub-agent | 3 bullets prepended under [Unreleased] § Added |
+| T9 | Self-checks: harness lint --quiet, node --test tests/*.test.mjs, harness sync --mode=check, check-text-encoding | done | orchestrator | 26/0/3 lint; 715/715 tests; No drift detected; LF-clean |
 | T10 | Open content PR on cs35/enforcement-doctrine-and-planning-locality; dispatch GPT-5.5 plan-vs-implementation review per C35-2 ladder; merge after CI green + review Go | pending | orchestrator | A4/A5 stale-diff invariant applies |
 | T11 | Close-out: docs + restart state (active→done rename, WORKBOARD prune, CONTEXT.md banner update, handoff state) | pending | orchestrator | per OPERATIONS.md § Close-out |
 | T12 | Close-out: learnings + follow-ups (file LRN-XXX with status `applied` per C35-16; surface any new follow-up CS candidates) | pending | orchestrator | per RETROSPECTIVES.md and OPERATIONS.md close-out procedure |
