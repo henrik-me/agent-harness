@@ -101,4 +101,12 @@ Orchestrator owns OPERATIONS.md / CHANGELOG.md edits.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+| Round | Reviewer model | Branch HEAD SHA | R-round | Verdict | Evidence link |
+|---|---|---|---|---|---|
+| R1 | gpt-5.5 | 685b936f39e70c33896a6ac77bdc684daa928f16 | R1 | Needs-Fix | https://github.com/henrik-me/agent-harness/pull/163#issuecomment-4441566368 — 4 Blocking findings (B1 workflow fork-source split, B2 PR template labels, B3 sync `_inherited_class` handler, B4 `DEFAULT_REVIEW_GATE_SET` includes A6). |
+| R2 | gpt-5.5 | 4ec7b07e4d1a2484afa8740e49f950fe678a7e23 | R2 | Go | https://github.com/henrik-me/agent-harness/pull/163#issuecomment-4441568806 — All four R1 Blocking findings verified fixed at HEAD 4ec7b07; one Non-blocking finding about stale C38a-4/Deliverable-5 wording (`pull-request.body` → actual `pull-request.review-evidence`), addressed in the same commit chain. |
+
+## Implementation notes
+
+- **Marker block ID divergence (Non-blocking R2 finding):** The C38a-4 + Deliverable #5 plan text references `local_blocks: ["pull-request.body"]` and `<!-- harness:review-evidence:start --> ... <!-- harness:review-evidence:end -->` markers. The shipped implementation uses the canonical repo block-marker shape `<!-- harness:local-start id=pull-request.review-evidence --> ... <!-- harness:local-end id=pull-request.review-evidence -->` (per `lib/composed.mjs` parser, which recognises only `harness:local-start`/`harness:local-end` sentinels). The block id `pull-request.review-evidence` (rather than `pull-request.body`) was chosen as more specific to the doctrine artefacts the block carries (Model audit + Review log). The composed-blocks linter accepts the implementation form; no schema or test churn is needed. This note documents the divergence for future audit.
+- **`--graphql-spike-outcome` flag (deferred, R1 B4 part 2):** The C38a-6 PASS branch references an override flag that lets the orchestrator force-select a degraded gate set when the CS37 spike outcome is not yet recorded in the close-out artefact. The flag was not implemented in CS38a; consumers can hand-edit `review_gates.gate_set` if they need a different shape. R2 reviewer accepted the deferral as non-blocking given CS37 PASS is the hard-coded path.
