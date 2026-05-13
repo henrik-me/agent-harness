@@ -2123,6 +2123,34 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-113
+
+```yaml
+id: LRN-113
+date: 2026-05-13
+category: process
+source_cs: CS39
+status: applied
+tags: [release-cut, cross-repo, plan-freshness, gh-api-verification]
+claim_area: planning
+```
+
+**Problem:** When a CS plan documents a cross-repo coordination step (filing a planned SUB-CS in a sibling repo, opening a port PR, etc.), the plan-author may hard-code path/naming conventions assumed from memory or copied from the parent repo's own conventions, without verifying them against the sibling repo's actual layout at plan-freeze time. CS39 plan (filed 2026-05-12, frozen at R2 hash `89da6676b7e3` on 2026-05-13) said to file `planned_subNN_pin-harness-v0.4.0.md` in `henrik-me/sub-invaders` — but the live SI repo uses the `planned_csNN_*.md` convention (existing csNN range cs01–cs09; next available cs10), discovered only at plan-vs-impl R1 review time on 2026-05-13.
+
+**Finding:** **Cross-repo coordination plans must verify sibling-repo conventions live at plan-freeze time, not at plan-author time.** A plan that hard-codes a path or naming convention based on what the author remembers (or what the parent repo uses) is a stale assumption from the moment it's written. For CS39, the harness uses `planned_csNN_*` for its own clickstops, but SI also uses `planned_csNN_*` (not the `subNN` prefix the CS39 author assumed). The plan was caught at the R1 plan-vs-impl review gate (the GPT-5.5 reviewer ran `gh api repos/henrik-me/sub-invaders/contents/project/clickstops/{planned,active,done}` as part of verifying the plan against reality), but it could just as easily have been missed if the reviewer had trusted the plan instead of verifying live.
+
+The fix is procedural, not mechanical: any CS-plan task that touches a sibling repo MUST cite the verification command it used to derive its target path/name and the timestamp of that verification, not the author's memory.
+
+**Evidence:**
+
+- CS39 plan filed 2026-05-12 with C39-4 saying `planned_subNN_*` (`project/clickstops/done/done_cs39_release-v0.4.0.md` line 29 pre-amendment, preserved in the R3 attestation row hash `89da6676b7e3` → `9155928aa51e` diff).
+- R1 verification 2026-05-13T21:55:00Z: `gh api repos/henrik-me/sub-invaders/contents/project/clickstops/planned --jq '.[].name'` returned `planned_cs04_*`, `planned_cs05_*`, `planned_cs06_*`, `planned_cs08_*`. No `subNN` prefix anywhere in planned/active/done.
+- R1 finding logged in CS39 close-out PR (`done_cs39_release-v0.4.0.md § Plan-vs-implementation review § R1`).
+- Amendment commit `b45ff44` updated C39-4/C39-5/Deliverable 4/T11 to `planned_cs10_pin-harness-v0.4.0.md` with explicit live-verification rationale + R3 attestation row added (`9155928aa51e`).
+- The actual SI cross-repo PR ([henrik-me/sub-invaders#48](https://github.com/henrik-me/sub-invaders/pull/48)) was filed with the corrected naming.
+
+**Disposition:** Applied. Going forward, any harness CS plan that includes a cross-repo coordination step (file a SUB-CS in a sibling repo, open a port PR, update a sibling repo's pinned version, etc.) MUST include an explicit live-verification step in its Tasks list and cite the verification command + timestamp in the relevant Decision body. Reviewers (R1 plan-vs-impl) MUST re-run the live verification at review time and reject plans whose cross-repo steps cite stale conventions. This is a special case of LRN-064 (mandatory plan-vs-impl review gate); LRN-113 narrows it to the cross-repo subset where the failure mode is "plan hard-codes a wrong path/name."
+
 ### LRN-112
 
 ```yaml
