@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs51/review-gates",
-  "resolved_sha": "c28ba300b126405afbe1553d590f4c3481af5ea2",
+  "resolved_sha": "fd7cf403e1f4712325712b4d3222884525a5cfb3",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:35:25.208Z",
+  "synced_at": "2026-05-14T23:36:51.443Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -92,7 +92,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "e7cbe895f8e5b52ebe2c59989b6876a903c23a55322effc8d48310402518b247",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
@@ -112,7 +112,7 @@
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
       "rendered_hash": "538a7749062e61d4282a9df1873e3cfadba0c0091cd7af8a96a590f5f3cda9e4",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
