@@ -302,7 +302,10 @@ function checkFile(filePath, subdir) {
       if (!hasGrandfathering && !hasAllFields) {
         logError(
           `${subdir}/${basename}: "## Plan-vs-implementation review" section ` +
-          `must contain Reviewer/Date/Outcome fields OR the grandfathering line`
+          `must contain Reviewer/Date/Outcome fields OR the grandfathering line. ` +
+          `The required field labels are matched verbatim (case-sensitive, bold-prefixed): ` +
+          `"**Reviewer:**", "**Date:**", "**Outcome:**". ` +
+          `See OPERATIONS.md § "Plan-vs-implementation review (close-out gate)" for the canonical skeleton.`
         );
       }
     }

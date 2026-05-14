@@ -241,7 +241,10 @@ for (const row of activeRows) {
     // single-digit IDs like CS3b.
     if (!/^CS\d{2,}[a-z]?$/.test(csId)) {
       logError(
-        `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d{2,}(a-z)? format`
+        `Active Work row has invalid CS-Task ID "${csId}" — expected CS\\d{2,}(a-z)? format. ` +
+        `For an empty Active Work table, remove all data rows and keep header rows only ` +
+        `(or use a single em-dash row with "no active CS" in the Title cell — see ` +
+        `template/seeded/WORKBOARD.md for the canonical template).`
       );
     }
   }
