@@ -83,17 +83,43 @@ CS23 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Edit `.github/workflows/harness-self-check.yml` to add `types: [opened, synchronize, reopened, edited]` per C23-1 | pending | yoga-ah | one-line YAML edit |
-| Add `tests/cs23-pr-body-trigger.test.mjs` regression test per C23-3 | pending | yoga-ah | parses YAML via `js-yaml` and asserts trigger contract |
-| Audit other workflows' `pull_request:` trigger shapes per C23-4; record findings in this file's Notes section | pending | yoga-ah | grep `.github/workflows/*.yml` for trigger shape gaps |
-| Flip [LRN-100](../../../LEARNINGS.md#lrn-100) frontmatter `status: open` → `applied` with disposition-update line per C23-5 | pending | yoga-ah | post-content-PR-merge step |
-| Add CHANGELOG.md `[Unreleased] / Fixed` entry citing LRN-100 + this CS | pending | yoga-ah | distributed-surface touch (workflow file) |
+| Edit `.github/workflows/harness-self-check.yml` to add `types: [opened, synchronize, reopened, edited]` per C23-1 | done | yoga-ah | one-line YAML edit |
+| Add `tests/cs23-pr-body-trigger.test.mjs` regression test per C23-3 | done | yoga-ah | parses YAML via `js-yaml` and asserts trigger contract |
+| Audit other workflows' `pull_request:` trigger shapes per C23-4; record findings in this file's Notes section | done | yoga-ah | grep `.github/workflows/*.yml` for trigger shape gaps |
+| Flip [LRN-100](../../../LEARNINGS.md#lrn-100) frontmatter `status: open` → `applied` with disposition-update line per C23-5 | done | yoga-ah | post-content-PR-merge step |
+| Add CHANGELOG.md `[Unreleased] / Fixed` entry citing LRN-100 + this CS | done | yoga-ah | distributed-surface touch (workflow file) |
 | Close-out: docs + restart state — update WORKBOARD, CONTEXT, no managed/composed mirror needed for this surface | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 | Close-out: learnings + follow-ups — file follow-up CSs for C23-4 audit findings (if any) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 
 ## Notes / Learnings
 
-(filled during execution)
+### C23-4 audit — `.github/workflows/*.yml` `pull_request:` trigger shapes
+
+Audit performed at CS23 implementation time against the worktree at branch
+`cs23/pr-body-trigger`. "PR-body-dependent work" means: anything that parses
+the live PR body, title, or reviewer set fetched at workflow run time (so
+that an in-place `gh pr edit --body|--title|--add-reviewer` round-trip would
+otherwise leave a stale conclusion visible). Workflows whose only PR-event
+input is the head commit / file tree are NOT body-dependent — `synchronize`
+already covers their re-fire surface.
+
+| Workflow | pull_request? | types: shape | edited needed? | Disposition |
+|---|---|---|---|---|
+| `harness-checks.yml` | No (`workflow_call:` only) | n/a | n/a | Reusable workflow; no PR-event trigger of its own. No action. |
+| `harness-drift.yml` | No (`schedule:` + `workflow_dispatch:`) | n/a | n/a | Cron-driven drift check. No action. |
+| `harness-self-check.yml` | Yes | now `[opened, synchronize, reopened, edited]` (this CS) | YES — has `pr-body` job that parses live PR body via `gh api repos/.../pulls/<N>` | THIS CS. Fixed under C23-1. Locked by `tests/cs23-pr-body-trigger.test.mjs` (C23-3). |
+| `harness-self-check-via-reusable.yml` | Yes | default (no `types:`) | No | Calls reusable `harness-checks.yml` with `cli-ref: head.sha`; head SHA-bound only, no PR body parsing. Per OQ1 default in CS plan: no action. |
+| `npm-pack-dry-run.yml` | Yes | default (no `types:`) | No | Runs `npm pack --dry-run` against the repo tree; depends on file contents only. No action. |
+| `pr-evidence-lint.yml` | Yes | already `[opened, synchronize, reopened, edited]` ✓ | already in compliance | Parses live PR body (`gh pr view --json body`) and reviewer set. Already correctly configured (likely fixed pre-LRN-100 for the same class of bug). No action. |
+| `private-smoke.yml` | Yes | default (no `types:`) | No | Smoke test against an external private consumer; PR head commit is the only relevant input. No action. |
+| `release.yml` | No (`push:` to `v*.*.*` tags) | n/a | n/a | Tag-triggered release; not a PR workflow. No action. |
+| `secret-scan.yml` | Yes | default (no `types:`) | No | Scans tracked file contents at the head commit. No action. |
+| `validate-schemas.yml` | Yes | default (no `types:`) | No | Validates `schemas/*.schema.json` and consumers thereof at the head commit. No action. |
+| `workboard-auto-approve.yml` | Yes (`pull_request_target:`) | `[opened, synchronize, reopened, labeled]` (no `edited`) | Likely no — gates on labels, branch, path, and actor allowlists, not on body | Bot approval is label-driven (`labeled` already covers the only orchestrator-controlled re-trigger surface relevant to approval). Not flagged for action; flagged as a low-priority follow-up CANDIDATE in case future label/path logic ever consults the body. |
+
+**Follow-up candidates (orchestrator decides whether to file as their own planned CSs):**
+
+- _(none required for CS23 close-out)_ — no other workflow currently parses live PR body content with the same default-types gap. The only other PR-body-parsing workflow is `pr-evidence-lint.yml`, which is already in compliance. `workboard-auto-approve.yml` is recorded as a low-priority "watch" item only; no current behaviour change is warranted.
 
 ## Plan-vs-implementation review
 

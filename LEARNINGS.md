@@ -2095,7 +2095,7 @@ id: LRN-100
 date: 2026-05-10
 category: tooling
 source_cs: CS22
-status: open
+status: applied
 tags: [ci, github-actions, pr-body, workflow-triggers, harness-self-check]
 claim_area: ci-workflows
 ```
@@ -2122,6 +2122,8 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 **Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
+
+**Disposition update (CS23):** Applied via `cs23/pr-body-trigger` (PR `#187`); status flipped `open` → `applied`. `.github/workflows/harness-self-check.yml` now declares `types: [opened, synchronize, reopened, edited]` on `pull_request:`, so `gh pr edit --body` re-fires the `pr-body` job. Regression locked by `tests/cs23-pr-body-trigger.test.mjs`. Workaround (`gh run rerun <run-id> --failed`) is no longer required.
 
 ### LRN-122
 
