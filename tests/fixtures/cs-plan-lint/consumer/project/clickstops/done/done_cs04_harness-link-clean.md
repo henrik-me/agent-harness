@@ -15,8 +15,8 @@ NOT trigger a violation.
 
 ## Background
 
-See [composed.mjs](https://github.com/henrik-me/agent-harness/blob/main/lib/composed.mjs)
-for the harness implementation detail referenced by this plan.
+See [CONVENTIONS.md](https://github.com/henrik-me/agent-harness/blob/main/template/composed/CONVENTIONS.md)
+for the harness composed-block contract referenced by this plan.
 
 ## Plan-vs-implementation review
 
