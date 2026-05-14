@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-14 (CS49: LRN-126 added in `Applied` — downstream `sub-invaders` CS02 hotfix episode exposed the missing orchestrator-availability, progress-cadence, and workboard-first doctrine)
+> **Last updated:** 2026-05-14 (CS49: LRN-126 added in `Applied` — downstream `sub-invaders` CS02 hotfix episode exposed the missing orchestrator-availability, progress-cadence, and workboard-first doctrine; CS48: LRN-127 added — implementer self-review is not rubber-duck review evidence)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2188,6 +2188,42 @@ claim_area: copilot-engagement
 **Evidence:** PR #192 in CS46 (https://github.com/henrik-me/agent-harness/pull/192). R1 (HEAD `2b094e48`) → 3 line comments fixed in `7a261bf` → R2 (HEAD `7a261bf`) flagged `resolved_sha=f8394130` as stale → re-ran `harness sync --resolved-sha 7a261bf` in `a56c0d7` → R3 (HEAD `a56c0d7`) flagged `resolved_sha=7a261bf` as stale (PR body's latest log row still said `analyzed_head=2b094e48`) → updated PR body review log to add R2/R3 rows with `analyzed_head=a56c0d7` → R4 returned "no new comments". CI `read-only-gates` then failed with `ERROR: stale Go verdict — analyzed_head="<fabricated 40-char>" but current PR HEAD="a56c0d766d124..."` because a hand-expanded short SHA was used. Real HEAD obtained via `git rev-parse HEAD`; PR body re-pushed; gate passed; PR admin-merged. See `scripts/check-review-evidence.mjs` for the gate logic and `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` for the canonical Field/Value model.
 
 **Disposition:** Applied. Discipline becomes part of OPERATIONS.md § "Copilot engagement procedure" — recommended insert: a single bullet under "When Copilot's R2+ review comment references lock provenance" linking to this LRN. Until OPERATIONS.md absorbs the doctrine, the rule above ("refresh lock + append review-log row + push together; use `git rev-parse HEAD` for full SHA") is the sufficient operational statement. Cross-reference: this LRN combines with LRN-124 (working-tree-loss doctrine) — both are CS46 close-out artifacts capturing iteration-discipline gotchas that surface only in self-host Copilot review chases.
+
+### LRN-127
+
+```yaml
+id: LRN-127
+date: 2026-05-14
+category: process
+source_cs: CS48
+status: applied
+tags: [review-evidence, independence-invariant, sub-agents, self-review, rubber-duck]
+claim_area: review-gates
+```
+
+**Problem:** The sub-agent dispatch/reporting path allowed implementers to
+report their own diff review without stating that the result is not review
+evidence. Orchestrators could mistakenly treat implementer self-review as the
+rubber-duck review required by REVIEWS.md Phase 2.
+
+**Finding:** **Implementer self-review is not a rubber-duck review.** A
+self-review by the implementing agent does not satisfy `REVIEWS.md § Phase 2`.
+Always dispatch a separate reviewer sub-agent (or use the planned
+`harness review <pr>` CLI) whose model is independent from every implementer
+model used in the CS.
+
+**Evidence:** `henrik-me/sub-invaders` PR #28 (CS07 content) had an
+implementer self-report of "no findings". The independent GPT-5.5 review
+immediately found a blocking bug: `?startWave=N` was plumbed through
+`main.mjs` but never consumed by `play.mjs`, silently breaking the wave-skip
+control.
+
+**Disposition:** Applied in CS48 / issue #142. The sub-agent dispatch/reporting
+template now states that self-review carries zero review weight, asks for
+`Implementer model used` instead of implementer review evidence, and points
+orchestrators at the planned `harness review` CLI for the independent
+rubber-duck review. Regression coverage lives in
+`tests/cs48-implementer-self-review-ban.test.mjs`.
 
 ### LRN-124
 

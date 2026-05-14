@@ -15,6 +15,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Changed
 
+- **CS48 / [#142](https://github.com/henrik-me/agent-harness/issues/142):** Dispatch reporting now states that implementer self-review carries zero review weight, replaces implementer review evidence with `Implementer model used` provenance, and adds LRN-127 + regression coverage anchored to the Sub Invaders PR #28 failure.
 - **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
 
 ### Removed
