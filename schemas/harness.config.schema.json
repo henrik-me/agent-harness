@@ -153,6 +153,11 @@
           "default": "sonnet-4.6",
           "examples": ["sonnet-4.6"]
         },
+        "require_copilot_review": {
+          "type": "boolean",
+          "description": "When true, `harness review` triggers and waits for Copilot review evidence unless --rubber-duck-only is supplied. Set false for projects that cannot use Copilot reviews; --copilot-only still forces a retry when explicitly requested.",
+          "default": true
+        },
         "copilot_trigger": {
           "type": "string",
           "description": "How `harness review` requests Copilot review. `mention` posts an @copilot review PR comment via `gh api`; `reviewer` uses the reviewer attachment path where supported.",

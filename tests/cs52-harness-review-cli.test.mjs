@@ -28,8 +28,7 @@ describe('harness review CLI', () => {
   it('advertises the review subcommand in top-level help', () => {
     const result = runHarness(['--help']);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /review <pr>/);
-    assert.match(result.stdout, /Orchestrate rubber-duck and Copilot PR review/);
+    assert.match(result.stdout, /review\s+Orchestrate rubber-duck \+ Copilot review/);
   });
 
   it('prints dedicated review help with flags and exit-code contract', () => {
@@ -38,24 +37,24 @@ describe('harness review CLI', () => {
     assert.match(result.stdout, /Usage: harness review <pr>/);
     assert.match(result.stdout, /--rubber-duck-only/);
     assert.match(result.stdout, /--copilot-only/);
-    assert.match(result.stdout, /--model <model>/);
-    assert.match(result.stdout, /--round <R1\|R2\|\.\.\.|Rn>/);
+    assert.match(result.stdout, /--model <id>/);
+    assert.match(result.stdout, /--round R<n>/);
     assert.match(result.stdout, /Exit codes:/);
-    assert.match(result.stdout, /0\s+Review gates passed/);
-    assert.match(result.stdout, /1\s+Review produced a No-Go/);
-    assert.match(result.stdout, /2\s+Operational failure/);
+    assert.match(result.stdout, /0\s+Go verdict/);
+    assert.match(result.stdout, /1\s+No-Go/);
+    assert.match(result.stdout, /2\s+bad usage/);
   });
 
   it('returns usage error for invalid PR identifiers', () => {
     const result = runHarness(['review', 'not-a-pr', '--dry-run']);
     assert.equal(result.status, 2);
-    assert.match(result.stderr, /Invalid PR/);
+    assert.match(result.stderr, /<pr> must be a positive integer/);
   });
 
   it('rejects mutually exclusive review mode flags', () => {
     const result = runHarness(['review', '141', '--rubber-duck-only', '--copilot-only', '--dry-run']);
     assert.equal(result.status, 2);
-    assert.match(result.stderr, /mutually exclusive/);
+    assert.match(result.stderr, /cannot be combined/);
   });
 
   it('supports dry-run orchestration without contacting GitHub', () => {
@@ -73,9 +72,10 @@ describe('harness review CLI', () => {
       '--no-poll',
     ]);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /DRY RUN/);
-    assert.match(result.stdout, /rubber-duck reviewer model: gpt-5\.5/);
-    assert.match(result.stdout, /would update PR body review log round R2/);
-    assert.match(result.stdout, /would skip Copilot review/);
+    assert.match(result.stdout, /review: dry-run/);
+    assert.match(result.stdout, /reviewer model: gpt-5\.5/);
+    assert.match(result.stdout, /round: R2/);
+    assert.match(result.stdout, /would compose manual rubber-duck prompt/);
+    assert.match(result.stdout, /would skip polling and PR-body update/);
   });
 });
