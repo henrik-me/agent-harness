@@ -2123,6 +2123,67 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-115
+
+```yaml
+id: LRN-115
+date: 2026-05-13
+category: tooling
+source_cs: CS40
+status: applied
+tags: [linter, enumeration, file-discrimination, extensionless-files, heuristics]
+claim_area: linters
+```
+
+**Problem:** A naive heuristic for distinguishing "this bullet is a file path" from "this bullet is prose" — `/[/.]/.test(filePath)` (the value contains a slash OR a dot) — incorrectly drops top-level extensionless files: `Makefile`, `LICENSE`, `Dockerfile`, `Vagrantfile`, `Procfile`, `Brewfile`, etc. In CS40's `scripts/check-review-output.mjs` initial implementation this caused the per-file enumeration check (C40-3) to silently fail when a reviewer enumerated such files — they were dropped on the linter's side, then re-flagged as "missing from enumeration" against `git diff --name-only`.
+
+**Finding:** **Don't infer "is a file path" from the string's shape; infer it from its position in the document structure.** In CS40's case the fix was to rely solely on `inFindingsSection` flag (already maintained by the per-line walker for the H2/H3 boundary between the per-file-enumeration section and the `## Findings` section) for the enumeration-vs-findings split. Side effect: prose bullets outside the findings section will become "extra-file" warnings (acceptable per C40-3 spec — extras are warnings, not errors).
+
+The general principle: any heuristic that uses a string property (extension, path separator, character class) to classify content will have blind spots. If structural context is available (section boundary, parent element, schema position), prefer that.
+
+**Evidence:**
+
+- Original code in `scripts/check-review-output.mjs` (initial CS40 commit `7c21faa`): `if (/[/.]/.test(filePath)) { fileSet.add(filePath); }` — dropped Makefile/LICENSE/Dockerfile.
+- Found by Copilot review on PR #172 (review @ 2026-05-13T23:34:23Z). Copilot's exact comment: "filePath would be filtered out for files like Makefile or LICENSE that lack extensions and slashes."
+- Fix in commit `198afa5` removed the `if` guard; relies on `inFindingsSection` for the section split.
+- Regression test added in `tests/check-review-output.test.mjs` (per `done_cs40_check-review-output-linter.md § Tasks T4 note`).
+
+**Disposition:** Applied. CS40 ships with the fix and a regression test. Any future linter that enumerates "files" from prose markdown should: (a) rely on document-structure context (section boundaries, fence types, list nesting) before inferring from string shape; (b) include a dedicated test fixture covering extensionless top-level files (Makefile, LICENSE, Dockerfile minimum).
+
+### LRN-114
+
+```yaml
+id: LRN-114
+date: 2026-05-13
+category: tooling
+source_cs: CS40
+status: applied
+tags: [javascript, string-replace, dollar-pattern, body-rewrite, security-adjacent]
+claim_area: linters
+```
+
+**Problem:** `String.prototype.replace(searchString, replacementString)` interprets `$&`, `$$`, `` $` ``, `$'`, and `$<n>` patterns inside the **replacement** string as backreferences/special tokens, even when the search argument is a literal string (not a regex). When the replacement string contains user-supplied or downstream-data content (URLs with query strings like `?foo=bar&baz=$&qux=...`, evidence_link cells with arbitrary text, GraphQL responses, PR-body fragments), the output is silently corrupted: `$&` is replaced by the entire matched substring, `$$` becomes a single `$`, `$<n>` becomes the n-th captured group (or empty), etc. CS40's `scripts/check-review-output.mjs` had two such sites in `updatePrReviewLog` (outer body splice + inner section row-append) — both took user-supplied evidence_link content and spliced it into the PR body via `body.replace(section, newSection)` and `section.replace(/\s*$/, '\n' + newRow + '\n')`, both of which would silently mangle any evidence_link containing `$` patterns.
+
+**Finding:** **Never use `String.prototype.replace(_, str)` when `str` may contain user-supplied content.** Use one of the safe alternatives:
+
+1. **Index-based slicing** (preferred for splice-into-string operations): `s.slice(0, idx) + new + s.slice(idx + section.length)`. Does not interpret any patterns. CS40 uses this for both sites.
+2. **Function-form replacement**: `s.replace(re, () => str)` — function-form callbacks return their value verbatim with NO pattern interpretation, even when the value contains `$`. Useful when the search needs regex semantics but the replacement should not be interpreted.
+3. **Pre-escape the replacement**: `str.replace(/\$/g, '$$$$')` (escape every `$` to `$$`) before passing to `.replace()`. Fragile and easy to forget.
+
+The `s.replace(re, '')` (empty replacement) form is **safe** — empty has no metachars by definition.
+
+**Evidence:**
+
+- Two affected sites in `scripts/check-review-output.mjs` `updatePrReviewLog()`:
+  - Outer: `const newBody = body.replace(section, newSection);` (CS40 initial commit `7c21faa`).
+  - Inner: `section.replace(/\s*$/, '\n' + newRow + '\n')` (also vulnerable because `newRow` is built from user-supplied `--actor`/`--evidence-link` flags).
+- Found by Copilot review on PR #172 (review @ 2026-05-13T23:34:23Z): "The replacement string in `body.replace(section, newSection)` may contain `$` patterns from user-supplied `--evidence-link` content..."
+- Fix in commit `198afa5`: both sites switched to index-based slicing. Dead `escapeRegex` helper (vestigial from an earlier abandoned approach) removed in same commit.
+- Regression test added in `tests/check-review-output.test.mjs`: `--update-pr` round-trip with evidence_link containing `$&` and `$1` patterns; asserts the PR body retains them verbatim.
+- MDN reference: [`String.prototype.replace()` § Specifying a string as the replacement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#specifying_a_string_as_the_replacement).
+
+**Disposition:** Applied. CS40 ships with the fix and a dedicated regression test. Any future linter or tool that splices arbitrary content into a string body MUST avoid the `replace(_, str)` form when `str` contains user-supplied or downstream-data content — use index-based slicing or function-form replacement. Worth a one-time grep across the codebase: `grep -rn "\.replace([^,]*,\s*[a-zA-Z]" scripts/ lib/ bin/` to flag any other splice-into-string sites that may be vulnerable. (Out of scope for CS40; could be a hygiene CS in the v0.5.0 arc tail or absorbed into CS41/CS42.)
+
 ### LRN-113
 
 ```yaml

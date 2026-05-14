@@ -1,10 +1,10 @@
 # CS40 — `check-review-output.mjs` linter (R1 enumeration vs `git diff --name-only`)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs40/check-review-output
 **Started:** 2026-05-13
-**Closed:** —
+**Closed:** 2026-05-13
 **Filed by:** Pre-CS40 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) gap #3 + Change C2 (R1 per-file enumeration). Authored 2026-05-12 by `yoga-ah`. First CS in the v0.5.0 arc.
 **Depends on:** [CS39](planned_cs39_release-v0.4.0.md) (v0.4.0 must be released first), [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md) (doctrine/schema).
 
@@ -83,15 +83,27 @@ Orchestrator owns OPERATIONS.md + CHANGELOG.md.
 | T6 | OPERATIONS.md § Reviewer dispatch — append post-review block per Deliverable 4 | done | yoga-ah | added `### Post-review validation (CS40 — harness review-output)` subsection in both root + composed copies |
 | T7 | CHANGELOG.md `[Unreleased] / Added` entry per Deliverable 5 | done | yoga-ah | three bullets covering CLI + linter, OPERATIONS update, test inventory |
 | T8 | validate (`harness lint` + tests + sync clean) | done | yoga-ah | lint 28/0/3; tests 886 (885 pass / 1 skipped / 0 fail); +16 from CS40; sync clean |
-| T9 | dispatch GPT-5.5 R1 plan-vs-impl review (sync rubber-duck) | planned | yoga-ah | per LRN-064 |
-| T10 | amendments per R1 + dispatch R2 | planned | yoga-ah | — |
-| T11 | open content PR; engage Copilot via `gh pr edit --add-reviewer`; CI green; admin-merge | planned | yoga-ah | — |
-| T12 | close-out PR (rename done, plan-vs-impl section, WORKBOARD/CONTEXT) | planned | yoga-ah | — |
+| T9 | dispatch GPT-5.5 R1 plan-vs-impl review (sync rubber-duck) | done | yoga-ah | per LRN-064 — Verdict: **Block** with 3 Blocking findings (C40-6 schema mismatch, C40-7 row-shape mismatch, missing tests) |
+| T10 | amendments per R1 + dispatch R2 | done | yoga-ah | R1 amendments in `7cfd42f` (canonical schemas + runGh seam + 2 new tests); R2 Verdict **Go** (0 findings); Copilot review then surfaced 4 inline findings; fixes in `198afa5` (index-based slicing for $-pattern preservation; Makefile/LICENSE/Dockerfile enumeration; dead helper removed; misleading test name renamed); R3 stale-diff re-review Verdict **Go** |
+| T11 | open content PR; engage Copilot via `gh pr edit --add-reviewer`; CI green; admin-merge | done | yoga-ah | PR #172 admin-merged at `2700d7b` (2026-05-13T23:59:05Z); A5 ordering required Copilot 3rd review @ 23:55:50Z to be after R3 Go @ 23:42:00Z |
+| T12 | close-out PR (rename done, plan-vs-impl section, WORKBOARD/CONTEXT) | in-progress | yoga-ah | this PR |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **LRN candidate** (filed in close-out): `String.prototype.replace(searchString, replacement)` interprets `$&`/`$$`/`$<n>` patterns in the replacement string. When the replacement contains user-supplied content (e.g. evidence_link cells with URL query strings, GraphQL responses) this silently corrupts output. Surfaced by Copilot review on PR #172. Fix: use index-based slicing (`s.slice(0, idx) + new + s.slice(idx + section.length)`) or function form `replace(re, () => str)` (function form does not interpret patterns). Affects two sites in `scripts/check-review-output.mjs` (`updatePrReviewLog` outer body splice + inner section row-append). Worth a learning because the same gotcha applies to any future linter that splices PR bodies.
+- **A5 ordering doctrine reminder**: each new HEAD requires a NEW R-row in `## Review log`. The R-row's timestamp must be BEFORE the most-recent Copilot review's `submittedAt`. If Go is added AFTER Copilot reviewed, re-engage Copilot via `gh pr edit --add-reviewer copilot-pull-request-reviewer` so a fresh Copilot review supersedes the local Go (this is the doctrine `harness copilot-engage` will automate in CS41).
+- **Per-file enumeration heuristic blind spot**: original C40-3 implementation used `/[/.]/.test(filePath)` to distinguish file paths from prose, which incorrectly dropped extensionless top-level files (Makefile, LICENSE, Dockerfile). Fixed by relying solely on `inFindingsSection` flag for the enumeration-vs-findings split. Side effect: prose bullets outside the findings section will now produce "extra-file" warnings, which is acceptable per spec (C40-3 says extras are warnings not errors).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** gpt-5.5 (dispatched by yoga-ah)
+**Date:** 2026-05-13
+**Outcome:** Go (R1 Block → R1-amendments + R2 Go → Copilot review fixes + R3 Go stale-diff re-review)
+
+### Transcript
+
+| Round | Reviewer model | Implementer model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | initial-impl-7c21faa | 2026-05-13T23:20:00Z | Block | 3 Blocking: C40-6 parser used "header contains model" heuristic instead of canonical `\| Field \| Value \|` schema; C40-7 emitted 7-cell row instead of canonical 6-cell `timestamp\|analyzed_head\|actor\|model\|verdict\|evidence_link`; tests gap — independence-violation test didn't exercise a real violation, no `--update-pr` idempotency test. |
+| R2 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | r1-amend-7cfd42f | 2026-05-13T23:30:00Z | Go | 0 findings. R1 amendments verified PASS: canonical `\| Field \| Value \|` parser; canonical 6-cell row + dedup on `analyzed_head+actor+model+verdict`; 2 new fake-gh tests added (real violation + round-trip). |
+| R3 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | copilot-fix-198afa5 | 2026-05-13T23:42:00Z | Go | Stale-diff re-review after Copilot's 4 inline fixes. 0 findings. All 4 Copilot fixes verified PASS: index-based slicing replaces `body.replace(section, ...)` (`$&`/`$$`/`$<n>` corruption averted); extensionless-file enumeration (Makefile/LICENSE/Dockerfile) restored; dead `escapeRegex` removed; misleading test name corrected. 2 regression tests added. |
