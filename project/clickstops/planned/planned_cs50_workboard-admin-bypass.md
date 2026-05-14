@@ -36,7 +36,7 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | copilot-cli | rubber-duck via general-purpose (orchestrator: yoga-ah) | a08129b6f21b | 2026-05-14T23:29:46Z | Go-with-amendments | R1 blockers addressed; proceed with status-rollup fail-closed and PAT bypass-actor docs/test. |
+| R1 | gpt-5.5 | copilot-cli | rubber-duck via general-purpose (orchestrator: yoga-ah) | ece0f7fce457 | 2026-05-14T23:29:46Z | Go-with-amendments | R1 blockers addressed; proceed with status-rollup fail-closed and PAT bypass-actor docs/test. |
 
 ## Deliverables
 
