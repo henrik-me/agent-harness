@@ -1,9 +1,9 @@
 # CS43 — Apply CS41 R5 F-residual-1: recurse into nested CS subdirectories in `check-clickstop-implementer-not-reviewer.mjs`
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs43-45/cs41-residuals-bundle
+**Started:** 2026-05-14
 **Closed:** —
 **Filed by:** Pre-CS43 disposition of [CS41 § R5 Copilot disposition F-residual-1](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-117" but `LEARNINGS.md` LRN-117 documents the unrelated `cacheDir` null-destructure fix (a different CS41 bug). The canonical reference is the **F-residual-1 anchor** in done_cs41 § R5; this CS does NOT depend on the LEARNINGS.md numbering being reconciled.
@@ -81,7 +81,14 @@ CS43 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| Refactor `scripts/check-clickstop-implementer-not-reviewer.mjs` to recurse into nested CS subdirs per C43-1 | pending | yoga-ah | replace flat readdirSync loop with recursive walker matching `^(planned\|active\|done)_cs\d+[a-z]?_.*$` |
+| Add `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE = '2026-05-14'` constant + `parseClosedDate()` helper per C43-2 | pending | yoga-ah | mirrors existing `CLOSEOUT_TASK_ENFORCEMENT_DATE` pattern |
+| Build `tests/fixtures/cs43/{a..e}/` fixture set per C43-5 (5 fixtures: pre-enforcement skip, post-enforcement enforced, active-nested always-enforced, unparseable-close-date warn-and-skip, flat-iteration preserved) | pending | yoga-ah | one valid + one invalid per code path |
+| Add `tests/cs43-impl-not-reviewer-recursion.test.mjs` (≥5 tests) per C43-5 | pending | yoga-ah | covers default + `--strict-agent-columns` modes |
+| Self-verify per Deliverable #5: run linter against live repo and confirm 4 named pre-CS35 nested subfolders produce ZERO findings | pending | yoga-ah | grandfathering smoke test |
+| Add CHANGELOG.md `[Unreleased] / Changed` bullet per C43-6 | pending | yoga-ah | shared with CS44 + CS45 in this bundle |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT (bundled with CS44 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Close-out: learnings + follow-ups — file follow-up CSs for any uncovered residual | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 
 ## Notes / Learnings
 

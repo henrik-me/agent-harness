@@ -1,9 +1,9 @@
 # CS45 — Apply CS41 R5 F-residual-3: wrap fs errors in `EngageError` in `lib/copilot-engage.mjs:resolveCopilotIdentity`
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs43-45/cs41-residuals-bundle
+**Started:** 2026-05-14
 **Closed:** —
 **Filed by:** Pre-CS45 disposition of [CS41 § R5 Copilot disposition F-residual-3](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-119" but `LEARNINGS.md` LRN-119 documents the unrelated A3 architectural carve-out. The canonical reference is the **F-residual-3 anchor** in done_cs41 § R5.
@@ -90,7 +90,17 @@ CS45 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| Wrap `__testSeam.mkdir` + `__testSeam.writeFile` calls (lines ~201-202 of `lib/copilot-engage.mjs`) in a single try/catch rethrowing as `EngageError(..., 'cache-write-failed', { cause: err })` per C45-1 | pending | yoga-ah | one block; preserves `err.syscall` in message |
+| Extend `EngageError.kind` JSDoc enumeration with `'cache-write-failed'` per C45-2 | pending | yoga-ah | top of class declaration |
+| Add `bin/harness.mjs cmdCopilotEngage` branch handling `err.kind === 'cache-write-failed'` per C45-3; pick next free exit code (claim-time grep + document choice) | pending | yoga-ah | stable exit code; stderr message must mention `--cache-dir <writable-path>` |
+| Add 3 new tests to `tests/cli-copilot-engage.test.mjs` per C45-4 (mkdir EACCES, writeFile ENOSPC, CLI smoke with unwritable `--cache-dir`) | pending | yoga-ah | uses `__testSeam` injection |
+| Edit `template/composed/OPERATIONS.md` § Copilot engagement procedure: append Troubleshooting paragraph per C45-6 | pending | yoga-ah | composed-mirror first per LRN-070 |
+| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` (bundled w/ CS44's sync) per C45-6 | pending | yoga-ah | DO NOT hand-edit root |
+| Add CHANGELOG.md `[Unreleased] / Changed` bullet referencing the new exit code N per Deliverable #7 (bundled w/ CS43 + CS44) | pending | yoga-ah | cite chosen exit code |
+| File new LRN per C45-7 + Deliverable #8 (next free LRN number; check vs CS23's LRN-100 flip + LEARNINGS.md numbering) | pending | yoga-ah | meta-lesson on auditing all syscalls at library/CLI boundary |
+| Smoke test per Exit criterion #11: invoke `harness copilot-engage 999 --cache-dir <unwritable>` and confirm exit code + stderr + no stack-trace dump | pending | yoga-ah | manual; record evidence in this file |
+| Close-out: docs + restart state (bundled with CS43 + CS44) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Close-out: learnings + follow-ups (bundled) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 
 ## Notes / Learnings
 
