@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs49/operations-doctrine",
-  "resolved_sha": "7943268984fef7ee61d7c61c1cd5f9f442e98c4f",
+  "harness_ref": "cs48/ban-implementer-self-review",
+  "resolved_sha": "eb9839bbacdca9bbb520b8ef0d4757fe4dd788c5",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:31:23.664Z",
+  "synced_at": "2026-05-14T23:47:03.804Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -84,21 +84,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "3fac49bf28157952228c51f073214bf3c51c73694393f36c01b43f389b293f2a",
+      "rendered_hash": "682c7f440ee93ac21cb89128b3f37d1ed9c15f3456b89e1c0b05a1a34713f468",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1631,
-            "end": 1633
+            "start": 1657,
+            "end": 1659
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "54d55f5d003a034d2fb7a2a821323efbb567d648ccd5b28ee5de1ae09ada3a6d"
+      "template_prose_hash": "88f86f15ea2939a20c0abfcb224dfb1c810a91fca995e1552993f09786986455"
     },
     {
       "target": "REVIEWS.md",
@@ -158,7 +158,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "87cfb2a3120d725ef02fc99d3f5d7aa9dc2f5f7567e538e6562c9ff549ee9493",
+      "rendered_hash": "56253fc3a7f6eb3b688fbc1ed4674f225e3f321b94309ef3a9d4b8094b6e36d5",
       "action": "preserved"
     },
     {
