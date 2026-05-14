@@ -291,12 +291,13 @@ describe('CS46 — workboard empty-state + Plan-vs-impl review discoverability',
 
   // -------------------------------------------------------------------------
   // C46-8: fresh-consumer acceptance — `harness init` against a fresh
-  // os.tmpdir() target dir produces a consumer whose WORKBOARD.md passes the
-  // workboard linter cleanly out of the box.
+  // os.tmpdir() target dir produces a consumer whose WORKBOARD.md AND the
+  // seeded `project/clickstops/` tree pass `harness lint --quiet` cleanly out
+  // of the box.
   //
   // Per LRN-094: target dir is under os.tmpdir(), NEVER under REPO_ROOT.
   // -------------------------------------------------------------------------
-  it('5. (C46-8 acceptance) `harness init` into fresh tmpdir → seeded WORKBOARD.md passes check-workboard with 0 errors', () => {
+  it('5. (C46-8 acceptance) `harness init` into fresh tmpdir → seeded WORKBOARD.md + harness lint pass cleanly', () => {
     const targetDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cs46-fresh-init-'));
     try {
       // Initialize git so harness init's repo-detection works.
@@ -320,18 +321,77 @@ describe('CS46 — workboard empty-state + Plan-vs-impl review discoverability',
         `harness init must create WORKBOARD.md at ${seededWb}`
       );
 
-      // Run the workboard linter against the freshly seeded file.
-      const lintResult = runWorkboardLinter(['--file', seededWb]);
+      // 5a. Run the workboard linter against the freshly seeded file.
+      const wbLintResult = runWorkboardLinter(['--file', seededWb]);
       assert.equal(
-        lintResult.status, 0,
-        `Freshly-seeded WORKBOARD.md must pass check-workboard with 0 errors (issue #146 acceptance criterion #1); got status=${lintResult.status}\nstdout: ${lintResult.stdout}\nstderr: ${lintResult.stderr}`
+        wbLintResult.status, 0,
+        `Freshly-seeded WORKBOARD.md must pass check-workboard with 0 errors (issue #146 acceptance criterion #1); got status=${wbLintResult.status}\nstdout: ${wbLintResult.stdout}\nstderr: ${wbLintResult.stderr}`
       );
       assert.ok(
-        lintResult.stdout.includes('0 errors'),
-        `Expected "0 errors"; got:\n${lintResult.stdout}`
+        wbLintResult.stdout.includes('0 errors'),
+        `Expected "0 errors"; got:\n${wbLintResult.stdout}`
+      );
+
+      // 5b. Run the full harness lint --quiet against the freshly init'd
+      // consumer dir. The fresh-init scaffold MUST satisfy `harness lint`
+      // out of the box — partial pass weakens issue #146 AC #1.
+      // Skip the public-artifact check (it requires --public-artifact-dir
+      // which fresh init does not provide).
+      const fullLintResult = spawnSync(
+        NODE,
+        [HARNESS_BIN, '--cwd', targetDir, 'lint', '--quiet'],
+        { encoding: 'utf8' }
+      );
+      assert.equal(
+        fullLintResult.status, 0,
+        `Freshly-init'd consumer must pass "harness lint --quiet" with exit 0 (issue #146 AC #1 strict); got ${fullLintResult.status}\nstdout: ${fullLintResult.stdout}\nstderr: ${fullLintResult.stderr}`
       );
     } finally {
       fs.rmSync(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // C46-2 / C46-9 doc-drift guard (rubber-duck R2 non-blocking finding):
+  // mechanically assert the canonical OPERATIONS.md skeleton + verbatim-labels
+  // callout exists. Without this, OPERATIONS.md could regress (e.g. someone
+  // strips the callout in a future refactor) while the rest of CS46's tests
+  // still pass — the discoverability fix would silently rot.
+  // -------------------------------------------------------------------------
+  it('6. canonical Plan-vs-impl skeleton + verbatim-labels callout present in OPERATIONS.md (template + root mirror)', () => {
+    const composedOps = path.join(REPO_ROOT, 'template', 'composed', 'OPERATIONS.md');
+    const rootOps = path.join(REPO_ROOT, 'OPERATIONS.md');
+    for (const opsFile of [composedOps, rootOps]) {
+      assert.ok(fs.existsSync(opsFile), `Expected ${opsFile} to exist`);
+      const body = fs.readFileSync(opsFile, 'utf8');
+
+      // Verbatim-labels callout must be present.
+      assert.ok(
+        body.includes('matched verbatim by `check-clickstop.mjs`'),
+        `${opsFile}: missing verbatim-labels callout (C46-2 regression)`
+      );
+
+      // All three required field labels must appear in the canonical skeleton
+      // code-block region (within ±50 lines of the callout).
+      assert.ok(
+        body.includes('**Reviewer:**'),
+        `${opsFile}: missing **Reviewer:** label`
+      );
+      assert.ok(
+        body.includes('**Date:**'),
+        `${opsFile}: missing **Date:** label`
+      );
+      assert.ok(
+        body.includes('**Outcome:**'),
+        `${opsFile}: missing **Outcome:** label`
+      );
+
+      // The callout must explicitly call out **Verdict:** as the failing alias
+      // (this is the highest-leverage anti-pattern hint per issue #146).
+      assert.ok(
+        body.includes('**Verdict:**'),
+        `${opsFile}: callout must name **Verdict:** as failing alias (C46-2)`
+      );
     }
   });
 
