@@ -81,18 +81,22 @@ CS43 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Refactor `scripts/check-clickstop-implementer-not-reviewer.mjs` to recurse into nested CS subdirs per C43-1 | pending | yoga-ah | replace flat readdirSync loop with recursive walker matching `^(planned\|active\|done)_cs\d+[a-z]?_.*$` |
-| Add `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE = '2026-05-14'` constant + `parseClosedDate()` helper per C43-2 | pending | yoga-ah | mirrors existing `CLOSEOUT_TASK_ENFORCEMENT_DATE` pattern |
-| Build `tests/fixtures/cs43/{a..e}/` fixture set per C43-5 (5 fixtures: pre-enforcement skip, post-enforcement enforced, active-nested always-enforced, unparseable-close-date warn-and-skip, flat-iteration preserved) | pending | yoga-ah | one valid + one invalid per code path |
-| Add `tests/cs43-impl-not-reviewer-recursion.test.mjs` (≥5 tests) per C43-5 | pending | yoga-ah | covers default + `--strict-agent-columns` modes |
-| Self-verify per Deliverable #5: run linter against live repo and confirm 4 named pre-CS35 nested subfolders produce ZERO findings | pending | yoga-ah | grandfathering smoke test |
-| Add CHANGELOG.md `[Unreleased] / Changed` bullet per C43-6 | pending | yoga-ah | shared with CS44 + CS45 in this bundle |
-| Close-out: docs + restart state — update WORKBOARD, CONTEXT (bundled with CS44 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
-| Close-out: learnings + follow-ups — file follow-up CSs for any uncovered residual | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Refactor `scripts/check-clickstop-implementer-not-reviewer.mjs` to recurse into nested CS subdirs per C43-1 | done | yoga-ah | replaced flat readdirSync loop with `walkClickstopSubdir()` matching `^(planned\|active\|done)_cs\d+[a-z]?_.*$`; CS-shaped `.md` filenames only (auxiliary docs like `harness-cs-plan.md` skipped) |
+| Add `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE = '2026-05-14'` constant + `parseClosedDate()` helper per C43-2 | done | yoga-ah | refined `parseClosedDate()` to return `{kind:'missing'\|'unparseable'\|'date'}` instead of literal null per C43-4 — see Notes for rationale |
+| Build `tests/fixtures/cs43/{a..e}/` fixture set per C43-5 (5 fixtures: pre-enforcement skip, post-enforcement enforced, active-nested always-enforced, unparseable-close-date warn-and-skip, flat-iteration preserved) | done | yoga-ah | LF-clean, all 5 land at the expected nested paths |
+| Add `tests/cs43-impl-not-reviewer-recursion.test.mjs` (≥5 tests) per C43-5 | done | yoga-ah | 6 tests (5 fixture-driven + 1 strict-mode variant), all pass |
+| Self-verify per Deliverable #5: run linter against live repo and confirm 4 named pre-CS35 nested subfolders produce ZERO findings | done | yoga-ah | live: `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` → **0 errors / 9 warnings** (3 of 4 named pre-CS35 nested folders silently grandfathered; 1 cs22 WARN due to em-dash close-date — pre-existing data anomaly, non-blocking) |
+| Add CHANGELOG.md `[Unreleased] / Changed` bullet per C43-6 | done | yoga-ah | shared with CS44 + CS45 in this bundle; orchestrator commits |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT (bundled with CS44 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
+| Close-out: learnings + follow-ups — file follow-up CSs for any uncovered residual | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **`parseClosedDate()` shape refinement (C43-4 spirit, not literal):** The briefing said the helper should return `null` for both missing and unparseable close-dates, with a single WARN+skip on either. The existing CS41 `tests/fixtures/cs41/multirow/.../done_cs41_multirow.md` has NO `**Closed:**` line at all, so a null-return + WARN would have broken the existing test suite. Refactored the helper to return `{kind:'missing'\|'unparseable'\|'date'}`. Only `kind:'unparseable'` (em-dash, TBD, etc.) triggers the WARN+skip the C43-4 wording calls for; `kind:'missing'` lints normally (deferring missing-field complaints to the existing `check-clickstop.mjs` linter, which already covers them). The spirit of C43-4 — "don't double-report a malformed close-out" — is preserved; the literal "single null path" is split into two semantic kinds.
+- **`CS_FILE_RE` filter:** Only `.md` files matching `^(planned|active|done)_cs\d+[a-z]?_.*\.md$` are linted. Auxiliary docs alongside (e.g. `done_cs01_bootstrap-repo/harness-cs-plan.md`) are silently skipped. This matches the briefing's references to `done_csNN_*.md`/`active_*.md`/`planned_*.md` patterns and avoids spurious findings on non-CS files inside CS subfolders.
+- **Live self-verify smoke (D43-4):** `node scripts\check-clickstop-implementer-not-reviewer.mjs --cwd .` → exit 0; **0 errors, 9 warnings**. Of the 4 named pre-CS35 nested subfolders (`done_cs01_*`, `done_cs11_*`, `done_cs16_*`, `done_cs22_*`), 3 are silently grandfathered (close-dates clearly before `2026-05-14`); `done_cs22_*` produces 1 WARN due to an em-dash close-date that `parseClosedDate()` cannot parse (pre-existing data anomaly — flagged as a LEARNINGS CANDIDATE for a follow-up CS to backfill the date).
+- **CRLF gotcha (Windows):** Files created via the `create` tool default to CRLF; `harness lint`'s text-encoding linter rejects them. All CS43 files were re-saved as LF + no-BOM UTF8 via `[System.IO.File]::WriteAllText` with `New-Object System.Text.UTF8Encoding $false` and absolute paths (PowerShell's `cd` did not survive between tool invocations and writes silently went to the wrong worktree).
+- **Linter flag:** the linter is invoked with `--cwd <dir>` (not `--dir <dir>` as the plan text says); the linter resolves `<cwd>/project/clickstops/` internally.
 
 ## Plan-vs-implementation review
 

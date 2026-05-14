@@ -414,6 +414,7 @@ Exit codes:
   2  bad usage (bad arguments, fork-source PR)
   3  poll timeout (mutation accepted but no review within --poll-timeout)
   4  auth or GraphQL error
+  5  identity cache write failed (use --cache-dir to override; CS45)
 `.trimStart(),
 
   version: `
@@ -2328,6 +2329,14 @@ async function cmdCopilotEngage(args, global) {
       const code = copilotEngageExitCode(err);
       if (parsed.json) {
         process.stderr.write(JSON.stringify({ error: err.message, kind: err.kind }, null, 2) + '\n');
+      } else if (err.kind === 'cache-write-failed') {
+        // CS45 C45-3: tailor the message so the user sees the --cache-dir
+        // escape hatch immediately. Preserve the typed-error message body
+        // so the offending path + syscall remain visible.
+        process.stderr.write(
+          `copilot-engage: cache write failed: ${err.message}\n` +
+          `Hint: pass --cache-dir <writable-path> to override the default ~/.cache/harness/ location.\n`,
+        );
       } else {
         process.stderr.write(`copilot-engage: ${err.message}\n`);
       }
@@ -2511,6 +2520,9 @@ function copilotEngageExitCode(err) {
   if (err.kind === 'fork-source' || err.kind === 'bad-input') return 2;
   if (err.kind === 'timeout') return 3;
   if (err.kind === 'auth-missing' || err.kind === 'network') return 4;
+  // CS45 C45-3: dedicated exit code for filesystem cache-write failures,
+  // distinct from network/auth (kind=4) so consumers can branch on it.
+  if (err.kind === 'cache-write-failed') return 5;
   return 4;
 }
 

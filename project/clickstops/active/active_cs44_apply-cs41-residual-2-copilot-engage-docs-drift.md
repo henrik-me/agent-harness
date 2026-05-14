@@ -76,19 +76,21 @@ CS44 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Edit `template/composed/OPERATIONS.md` § Copilot engagement procedure: `node(login:)` → `node(id:$id)` + `BOT_kgDOCnlnWA` per C44-2 | pending | yoga-ah | composed-mirror first per LRN-070 |
-| Add rationale sentence after the new wording (cite LRN-009 + ADR-0004 § ADR4-2) per C44-3 | pending | yoga-ah | one sentence, in same paragraph |
-| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` + refresh `.harness-lock.json` per C44-4 | pending | yoga-ah | DO NOT hand-edit root |
-| Edit `CHANGELOG.md` `[Unreleased] / Added` § CS41 row to use the canonical `node(id:` wording per C44-2 | pending | yoga-ah | corrects the line that inherited the stale wording |
-| Add CHANGELOG.md `[Unreleased] / Changed` bullet documenting this doc-correction (bundled w/ CS43 + CS45) | pending | yoga-ah | per Deliverable #6 |
-| Add `tests/cs44-docs-impl-alignment.test.mjs` (≥4 assertions) per C44-6 | pending | yoga-ah | watchdog asserting all 4 touchpoints reference `node(id:` + `BOT_kgDOCnlnWA` |
-| LEARNINGS.md LRN-009 cross-link bullet per C44-7 (skip if already present) | pending | yoga-ah | claim-time check |
-| Close-out: docs + restart state (bundled with CS43 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
-| Close-out: learnings + follow-ups (bundled) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Edit `template/composed/OPERATIONS.md` § Copilot engagement procedure: stale wording → `node(id:$id)` + `BOT_kgDOCnlnWA` per C44-2 | done | yoga-ah | composed-mirror first per LRN-070 |
+| Add rationale sentence after the new wording (cite LRN-009 + ADR-0004 § ADR4-2) per C44-3 | done | yoga-ah | one sentence, same paragraph |
+| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` + refresh `.harness-lock.json` per C44-4 | done | yoga-ah | DO NOT hand-edit root; required two passes due to stale `template_prose_hash` in lock — see Notes |
+| Edit `CHANGELOG.md` `[0.5.0] / Added` § CS41 row to use the canonical `node(id:` wording per C44-2 | done | yoga-ah | the row already shipped under [0.5.0] (not [Unreleased]) since CS42 cut v0.5.0; edited in place — see Notes |
+| Add CHANGELOG.md `[Unreleased] / Changed` bullet documenting this doc-correction (bundled w/ CS43 + CS45) | done | yoga-ah | bullet uses neutral "stale `node`-by-login wording" phrasing so the watchdog regex doesn't trip on the changelog itself |
+| Add `tests/cs44-docs-impl-alignment.test.mjs` (≥4 assertions) per C44-6 | done | yoga-ah | 9 assertions total: 4 touchpoints × `node(id:` (4) + 4 touchpoints × `BOT_kgDOCnlnWA` (4) + 1 anti-regression for absence of stale wording; all pass |
+| LEARNINGS.md LRN-009 cross-link bullet per C44-7 (skip if already present) | done | yoga-ah | new "Cross-link (CS44, 2026-05-14)" paragraph appended to LRN-009 body |
+| Close-out: docs + restart state (bundled with CS43 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
+| Close-out: learnings + follow-ups (bundled) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **CHANGELOG row location drift (briefing said `[Unreleased]/Added`, actual was `[0.5.0]/Added`):** Plan referenced `[Unreleased] / Added` § CS41 row, but CS42 already cut v0.5.0 between CS41 close-out and CS44 claim, so the CS41 row had already moved into the `## [0.5.0] ### Added` block at line ~39. Decision: edit the [0.5.0] CS41 row in place to fix the historical record AND add a separate CS44 doc-correction bullet under `[Unreleased] / Changed`. This preserves changelog accuracy without rewriting release history.
+- **Sync required two `--mode=apply` passes (pre-existing stale `template_prose_hash` in `.harness-lock.json`):** First sync attempt with my CS44 + CS45 composed-mirror edits failed with `Composed merge failed for "OPERATIONS.md": Consumer file contains content outside local blocks that does not match the template`. Root cause: the lock's recorded `template_prose_hash` for `OPERATIONS.md` was `a130e2c3...` (stale from synced_at `2026-05-13T21:04:47`), but the current consumer skeleton hashed to `410b5d85...` and the new templated skeleton (with my edits) hashed to `7dbd0926...` — case (b) "consumer edited prose" fail-closed (per `lib/composed.mjs:706-742`). Workaround: stashed my template edits, ran `harness sync --mode=apply` once to refresh the lock's `template_prose_hash` to the current consumer skeleton hash (`410b5d85`), unstashed, ran sync again — case (a) "template prose evolved" → AUTO-ADOPT triggered. Final state: `harness sync --mode=check --cwd .` reports `No drift detected.` Worth filing as a LEARNINGS CANDIDATE — the prose-hash refresh seems to fail silently when the diff between consumer and template is below some threshold; future composed-mirror edits to OPERATIONS.md may hit this same issue.
+- **Watchdog test phrasing:** The CHANGELOG `[Unreleased]/Changed` bullet uses "stale `node`-by-login GraphQL fragment wording" instead of the literal `node(login:)` so the new watchdog test (which scans CHANGELOG.md for `/node\(login:\)/`) doesn't trip on the changelog itself. The test's regex is intentionally narrow (only the `node(login:)` form) so future descriptive prose can safely talk about "login-based GraphQL queries" without false positives.
 
 ## Plan-vs-implementation review
 

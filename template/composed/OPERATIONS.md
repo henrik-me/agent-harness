@@ -802,9 +802,13 @@ The CLI:
 
 1. Auto-detects `--repo` from the current working directory's `git remote origin url`
    when omitted. Errors with a clear message on detached/missing remotes.
-2. Resolves the Copilot reviewer's Bot node ID via `node(login:)` / `... on Bot`
-   GraphQL fragment (cached for 7 days under `~/.cache/harness/copilot-id.json`
-   per C41-2).
+2. Resolves the Copilot reviewer's Bot node ID via the
+   `node(id: $id) { ... on Bot { databaseId login } }` GraphQL fragment with
+   the hardcoded Copilot Bot node ID `BOT_kgDOCnlnWA` (cached for 7 days
+   under `~/.cache/harness/copilot-id.json` per C41-2). The hardcoded ID is
+   required because `user(login: 'copilot-pull-request-reviewer')` returns
+   `null` per the CS37 GraphQL spike — see [LRN-009](LEARNINGS.md#lrn-009)
+   and [ADR-0004 § ADR4-2](docs/adr/0004-copilot-graphql-spike.md#adr4-2).
 3. Shells out to `gh pr edit <pr> --add-reviewer copilot-pull-request-reviewer` to
    request the review (per ADR-0004 § ADR4-2 — `requestReviews` GraphQL rejects
    Bot IDs).
@@ -880,6 +884,14 @@ Fork PR caveat (ADR4-6): on `pullRequest.isCrossRepository == true`, the
 `check-copilot-review` gate exits 2 with a maintainer-rerun hint —
 forks cannot self-engage Copilot under their own token. `harness copilot-engage`
 mirrors this exit-2 behavior on fork PRs.
+
+### Troubleshooting (CS45):
+
+If `harness copilot-engage` exits with `cache-write-failed` (exit code 5),
+the most common cause is a read-only `$HOME/.cache/` (e.g. hardened CI
+runner, sandboxed home directory). Override the cache directory with
+`--cache-dir <writable-path>` to redirect identity-cache writes to a
+location the process can write to.
 
 ---
 

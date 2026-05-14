@@ -208,6 +208,8 @@ These can drift. The schema doesn't enforce that they agree; the engine has to p
 
 **Applied (CS02b, 2026-05-09):** Option (b) per user directive 2026-05-09. Top-level `local_blocks` was removed from `schemas/harness.config.schema.json`; `composed.overrides[<file>].local_blocks` is now the single source of truth. `lib/sync.mjs` `resolveAllowedBlockIds()` simplified to read only the nested form; the `canonLocalBlocks` canonicalisation block was removed; the previous "top-level vs override disagreement" warning was deleted. `bin/harness.mjs` `cmdLint` now iterates `cfg.composed.overrides` to assemble the per-file allowlist. All 8 in-repo configs (self-host, 4 examples/templates, 3 fixtures) migrated. ADR 0001 grew a "v0.2.0" subsection documenting the migration. Ajv now rejects any config carrying top-level `local_blocks` with an `additional properties` error naming the offending key. Targets v0.2.0; CHANGELOG updated.
 
+**Cross-link (CS44, 2026-05-14):** `OPERATIONS.md` § Copilot engagement procedure (and its composed mirror in `template/composed/OPERATIONS.md`) document the resulting `node(id: $id) { ... on Bot { databaseId login } }` GraphQL fragment with the hardcoded Copilot Bot node ID `BOT_kgDOCnlnWA` per CS44. The hardcoded ID is required because `user(login: 'copilot-pull-request-reviewer')` returns `null` per the CS37 GraphQL spike (this LRN). See also [ADR-0004 § ADR4-2](docs/adr/0004-copilot-graphql-spike.md#adr4-2). The new regression test `tests/cs44-docs-impl-alignment.test.mjs` is the doc-drift watchdog that pins all four touchpoints (lib, composed/OPERATIONS, root OPERATIONS, CHANGELOG) to mention both `node(id:` AND `BOT_kgDOCnlnWA` so future drift trips a hard test failure.
+
 ### LRN-010
 
 ```yaml
@@ -2124,6 +2126,26 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
 **Disposition update (CS23):** Applied via `cs23/pr-body-trigger` (PR `#187`); status flipped `open` → `applied`. `.github/workflows/harness-self-check.yml` now declares `types: [opened, synchronize, reopened, edited]` on `pull_request:`, so `gh pr edit --body` re-fires the `pr-body` job. Regression locked by `tests/cs23-pr-body-trigger.test.mjs`. Workaround (`gh run rerun <run-id> --failed`) is no longer required.
+
+### LRN-123
+
+```yaml
+id: LRN-123
+date: 2026-05-14
+category: architectural
+source_cs: CS45
+status: applied
+tags: [typed-errors, error-envelopes, fs-syscalls, exit-code-discipline, audit-coverage]
+claim_area: error-handling
+```
+
+**Problem:** When `lib/copilot-engage.mjs` introduced the `EngageError` typed-error class in CS41 (kinds: `bad-input`, `fork-source`, `timeout`, `auth-missing`, `network`), the wrap-and-rethrow discipline was applied to every documented network/auth/parse boundary — but a subset of cold-path syscalls in `resolveCopilotIdentity()` (the cache-write seam: `__testSeam.mkdir(cacheDir, {recursive:true})` + `__testSeam.writeFile(cachePath, JSON.stringify(payload))` at lines 201-202) was missed. On a hardened CI runner with a read-only `$HOME/.cache/` (or a sandboxed home directory, or a process whose UID had no write permission to the cache dir), the unwrapped fs error escaped the library boundary as a raw Node `Error` (with `.code = 'EACCES'` or similar) and bubbled all the way to `bin/harness.mjs`'s top-level catch, producing an opaque stack trace and a generic exit code instead of the typed exit-code + actionable `--cache-dir <writable-path>` hint the rest of the surface provides. The CS41 R4 dogfood Copilot review at HEAD `c099ee5` (2026-05-14) explicitly flagged the unwrapped fs writes as a residual; CS45 ships the wrap.
+
+**Finding:** **When introducing a typed-error envelope, audit EVERY syscall on EVERY code path the public API can reach — not just the documented happy-path boundaries.** The CS41 audit covered `gh` invocations, GraphQL parsing, polling timeouts, and fork-source detection (the obvious failure modes), but the cache-write was treated as "best-effort housekeeping" and left raw. Two structural fixes: (1) the typed-error class's JSDoc enumeration of kinds becomes the single source of truth — every call site that can reach the library must rethrow as one of the enumerated kinds OR the kind list must grow; (2) the CLI's catch handler must include a default branch that rejects un-typed errors loudly (so a future missed wrap fails fast in a test rather than silently leaking through). For the broader doctrine: any "kind enumeration"-style typed-error class should be paired with a coverage test that asserts every `try { ... } catch (err) { ... }` site within the library either rethrows as that class OR is documented as belonging to a different error domain. Pattern generalises: `EngageError`, `GraphQLError`, `ComposedMergeError`, `SyncError`, etc. all benefit from the same audit discipline.
+
+**Evidence:** CS41 R4 dogfood Copilot review at HEAD `c099ee5` (2026-05-14) flagged `lib/copilot-engage.mjs:201-202` as raw fs writes outside the EngageError envelope. The pattern was confirmed in CS45 by reading the full file: `__testSeam.spawnSync` calls were typed (`auth-missing`/`network`); `__testSeam.fetch` calls were typed (`network`/`http-status`); the GraphQL response parser was typed (`graphql-errors`); but the `mkdir`+`writeFile` pair were the only raw fs syscalls in the cold path. CS45 wrapped them in a single `try { mkdir; writeFile } catch (err) { throw new EngageError(...with err.syscall in message..., 'cache-write-failed', { cause: err }) }`. New exit code **5** assigned (`bin/harness.mjs cmdCopilotEngage` `copilotEngageExitCode()`; codes 0/2/3/4 already taken by success/bad-input+fork-source/timeout/auth-missing+network). Three new tests in `tests/cli-copilot-engage.test.mjs` exercise EACCES (mkdir), ENOSPC (writeFile), and a CLI-level smoke against an unwritable `--cache-dir`. The `--cache-dir` escape hatch is documented in `OPERATIONS.md § Copilot engagement procedure → Troubleshooting (CS45)`.
+
+**Disposition:** Applied (CS45, 2026-05-14). The narrow lesson — "every typed-error class needs a syscall-coverage audit when introduced" — should be folded into the "introducing a new typed-error class" section of `OPERATIONS.md` (no such section exists yet; candidate v0.6.0 documentation expansion). The wider lesson — "audit-coverage tests for typed-error classes" — is filed as a candidate planned CS (would scan each `lib/*-error.mjs`-bearing module and assert every catch site rethrows as the typed class). Cross-reference: [LRN-009](#lrn-009) (Copilot Bot node-ID hardcoded workaround) and [LRN-117](#lrn-117) (CS41 R5 cacheDir override fix that this LRN supersedes for the fs-error-wrapping subscope).
 
 ### LRN-122
 
