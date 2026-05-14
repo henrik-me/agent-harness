@@ -1,10 +1,10 @@
 # CS42 — Release v0.5.0
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs42/release-v0.5.0
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Pre-CS42 disposition. Authored 2026-05-12 by `yoga-ah`. Third (final) CS in the v0.5.0 arc; release-cut.
 **Depends on:** [CS41](../done/done_cs41_copilot-engage-cli-and-default-flip.md) (and transitively CS40, CS39).
 
@@ -71,21 +71,21 @@ None. Release-cut is orchestrator-only.
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T1 — Pre-claim review of LEARNINGS open items | done | yoga-ah | Done in claim turn (no `process`/`architectural` open items relevant to release-cut blocking; LRN-117..120 from CS41 close-out are all `applied`). |
-| T2 — Claim PR (this rename + WORKBOARD update) | in-progress | yoga-ah | `workboard/cs42-claim` branch; admin-merge after CI green. |
+| T2 — Claim PR (this rename + WORKBOARD update) | done | yoga-ah | `workboard/cs42-claim` branch (PR #180); auto-approved + squash-merged at `6d11573`. |
 | T3 — Branch `cs42/release-v0.5.0` from `main` | done | yoga-ah | Checked out post-claim-merge from `6d11573`. |
 | T4 — `npm version 0.5.0 --no-git-tag-version` | done | yoga-ah | Bumps `package.json` + lockfile cleanly per CS39 T4 precedent. |
 | T5 — CHANGELOG transform: `[Unreleased]` → `[0.5.0] — 2026-05-14` | done | yoga-ah | Em-dash format per C42-2; re-seeded empty `[Unreleased]` block; added `### Changed` entry for C42-7 strict-flip. |
 | T6 — README pin sweep `v0.4.0` → `v0.5.0` | done | yoga-ah | Hand-edit (sync-excluded). Status banner rewritten for v0.5.0 highlights + 3 install snippets + npm-Arborist note. |
 | T7 — C42-7 strict-flip: `scripts/check-clickstop-plan-review.mjs` line 128 `let strict = false;` → `true` | done | yoga-ah | Flipped default. Updated help text + module header doc. Updated tests (now 23 pass). Mirrored asymmetry-doctrine prose in `OPERATIONS.md` + `template/composed/OPERATIONS.md` + `bin/harness.mjs` doctrine block + the `cmdLint` registration comment. **Self-host validation** surfaced 9 pre-existing planned files lacking `## Plan review`: 6 pre-CS35b backlog (CS21/22b/23/24/26/27 — were never grandfathered by CS35b) + 3 PR-#178 filings (CS43/44/45 — filed earlier this session, missed the section). Backfilled all 9 with grandfather attestations (R1 / gpt-5.5 / claude-opus-4.7-xhigh / Go-with-amendments / fresh hash via `harness plan-review-hash`); recap line documents grandfather context per CS35b-2 (≤200 chars). Post-backfill `harness lint --quiet` returns to 29/0/3. |
 | T8 — Validate: lint/tests/sync clean | done | yoga-ah | Branch baseline: lint 29/0/3 + tests 921/920/0/1 + sync no-drift. Same numbers as the `b901433` baseline modulo the +1 test added by the CS42-7 strict-flip test rename. |
-| T9 — Open content PR | pending | yoga-ah | Standard required H2s; CS35-doctrine plan-vs-impl review BEFORE merge. |
+| T9 — Open content PR | done | yoga-ah | PR #181 opened with required H2s (Summary/Changes/Testing) + Model audit + Review log; CS35-doctrine plan-vs-impl review BEFORE merge per T10. |
 | T10 — GPT-5.5 plan-vs-impl review (rubber-duck, default model) | done | yoga-ah | R1 verdict: **Go-with-amendments** at 2026-05-14T05:05:00Z. 1 NB finding: duplicate T3 row in Tasks (one `pending`, one `done`) — fixed (`pending` row removed). Verdict + amendment recorded in `## Plan-vs-implementation review` section. |
-| T11 — Squash-merge content PR | pending | yoga-ah | After R1 GO. |
-| T12 — Tag at content-PR squash SHA | pending | yoga-ah | `git tag v0.5.0 <squash-sha> -m "Release v0.5.0 — v0.5.0 arc complete (CS40, CS41) + check-clickstop-plan-review --strict default flip"` then `git push origin v0.5.0`. Per CS39 T9 / CS22 / CS14 precedent (tag points at content-squash, NOT main HEAD). |
-| T13 — Observe `release.yml` workflow + publish draft | pending | yoga-ah | Workflow creates draft per `release.yml:75`; `gh release edit v0.5.0 --draft=false` to publish (LRN-121 candidate: this gap recurred from CS39 → required CS42-A2 to publish v0.4.0 retroactively; release.yml comment block should be updated OR auto-publish flag added in v0.6.0). |
-| T14 — Cross-repo SI SUB-CS PR | pending | yoga-ah | `henrik-me/sub-invaders` branch `docs/file-planned-cs11-pin-harness-v0.5.0` + file `planned_cs11_pin-harness-v0.5.0.md`. SI cs10 is reserved by SI PR #48 (still OPEN at 2026-05-14 from CS39 cycle), so next free is **cs11** (NOT cs10 as CS42 plan body originally said — `planned_subNN` reference in C42-4 is also stale; SI uses `planned_csNN_*` per CS39 R1 live verification). |
-| T15 — Schema-migration upgrade decision (C42-6) | pending | yoga-ah | Decide at close-out based on consumer adoption signal (current consumer surface = SI only). |
-| T16 — Close-out PR | pending | yoga-ah | `workboard/cs42-close`: rename active→done, populate `## Plan-vs-implementation review`, update WORKBOARD/CONTEXT/LRN. |
+| T11 — Squash-merge content PR | done | yoga-ah | Admin-merged PR #181 at squash `bab97aa` (workboard-bot does not auto-approve content PRs; admin path required per CS41 precedent). All read-only-gates passed after Copilot engaged via `harness copilot-engage 181 --no-poll` (dogfooded the new CS41 CLI). |
+| T12 — Tag at content-PR squash SHA | done | yoga-ah | `git tag -a v0.5.0 bab97aa -m "Release v0.5.0 — v0.5.0 arc complete (CS40, CS41) + check-clickstop-plan-review --strict default flip (C42-7)"` then `git push origin v0.5.0`. Per CS39 T9 / CS22 / CS14 precedent (tag points at content-squash, NOT main HEAD). |
+| T13 — Observe `release.yml` workflow + publish draft | done | yoga-ah | Workflow run `25843197058` succeeded in 88s, created draft. `gh release edit v0.5.0 --draft=false` published at `2026-05-14T05:18:21Z`. **LRN-121 candidate filed** (release.yml-creates-draft gap recurred CS39 → CS42; same manual publish step needed for v0.4.0 mid-session AND v0.5.0). |
+| T14 — Cross-repo SI SUB-CS PR | done | yoga-ah | SI PR #56 (`docs/file-planned-cs11-pin-harness-v0.5.0`) admin-merged at squash `c909238`. cs10 was reserved by SI PR #48 (now MERGED); next free was **cs11**. cs11 doc supersedes the never-claimed cs10 (decision C11-2 instructs SI orchestrator to retire cs10 → done with `superseded by CS11` header at claim time). |
+| T15 — Schema-migration upgrade decision (C42-6) | done | yoga-ah | **Decision: KEEP warn-not-error in v0.5.0; defer error-flip to v0.6.0.** Rationale: only consumer surface is SI (1 repo), which has not yet pinned to v0.5.0 (cs11 still planned at close-out). Insufficient adoption signal to error-flip. Follow-up captured as **CS46 placeholder** (separate planning PR — file `planned_cs46_strict-agent-columns-v060.md` after CS42 close-out). |
+| T16 — Close-out PR | done | yoga-ah | This PR (`workboard/cs42-close`): rename active→done, populate `## Plan-vs-implementation review`, update WORKBOARD/CONTEXT/LRN. |
 
 ## Notes / Learnings
 
@@ -93,7 +93,12 @@ None. Release-cut is orchestrator-only.
 
 ## Plan-vs-implementation review
 
+**Reviewer:** GPT-5.5
+**Date:** 2026-05-14
+**Outcome:** R1 = Go-with-amendments (1 Non-blocking, fixed pre-PR) → close-out-execution Go (post-merge verification of release tag + draft publish + cross-repo SI cs11 SUB-CS PR + T15 schema-migration upgrade decision deferral to v0.6.0).
+
 | Round | Reviewer model | Implementer model(s) | Reviewer agent | Implementer agent | Analyzed HEAD | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | claude-opus-4.7-xhigh (orchestrator: yoga-ah) | (pre-commit working tree on `cs42/release-v0.5.0` from `6d11573`) | 2026-05-14T05:05:00Z | Go-with-amendments | All 7 decisions implemented; lint 29/0/3, tests 921/920/0/1, sync clean. 1 NB: duplicate T3 row in Tasks (one pending, one done) — fixed. Suggestions noted but not blocking. |
 | T10-followup-fix | — | — | yoga-ah | yoga-ah | (after R1 amendment) | 2026-05-14T05:08:00Z | n/a | Removed duplicate T3 (pending) row in Tasks table; only the `done` T3 remains. R1 amendment applied per non-blocking finding; no R2 required. |
+| Close-out-execution | — | — | yoga-ah | yoga-ah | bab97aa..HEAD (post-merge) | 2026-05-14T05:25:00Z | Go | Content PR #181 squash-merged at `bab97aa`; tag `v0.5.0` pushed; release.yml run `25843197058` created draft; published via `gh release edit v0.5.0 --draft=false` at `2026-05-14T05:18:21Z`. SI cs11 PR #56 admin-merged at squash `c909238`. T15 decision recorded (defer error-flip to v0.6.0). LRN-121 + LRN-122 candidates filed. |

@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-14 (CS41 close-out: LRN-117/118/119/120 added in `Applied` — 117 = JS default-parameter destructuring trap on `null`; 118 = linter empty-cell vs missing-row semantics; 119 = single-orchestrator harness self-PR cannot satisfy A3 by design; 120 = Copilot review cycle is non-converging — bound to ≤2 amend rounds and document residuals)
+> **Last updated:** 2026-05-14 (CS42 close-out: LRN-121/122 added in `Applied` — 121 = release.yml-creates-draft manual-publish gap recurred CS39 → CS42; 122 = retroactive grandfather scope must cover ENTIRE existing population at strict-flip moment, not just in-arc set)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2122,6 +2122,46 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 **Disposition:** Open. Recommended fix is a one-line change to the workflow trigger; should land as a docs/CI-hygiene CS or be folded into the next CS that touches `harness-self-check.yml`. Until then, orchestrators who edit a PR body to satisfy `pr-body` MUST follow up with `gh run rerun <run-id> --failed` (or push an empty commit) and verify the conclusion flips to SUCCESS before requesting review or merging.
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
+
+### LRN-122
+
+```yaml
+id: LRN-122
+date: 2026-05-14
+category: process
+source_cs: CS42
+status: applied
+tags: [grandfather-scope, retroactive-backfill, plan-review, strict-flip, asymmetry-collapse]
+claim_area: linter-rollout
+```
+
+**Problem:** When CS35b introduced the `## Plan review` attestation requirement with retroactive grandfathering, the grandfather sweep was scoped to "in-arc files" only — i.e., the CS35b active file plus the planned files for the immediately following arc (CS36..CS42). Two populations were missed: (a) **pre-CS35b backlog** of planned CS files that pre-existed the requirement (CS21, CS22b, CS23, CS24, CS26, CS27 — all valid workboard-hygiene CSs awaiting claim), and (b) **any subsequent planning PRs** filed AFTER CS35b but BEFORE the strict-flip (CS43, CS44, CS45 — filed during the CS41 close-out turn, before CS42 flipped strict to default). Both populations sat dormant under v0.4.0's warn-only default. When CS42-7 flipped `--strict` default `false` → `true` in v0.5.0, the linter immediately turned what had been informational warnings into errors, breaking `harness lint` on the next invocation in 9 unrelated files. The CS42 implementation had to write a programmatic backfill helper script mid-CS to restore lint to clean (29/0/3) before the release-cut PR could open.
+
+**Finding:** **Retroactive grandfathering must cover the ENTIRE existing population at the moment of strict-flip, not just the in-arc set, AND the linter must fail-loud at the moment of strict-flip rather than silently shift severity.** The CS35b grandfather sweep was correct in concept but incomplete in scope; it implicitly assumed the strict-flip CS would re-sweep before flipping. CS42 inherited that assumption and discovered it was wrong only via a self-host-broken `harness lint` after the one-line default-flip. Two structural improvements: (1) the strict-flip CS's pre-flip checklist must include "re-run grandfather sweep against the full current population to absorb anything filed since the requirement was introduced"; (2) the linter itself should emit a one-time **bridge warning** in the cycle preceding the strict-flip listing every file that would error post-flip, so consumers see the failure surface before it hits them. Pattern generalises: any "warn-now, error-later" linter migration ramp has the same shape and the same failure mode.
+
+**Evidence:** CS42 turn (2026-05-14): after `let strict = false;` → `true` change in `scripts/check-clickstop-plan-review.mjs:128`, `harness lint --quiet` immediately failed on `planned_cs21`, `planned_cs22b`, `planned_cs23`, `planned_cs24`, `planned_cs26`, `planned_cs27`, `planned_cs43`, `planned_cs44`, `planned_cs45` (9 files). All were valid CSs with intact bodies — only the `## Plan review` H2 was missing. Backfill helper script (session-state `files/backfill-plan-review.mjs`) wrote R1 grandfather rows on all 9, recomputing fresh hashes via `harness plan-review-hash`. Lint restored to 29/0/3 in one shot. Same pattern documented in CS35b § Strict-mode asymmetry doctrine (which explicitly anticipated a v0.5.0 flip but did not specify the re-sweep step). Cross-references: LRN-108 (CS35b in-arc grandfather invariant), CS42-7 implementation in PR #181 squash `bab97aa`, the 9 backfill commits captured in the same content PR diff.
+
+**Disposition:** Applied. CS42 close-out captures the LRN. The bridge-warning improvement (#2 above) is a candidate v0.6.0 enhancement to `check-clickstop-plan-review.mjs` (emit listing of would-error files when `--strict` is the default but invoked without explicit override). The pre-flip re-sweep checklist (#1 above) should be added to `OPERATIONS.md` § Strict-flip migration discipline as a generic checklist applicable to all warn-now-error-later linters (CS46 is a candidate venue for this once it claims). Until v0.6.0 strict-flip planning starts, this LRN serves as the institutional memory: when planning the next strict-flip, re-sweep first.
+
+### LRN-121
+
+```yaml
+id: LRN-121
+date: 2026-05-14
+category: process
+source_cs: CS42
+status: applied
+tags: [release-process, draft-release, github-releases, manual-step, automation-gap]
+claim_area: release-cut
+```
+
+**Problem:** `release.yml` workflow creates GitHub Releases with `--draft` (per intentional caution at `release.yml:75`), requiring a manual `gh release edit <tag> --draft=false` step to publish. This is a known design choice (lets a release-cut be observed before publication) but the manual step has been **forgotten in two consecutive release cycles**: (a) CS39 (v0.4.0) was admin-merged, tagged, workflow ran, but the release sat in draft state for nearly a day before CS42's session-start audit caught it and ran `gh release edit v0.4.0 --draft=false` retroactively; (b) CS42 (v0.5.0) explicitly remembered the step this session — but only because LRN-121 was already a candidate from observing the v0.4.0 gap. In both cases the published-state of the release was decoupled from the tag-push observability, leading to a silent "the release is technically out but invisible to consumers visiting the Releases page" window.
+
+**Finding:** **Manual post-workflow steps are reliably forgotten across CSs even when documented in the active CS file's task list.** The CS39 close-out task list explicitly named the publish step but it was not done. The drift between "tag pushed → workflow ran → release created" (machine-observable) and "release published" (requires human action) is exactly the kind of observability-gap-without-machine-enforcement that LRN-064 / LRN-068 / CS35-arc collectively addresses for review gates. The release pipeline needs the same treatment: either (a) auto-publish via a workflow flag (default `false` for caution, `true` for trunk releases of stable arcs), (b) a separate `release-publish.yml` workflow_dispatch that takes a tag input and flips draft→published with an audit trail, or (c) a loud `OPERATIONS.md § Release procedure` callout with a dedicated post-merge checklist item that orchestrators MUST tick. The lowest-cost intervention is (c); (a) or (b) should be a v0.6.0 deliverable.
+
+**Evidence:** CS42 session start (2026-05-14): user asked "is the 0.5.0 release out? did all the relevant docs get updated?" — investigation revealed v0.4.0 still in draft state since `2026-05-13T22:09:01Z` (`gh release view v0.4.0 --json isDraft,publishedAt` returned `{"isDraft":true,"publishedAt":null}`); ran `gh release edit v0.4.0 --draft=false` to publish at `2026-05-14T04:44:44Z` (~6.5 hours late). Same pattern repeated for v0.5.0: `release.yml` run `25843197058` succeeded, draft created at `2026-05-14T05:17:26Z`, `gh release edit v0.5.0 --draft=false` published at `2026-05-14T05:18:21Z` (1 minute later — caught only because LRN-121 was already on the candidate list). Workflow source confirms the design intent at `release.yml:75-79`. Both occurrences spanned different orchestrator sessions and different model contexts, so the recurrence is not a single-session memory issue but a structural workflow-design gap.
+
+**Disposition:** Applied. CS42 close-out captures the LRN. Intervention (c) — a loud OPERATIONS.md callout with a dedicated checklist item — should land in the next workboard-hygiene PR or be folded into the v0.6.0 release-cut CS. Interventions (a) or (b) are deferred to v0.6.0+ as larger workflow changes. Until then, every release-cut CS's task list MUST explicitly enumerate the publish step as a separate task (not a sub-bullet of the workflow-observe task) and orchestrator must verify `isDraft: false, publishedAt: <timestamp>` via `gh release view <tag>` before close-out. This LRN is referenced from CS42's `## Plan-vs-implementation review` close-out execution row.
 
 ### LRN-120
 

@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-14 (CS42 claimed — release v0.5.0. v0.4.0 GitHub Release published (CS39 close-out gap closed via PR #179 README pin sweep + `gh release edit v0.4.0 --draft=false`). CS42 will: bump CHANGELOG `[Unreleased]`→`[0.5.0]`, bump package.json 0.4.0→0.5.0, sweep README pins to v0.5.0, flip `check-clickstop-plan-review --strict` default `false`→`true` per CS35b-10, tag, observe release.yml, file SI cs11 SUB-CS. Baseline at HEAD `b901433`: lint 29/0/3, tests 920/919/1/0, sync clean.)
+> **Last updated:** 2026-05-14 (CS42 closed — v0.5.0 released. PR #181 squash-merged at `bab97aa`; tag `v0.5.0` pushed; `release.yml` ran clean; `gh release edit v0.5.0 --draft=false` published the release at 2026-05-14T05:18:21Z. SI cs11 PR #56 (cross-repo SUB-CS for SI to pin to v0.5.0) admin-merged at squash `c909238`. T15 schema-migration upgrade decision: defer error-flip to v0.6.0 (consumer surface = SI only, has not yet pinned). Baseline post-close-out: lint 29/0/3, tests 921/920/0/1, sync clean. Orchestrator back to 🟡 Idle pending next CS claim.)
 
 ## Orchestrators
 
@@ -10,12 +10,12 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-14 |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟡 Idle | 2026-05-14 |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS42       | Release v0.5.0 | active | yoga-ah | cs42/release-v0.5.0 | 2026-05-14 | —              |
+| —          | (no active CS) | — | — | — | 2026-05-14 | —              |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
