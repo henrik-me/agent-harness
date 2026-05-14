@@ -100,6 +100,13 @@ const CLEAN_AUDIT = [
   ['Reviewer model', 'gpt-5.5'],
 ];
 
+/** Standard independence-clean Model audit rows with explicit agent identities. */
+const CLEAN_AUDIT_WITH_AGENTS = [
+  ...CLEAN_AUDIT,
+  ['Implementer agent', 'yoga-ah'],
+  ['Reviewer agent', 'copilot'],
+];
+
 // ---------------------------------------------------------------------------
 // Test runner helper
 // ---------------------------------------------------------------------------
@@ -166,6 +173,60 @@ describe('scripts/check-review-evidence.mjs', () => {
       `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`
     );
     assert.match(r.stdout, /0 errors/);
+  });
+
+  // CS41 agent-column cases ----------------------------------------------
+  it('CS41: clean Model audit with distinct agent rows → exit 0 and no warning', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: CLEAN_AUDIT_WITH_AGENTS,
+    });
+    const file = writeBody('cs41_clean_agents.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 0, `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.match(r.stdout, /0 errors/);
+    assert.match(r.stdout, /0 warnings/);
+    assert.doesNotMatch(r.stderr, /WARN:/);
+  });
+
+  it('CS41: missing agent rows with default strict=false → exit 0 and warn to stderr', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: CLEAN_AUDIT,
+    });
+    const file = writeBody('cs41_missing_agents_warn.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 0, `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.match(r.stderr, /WARN:/);
+    assert.match(r.stderr, /missing required agent row/);
+    assert.match(r.stdout, /1 warnings/);
+  });
+
+  it('CS41: missing agent rows with --strict-agent-columns → exit 1', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: CLEAN_AUDIT,
+    });
+    const file = writeBody('cs41_missing_agents_strict.md', body);
+    const r = run(file, VALID_HEAD, ['--strict-agent-columns']);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.match(r.stdout, /ERROR:/);
+    assert.match(r.stdout, /missing required agent row/);
+  });
+
+  it('CS41: overlapping Implementer/Reviewer agent rows → exit 1', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: [
+        ...CLEAN_AUDIT,
+        ['Implementer agent', 'yoga-ah'],
+        ['Reviewer agent', 'YOGA-AH'],
+      ],
+    });
+    const file = writeBody('cs41_agent_overlap.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.match(r.stdout, /agent-identity violation/);
   });
 
   // Case 2 ----------------------------------------------------------------

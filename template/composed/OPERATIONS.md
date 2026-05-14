@@ -773,11 +773,11 @@ invariants may require 5–8 rounds ([LRN-024](LEARNINGS.md#lrn-024)).
 
 ---
 
-## Copilot engagement procedure (CS35 C35-10, updated CS37)
+## Copilot engagement procedure (CS35 C35-10, updated CS37 + CS41)
 
 GitHub Copilot review engagement on a content PR (gate A16 in REVIEWS.md
 PR-evidence list) is performed locally by the orchestrator using
-`harness copilot-engage` (lands in CS41). The CI workflow only VERIFIES
+`harness copilot-engage` (CS41). The CI workflow only VERIFIES
 the engagement happened (PR-evidence gate dispatched by
 `harness pr-evidence` via `scripts/check-copilot-review.mjs` from CS37);
 CI never mutates the PR.
@@ -786,10 +786,43 @@ CI never mutates the PR.
 REJECTS the Copilot reviewer ID with "Could not resolve to User node"
 because the Copilot reviewer is `__typename: Bot`, not `User`. The
 documented engagement primitive is therefore the REST-backed
-`gh pr edit --add-reviewer` invocation below — NOT a GraphQL mutation.
-See `docs/adr/0004-copilot-graphql-spike.md` for the full transcript.
+`gh pr edit --add-reviewer` invocation that `harness copilot-engage`
+wraps — NOT a GraphQL mutation. See `docs/adr/0004-copilot-graphql-spike.md`
+for the full transcript.
 
-Manual engagement recipe (until CS41 lands the wrapper):
+### Recommended invocation (CS41+):
+
+```
+harness copilot-engage <pr-number> [--repo owner/name] [--no-poll] [--poll-timeout 300] [--submitted-after <iso>]
+```
+
+The CLI:
+
+1. Auto-detects `--repo` from the current working directory's `git remote origin url`
+   when omitted. Errors with a clear message on detached/missing remotes.
+2. Resolves the Copilot reviewer's Bot node ID via `node(login:)` / `... on Bot`
+   GraphQL fragment (cached for 7 days under `~/.cache/harness/copilot-id.json`
+   per C41-2).
+3. Shells out to `gh pr edit <pr> --add-reviewer copilot-pull-request-reviewer` to
+   request the review (per ADR-0004 § ADR4-2 — `requestReviews` GraphQL rejects
+   Bot IDs).
+4. Polls the PR's reviews via GraphQL every 30s up to `--poll-timeout` (default 300s);
+   exits 0 when at least one Bot review by `copilot-pull-request-reviewer` with state
+   ∈ {APPROVED, COMMENTED, CHANGES_REQUESTED} is observed at the current PR head AND
+   submitted at or after the engage-request timestamp (or the explicit
+   `--submitted-after <iso>` floor if provided). The submitted-after floor enforces
+   the A5 ordering doctrine: a stale Copilot review on the same HEAD that predates
+   the latest local Go MUST NOT satisfy the gate.
+5. Exits 0 immediately after the request when `--no-poll` is set (CI use case
+   where verification happens in a separate job).
+6. Exits 2 on fork PRs (`isCrossRepository == true`) with the maintainer-rerun
+   hint per ADR4-6.
+
+The poll predicate is identical to the A5+A16 gate
+(`scripts/check-copilot-review.mjs`) so "engage CLI says satisfied" =
+"PR-evidence gate says satisfied".
+
+### Manual fallback (only if `harness copilot-engage` is unavailable):
 
 1. Request a Copilot review with the maintainer's `gh` auth:
    ```
@@ -825,15 +858,26 @@ harness CLI MUST run engagement only under the maintainer's `gh` auth,
 never under a CI `GITHUB_TOKEN` (which is read-only on fork PRs anyway
 per Decision C35-9).
 
+### A5 ordering doctrine (PR #172 reconfirmation, CS40):
+
+Each new HEAD requires a NEW `R` row in the PR body's `## Review log`
+section. The latest local Go row's timestamp must be BEFORE the
+most-recent Copilot review's `submittedAt`. If you add a Go row AFTER
+Copilot has reviewed, you MUST re-engage Copilot (re-run
+`harness copilot-engage <pr>`) so a new review lands on the new HEAD.
+Wait ~3–4 minutes for the new review then re-run failed CI jobs. The
+A5+A16 gate enforces this strict ordering mechanically.
+
 CI implication (ADR4-8): an engage-and-verify workflow run will always
 fail the verify step on first execution because the review is delivered
-asynchronously after the workflow completes. CS38a CI MUST split engage
+asynchronously after the workflow completes. CS38a CI splits engage
 and verify into separate jobs/events (e.g. engage on `pull_request`,
 verify on a later `pull_request_review` or scheduled rerun).
 
 Fork PR caveat (ADR4-6): on `pullRequest.isCrossRepository == true`, the
 `check-copilot-review` gate exits 2 with a maintainer-rerun hint —
-forks cannot self-engage Copilot under their own token.
+forks cannot self-engage Copilot under their own token. `harness copilot-engage`
+mirrors this exit-2 behavior on fork PRs.
 
 ---
 

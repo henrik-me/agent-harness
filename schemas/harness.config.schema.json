@@ -112,7 +112,12 @@
         "enabled": {
           "type": "boolean",
           "description": "Master switch for the PR-evidence gate set. When false, the workflow runs but exits 0 unconditionally (a no-op shell). When true, the gate set listed below is enforced.",
-          "default": false
+          "default": true
+        },
+        "_opt_out_reason": {
+          "type": "string",
+          "description": "Required when review_gates.enabled is false in v0.5.0+; records the explicit reason this consumer is opting out of the default PR-evidence gate set.",
+          "minLength": 1
         },
         "copilot_required": {
           "type": "boolean",

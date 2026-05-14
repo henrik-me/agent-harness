@@ -2123,6 +2123,39 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
+### LRN-116
+
+```yaml
+id: LRN-116
+date: 2026-05-14
+category: process
+source_cs: CS41
+status: applied
+tags: [tests, brittleness, linter-aggregator, harness-lint, count-assertion]
+claim_area: testing
+```
+
+**Problem:** `tests/cs15d-aggregator.test.mjs` asserts an exact linter count for the `consumer-no-scaffolds` fixture: `assert.equal(rows.length, beta9AggregatorLanded() ? 20 : 15, ...)`. Every CS that registers a new linter in `cmdLint` must update this exact-count number, even though the new linter is unrelated to the test's actual intent (which is "scaffold policy linters are not dispatched without a scaffolds field"). CS41 added `clickstop-implementer-not-reviewer` and the assertion broke (expected 20, got 21).
+
+**Finding:** Exact-count assertions on aggregator output are brittle. They couple unrelated CSs to the same test surface and create churn for every new linter. The test's actual semantic intent is *"no scaffold-policy rows are dispatched"*, which is already directly asserted on line 128:
+
+```js
+assert.equal(rows.filter((row) => /migration.*policy|feature.*flag.*policy|feature-flags.*policy/.test(row.name)).length, 0);
+```
+
+The follow-up `rows.length === N` line adds no signal beyond "the linter set has not changed, somehow". Better alternatives:
+
+1. Drop the exact-count assertion entirely (the negative assertion above already covers the intent).
+2. Replace with `assert.ok(rows.length >= MIN, ...)` so new linters don't break it.
+3. Auto-derive the expected count from `bin/harness.mjs` introspection (over-engineered).
+
+**Evidence:**
+
+- `tests/cs15d-aggregator.test.mjs:129` — failing assertion: `21 !== 20` after CS41 added `clickstop-implementer-not-reviewer` to the aggregator. Fix in CS41 was the minimum-change one-line bump (20→21), but every future CS that adds a linter will hit the same churn.
+- Same pattern previously bit CS35b (added `clickstop-plan-review`), CS35a (added `learnings-precondition`), and similar prior expansions; orchestrators have updated this number ~6 times over the v0.3.x → v0.4.x arc.
+
+**Disposition:** Applied (workaround). CS41 bumps the magic number 20→21. The test should be refactored to drop the exact-count check OR to `>= MIN` in a future hygiene CS. File as planned `CS-pending-aggregator-count-refactor` if the count flips again before the v0.5.0 release; otherwise fold into CS42 hygiene work.
+
 ### LRN-115
 
 ```yaml

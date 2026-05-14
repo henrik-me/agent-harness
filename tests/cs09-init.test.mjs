@@ -169,15 +169,28 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
 
       const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
 
-      // composed.files matches seeded template
-      assert.deepEqual(cfg.composed.files, ['CONVENTIONS.md', 'OPERATIONS.md', 'REVIEWS.md']);
+      // composed.files matches seeded template + the PR template migrated by
+      // the default-on review-gates flow (CS41 C41-7: review_gates is opt-out
+      // by default in v0.5.0, and a fresh init runs the migration).
+      assert.deepEqual(
+        cfg.composed.files,
+        ['CONVENTIONS.md', 'OPERATIONS.md', 'REVIEWS.md', '.github/pull_request_template.md'],
+      );
 
       // composed.overrides has the 3 expected per-file allowlists (LRN-009 / CS02b)
-      assert.equal(Object.keys(cfg.composed.overrides).length, 3);
+      // plus the PR-template override added by enableReviewGatesForInit.
+      assert.equal(Object.keys(cfg.composed.overrides).length, 4);
       assert.deepEqual(cfg.composed.overrides['CONVENTIONS.md'].local_blocks, ['conventions.project']);
       assert.deepEqual(cfg.composed.overrides['OPERATIONS.md'].local_blocks, ['operations.project-deploy']);
       assert.deepEqual(cfg.composed.overrides['REVIEWS.md'].local_blocks, ['reviews.project-gates']);
+      assert.deepEqual(
+        cfg.composed.overrides['.github/pull_request_template.md'].local_blocks,
+        ['pull-request.review-evidence'],
+      );
       assert.equal(cfg.local_blocks, undefined, 'Top-level local_blocks must not be present (removed in v0.2.0)');
+
+      // CS41 C41-7: fresh init writes review_gates.enabled = true by default.
+      assert.equal(cfg.review_gates?.enabled, true, 'fresh init must default review_gates.enabled to true (CS41 C41-7)');
 
       // templating map has expected keys
       for (const key of ['project_name', 'agent_suffix', 'agent_suffix_upper', 'repo_owner', 'default_codeowner', 'lib_codeowner', 'repo_short']) {

@@ -201,12 +201,12 @@ Every content PR body must record the following fields before merge:
 |---|---|---|
 | `Implementer models` | yes | Comma-separated list of every model that materially implemented any code/doc/config in the CS (orchestrator + all sub-agents). Case-insensitive on the family + version pair (e.g. `claude-opus-4.7` ≡ `Claude Opus 4.7`). |
 | `Reviewer model` | yes | Single model identifier from the C35-2 fallback ladder. |
-| `Implementer agent` | optional in v0.4.0; required in v0.5.0 per C42-6 | GitHub username of the implementing agent. Per CS35 C35-18 (agent-identity independence). |
-| `Reviewer agent` | optional in v0.4.0; required in v0.5.0 per C42-6 | GitHub username of the reviewing agent. Per CS35 C35-18. |
+| `Implementer agent` | required in v0.5.0+ (warned in v0.4.0); enforced strict by CS41 + C42-6 | GitHub username of the implementing agent. Per CS35 C35-18 (agent-identity independence). Mechanically enforced: `scripts/check-clickstop-implementer-not-reviewer.mjs` (CS41) on the planned/active/done CS files; `scripts/check-review-evidence.mjs` (CS36, parser extended in CS41) on the PR body's `## Model audit` block. |
+| `Reviewer agent` | required in v0.5.0+ (warned in v0.4.0); enforced strict by CS41 + C42-6 | GitHub username of the reviewing agent. Per CS35 C35-18. Same enforcement surface as `Implementer agent`. |
 
 **Independence invariant (MUST):** `intersection({Implementer models}, {Reviewer model})` = ∅. Comparison is case-insensitive on the family + version pair. Violation blocks merge per A3.
 
-**Agent-identity independence (MUST per CS35 C35-18):** `Implementer agent` ≠ `Reviewer agent` (case-insensitive). v0.4.0 issues a warning when columns are absent; v0.5.0 may upgrade to error per C42-6.
+**Agent-identity independence (MUST per CS35 C35-18 + CS41):** `Implementer agent` ≠ `Reviewer agent` (case-insensitive). v0.4.0 issued a warning when columns were absent; v0.5.0 (CS41) requires both columns and treats overlap as a hard error. The `--strict-agent-columns` flag on `check-review-evidence.mjs` defaults to `false` in v0.5.0 (warning-on-missing) so consumers have a one-cycle migration ramp; flips to `true` in v0.6.0 (hard error) per C42-6 strict-flip plan.
 
 Example block (paste into the active CS file):
 
@@ -363,8 +363,9 @@ Violation handling:
 Beyond model independence (above), CS35 C35-18 introduces agent-identity
 independence: the GitHub usernames of `Implementer agent` and `Reviewer agent`
 MUST also differ. The CS41 linter `check-clickstop-implementer-not-reviewer`
-enforces this; v0.4.0 issues a warning when the columns are absent, v0.5.0
-may upgrade to error per C42-6.
+enforces this. v0.5.0 ships the columns as required-with-warn-ramp (linters
+warn but do not error when columns are missing); v0.6.0 flips to strict per
+C42-6, after which missing columns become a hard failure.
 
 ---
 
