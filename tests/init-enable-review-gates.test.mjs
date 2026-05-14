@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const prTemplate = '.github/pull_request_template.md';
-const instructionNeedle = 'PR-evidence gates enabled. Manual step required:';
+const instructionNeedle = 'Review gates enabled. Branch-ruleset contexts required:';
 
 function makeTempDir() {
   return mkdtempSync(path.join(os.tmpdir(), 'harness-review-gates-'));
@@ -69,7 +69,8 @@ describe('harness init --enable-review-gates', () => {
       const result = runInit(dir, ['--enable-review-gates']);
       assert.equal(result.status, 0, `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
 
-      assert.deepEqual(readConfig(dir).review_gates, {
+      const cfg = readConfig(dir);
+      assert.deepEqual(cfg.review_gates, {
         enabled: true,
         copilot_required: true,
         // C38a R2 B4: A6 is dispatched independently by the pr-evidence aggregator
@@ -78,6 +79,8 @@ describe('harness init --enable-review-gates', () => {
         // ["B1","A3","A4","A5","A16"] (no A6).
         gate_set: ['B1', 'A3', 'A4', 'A5', 'A16'],
       });
+      assert.equal(cfg.reviews?.enforce_gates, true);
+      assert.equal(cfg.reviews?.require_copilot_review, true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -111,6 +114,10 @@ describe('harness init --enable-review-gates', () => {
 
       assert.match(result.stdout, new RegExp(instructionNeedle));
       assert.match(result.stdout, /pr-evidence-lint \/ read-only-gates/);
+      for (const context of ['review-log-evidence', 'copilot-review-attached', 'independence-invariant', 'review-threads-resolved']) {
+        assert.match(result.stdout, new RegExp(context));
+      }
+      assert.match(result.stdout, /infra\/main-protection-ruleset\.json/);
       assert.match(result.stdout, /managing-rulesets-for-a-repository/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
