@@ -67,8 +67,8 @@ Issue #139 was filed after a `henrik-me/sub-invaders` post-CS hotfix episode: th
 |---|---|---|---|
 | Read issue #139, current operations layout, workboard shape, learning format, and CS46 plan prior art | done | Copilot CLI | Required reading completed before plan authoring. |
 | Add CS49 plan and rubber-duck plan review | done | Copilot CLI | R1 rubber-duck verdict Go; hash `c07f31a287c3`. |
-| Edit `template/composed/OPERATIONS.md` with the three doctrine subsections | pending | Copilot CLI | Avoid CS48/CS50/CS51/CS52 owned text. |
-| Add `LRN-126`, CS49 test, and CHANGELOG bullet | pending | Copilot CLI | Commit before any harness command per LRN-124. |
+| Edit `template/composed/OPERATIONS.md` with the three doctrine subsections | done | Copilot CLI | Appended new subsections without editing CS48/CS50/CS51/CS52 owned text. |
+| Add `LRN-126`, CS49 test, and CHANGELOG bullet | done | Copilot CLI | Source/doc/test batch committed before any harness command per LRN-124. |
 | Run `harness sync --mode=apply --resolved-sha <source-sha>` | pending | Copilot CLI | Regenerates root `OPERATIONS.md` + lockfile. |
 | Validate targeted test, `harness lint --quiet`, `harness sync --mode=check`, and PR body | pending | Copilot CLI | Record exact results in final report. |
 | Push branch, open PR, and engage Copilot | pending | Copilot CLI | Title must close issue #139. |
