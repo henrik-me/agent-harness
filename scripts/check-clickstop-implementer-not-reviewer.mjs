@@ -2,7 +2,7 @@
 /**
  * scripts/check-clickstop-implementer-not-reviewer.mjs — Agent identity independence linter.
  *
- * Scans active/ and done/ clickstop files for a `## Model audit` key-value
+ * Scans planned/, active/, and done/ clickstop files for a `## Model audit` key-value
  * table. `Implementer agent` and `Reviewer agent` must be present and must
  * not match case-insensitively. Missing agent rows warn by default in v0.5.0;
  * pass --strict-agent-columns to turn the migration warning into an error.
@@ -12,7 +12,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { headingAnchor } from '../lib/doc-schema.mjs';
 
-const LINTED_SUBDIRS = ['active', 'done'];
+const LINTED_SUBDIRS = ['planned', 'active', 'done'];
+
+/**
+ * CS43 — recurse into nested CS subdirectories under
+ * `project/clickstops/{planned,active,done}/` (e.g. `done_cs01_bootstrap-repo/`)
+ * with a date-gated grandfather. Done CSs whose `**Closed:**` date
+ * parses to a value strictly BEFORE this constant are silently skipped;
+ * everything at-or-after this date is linted as usual. The constant
+ * mirrors the `CLOSEOUT_TASK_ENFORCEMENT_DATE` pattern in
+ * `scripts/check-clickstop.mjs`.
+ */
+const IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE = '2026-05-14';
+
+/** Match the `^(planned|active|done)_cs\d+[a-z]*_.*$` CS subfolder pattern used
+ *  for nested CS files (e.g. `done_cs01_bootstrap-repo/`). Aligned with
+ *  `scripts/check-clickstop.mjs` (which uses `[a-z]*` for multi-letter
+ *  suffixes like `cs10bb`) so the two linters cover the same set of files. */
+const NESTED_CS_DIR_RE = /^(planned|active|done)_cs\d+[a-z]*_.*$/;
 
 const HELP = `\
 Usage: check-clickstop-implementer-not-reviewer.mjs [--cwd <dir>] [--strict-agent-columns] [--quiet] [--help]
@@ -176,6 +193,83 @@ function missingAgentFinding(label, line, missingFields) {
   }
 }
 
+/**
+ * Parse the `**Closed:** YYYY-MM-DD` line from a clickstop body.
+ *
+ * Returns one of:
+ *   - `{ kind: 'missing' }`           — no `**Closed:**` line in the body.
+ *   - `{ kind: 'unparseable', raw }`  — line present but the value is not a
+ *                                       valid YYYY-MM-DD date (e.g. em-dash
+ *                                       placeholder `—`, plain `-`, `TBD`,
+ *                                       `<ISO-...>`, `(when done)`).
+ *   - `{ kind: 'date', date }`        — value parses as YYYY-MM-DD (with
+ *                                       optional trailing `THH:MMZ` time or
+ *                                       `(parenthetical context)`).
+ *
+ * The split between `missing` and `unparseable` lets the caller treat them
+ * differently (CS43 C43-4 emits a per-file WARN for `unparseable` because
+ * that signals a half-formed close-out worth flagging, but stays silent for
+ * `missing` because that case is owned by `scripts/check-clickstop.mjs`'s
+ * required-fields check and is not this script's concern).
+ *
+ * @param {string} content
+ * @returns {{ kind: 'missing' } | { kind: 'unparseable', raw: string } | { kind: 'date', date: Date }}
+ */
+function parseClosedDate(content) {
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const m = line.match(/^\*\*Closed:\*\*\s*(.*?)\s*$/);
+    if (!m) continue;
+    const raw = m[1];
+    if (!raw) return { kind: 'unparseable', raw: '' };
+    const dateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!dateMatch) return { kind: 'unparseable', raw };
+    const iso = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}T00:00:00Z`;
+    const ts = Date.parse(iso);
+    if (!Number.isFinite(ts)) return { kind: 'unparseable', raw };
+    return { kind: 'date', date: new Date(ts) };
+  }
+  return { kind: 'missing' };
+}
+
+const ENFORCEMENT_DATE_MS = Date.parse(
+  `${IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE}T00:00:00Z`,
+);
+
+/**
+ * Date-gate predicate per CS43 C43-2/C43-3/C43-4. Returns `true` if the
+ * file should be linted, `false` if it is grandfathered out.
+ *
+ *   - Active and planned files: always lint (C43-3); the date-gate only
+ *     applies to `done_*` files.
+ *   - Done files with a parseable `**Closed:**` date strictly BEFORE
+ *     `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE`: silently
+ *     grandfathered out.
+ *   - Done files with an unparseable `**Closed:**` value (em-dash, TBD,
+ *     etc.): WARN+skip per C43-4.
+ *   - Done files missing the `**Closed:**` line entirely: lint normally;
+ *     `check-clickstop.mjs` already enforces the required-fields invariant.
+ *
+ * @param {string} label  Human-readable label for diagnostics.
+ * @param {string} basename  Filename (e.g. `done_cs01_thing.md`).
+ * @param {string} content  File content.
+ * @returns {boolean}
+ */
+function shouldLintByDateGate(label, basename, content) {
+  if (!/^done_/.test(basename)) return true;
+  const closed = parseClosedDate(content);
+  if (closed.kind === 'missing') return true;
+  if (closed.kind === 'unparseable') {
+    logWarning(
+      `${label}: skipping due to unparseable **Closed:** date '${closed.raw}' ` +
+      `(CS43 C43-4 — unparseable date is not a hygiene gate failure).`,
+    );
+    return false;
+  }
+  if (closed.date.getTime() < ENFORCEMENT_DATE_MS) return false;
+  return true;
+}
+
 function checkFile(filePath, subdir) {
   const basename = path.basename(filePath);
   const label = `${subdir}/${basename}`;
@@ -189,6 +283,7 @@ function checkFile(filePath, subdir) {
     logError(`${label}: cannot read file: ${err.message}`);
     return;
   }
+  if (!shouldLintByDateGate(label, basename, content)) return;
 
   const section = extractSectionWithLineNumber(content, headingAnchor('Model audit'));
   if (!section) {
@@ -256,24 +351,69 @@ function checkFile(filePath, subdir) {
 let filesChecked = 0;
 const clickstopsDir = path.join(cwd, 'project', 'clickstops');
 
-for (const subdir of LINTED_SUBDIRS) {
-  const dirPath = path.join(clickstopsDir, subdir);
-  if (!fs.existsSync(dirPath)) continue;
+/**
+ * Match canonical CS file basenames (e.g. `done_cs01_bootstrap-repo.md`).
+ * Auxiliary files inside a nested CS subfolder (e.g. `harness-cs-plan.md`)
+ * do not match and are intentionally NOT linted by this script — they
+ * carry their own structure.
+ */
+const CS_FILE_RE = /^(planned|active|done)_cs\d+[a-z]*_.*\.md$/;
+
+/**
+ * Walk a single `LINTED_SUBDIRS` directory: lint every CS-shaped `.md` file
+ * directly inside, and additionally descend ONE level into each child
+ * directory whose name matches the canonical CS subfolder pattern (e.g.
+ * `done_cs01_bootstrap-repo/`) per CS43 C43-1. Sub-subdirectories are NOT
+ * descended into — CSs do not nest more deeply than one level. Files whose
+ * basename does not match the canonical CS-file shape are skipped (auxiliary
+ * docs).
+ *
+ * @param {string} dirPath  Absolute path to the active/done/planned dir.
+ * @param {string} subdir   The lifecycle subdir name (active/done/planned).
+ */
+function walkClickstopSubdir(dirPath, subdir) {
   let entries;
   try {
     entries = fs.readdirSync(dirPath, { withFileTypes: true });
   } catch (err) {
     logError(`${subdir}/: cannot read directory: ${err.message}`);
-    continue;
+    return;
   }
 
   for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    if (!entry.name.endsWith('.md')) continue;
     if (entry.name === '.gitkeep') continue;
-    filesChecked++;
-    checkFile(path.join(dirPath, entry.name), subdir);
+    if (entry.isFile()) {
+      if (!CS_FILE_RE.test(entry.name)) continue;
+      filesChecked++;
+      checkFile(path.join(dirPath, entry.name), subdir);
+      continue;
+    }
+    if (entry.isDirectory() && NESTED_CS_DIR_RE.test(entry.name)) {
+      const nestedPath = path.join(dirPath, entry.name);
+      const nestedLabel = `${subdir}/${entry.name}`;
+      let nestedEntries;
+      try {
+        nestedEntries = fs.readdirSync(nestedPath, { withFileTypes: true });
+      } catch (err) {
+        logError(`${nestedLabel}/: cannot read directory: ${err.message}`);
+        continue;
+      }
+      for (const nested of nestedEntries) {
+        if (!nested.isFile()) continue;
+        if (!CS_FILE_RE.test(nested.name)) continue;
+        filesChecked++;
+        checkFile(path.join(nestedPath, nested.name), nestedLabel);
+      }
+    }
+    // Any other directory shape (e.g. unrecognised prefix or two-level nesting)
+    // is silently skipped per C43-1's defensive recursion.
   }
+}
+
+for (const subdir of LINTED_SUBDIRS) {
+  const dirPath = path.join(clickstopsDir, subdir);
+  if (!fs.existsSync(dirPath)) continue;
+  walkClickstopSubdir(dirPath, subdir);
 }
 
 if (!quiet) {

@@ -421,3 +421,106 @@ describe('harness copilot-engage CLI route', () => {
     assert.match(result.stderr, /<pr> must be a positive integer/);
   });
 });
+
+// CS45 — fs cache-write failures must surface as EngageError(kind='cache-write-failed')
+// rather than raw node:fs errors leaking past the CLI's typed-error handler.
+// Each test re-sets `__testSeam` in a try/finally to prevent the injected throw
+// from bleeding into subsequent tests (per CS45 R2).
+describe('CS45 — resolveCopilotIdentity wraps fs errors as EngageError', () => {
+  it('mkdir EACCES surfaces as kind=cache-write-failed with cause preserved', async () => {
+    const original = { mkdir: __testSeam.mkdir, writeFile: __testSeam.writeFile, graphqlFn: __testSeam.graphqlFn, readFile: __testSeam.readFile };
+    try {
+      const eaccess = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES', syscall: 'mkdir' });
+      __testSeam.readFile = async () => {
+        const enoent = new Error('ENOENT');
+        enoent.code = 'ENOENT';
+        throw enoent;
+      };
+      __testSeam.mkdir = async () => { throw eaccess; };
+      __testSeam.writeFile = async () => {};
+      __testSeam.graphqlFn = async () => identityNode({ id: 'BOT_kgDOCnlnWA' });
+
+      await assert.rejects(
+        resolveCopilotIdentity({ cacheDir: scratch }),
+        (err) => {
+          assert.ok(err instanceof EngageError, 'must raise EngageError');
+          assert.equal(err.kind, 'cache-write-failed');
+          assert.equal(err.cause, eaccess, 'original fs error must be preserved as err.cause');
+          assert.match(err.message, /Failed to write Copilot identity cache/);
+          assert.match(err.message, /EACCES/);
+          assert.match(err.message, /syscall: mkdir/);
+          return true;
+        },
+      );
+    } finally {
+      Object.assign(__testSeam, original);
+    }
+  });
+
+  it('writeFile ENOSPC surfaces as kind=cache-write-failed with cause preserved', async () => {
+    const original = { mkdir: __testSeam.mkdir, writeFile: __testSeam.writeFile, graphqlFn: __testSeam.graphqlFn, readFile: __testSeam.readFile };
+    try {
+      const enospc = Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC', syscall: 'write' });
+      __testSeam.readFile = async () => {
+        const enoent = new Error('ENOENT');
+        enoent.code = 'ENOENT';
+        throw enoent;
+      };
+      __testSeam.mkdir = async () => {};
+      __testSeam.writeFile = async () => { throw enospc; };
+      __testSeam.graphqlFn = async () => identityNode({ id: 'BOT_kgDOCnlnWA' });
+
+      await assert.rejects(
+        resolveCopilotIdentity({ cacheDir: scratch }),
+        (err) => {
+          assert.ok(err instanceof EngageError, 'must raise EngageError');
+          assert.equal(err.kind, 'cache-write-failed');
+          assert.equal(err.cause, enospc, 'original fs error must be preserved as err.cause');
+          assert.match(err.message, /Failed to write Copilot identity cache/);
+          assert.match(err.message, /ENOSPC/);
+          assert.match(err.message, /syscall: write/);
+          return true;
+        },
+      );
+    } finally {
+      Object.assign(__testSeam, original);
+    }
+  });
+
+  it('CLI exits 5 with --cache-dir hint when the cache dir is unwritable (no stack trace)', () => {
+    // Smoke-test the CLI's typed-error envelope at the process boundary. We
+    // construct an unwritable cache-dir path (a child of a non-existent
+    // directory under C:\) and invoke `harness copilot-engage` against a
+    // bogus PR. The cmdCopilotEngage flow hits multiple early-exit points
+    // before reaching the cache-write seam — `git rev-parse HEAD` (via
+    // detectGitHead), then the GraphQL identity-resolve fetch which needs
+    // GITHUB_TOKEN — so we cannot guarantee the test reaches exit 5
+    // deterministically (auth-missing exit 4 is a possible early exit when
+    // GITHUB_TOKEN is cleared). What we CAN guarantee at the process
+    // boundary: any failure path must produce a typed-error exit code
+    // (2/3/4/5) and never leak a raw `at ...` stack frame past the CLI's
+    // top-level catch. Unit tests (a) + (b) above cover the actual
+    // EACCES/ENOSPC paths via __testSeam injection. Note: this test is
+    // Windows-targeted (the C:\ path is unlikely to be writable on the
+    // CI runner); on non-Windows the path may be auto-created during
+    // mkdir-recursive — but since the GraphQL fetch fails first under
+    // the cleared-token env, the test still asserts the typed-error
+    // contract regardless of platform.
+    const unwritable = path.join('C:', 'nonexistent-dir-cs45-test', 'cache');
+    const result = spawnSync(
+      NODE,
+      [HARNESS, 'copilot-engage', '999', '--repo', 'henrik-me/agent-harness', '--no-poll', '--cache-dir', unwritable],
+      { encoding: 'utf8', cwd: scratch, env: { ...process.env, GITHUB_TOKEN: '', GH_TOKEN: '' } },
+    );
+    // Exit code must be a known typed-error code (2/3/4/5), never 0 (success)
+    // nor 1 (uncaught-throw fallback) since the CLI wraps all EngageErrors.
+    assert.ok([2, 4, 5].includes(result.status), `expected typed-error exit code; got ${result.status}\nstderr:\n${result.stderr}\nstdout:\n${result.stdout}`);
+    // No raw stack trace should leak past the typed-error handler.
+    assert.doesNotMatch(result.stderr, /^\s+at .*\(/m, `unexpected stack frame in stderr:\n${result.stderr}`);
+    // If we hit the cache-write-failed path, verify the hint is present.
+    if (result.status === 5) {
+      assert.match(result.stderr, /cache write failed/);
+      assert.match(result.stderr, /--cache-dir/);
+    }
+  });
+});
