@@ -11,7 +11,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
@@ -19,6 +21,8 @@ import yaml from 'js-yaml';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 
+const CLI = path.join(REPO_ROOT, 'bin', 'harness.mjs');
+const NODE = process.execPath;
 const ROOT_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'workboard-auto-approve.yml');
 const TEMPLATE_WORKFLOW = path.join(REPO_ROOT, 'template', 'managed', '.github', 'workflows', 'workboard-auto-approve.yml');
 const WORKFLOWS = [ROOT_WORKFLOW, TEMPLATE_WORKFLOW];
@@ -113,6 +117,32 @@ describe('CS50 — init/docs surfaces for WORKBOARD_MERGE_TOKEN', () => {
     assert.match(cli, /--skip-workboard-pat-prompt/, 'harness init must expose --skip-workboard-pat-prompt');
     assert.match(cli, /Create a fine-grained PAT with these scopes:/, 'init guidance must tell users to create a fine-grained PAT');
     assert.match(cli, /WORKBOARD_MERGE_TOKEN/, 'init guidance must name the repo secret');
+  });
+
+  it('fresh init installs the managed workboard workflow when the prompt is skipped', () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'cs50-init-'));
+    try {
+      const result = spawnSync(
+        NODE,
+        [CLI, 'init', dir, '--skip-constraint-detection', '--skip-workboard-pat-prompt'],
+        { cwd: REPO_ROOT, encoding: 'utf8' },
+      );
+      assert.equal(
+        result.status,
+        0,
+        `harness init should pass without network when skip flags are set\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+      );
+      assert.match(result.stdout, /Skipped WORKBOARD_MERGE_TOKEN PAT setup guidance/);
+      const workflowPath = path.join(dir, '.github', 'workflows', 'workboard-auto-approve.yml');
+      assert.ok(existsSync(workflowPath), 'fresh init must materialize the managed workboard workflow');
+      const config = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.ok(
+        config.managed?.files?.includes('.github/workflows/workboard-auto-approve.yml'),
+        'fresh init must record the workboard workflow in managed.files so future syncs maintain it',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('root OPERATIONS documents the admin-bypass fallback subsection', () => {
