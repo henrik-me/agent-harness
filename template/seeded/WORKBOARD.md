@@ -22,7 +22,8 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
   An alternative form using a single em-dash placeholder row
   (`| — | no active CS — populate when claiming | — | — | — | _(set on claim)_ | _(none)_ |`)
   is also accepted by the linter for backward compatibility, but the
-  header-only form above is the canonical / recommended seed.
+  header-only form (the table below this comment, with header + separator
+  rows only and no data rows) is the canonical / recommended seed.
 
   IMPORTANT: do NOT use `_(none)_` (or any other non-em-dash placeholder) in
   the CS-Task ID column — `check-workboard.mjs` requires either a real

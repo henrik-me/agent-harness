@@ -16,6 +16,12 @@
  *   5. (C46-8 acceptance) `harness init` end-to-end against a fresh os.tmpdir()
  *      target produces a consumer dir whose seeded WORKBOARD.md and seeded
  *      project/clickstops/ tree pass `harness lint --quiet` without errors.
+ *   6. (Doc-drift guard, rubber-duck R2) Canonical Plan-vs-impl review skeleton
+ *      + verbatim-labels callout block must exist in `template/composed/OPERATIONS.md`
+ *      AND root `OPERATIONS.md` — required field labels are asserted to live
+ *      INSIDE the callout/skeleton body (not anywhere in the file), so the
+ *      discoverability fix can't silently rot if someone strips the section
+ *      while leaving the labels mentioned elsewhere.
  *
  * All scratch dirs use os.tmpdir() per LRN-094 — never write under REPO_ROOT
  * (race with check-text-encoding's recursive walk under parallel `node --test`).
@@ -352,11 +358,14 @@ describe('CS46 — workboard empty-state + Plan-vs-impl review discoverability',
   });
 
   // -------------------------------------------------------------------------
-  // C46-2 / C46-9 doc-drift guard (rubber-duck R2 non-blocking finding):
-  // mechanically assert the canonical OPERATIONS.md skeleton + verbatim-labels
-  // callout exists. Without this, OPERATIONS.md could regress (e.g. someone
-  // strips the callout in a future refactor) while the rest of CS46's tests
-  // still pass — the discoverability fix would silently rot.
+  // C46-2 / C46-9 doc-drift guard (rubber-duck R2 non-blocking finding +
+  // Copilot suppressed-comment refinement): mechanically assert the canonical
+  // OPERATIONS.md skeleton + verbatim-labels callout exists AND that the
+  // required field labels live INSIDE the close-out gate H3 section body
+  // (not anywhere else in OPERATIONS.md — `**Reviewer:**` etc. appear in
+  // multiple unrelated places, so a bare `body.includes(...)` would still
+  // pass even if the canonical skeleton block were stripped). Without this
+  // refinement, the discoverability fix would silently rot.
   // -------------------------------------------------------------------------
   it('6. canonical Plan-vs-impl skeleton + verbatim-labels callout present in OPERATIONS.md (template + root mirror)', () => {
     const composedOps = path.join(REPO_ROOT, 'template', 'composed', 'OPERATIONS.md');
@@ -365,32 +374,49 @@ describe('CS46 — workboard empty-state + Plan-vs-impl review discoverability',
       assert.ok(fs.existsSync(opsFile), `Expected ${opsFile} to exist`);
       const body = fs.readFileSync(opsFile, 'utf8');
 
-      // Verbatim-labels callout must be present.
+      // Extract the body of the H3 § "Plan-vs-implementation review (close-out
+      // gate)" section. Bounded by the next H2/H3 heading at start-of-line OR
+      // end-of-file. This isolates the canonical skeleton + callout and
+      // prevents false passes from labels mentioned elsewhere in OPERATIONS.md.
+      const sectionStart = body.indexOf('### Plan-vs-implementation review (close-out gate)');
       assert.ok(
-        body.includes('matched verbatim by `check-clickstop.mjs`'),
-        `${opsFile}: missing verbatim-labels callout (C46-2 regression)`
+        sectionStart !== -1,
+        `${opsFile}: missing H3 "### Plan-vs-implementation review (close-out gate)" section (C46-2 regression)`
+      );
+      const tail = body.slice(sectionStart + 1);
+      const nextHeadingMatch = tail.match(/\n## |\n### /);
+      const sectionEnd = nextHeadingMatch
+        ? sectionStart + 1 + nextHeadingMatch.index
+        : body.length;
+      const sectionBody = body.slice(sectionStart, sectionEnd);
+
+      // Verbatim-labels callout must be present INSIDE the section.
+      assert.ok(
+        sectionBody.includes('matched verbatim by `check-clickstop.mjs`'),
+        `${opsFile}: § Plan-vs-impl review (close-out gate) section missing verbatim-labels callout (C46-2 regression)`
       );
 
-      // All three required field labels must appear in the canonical skeleton
-      // code-block region (within ±50 lines of the callout).
+      // All three required field labels must appear INSIDE the section body
+      // (not anywhere in the file — that would let the canonical skeleton be
+      // stripped while the test still passes, per Copilot suppressed comment).
       assert.ok(
-        body.includes('**Reviewer:**'),
-        `${opsFile}: missing **Reviewer:** label`
+        sectionBody.includes('**Reviewer:**'),
+        `${opsFile}: § Plan-vs-impl review (close-out gate) section missing **Reviewer:** label inside its body`
       );
       assert.ok(
-        body.includes('**Date:**'),
-        `${opsFile}: missing **Date:** label`
+        sectionBody.includes('**Date:**'),
+        `${opsFile}: § Plan-vs-impl review (close-out gate) section missing **Date:** label inside its body`
       );
       assert.ok(
-        body.includes('**Outcome:**'),
-        `${opsFile}: missing **Outcome:** label`
+        sectionBody.includes('**Outcome:**'),
+        `${opsFile}: § Plan-vs-impl review (close-out gate) section missing **Outcome:** label inside its body`
       );
 
       // The callout must explicitly call out **Verdict:** as the failing alias
       // (this is the highest-leverage anti-pattern hint per issue #146).
       assert.ok(
-        body.includes('**Verdict:**'),
-        `${opsFile}: callout must name **Verdict:** as failing alias (C46-2)`
+        sectionBody.includes('**Verdict:**'),
+        `${opsFile}: § Plan-vs-impl review (close-out gate) section callout must name **Verdict:** as failing alias inside its body (C46-2)`
       );
     }
   });
