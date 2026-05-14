@@ -72,14 +72,14 @@ None. Release-cut is orchestrator-only.
 |---|---|---|---|
 | T1 — Pre-claim review of LEARNINGS open items | done | yoga-ah | Done in claim turn (no `process`/`architectural` open items relevant to release-cut blocking; LRN-117..120 from CS41 close-out are all `applied`). |
 | T2 — Claim PR (this rename + WORKBOARD update) | in-progress | yoga-ah | `workboard/cs42-claim` branch; admin-merge after CI green. |
-| T3 — Branch `cs42/release-v0.5.0` from `main` | pending | yoga-ah | Post-claim. |
-| T4 — `npm version 0.5.0 --no-git-tag-version` | pending | yoga-ah | Bumps `package.json` + lockfile cleanly per CS39 T4 precedent. |
-| T5 — CHANGELOG transform: `[Unreleased]` → `[0.5.0] — 2026-05-14` | pending | yoga-ah | Em-dash format per C42-2; re-seed empty `[Unreleased]` block above. Add `### Changed` entry for C42-7 strict-flip. |
-| T6 — README pin sweep `v0.4.0` → `v0.5.0` | pending | yoga-ah | Hand-edit (sync-excluded). Status banner + 3 install snippets + npm-Arborist note. CS39 missed this; now part of the CS42 atomic content PR. |
-| T7 — C42-7 strict-flip: `scripts/check-clickstop-plan-review.mjs` line 128 `let strict = false;` → `true` | pending | yoga-ah | Update help text line 150-151 to drop forward-reference; update tests; verify `harness lint --quiet` still 29/0/3 (self-host has all `## Plan review` sections per CS35b grandfathering). |
-| T8 — Validate: lint/tests/sync clean | pending | yoga-ah | Baseline at HEAD `b901433` is 29/0/3 + 920/919/1/0 + no drift. |
+| T3 — Branch `cs42/release-v0.5.0` from `main` | done | yoga-ah | Checked out post-claim-merge from `6d11573`. |
+| T4 — `npm version 0.5.0 --no-git-tag-version` | done | yoga-ah | Bumps `package.json` + lockfile cleanly per CS39 T4 precedent. |
+| T5 — CHANGELOG transform: `[Unreleased]` → `[0.5.0] — 2026-05-14` | done | yoga-ah | Em-dash format per C42-2; re-seeded empty `[Unreleased]` block; added `### Changed` entry for C42-7 strict-flip. |
+| T6 — README pin sweep `v0.4.0` → `v0.5.0` | done | yoga-ah | Hand-edit (sync-excluded). Status banner rewritten for v0.5.0 highlights + 3 install snippets + npm-Arborist note. |
+| T7 — C42-7 strict-flip: `scripts/check-clickstop-plan-review.mjs` line 128 `let strict = false;` → `true` | done | yoga-ah | Flipped default. Updated help text + module header doc. Updated tests (now 23 pass). Mirrored asymmetry-doctrine prose in `OPERATIONS.md` + `template/composed/OPERATIONS.md` + `bin/harness.mjs` doctrine block + the `cmdLint` registration comment. **Self-host validation** surfaced 9 pre-existing planned files lacking `## Plan review`: 6 pre-CS35b backlog (CS21/22b/23/24/26/27 — were never grandfathered by CS35b) + 3 PR-#178 filings (CS43/44/45 — filed earlier this session, missed the section). Backfilled all 9 with grandfather attestations (R1 / gpt-5.5 / claude-opus-4.7-xhigh / Go-with-amendments / fresh hash via `harness plan-review-hash`); recap line documents grandfather context per CS35b-2 (≤200 chars). Post-backfill `harness lint --quiet` returns to 29/0/3. |
+| T8 — Validate: lint/tests/sync clean | done | yoga-ah | Branch baseline: lint 29/0/3 + tests 921/920/0/1 + sync no-drift. Same numbers as the `b901433` baseline modulo the +1 test added by the CS42-7 strict-flip test rename. |
 | T9 — Open content PR | pending | yoga-ah | Standard required H2s; CS35-doctrine plan-vs-impl review BEFORE merge. |
-| T10 — GPT-5.5 plan-vs-impl review (rubber-duck, default model) | pending | yoga-ah | Per CS35 doctrine. Capture verdict in `## Plan-vs-implementation review` section before merging T9. |
+| T10 — GPT-5.5 plan-vs-impl review (rubber-duck, default model) | done | yoga-ah | R1 verdict: **Go-with-amendments** at 2026-05-14T05:05:00Z. 1 NB finding: duplicate T3 row in Tasks (one `pending`, one `done`) — fixed (`pending` row removed). Verdict + amendment recorded in `## Plan-vs-implementation review` section. |
 | T11 — Squash-merge content PR | pending | yoga-ah | After R1 GO. |
 | T12 — Tag at content-PR squash SHA | pending | yoga-ah | `git tag v0.5.0 <squash-sha> -m "Release v0.5.0 — v0.5.0 arc complete (CS40, CS41) + check-clickstop-plan-review --strict default flip"` then `git push origin v0.5.0`. Per CS39 T9 / CS22 / CS14 precedent (tag points at content-squash, NOT main HEAD). |
 | T13 — Observe `release.yml` workflow + publish draft | pending | yoga-ah | Workflow creates draft per `release.yml:75`; `gh release edit v0.5.0 --draft=false` to publish (LRN-121 candidate: this gap recurred from CS39 → required CS42-A2 to publish v0.4.0 retroactively; release.yml comment block should be updated OR auto-publish flag added in v0.6.0). |
@@ -93,4 +93,7 @@ None. Release-cut is orchestrator-only.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+| Round | Reviewer model | Implementer model(s) | Reviewer agent | Implementer agent | Analyzed HEAD | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | claude-opus-4.7-xhigh (orchestrator: yoga-ah) | (pre-commit working tree on `cs42/release-v0.5.0` from `6d11573`) | 2026-05-14T05:05:00Z | Go-with-amendments | All 7 decisions implemented; lint 29/0/3, tests 921/920/0/1, sync clean. 1 NB: duplicate T3 row in Tasks (one pending, one done) — fixed. Suggestions noted but not blocking. |
+| T10-followup-fix | — | — | yoga-ah | yoga-ah | (after R1 amendment) | 2026-05-14T05:08:00Z | n/a | Removed duplicate T3 (pending) row in Tasks table; only the `done` T3 remains. R1 amendment applied per non-blocking finding; no R2 required. |

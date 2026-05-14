@@ -34,13 +34,17 @@
  *     (per C35b-3, computed via lib/plan-review-hash.mjs).
  *   - Latest verdict MUST be Go or Go-with-amendments (C35b-5).
  *
- * Mode + strictness (per C35b-9, C35b-10):
- *   --mode standalone   (default) — `--strict` defaults to false (warn-only
- *                                  on missing section in v0.4.0; CS42 flips
- *                                  the default to true for v0.5.0).
+ * Mode + strictness (per C35b-9, C35b-10, C42-7):
+ *   --mode standalone   (default) — `--strict` defaults to TRUE in v0.5.0
+ *                                  (CS42 flipped from v0.4.0's warn-only
+ *                                  default per CS35b-10 migration ramp).
+ *                                  Pass `--strict false` to opt out.
  *   --mode pr-evidence  — STRICT regardless of --strict flag (A6 gate).
  *                         The asymmetry between local convenience and PR
- *                         enforcement is the mechanism that closes the gap.
+ *                         enforcement was the v0.4.0 mechanism that closed
+ *                         the gap; v0.5.0 collapses the asymmetry to "always
+ *                         strict by default" while preserving the explicit
+ *                         opt-out for repos still mid-migration.
  *
  * Once a `## Plan review` section IS present, schema/independence/hash/
  * verdict violations are ALWAYS errors, regardless of --strict or --mode —
@@ -125,7 +129,7 @@ const HASH_RE = /^[0-9a-f]{12}$/;
 
 let clickstopsDir = null;
 let mode = 'standalone';
-let strict = false;
+let strict = true;
 let strictExplicit = false;
 let skipReasons = new Set();
 let quiet = false;
@@ -147,10 +151,11 @@ const HELP = [
   '  --dir <path>           Path to the clickstops/ root directory (required)',
   '  --mode <m>             standalone (default) | pr-evidence',
   '                         pr-evidence forces strict regardless of --strict',
-  '  --strict <bool>        true|false (default false in standalone mode in v0.4.0;',
-  '                         CS42 flips the default to true for v0.5.0). Applies',
-  '                         only to "section entirely absent". Schema / independence /',
-  '                         hash / verdict violations are always errors.',
+  '  --strict <bool>        true|false (default true in standalone mode in v0.5.0;',
+  '                         CS42 flipped the default from false per CS35b-10 ramp;',
+  '                         pass --strict false to opt out of the strict default).',
+  '                         Applies only to "section entirely absent". Schema /',
+  '                         independence / hash / verdict violations are always errors.',
   '  --skip-reasons <csv>   In pr-evidence mode, "workboard-only" short-circuits',
   '                         to a pass. Other reasons do not skip this gate.',
   '  --files <csv>          Restrict linting to this explicit list of files',
@@ -163,7 +168,7 @@ const HELP = [
   '  --help                 Print this help text',
   '',
   'Exit codes:',
-  '  0  pass (or warn-only on missing section in standalone mode)',
+  '  0  pass (or warn-only on missing section with --strict=false in standalone mode)',
   '  1  strict violation OR schema/independence/hash/verdict violation',
   '  2  bad usage',
   '',

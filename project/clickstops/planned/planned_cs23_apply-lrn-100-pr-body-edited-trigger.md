@@ -74,6 +74,11 @@ CS23 close-out is permitted only when **all** of the following are true and reco
 - **R2 (low):** Some PR-body edits (e.g. mid-PR conversation note appends) will trigger a redundant lint pass. This is acceptable — every `edited` event is a real change that could affect the lint result.
 - **OQ1:** Should the test also assert the same shape on `harness-self-check-via-reusable.yml`? **Default:** no — it has no `pr-body` job and is gated separately. Document the rationale in the test file as a comment.
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 04c7113c3b84 | 2026-05-14T04:50:00Z | Go-with-amendments | CS23 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
 ## Tasks
 
 | Task | State | Owner | Notes |

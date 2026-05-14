@@ -62,6 +62,11 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 | R2 | Adding informational lines to `harness lint` summary may conflict with `--quiet` flag expectations | `--quiet` should suppress informational notes the same way it suppresses success output. Verify in the test fixture: `--quiet` mode produces no recommendation lines on stdout. |
 | R3 | The recommendation text references files (`.github/pull_request_template.md`) that the consumer may have but at a different path | Use the standard GitHub-recognised path. Acceptable to use ONE canonical path in the recommendation; consumers using non-standard paths can disable the recommendation later if it becomes annoying (out of scope for CS27). |
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | b376befdb2b2 | 2026-05-14T04:50:00Z | Go-with-amendments | CS27 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
 ## Tasks
 
 | Task | State | Owner | Notes |

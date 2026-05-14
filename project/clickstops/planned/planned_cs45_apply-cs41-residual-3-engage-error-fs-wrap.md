@@ -81,6 +81,11 @@ CS45 close-out is permitted only when **all** of the following are true and reco
 - **OQ1 (defer to claim time):** Should the `--cache-dir` flag also be exposed as an environment variable `HARNESS_CACHE_DIR` (mentioned speculatively in C45-6)? If the existing CLI does not already honour env vars for this, add it as a small ancillary deliverable so the troubleshooting hint is real, not aspirational. Verify at claim time.
 - **OQ2 (defer to claim time):** The new LRN number per C45-7 may be 121 (next free after the LEARNINGS.md sequence) or higher depending on what other CSs land in between. Use the lowest unused number at close-out.
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 926d7fe0dae5 | 2026-05-14T04:50:00Z | Go-with-amendments | CS45 grandfather: filed in PR #178 between CS35b and CS42; missed Plan-review section at filing. Backfilled here per CS42-7. Plan content unchanged. |
 ## Tasks
 
 | Task | State | Owner | Notes |

@@ -161,6 +161,11 @@ Each filer briefing must follow the planned-file template shape proven by `plann
 - **OQ1:** Should CS21 also harvest the gwn-side `LEARNINGS.md` for cross-applicable LRN entries? **Default:** out of scope for CS21 (LRNs are project-specific by design; the harness's own learnings are independent). If the surveyor spots a gwn LRN that's clearly applicable here, classify `defer` and file as a one-LRN follow-up CS.
 - **OQ2:** Should CS21 cut a release tag in-CS instead of filing the release follow-up? Per C21-5, no — release mechanics are their own CS. If user later disagrees, the release-followup planned file is trivial to redirect.
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 2a8d22eb1cad | 2026-05-14T04:50:00Z | Go-with-amendments | CS21 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog item; plan content unchanged; backfill only. |
 ## Tasks
 
 | Task | State | Owner | Notes |

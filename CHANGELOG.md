@@ -11,6 +11,20 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- _(none yet — next entries land here)_
+
+### Changed
+
+- _(none yet)_
+
+### Removed
+
+- _(none yet)_
+
+## [0.5.0] — 2026-05-14
+
+### Added
+
 - **CS41:** `harness copilot-engage <pr-number>` subcommand + `lib/copilot-engage.mjs` library — wraps the documented Copilot review-engagement primitive (`gh pr edit --add-reviewer copilot-pull-request-reviewer` per ADR-0004 § ADR4-2) so orchestrators no longer hand-craft GraphQL invocations. Auto-detects `--repo` from `git remote origin url`. Resolves Copilot's Bot node ID via `node(login:)` / `... on Bot` GraphQL fragment (cached 7d at `~/.cache/harness/copilot-id.json` per C41-2). Polls reviews every 30s until at least one Bot review by `copilot-pull-request-reviewer` lands at the current PR head with state ∈ {APPROVED, COMMENTED, CHANGES_REQUESTED} **and submitted at or after the engage-request timestamp** (or the explicit `--submitted-after <iso>` floor if provided); the implicit submitted-after floor enforces the A5 ordering doctrine — a stale Copilot review on the same HEAD that predates the engage request MUST NOT satisfy the gate. `--no-poll` short-circuits after the request for CI usage. Exits 2 on fork PRs (`isCrossRepository == true`) per ADR4-6. The poll predicate matches `scripts/check-copilot-review.mjs` exactly so "engage CLI satisfied" = "A5+A16 gate satisfied". Per Decisions C41-1 / C41-2 / C41-3 / C41-4.
 - **CS41:** `scripts/check-clickstop-implementer-not-reviewer.mjs` — new self-host-guarded linter that scans `project/clickstops/{active,done}/*.md`, parses each `## Model audit` block, and fails when `Implementer agent` ≡ `Reviewer agent` (case-insensitive). Mirrors the model-independence invariant from CS35 C35-2 at the agent-identity level (CS35 C35-18). Default behaviour: missing columns → WARNING (one-cycle migration ramp); `--strict-agent-columns` → missing columns become errors. Registered in `harness lint`. Per Decisions C41-5 / C41-6.
 - **CS41:** `Implementer agent` + `Reviewer agent` columns now first-class in the `## Model audit` schema. `scripts/check-review-evidence.mjs` parser extended to ingest both rows; new `--strict-agent-columns` flag (default false in v0.5.0; flips true in v0.6.0 per C42-6 strict-flip plan) controls the missing-column severity. PR template (`template/managed/.github/pull_request_template.md`) gains the two new placeholder rows. REVIEWS.md and the composed mirror align the schema prose with the new enforcement. Per Decisions C41-6 / Deliverable 7.
@@ -22,6 +36,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 ### Changed
 
 - **CS41:** `harness.config.json` `review_gates` block defaults to `enabled: true` for fresh `harness init` invocations (was opt-in via `--enable-review-gates` in v0.4.0). New `_opt_out_reason: "<string>"` field on the `review_gates` block lets consumers explicitly opt out; `harness sync --mode=check` now ERRORS when `review_gates` is absent OR `enabled: false` without `_opt_out_reason`. Existing repos that ran `harness init --enable-review-gates` are unaffected; repos that never opted in must either opt-in (recommended) or set `_opt_out_reason`. Schema (`schemas/harness.config.schema.json`) and tests (`tests/sync-review-gates-default-flip.test.mjs`) updated. Per Decisions C41-7 / C41-8.
+- **CS42:** `scripts/check-clickstop-plan-review.mjs --strict` default flips from `false` (v0.4.0 warn-only) to `true` (v0.5.0 error) per CS35b-10 migration ramp. Local `harness lint` invocations now ERROR rather than WARN on missing/stale `## Plan review` attestations on planned/active CS files. (The PR-time A6 gate via `harness pr-evidence` was already strict from v0.4.0; this change brings local lint into alignment.) **Migration:** any consumer with planned/active CS files lacking the `## Plan review` section will start failing `harness lint` at v0.5.0 — they MUST either backfill the attestation OR pass `--strict=false` explicitly with a documented reason. The harness's own self-host repo had retroactive grandfathering applied during CS35b, so the post-flip `harness lint --quiet` continues at 29/0/3. Per Decision C42-7.
 
 ## [0.4.0] — 2026-05-13
 

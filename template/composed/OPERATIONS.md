@@ -195,15 +195,17 @@ row with the post-amendment hash. The plan-vs-implementation review ladder
 in [REVIEWS.md](REVIEWS.md) (3-round cap, escalate on R3 Needs-Fix) applies
 identically to the planning-phase ladder.
 
-**Strictness asymmetry (C35b-9 / C35b-10):**
+**Strictness asymmetry (C35b-9 / C35b-10 / C42-7):**
 
-- `harness lint` (standalone, pre-PR convenience) runs the linter with
-  `--strict=false` in v0.4.0 (warn-only on missing-section). CS42 flips
-  the default to `true` for v0.5.0 (per C42-7).
+- `harness lint` (standalone, pre-PR convenience) ran the linter with
+  `--strict=false` in v0.4.0 (warn-only on missing-section). v0.5.0 (CS42)
+  flipped the default to `true`; standalone lint now ERRORS on missing
+  section by default. Consumers mid-migration can pass `--strict false`
+  explicitly.
 - The PR-time A6 gate dispatched by `harness pr-evidence` (CS36) ALWAYS
   runs in `--mode=pr-evidence`, which is STRICT regardless of `--strict`.
-  This asymmetry means developers get a friendly local warning while
-  editing, but PR merge is blocked without a fresh attestation.
+  The v0.4.0 asymmetry between local warn and PR strict has been collapsed
+  to "always strict by default" in v0.5.0.
 - Schema / independence / hash / verdict violations are ALWAYS errors,
   regardless of mode or `--strict`. Only the "section entirely absent"
   case is governed by the warn-vs-strict toggle.

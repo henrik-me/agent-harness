@@ -8,8 +8,8 @@
  * Cases covered:
  *   - clean planned file with R1 Go (full 8-col schema)
  *   - clean active file with R1 Go-with-amendments
- *   - missing section + --strict=false (warn, exit 0)
- *   - missing section + --strict=true (error, exit 1)
+ *   - missing section + --strict=false (explicit opt-out, warn, exit 0)
+ *   - missing section + default --strict (CS42-7 flipped default to true; error, exit 1)
  *   - missing section + --mode=pr-evidence (error regardless of --strict)
  *   - latest verdict Needs-Fix fails (regardless of --strict)
  *   - reviewer model overlap with same-row authors fails
@@ -181,15 +181,23 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
     assert.equal(r.status, 0, `expected pass; stdout=\n${r.stdout}`);
   });
 
-  it('warn-only on missing section in standalone mode (default --strict=false)', () => {
+  it('warn-only on missing section in standalone mode with --strict=false (explicit opt-out)', () => {
     clearScratch();
     fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
-    const r = runLinter(scratch);
+    const r = runLinter(scratch, ['--strict', 'false']);
     assert.equal(r.status, 0);
     assert.match(r.stdout, /WARN:.*missing required H2 section/);
   });
 
-  it('errors on missing section with --strict=true', () => {
+  it('errors on missing section with default --strict (CS42-7 flipped default to true in v0.5.0)', () => {
+    clearScratch();
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    const r = runLinter(scratch);
+    assert.equal(r.status, 1, `expected default-strict to error; stdout=\n${r.stdout}`);
+    assert.match(r.stdout, /ERROR:.*missing required H2 section/);
+  });
+
+  it('errors on missing section with --strict=true (explicit, same as default)', () => {
     clearScratch();
     fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--strict', 'true']);
