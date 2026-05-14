@@ -1,0 +1,81 @@
+# CS46 — Apply issue #146: surface canonical formats for workboard empty-state and clickstop Plan-vs-implementation review section
+
+**Status:** planned
+**Owner:** —
+**Branch:** —
+**Started:** —
+**Closed:** —
+**Filed by:** Pre-claim disposition of [issue #146](https://github.com/henrik-me/agent-harness/issues/146) (filed 2026-05-13 by `henrikm`; encountered first-hand by `yoga-ah` during the close-out of CS23 + CS43 + CS44 + CS45 on 2026-05-14, PR #189).
+**Depends on:** None. May claim independently. Small enough to ship in a single sitting (single orchestrator, no fan-out per rubber-duck finding #6).
+
+## Goal
+
+Two harness-enforced format constraints currently have no canonical published examples and no actionable error messages, leading consumers to a CI roundtrip on first encounter (issue #146). This CS addresses both:
+
+1. **Constraint A — `check-workboard.mjs`:** rejects `_(none)_` placeholder rows in the `## Active Work` table; valid empty forms (header-only OR a single em-dash row with "no active CS" in Title) aren't documented in the seeded scaffold or the lint message.
+2. **Constraint B — `check-clickstop.mjs`:** requires verbatim `**Reviewer:**`, `**Date:**`, `**Outcome:**` field labels in the `## Plan-vs-implementation review` section of every `done/` clickstop file; the linter error message doesn't enumerate them, so consumers using semantically-equivalent labels (`**Verdict:**`, `**Date closed:**`) hit a CI roundtrip.
+
+Phase 3 from issue #146 (`harness lint --fix` autofix) is explicitly deferred per the issue's own framing ("nice to have, not blocking").
+
+## Background
+
+Issue #146 was filed 2026-05-13 with concrete reproduction in `henrik-me/sub-invaders` PR #29 close-out. Trap (A) was independently re-encountered by the orchestrator during close-out PR #189 (this morning, 2026-05-14) — `_(none)_` placeholder rejected by `check-workboard.mjs`, then header-only converged on by trial-and-error.
+
+`check-workboard.mjs:228-247` enforces the regex `^CS\d{2,}[a-z]?$` on every CS-Task ID cell and accepts em-dash placeholder rows ONLY when Title contains "no active CS". `check-clickstop.mjs:283-309` enforces a separate `## Plan-vs-implementation review` H2 gate on `active/`+`done/` files; the `done/` arm requires `**Reviewer:**`, `**Date:**`, `**Outcome:**` (or the canonical grandfathering line). Both linters are correct in their strictness — the issue is purely discoverability + message quality, not enforcement strength.
+
+Issue acceptance criteria #1 ("a consumer running `harness init` in a fresh repo gets a `WORKBOARD.md` whose empty state passes `check-workboard` without modification") binds the seeded template (`template/seeded/WORKBOARD.md`) to the linter contract.
+
+## Decisions
+
+| # | Decision | Choice | Rationale |
+|---|---|---|---|
+| C46-1 | Canonical empty-state form to document | **Option (a) header-only.** Update `template/seeded/WORKBOARD.md` to use header-only as the canonical empty state + add an HTML comment documenting the contract. | Simpler than the em-dash placeholder; matches what the linter reaches via `activeRows.length === 0`; matches the form `yoga-ah` converged on in PR #189. The em-dash variant remains accepted by the linter (no behavior change there). |
+| C46-2 | Plan-vs-impl review skeleton location | Extend the existing code block in `template/composed/OPERATIONS.md` § "Plan-vs-implementation review (close-out gate)" to be a complete copy-pasteable skeleton + add an explicit "field labels are matched verbatim by `check-clickstop.mjs` — no aliases" callout. | Already the canonical place per OPERATIONS.md lines 95-144; consumers will look here first. |
+| C46-3 | `check-workboard.mjs` error message hint | Append `. For an empty Active Work table, remove all data rows and keep header rows only (or use a single em-dash row with "no active CS" in the Title cell — see WORKBOARD.md template).` to the existing `Active Work row has invalid CS-Task ID "${csId}" — expected CS\d{2,}(a-z)? format` message. | Self-documenting; both valid forms surfaced; consumer doesn't need to read linter source. |
+| C46-4 | `check-clickstop.mjs` error message hint | Append `. The required field labels are matched verbatim (case-sensitive bold-prefixed): "**Reviewer:**", "**Date:**", "**Outcome:**". See OPERATIONS.md § "Plan-vs-implementation review (close-out gate)" for the canonical skeleton.` to the existing `must contain Reviewer/Date/Outcome fields OR the grandfathering line` message. | Same self-documenting principle; surfaces verbatim labels + canonical reference. |
+| C46-5 | Test approach | Add `tests/cs46-empty-state-and-review-discoverability.test.mjs` with 4+ fixture-based tests: (1) seeded WORKBOARD.md template passes `check-workboard.mjs` cleanly with no data rows, (2) `_(none)_` row produces error message containing the new C46-3 hint substring, (3) clickstop with `**Verdict:**` instead of `**Outcome:**` produces error containing the new C46-4 verbatim-labels hint, (4) clickstop **built as a minimally-valid done file (with required close-out hygiene task rows per `check-clickstop.mjs:311-312`)** with the canonical OPERATIONS.md skeleton verbatim copy-pasted passes the lint AND does NOT pass via the grandfathering fallback. | Mirrors `tests/check-workboard.test.mjs` + `tests/check-clickstop.test.mjs:332-354` patterns. Fixture #4 wording avoids false-pass via grandfathering by asserting exact-label enforcement (per rubber-duck finding #3). |
+| C46-6 | Out of scope | Phase 3 autofix (`harness lint --fix`); CS-Task ID case sensitivity (separate planned CS pointing at issue #138 once #138 design is decided); regex generalization to accept `_(none)_` (issue #146 explicitly rejects this); changes to issue #138's PAT-based admin-merge proposal. | Scope discipline — bundling either would multiply review surface and create dependency on user design input that's not yet provided. |
+| C46-7 | Composed-file workflow | Edit `template/composed/OPERATIONS.md`; run `harness sync --mode=apply --resolved-sha <sha>` to refresh root `OPERATIONS.md` + `.harness-lock.json`. Two-pass workaround (CS43-45 finding) likely needed if prose-hash drifts. | Follow established managed-core flow; do NOT hand-edit root `OPERATIONS.md`. |
+| C46-8 | Fresh-consumer acceptance test (per rubber-duck finding #1) | Add `node bin/harness.mjs init --target-dir <os.tmpdir()/cs46-fresh-XXXXXX>` followed by `cd <fresh-dir> && node <abs-path-bin/harness.mjs> lint --quiet` as a deliverable-side self-check (executed during implementation; recorded in CS file Notes section). Assertion: zero errors against the fresh seeded `WORKBOARD.md` and `project/clickstops/`. Use `os.tmpdir()` per LRN-094 to avoid REPO_ROOT race with `check-text-encoding`. | Issue #146 acceptance criterion #1 is explicit; cannot pass acceptance without exercising the `harness init` path end-to-end. |
+| C46-9 | TRACKING.md skeleton drift (per rubber-duck finding #2) | Append a 1-2 sentence pointer in `template/managed/TRACKING.md`'s clickstop skeleton (around lines 87-105) directing consumers to the canonical Plan-vs-impl review skeleton in OPERATIONS.md so consumers copying TRACKING's skeleton don't omit the close-out gate. | TRACKING is one of two documented sources; without this pointer, the discoverability fix is incomplete for the TRACKING copy-paste path. |
+
+## Deliverables
+
+1. **`template/seeded/WORKBOARD.md`** — replace line 19 placeholder row with HTML comment + header-only empty state per C46-1.
+2. **`template/composed/OPERATIONS.md`** § Plan-vs-implementation review (close-out gate) — extend skeleton + add verbatim-labels callout per C46-2.
+3. **`OPERATIONS.md`** root — regenerated via `harness sync --mode=apply` per C46-7.
+4. **`scripts/check-workboard.mjs`** — extend `logError` line 244 per C46-3.
+5. **`scripts/check-clickstop.mjs`** — extend `logError` lines 304-305 per C46-4.
+6. **`tests/cs46-empty-state-and-review-discoverability.test.mjs`** — new file, 4+ tests per C46-5.
+7. **`template/managed/TRACKING.md`** — append cross-link from clickstop skeleton to canonical OPERATIONS.md plan-vs-impl skeleton per C46-9.
+8. **`CHANGELOG.md`** `[Unreleased]/Changed` bullet citing CS46.
+9. **Self-check evidence** — fresh-init E2E test result (per C46-8) recorded in Notes section.
+10. `## Plan-vs-implementation review` section filled at close-out per gate.
+
+## Risk Assessment
+
+| Risk | Mitigation |
+|------|------------|
+| R1 — TRACKING.md edit lands inside a managed local block that auto-regen would clobber | C46-9 confines the edit to a small append; verify the target lines (87-105) are not inside a `<!-- harness:... -->` block before editing. If they are, wrap the new prose in its own local block. |
+| R2 — Fresh-init self-check (C46-8) may pass on the harness self-host but fail in a real fresh consumer due to peer-deps gaps (issue #138 friction list mentions `ajv`/`ajv-formats`/`js-yaml` peer-deps). | Document the dep requirement in the Notes section if encountered; do NOT bundle a peer-deps fix into CS46 (separate scope). |
+| R3 — Issue #146 mentions related issue #138 in scope adjacency. Consumer may expect both fixed together. | C46-6 explicitly excludes #138; CS46 PR body states the boundary clearly so reviewers don't conflate. |
+
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 2c8a5f0f2a82 | 2026-05-14T19:00:00Z | Go-with-amendments | R1 NEEDS-FIX flagged missing fresh-init acceptance test (issue #146 AC #1); amended C46-8 + C46-9 + C46-5 wording in same session before opening this filing PR. |
+
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+
+## Notes / Learnings
+
+(filled during execution)
+
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
