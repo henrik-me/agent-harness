@@ -1797,6 +1797,19 @@ makes the dependency edge explicit. For SAML-protected orgs where
 \`git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<tag>\`
 as the SAML-safe fallback (see OPERATIONS.md § Reusable CI workflow).
 `.trim(),
+  'review-gates': `
+**Linter:** check-review-gates (scripts/check-review-gates.mjs)
+**Target:** harness.config.json, .github/workflows/review-gates.yml, and
+          infra/main-protection-ruleset.json.
+**Rules:**
+  - If \`reviews.enforce_gates=true\`, the review-gates workflow must exist.
+  - harness.config.json \`managed.files\` must include the workflow target.
+  - infra/main-protection-ruleset.json \`required_checks\` must include
+    review-log-evidence, copilot-review-attached, independence-invariant,
+    and review-threads-resolved.
+**Why:** REVIEWS.md is only mechanically enforced when both the workflow and
+branch ruleset contexts are installed; this catches partial sync/init states.
+`.trim(),
 };
 
 async function cmdLint(args, _global) {
@@ -1981,6 +1994,15 @@ async function cmdLint(args, _global) {
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
       ],
       target: path.join(cwd, '.github', 'workflows'),
+    },
+    {
+      name: 'review-gates',
+      script: 'check-review-gates.mjs',
+      args: [
+        '--cwd', cwd,
+        ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+      ],
+      target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
     },
     {
       // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd

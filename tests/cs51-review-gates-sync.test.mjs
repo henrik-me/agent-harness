@@ -34,7 +34,7 @@ function writeConfig(dir) {
   const cfg = {
     version: 'v0.5.1',
     project: { name: 'review-gate-sync-fixture', agent_suffix: 'rg', repo: 'owner/repo' },
-    managed: { files: [] },
+    managed: { files: ['.github/workflows/review-gates.yml'] },
     composed: { files: [] },
     seeded: { files: [] },
     scaffolds: [],
@@ -98,6 +98,10 @@ describe('CS51 review gate sync/init integration', () => {
       const check = runHarness(['--cwd', dir, 'sync', '--mode=check']);
       assert.equal(check.status, 0, `stdout:\n${check.stdout}\nstderr:\n${check.stderr}`);
       assert.match(check.stdout, /No drift detected/);
+
+      const lint = runHarness(['--cwd', dir, 'lint', '--only', 'review-gates', '--quiet']);
+      assert.equal(lint.status, 0, `stdout:\n${lint.stdout}\nstderr:\n${lint.stderr}`);
+      assert.match(lint.stdout, /review-gates: pass/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
