@@ -229,6 +229,44 @@ describe('scripts/check-review-evidence.mjs', () => {
     assert.match(r.stdout, /agent-identity violation/);
   });
 
+  it('CS41 (R4 fix): empty agent cells → warn-as-missing, NOT overlap (default strict=false)', () => {
+    // Both rows present but values are empty → previously triggered overlap
+    // because "".trim().toLowerCase() === "".trim().toLowerCase(). Per CS41
+    // spec, empty cells are semantically "missing" and should fall under the
+    // warn-ramp, not the overlap-strict path.
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: [
+        ...CLEAN_AUDIT,
+        ['Implementer agent', ''],
+        ['Reviewer agent', '   '], // whitespace-only also counts as empty
+      ],
+    });
+    const file = writeBody('cs41_agent_empty.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 0, `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.doesNotMatch(r.stdout, /agent-identity violation/);
+    assert.match(r.stderr, /WARN:/);
+    assert.match(r.stderr, /missing required agent row/);
+    assert.match(r.stderr, /Implementer agent.*Reviewer agent/);
+  });
+
+  it('CS41 (R4 fix): empty agent cells with --strict-agent-columns → exit 1 as missing', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: [
+        ...CLEAN_AUDIT,
+        ['Implementer agent', ''],
+        ['Reviewer agent', ''],
+      ],
+    });
+    const file = writeBody('cs41_agent_empty_strict.md', body);
+    const r = run(file, VALID_HEAD, ['--strict-agent-columns']);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.doesNotMatch(r.stdout, /agent-identity violation/);
+    assert.match(r.stdout, /missing required agent row/);
+  });
+
   // Case 2 ----------------------------------------------------------------
   it('case 2: stale analyzed_head → exit 1', () => {
     const body = buildPrBody({

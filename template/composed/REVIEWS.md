@@ -201,8 +201,8 @@ Every content PR body must record the following fields before merge:
 |---|---|---|
 | `Implementer models` | yes | Comma-separated list of every model that materially implemented any code/doc/config in the CS (orchestrator + all sub-agents). Case-insensitive on the family + version pair (e.g. `claude-opus-4.7` ≡ `Claude Opus 4.7`). |
 | `Reviewer model` | yes | Single model identifier from the C35-2 fallback ladder. |
-| `Implementer agent` | required in v0.5.0+ (warned in v0.4.0); enforced strict by CS41 + C42-6 | GitHub username of the implementing agent. Per CS35 C35-18 (agent-identity independence). Mechanically enforced: `scripts/check-clickstop-implementer-not-reviewer.mjs` (CS41) on the planned/active/done CS files; `scripts/check-review-evidence.mjs` (CS36, parser extended in CS41) on the PR body's `## Model audit` block. |
-| `Reviewer agent` | required in v0.5.0+ (warned in v0.4.0); enforced strict by CS41 + C42-6 | GitHub username of the reviewing agent. Per CS35 C35-18. Same enforcement surface as `Implementer agent`. |
+| `Implementer agent` | overlap is a hard error in v0.5.0 (CS41); missing or empty cells warn in v0.5.0, become a hard error in v0.6.0 (C42-6 strict-flip) | GitHub username of the implementing agent. Per CS35 C35-18 (agent-identity independence). Mechanically enforced: `scripts/check-clickstop-implementer-not-reviewer.mjs` (CS41) on the planned/active/done CS files; `scripts/check-review-evidence.mjs` (CS36, parser extended in CS41) on the PR body's `## Model audit` block. |
+| `Reviewer agent` | overlap is a hard error in v0.5.0 (CS41); missing or empty cells warn in v0.5.0, become a hard error in v0.6.0 (C42-6 strict-flip) | GitHub username of the reviewing agent. Per CS35 C35-18. Same enforcement surface as `Implementer agent`. |
 
 **Independence invariant (MUST):** `intersection({Implementer models}, {Reviewer model})` = ∅. Comparison is case-insensitive on the family + version pair. Violation blocks merge per A3.
 

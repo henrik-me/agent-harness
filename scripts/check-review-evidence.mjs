@@ -513,25 +513,28 @@ function checkA3() {
     return;
   }
 
+  const implementerAgentTrimmed = implementerAgentRaw === null ? '' : implementerAgentRaw.trim();
+  const reviewerAgentTrimmed = reviewerAgentRaw === null ? '' : reviewerAgentRaw.trim();
+
   const missingAgentFields = [];
-  if (implementerAgentRaw === null) missingAgentFields.push('Implementer agent');
-  if (reviewerAgentRaw === null) missingAgentFields.push('Reviewer agent');
+  if (implementerAgentTrimmed === '') missingAgentFields.push('Implementer agent');
+  if (reviewerAgentTrimmed === '') missingAgentFields.push('Reviewer agent');
   if (missingAgentFields.length > 0) {
     const message =
       `${prBodyFile}:${headingLine}: ` +
-      `## Model audit missing required agent row(s): ${missingAgentFields.join(', ')}. ` +
+      `## Model audit missing required agent row(s) (absent or empty): ${missingAgentFields.join(', ')}. ` +
       `Fix: add rows "| Implementer agent | <github-login> |" and ` +
       `"| Reviewer agent | <github-login> |" with distinct GitHub usernames per REVIEWS.md §2.8.`;
     if (strictAgentColumns) logError(message);
     else logWarning(message);
   } else {
-    const implementerAgent = implementerAgentRaw.trim().toLowerCase();
-    const reviewerAgent = reviewerAgentRaw.trim().toLowerCase();
+    const implementerAgent = implementerAgentTrimmed.toLowerCase();
+    const reviewerAgent = reviewerAgentTrimmed.toLowerCase();
     if (implementerAgent === reviewerAgent) {
       logError(
         `${prBodyFile}:${reviewerAgentLine}: ` +
         `## Model audit agent-identity violation — Implementer agent and Reviewer agent ` +
-        `are both "${reviewerAgentRaw.trim()}" (case-insensitive compare). ` +
+        `are both "${reviewerAgentTrimmed}" (case-insensitive compare). ` +
         `Fix: dispatch a reviewer under a different GitHub identity and update ` +
         `the Reviewer agent row at ${prBodyFile}:${reviewerAgentLine}.`
       );

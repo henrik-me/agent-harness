@@ -166,7 +166,7 @@ function buildColMap(headerCells) {
 
 function missingAgentFinding(label, line, missingFields) {
   const message =
-    `${label}:${line}: ## Model audit missing required agent row(s): ${missingFields.join(', ')}. ` +
+    `${label}:${line}: ## Model audit missing required agent row(s) (absent or empty): ${missingFields.join(', ')}. ` +
     `Fix: add "| Implementer agent | <github-login> |" and ` +
     `"| Reviewer agent | <github-login> |" rows with distinct GitHub usernames.`;
   if (strictAgentColumns) {
@@ -230,20 +230,23 @@ function checkFile(filePath, subdir) {
     }
   }
 
+  const implementerAgentTrimmed = implementerAgentRaw === null ? '' : implementerAgentRaw.trim();
+  const reviewerAgentTrimmed = reviewerAgentRaw === null ? '' : reviewerAgentRaw.trim();
+
   const missingFields = [];
-  if (implementerAgentRaw === null) missingFields.push('Implementer agent');
-  if (reviewerAgentRaw === null) missingFields.push('Reviewer agent');
+  if (implementerAgentTrimmed === '') missingFields.push('Implementer agent');
+  if (reviewerAgentTrimmed === '') missingFields.push('Reviewer agent');
   if (missingFields.length > 0) {
     missingAgentFinding(label, section.headingLine, missingFields);
     return;
   }
 
-  const implementerAgent = implementerAgentRaw.trim().toLowerCase();
-  const reviewerAgent = reviewerAgentRaw.trim().toLowerCase();
+  const implementerAgent = implementerAgentTrimmed.toLowerCase();
+  const reviewerAgent = reviewerAgentTrimmed.toLowerCase();
   if (implementerAgent === reviewerAgent) {
     logError(
       `${label}:${reviewerAgentLine}: ## Model audit agent-identity violation — ` +
-      `Implementer agent and Reviewer agent are both "${reviewerAgentRaw.trim()}" ` +
+      `Implementer agent and Reviewer agent are both "${reviewerAgentTrimmed}" ` +
       `(case-insensitive compare). Fix: dispatch a reviewer under a different GitHub identity ` +
       `and update the Reviewer agent row at ${label}:${reviewerAgentLine}.`
     );

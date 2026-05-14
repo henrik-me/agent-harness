@@ -154,3 +154,22 @@ GPT-5.5 confirmed all three R1 findings are closed (cited specific file:line for
 ### Post-R2 hotfix — null `cacheDir` regression discovered during live engage
 
 While running `harness copilot-engage 176 --no-poll` (the very R2-1 sandbox-PR exercise that was waived), the CLI failed with `TypeError: The "path" argument must be of type string. Received null`. Root cause: `resolveCopilotIdentity({ cacheDir = path.join(os.homedir(), '.cache', 'harness') })` used JS default-parameter destructuring, which does NOT apply when the argument is explicitly `null` (only when `undefined`). The CLI parser at `bin/harness.mjs:2336` initializes `cacheDir = null` and passes it through, so the default never fired. Fixed by explicitly checking `cacheDir == null` inside `resolveCopilotIdentity`. Added regression test `resolveCopilotIdentity falls back to ~/.cache/harness when cacheDir is null (CS41 PR #176 hotfix)` (`tests/cli-copilot-engage.test.mjs`). Re-ran full suite: 916 / 915 pass / 1 skip / 0 fail. This validates R2-1 in the affirmative — the live engage now works end-to-end against PR #176, retroactively converting the waiver into demonstrated evidence.
+
+### R3 verdict — Go (against committed HEAD `37caf32`)
+
+GPT-5.5 reviewed the post-R2 hotfix delta `cdc0245..37caf32` covering `lib/copilot-engage.mjs:174-201` (null-safe `effectiveCacheDir`), `tests/cli-copilot-engage.test.mjs:353-387` (regression test), and the active CS file's post-R2 hotfix prose. Verdict: **Go**, with one optional hardening suggestion (test could assert exact path equality to `path.join(os.homedir(), '.cache', 'harness')` instead of substring match). Independently re-ran lint (29/0/3) + tests (916 / 915 pass / 1 skip / 0 fail) + sync (clean) at `37caf32`; appended R3 row to PR body Review log at timestamp `2026-05-14T03:34:50Z`. Optional hardening suggestion deferred (would require another amend cycle for cosmetic test-tightening); surfaced as a learning candidate.
+
+### R4 fixes — Copilot-review findings on `37caf32`
+
+Live `harness copilot-engage 176` (R3 dogfood) returned a Copilot review at `2026-05-14T03:44:14Z` with 6 findings, all in CS41-owned files. Addressed all 6 in-band rather than deferring to CS42 because the cluster includes 2 real correctness bugs in the linters this CS ships:
+
+| # | File | Finding | Fix |
+|---|---|---|---|
+| 1 | `scripts/check-review-evidence.mjs:516-545` | Empty/whitespace-only agent cells trigger overlap error (`"".trim().toLowerCase() === "".trim().toLowerCase()`); per CS41 spec these should be treated as missing (warn-ramp) | Compute `*Trimmed` early; if empty, fall to missing-row path; only check overlap when both non-empty |
+| 2 | `scripts/check-clickstop-implementer-not-reviewer.mjs:233-251` | Same empty-cell overlap bug | Same fix; `missingAgentFinding()` message updated to "missing required agent row(s) (absent or empty)" |
+| 3 | `tests/sync-review-gates-default-flip.test.mjs:18-29` | `runHarness(args, cwd, env)` ignores the `cwd` parameter (subprocess always runs at REPO_ROOT) | Dropped unused `cwd` parameter; updated 3 call sites |
+| 4 | `template/managed/.github/pull_request_template.md:37-38` | `<github-login>` literal placeholder is not detected by `check-pr-body.mjs`; could leak into real PR bodies | Switched to italic `_(GitHub username of …)_` placeholder consistent with the rest of the template |
+| 5 | PR #176 description | Claims `lib/copilot-engage.mjs` exports `findLatestMatchingCopilotReview(...)` and `parseSubmittedAfter(...)`, but they are file-private | Will correct PR body in the R4 re-engage step (PR body is a non-source artefact) |
+| 6 | `REVIEWS.md:204-205` (+ composed mirror) | Model audit table conflated overlap-strict (CS41) with missing-columns warn-then-strict (v0.5.0 → v0.6.0 per C42-6) | Reworded both rows to distinguish the two enforcement axes |
+
+Added 4 regression tests (2 per linter) covering empty-cell and whitespace-only inputs in both default and `--strict-agent-columns` modes. Full suite: 920 / 919 pass / 1 skip / 0 fail; lint 29/0/3; sync clean.

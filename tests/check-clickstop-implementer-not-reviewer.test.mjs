@@ -78,6 +78,46 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     assert.match(r.stdout, /case-insensitive/);
   });
 
+  it('R4 fix: empty agent cells warn-as-missing, NOT overlap (default strict=false)', () => {
+    const audit = [
+      '# Test',
+      '',
+      '## Model audit',
+      '',
+      '| Field | Value |',
+      '|---|---|',
+      '| Implementer agent |   |',
+      '| Reviewer agent | |',
+      '',
+    ].join('\n');
+    const cwd = writeTempClickstop('active/active_cs41_empty_agents.md', audit);
+    const r = run(cwd);
+    assert.equal(r.status, 0, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`);
+    assert.doesNotMatch(r.stdout, /agent-identity violation/);
+    assert.match(r.stdout, /WARN:/);
+    assert.match(r.stdout, /missing required agent row/);
+  });
+
+  it('R4 fix: empty agent cells with --strict-agent-columns → exit 1 as missing', () => {
+    const audit = [
+      '# Test',
+      '',
+      '## Model audit',
+      '',
+      '| Field | Value |',
+      '|---|---|',
+      '| Implementer agent | |',
+      '| Reviewer agent | |',
+      '',
+    ].join('\n');
+    const cwd = writeTempClickstop('active/active_cs41_empty_agents_strict.md', audit);
+    const r = run(cwd, ['--strict-agent-columns']);
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`);
+    assert.doesNotMatch(r.stdout, /agent-identity violation/);
+    assert.match(r.stdout, /ERROR:/);
+    assert.match(r.stdout, /missing required agent row/);
+  });
+
   it('temporary clickstop missing Model audit warns by default', () => {
     const cwd = writeTempClickstop('active/active_cs41_no_audit.md', '# No audit here\n');
     const r = run(cwd);

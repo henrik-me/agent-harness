@@ -15,7 +15,7 @@ function makeTempDir() {
   return mkdtempSync(path.join(os.tmpdir(), 'cs41-flip-'));
 }
 
-function runHarness(args, cwd, env = {}) {
+function runHarness(args, env = {}) {
   const result = spawnSync(
     process.execPath,
     [CLI, ...args],
@@ -51,7 +51,6 @@ describe('CS41 review_gates default flip', () => {
     try {
       const r = runHarness(
         ['init', '--cwd', dir],
-        dir,
         { HARNESS_DETECT_TIER_OVERRIDE: JSON.stringify({ tier: 'unknown', reason: 'offline-test' }) }
       );
       assert.equal(r.status, 0, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`);
@@ -67,7 +66,7 @@ describe('CS41 review_gates default flip', () => {
     const dir = makeTempDir();
     try {
       writeConfig(dir, minimalConfig());
-      const r = runHarness(['sync', '--mode=check', '--cwd', dir], dir);
+      const r = runHarness(['sync', '--mode=check', '--cwd', dir]);
       assert.equal(r.status, 1, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`);
       assert.match(r.stderr, new RegExp(MIGRATION_MESSAGE));
       assert.match(r.stderr, /_opt_out_reason/);
@@ -85,7 +84,7 @@ describe('CS41 review_gates default flip', () => {
           _opt_out_reason: 'legacy migration in progress',
         },
       }));
-      const r = runHarness(['sync', '--mode=check', '--cwd', dir], dir);
+      const r = runHarness(['sync', '--mode=check', '--cwd', dir]);
       assert.equal(r.status, 0, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`);
       assert.match(r.stdout, /No drift detected/);
     } finally {
