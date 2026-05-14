@@ -32,12 +32,12 @@ describe('check-cs-plan linter', () => {
     assert.match(r.stderr, /VIOLATION:/, 'stderr should contain VIOLATION:');
   });
 
-  it('2. consumer with lib/ violation exits 1 and reports lib/ prefix', () => {
+  it('2. consumer with template/managed/ violation exits 1 and reports template/managed/ prefix', () => {
     const dir = path.join(CONSUMER_FIXTURE, 'project', 'clickstops');
     const r = run(['--dir', dir, '--cwd', CONSUMER_FIXTURE]);
     assert.equal(r.status, 1, `expected exit 1, got ${r.status}; stderr: ${r.stderr}`);
     assert.match(r.stderr, /planned_cs02/, 'stderr should mention the planned_cs02 fixture file');
-    assert.match(r.stderr, /lib\//, 'stderr should mention the lib/ prefix');
+    assert.match(r.stderr, /template\/managed\//, 'stderr should mention the template/managed/ prefix');
   });
 
   it('3. fenced-code mention is exempt (done_cs03 must not appear as violation)', () => {
@@ -78,8 +78,8 @@ describe('check-cs-plan linter', () => {
     assert.equal(r.stdout.trim(), '', `expected empty stdout under --quiet, got: "${r.stdout}"`);
   });
 
-  it('7. --config overrides forbidden_path_prefixes (lib/ and template/composed/ not flagged when omitted)', () => {
-    // Write a temp config that only forbids template/seeded/ (omits lib/ and template/composed/).
+  it('7. --config overrides forbidden_path_prefixes (template/managed/ and template/composed/ not flagged when omitted)', () => {
+    // Write a temp config that only forbids template/seeded/ (omits template/managed/ and template/composed/).
     const tmp = mkdtempSync(path.join(tmpdir(), 'cs-plan-cfg-'));
     const cfgPath = path.join(tmp, 'harness.config.json');
     writeFileSync(cfgPath, JSON.stringify({
@@ -92,11 +92,11 @@ describe('check-cs-plan linter', () => {
     // No fixture mentions template/seeded/, so the override produces 0 violations.
     assert.equal(r.status, 0, `expected exit 0 with override (no fixture mentions template/seeded/), got ${r.status}; stderr: ${r.stderr}`);
     assert.match(r.stdout, /check-cs-plan: 4 files checked, 0 violations\./, 'stdout must include the success summary line');
-    // lib/ and template/composed/ violations should NOT be reported (they're not in the prefix list).
+    // template/managed/ and template/composed/ violations should NOT be reported (they're not in the prefix list).
     const violationLines = r.stderr.split('\n').filter((l) => l.startsWith('VIOLATION:'));
-    const libLines = violationLines.filter((l) => l.includes('lib/'));
+    const managedLines = violationLines.filter((l) => l.includes('template/managed/'));
     const composedLines = violationLines.filter((l) => l.includes('template/composed/'));
-    assert.equal(libLines.length, 0, `lib/ should not be flagged with custom config; got: ${libLines.join('\n')}`);
+    assert.equal(managedLines.length, 0, `template/managed/ should not be flagged with custom config; got: ${managedLines.join('\n')}`);
     assert.equal(composedLines.length, 0, `template/composed/ should not be flagged with custom config; got: ${composedLines.join('\n')}`);
   });
 
@@ -113,9 +113,11 @@ describe('check-cs-plan linter', () => {
     }));
     const csDir = path.join(tmp, 'project', 'clickstops', 'active');
     mkdirSync(csDir, { recursive: true });
+    // Bare-prose mention (NOT inside backticks) — issue #183 added inline-code-span
+    // exemption, so the violation must be in plain text to trigger the linter.
     writeFileSync(
       path.join(csDir, 'active_cs01_violation.md'),
-      '# CS01\n\nEdit `template/composed/CONVENTIONS.md` to register your block.\n',
+      '# CS01\n\nEdit template/composed/CONVENTIONS.md to register your block.\n',
     );
     const HARNESS = path.join(REPO_ROOT, 'bin', 'harness.mjs');
     const r = spawnSync(NODE, [HARNESS, '--cwd', tmp, 'lint', '--only', 'cs-plan'], { encoding: 'utf8' });
@@ -125,5 +127,84 @@ describe('check-cs-plan linter', () => {
     assert.match(stdout, /cs-plan/, `cs-plan row missing from summary; stdout:\n${stdout}\nstderr:\n${stderr}`);
     assert.notEqual(r.status, 0, `expected non-zero exit because the consumer CS plan violates; got ${r.status}; stdout:\n${stdout}`);
     assert.match(stderr, /template\/composed\//, `expected violation referencing template/composed/ on stderr; got:\n${stderr}`);
+  });
+
+  it('9. issue #183 Gap A: lib/, bin/, scripts/ are NOT in the default forbidden set (no false positives)', () => {
+    // Build a temp consumer with a CS plan that mentions lib/, bin/, scripts/ in
+    // bare prose. These were defaults pre-issue-#183; they must NOT trigger now.
+    const tmp = mkdtempSync(path.join(tmpdir(), 'cs-plan-gap-a-'));
+    writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'consumer-fixture-183-a', version: '0.0.0' }));
+    const csDir = path.join(tmp, 'project', 'clickstops', 'planned');
+    mkdirSync(csDir, { recursive: true });
+    writeFileSync(
+      path.join(csDir, 'planned_cs99_universal-dirs.md'),
+      [
+        '# CS99 — Universal-dir prose mentions',
+        '',
+        'See scripts/check-engine-isolation.mjs for the consumer-side gate.',
+        'The lib/feature-flags.mjs module exposes the runtime toggles.',
+        'Local-dev invocation form is node bin/harness.mjs lint.',
+        '',
+      ].join('\n'),
+    );
+    const r = run(['--dir', path.join(tmp, 'project', 'clickstops'), '--cwd', tmp]);
+    assert.equal(r.status, 0, `expected exit 0 (lib/, bin/, scripts/ are no longer default-forbidden), got ${r.status}; stderr: ${r.stderr}`);
+    assert.match(r.stdout, /1 files checked, 0 violations/, `expected clean summary; stdout: ${r.stdout}`);
+  });
+
+  it('10. issue #183 Gap A: opt-in to legacy stricter set via harness.config.json restores lib/ enforcement', () => {
+    // Same fixture as test 9, but with an explicit forbidden_path_prefixes that
+    // re-adds lib/. The opt-in path is the documented escape hatch for repos
+    // that DO want the pre-#183 stricter coverage.
+    const tmp = mkdtempSync(path.join(tmpdir(), 'cs-plan-gap-a-optin-'));
+    writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'consumer-fixture-183-a-optin', version: '0.0.0' }));
+    const cfgPath = path.join(tmp, 'harness.config.json');
+    writeFileSync(cfgPath, JSON.stringify({
+      version: '0.0.0',
+      project: { name: 'test', agent_suffix: 'test' },
+      cs_plan_lint: { forbidden_path_prefixes: ['lib/'] },
+    }));
+    const csDir = path.join(tmp, 'project', 'clickstops', 'planned');
+    mkdirSync(csDir, { recursive: true });
+    writeFileSync(
+      path.join(csDir, 'planned_cs99_lib-mention.md'),
+      '# CS99\n\nThe lib/feature-flags.mjs module exposes the runtime toggles.\n',
+    );
+    const r = run(['--dir', path.join(tmp, 'project', 'clickstops'), '--config', cfgPath, '--cwd', tmp]);
+    assert.equal(r.status, 1, `expected exit 1 with opt-in lib/ in config, got ${r.status}; stdout: ${r.stdout}; stderr: ${r.stderr}`);
+    assert.match(r.stderr, /lib\//, `expected lib/ violation reported; stderr: ${r.stderr}`);
+  });
+
+  it('11. issue #183 Gap B: backtick-delimited inline code spans are exempt (single-, double-, triple-backtick variants)', () => {
+    // Three forms of inline code with forbidden prefixes; none should violate.
+    // Plus one bare-prose mention that MUST violate (proves the linter still runs).
+    const tmp = mkdtempSync(path.join(tmpdir(), 'cs-plan-gap-b-'));
+    writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'consumer-fixture-183-b', version: '0.0.0' }));
+    const csDir = path.join(tmp, 'project', 'clickstops', 'done');
+    mkdirSync(csDir, { recursive: true });
+    writeFileSync(
+      path.join(csDir, 'done_cs88_inline-code-exempt.md'),
+      [
+        '# CS88 — Inline code exemption',
+        '',
+        'The harness CS plan said `edit template/composed/CONVENTIONS.md` (single-backtick).',
+        'Or alternatively ``edit template/seeded/CONVENTIONS.md`` (double-backtick).',
+        'Triple form: ```template/managed/foo.md``` should be exempt too.',
+        'Mixed line: regular prose and `template/managed/foo.md` inline reference.',
+        '',
+      ].join('\n'),
+    );
+    // Bare-prose mention in a SECOND file to prove the linter still flags real violations.
+    writeFileSync(
+      path.join(csDir, 'done_cs89_bare-prose-violates.md'),
+      '# CS89\n\nEdit template/composed/CONVENTIONS.md (no backticks here).\n',
+    );
+    const r = run(['--dir', path.join(tmp, 'project', 'clickstops'), '--cwd', tmp]);
+    assert.equal(r.status, 1, `expected exit 1 (bare-prose file violates), got ${r.status}; stderr: ${r.stderr}`);
+    const violationLines = r.stderr.split('\n').filter((l) => l.startsWith('VIOLATION:'));
+    const cs88Lines = violationLines.filter((l) => l.includes('done_cs88'));
+    const cs89Lines = violationLines.filter((l) => l.includes('done_cs89'));
+    assert.equal(cs88Lines.length, 0, `inline-code spans must be exempt; got cs88 violations:\n${cs88Lines.join('\n')}`);
+    assert.ok(cs89Lines.length >= 1, `bare-prose mention must still trigger; got cs89 violations:\n${cs89Lines.join('\n')}`);
   });
 });

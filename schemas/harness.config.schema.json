@@ -266,7 +266,7 @@
       "properties": {
         "forbidden_path_prefixes": {
           "type": "array",
-          "description": "Path prefix strings to forbid inside CS plan markdown (outside fenced code blocks and outside links to the harness repo). Replaces the default list when present. Defaults: ['template/composed/', 'template/seeded/', 'lib/', 'bin/', 'scripts/'].",
+          "description": "Path prefix strings to forbid inside CS plan markdown (outside fenced code blocks, outside backtick-delimited inline code spans, and outside links to the harness repo). Replaces the default list when present. Defaults: ['template/composed/', 'template/seeded/', 'template/managed/']. (Pre-issue-#183, defaults also included 'lib/', 'bin/', 'scripts/'; those were dropped because they collide with universal consumer-repo dir names. Consumers wanting the stricter set can re-add them here.)",
           "items": {
             "type": "string",
             "description": "A path prefix string (substring match against each line).",

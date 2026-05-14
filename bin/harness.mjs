@@ -1469,14 +1469,22 @@ and either re-claim or skip the active CS.
 **Target:** project/clickstops/{active,done,planned}/*.md (CS plan files)
 **Rules:**
   - No mention of harness-repo-internal path prefixes (default:
-    template/composed/, template/seeded/, lib/, bin/, scripts/) outside
-    fenced code blocks AND outside links to https://github.com/henrik-me/agent-harness/...
+    template/composed/, template/seeded/, template/managed/) outside
+    fenced code blocks, outside backtick-delimited inline code spans
+    (\`like-this\`), AND outside links to https://github.com/henrik-me/agent-harness/...
   - Configurable via harness.config.json → cs_plan_lint.forbidden_path_prefixes (string[]).
+    Consumers wanting the pre-issue-#183 stricter set can opt in by adding
+    \`lib/\`, \`bin/\`, \`scripts/\` to the override list.
   - Self-host-guarded: skipped when package.json#name === '@henrik-me/agent-harness'.
 **Why:** consumer repos that copy CS-plan templates from the harness can
 inadvertently keep harness-perspective paths (e.g. "edit template/composed/CONVENTIONS.md")
 that don't exist in the consumer; sub-agents then look in the wrong place
 and waste a round-trip. LRN-105 documents the SI-CS01 trigger case.
+Issue #183 (post-v0.5.0) shrunk the defaults from the original 5-prefix list
+(\`template/composed/\`, \`template/seeded/\`, \`lib/\`, \`bin/\`, \`scripts/\`)
+to the 3 unambiguously harness-only \`template/*\` prefixes, and added
+inline-code-span exemption to match the way humans naturally reference paths
+in prose.
 `.trim(),
   'planning-locality': `
 **Linter:** check-planning-locality (scripts/check-planning-locality.mjs)
