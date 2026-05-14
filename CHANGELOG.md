@@ -17,6 +17,14 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 - **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
 
+### Removed
+
+- _(none yet)_
+
+## [0.5.2] — 2026-05-14
+
+### Changed
+
 - **CS46 / [#146](https://github.com/henrik-me/agent-harness/issues/146):** Surface canonical formats for two harness-enforced constraints to remove the first-encounter CI roundtrip:
   - `template/seeded/WORKBOARD.md`: replace the em-dash placeholder row in `## Active Work` with the **header-only canonical empty state** + an HTML comment documenting both accepted forms (header-only OR single em-dash row with "no active CS" in Title) and the `_(none)_` anti-pattern. The em-dash variant remains accepted by `check-workboard.mjs` for backward compatibility — no behavior change to the linter contract.
   - `template/composed/OPERATIONS.md` § Plan-vs-implementation review (close-out gate): add an explicit **field labels are matched verbatim** callout enumerating `**Reviewer:**`, `**Date:**`, `**Outcome:**` and naming `**Verdict:**` as a common (failing) alias.
