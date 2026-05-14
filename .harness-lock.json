@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs51/review-gates",
-  "resolved_sha": "851c3b27821e52ea7a96dc4b3da1e2a6af580c58",
+  "resolved_sha": "c28ba300b126405afbe1553d590f4c3481af5ea2",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:32:02.331Z",
+  "synced_at": "2026-05-14T23:35:25.208Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -65,7 +65,7 @@
       "source_template": "template/managed/.github/workflows/review-gates.yml",
       "class": "managed",
       "rendered_hash": "f321bc7c7903feb5c5a21c326dc42d6a34507569ce13daf3793d7059b1d1af14",
-      "action": "created"
+      "action": "skipped"
     },
     {
       "target": "CONVENTIONS.md",
@@ -91,7 +91,7 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "84b8263095a8af242ba9d8e45ce03c546d33d00e674fa0c36184b87fe4394f1e",
+      "rendered_hash": "e7cbe895f8e5b52ebe2c59989b6876a903c23a55322effc8d48310402518b247",
       "action": "updated",
       "blocks": [
         {
@@ -105,13 +105,13 @@
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "bd061c652a9762630f25632acf104ccb4bc542a4932cb812ecb6e63353121358"
+      "template_prose_hash": "3bc290015053ce030d1ad6f67d3f199fdeac7ff0658fce0ea79ef4b2a4d2dc39"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "ec0540709fffcc91d5d1bf040c9f08b9cc318de547f2bd404e58e834b0378031",
+      "rendered_hash": "538a7749062e61d4282a9df1873e3cfadba0c0091cd7af8a96a590f5f3cda9e4",
       "action": "updated",
       "blocks": [
         {
@@ -125,7 +125,7 @@
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "077b8af6cf9e462d88a5233a206f54d4e5cd33d5a40aff898d0e18c25d8e1796"
+      "template_prose_hash": "f169fb29778627995d3608685aedb97ead7f624af4d5612f86f75b9111edc834"
     },
     {
       "target": ".github/pull_request_template.md",
