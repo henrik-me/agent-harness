@@ -270,6 +270,27 @@ Example Active Work row for a downstream hotfix:
 | CS02h | Hotfix torpedo-collision regression — restore user-visible gameplay correctness | 🟢 Active | yoga-si | hotfix/torpedo-collision | 2026-05-14 | — |
 ```
 
+#### Workboard-only PR admin-bypass fallback
+
+Consumer repos that have not installed the G3 workboard GitHub App may instead
+configure a per-repo secret named `WORKBOARD_MERGE_TOKEN`. The token should be
+a fine-grained PAT with repository permissions `contents: write` and
+`pull-requests: write`; the token owner must also be allowed to bypass the
+`main-protection` ruleset (typically by being a `RepositoryAdmin` bypass actor,
+per [LRN-080](LEARNINGS.md#lrn-080)). If you manage ruleset bypass actors via
+`gh`/API, refresh your local auth first with `gh auth refresh -s admin:org`;
+otherwise create the fine-grained PAT in GitHub's developer settings UI and add
+it to the consumer repo as the `WORKBOARD_MERGE_TOKEN` Actions secret.
+
+The fallback degrades gracefully. When the secret is absent, the workflow keeps
+running the label/branch/actor/path validation and then either uses the existing
+GitHub App path (if `WORKBOARD_BOT_APP_ID` + `WORKBOARD_BOT_PRIVATE_KEY` are
+configured) or logs `validation-only` so the owner knows a manual admin merge is
+still required. The PAT cannot expand the workboard-only surface: the workflow
+uses it only after the same actor allowlist, same-repository, immutable-head,
+and path-allowlist gates pass, and the admin merge re-checks the PR head plus
+reported non-workboard status checks before invoking `gh pr merge --admin`.
+
 ---
 
 ## Dispatch

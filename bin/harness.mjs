@@ -60,6 +60,25 @@ const REVIEW_GATES_INSTRUCTION_BLOCK = `
 ══════════════════════════════════════════════════════════════════════
 `.trimStart();
 
+const WORKBOARD_PAT_INSTRUCTION_BLOCK = `
+══════════════════════════════════════════════════════════════════════
+  Optional workboard-only admin-merge fallback (CS50 / issue #138):
+
+  Create a fine-grained PAT with these scopes: Contents: Read and write;
+  Pull requests: Read and write. The token owner must also be allowed to
+  bypass the main-protection ruleset as a repository admin / bypass actor.
+  Then add as repo secret named \`WORKBOARD_MERGE_TOKEN\`.
+
+  If you manage ruleset bypass actors via gh/api, first run:
+
+    gh auth refresh -s admin:org
+
+  Skipping this setup is OK: workboard-auto-approve.yml degrades gracefully
+  to the GitHub App path when configured, or validation-only/manual merge
+  when neither credential set is present.
+══════════════════════════════════════════════════════════════════════
+`.trimStart();
+
 // ---------------------------------------------------------------------------
 // Help text
 // ---------------------------------------------------------------------------
@@ -128,6 +147,8 @@ Options:
                                           (default: discipline-only)
   --skip-constraint-detection           Skip the GitHub-tier detection step entirely
                                           (no constraints block written; useful in CI without network)
+  --skip-workboard-pat-prompt           Suppress the optional WORKBOARD_MERGE_TOKEN PAT setup guidance
+                                          (useful in CI / non-interactive init runs)
   --enable-review-gates                 Opt the project into the PR-evidence gate set per CS38a; writes \`review_gates\` config block, migrates \`.github/pull_request_template.md\` to composed, and emits a branch-ruleset instruction block. Idempotent. Per CS41 C41-7, \`enabled: true\` is now the FRESH-init default; this flag is required only when migrating an existing config that lacks the \`review_gates\` block.
   --disable-review-gates <reason>       Explicit opt-out from the PR-evidence gate set (CS41 C41-7/C41-8). Writes \`review_gates: { enabled: false, _opt_out_reason: "<reason>" }\` to harness.config.json, satisfying the \`harness sync --mode=check\` migration gate. Reason must be a non-empty string.
   --help                                Print this help
@@ -750,6 +771,7 @@ async function cmdInit(args, global) {
   const withScaffolds = [];
   let constraintDisposition = null;
   let skipConstraintDetection = false;
+  let skipWorkboardPatPrompt = false;
   let enableReviewGates = true;
   let enableReviewGatesExplicit = false;
   let reviewGatesOptOutReason = null;
@@ -782,6 +804,8 @@ async function cmdInit(args, global) {
       constraintDisposition = v;
     } else if (a === '--skip-constraint-detection') {
       skipConstraintDetection = true;
+    } else if (a === '--skip-workboard-pat-prompt') {
+      skipWorkboardPatPrompt = true;
     } else if (a === '--enable-review-gates') {
       enableReviewGates = true;
       enableReviewGatesExplicit = true;
@@ -930,6 +954,36 @@ async function cmdInit(args, global) {
     };
     writeFileSync(configDest, JSON.stringify(config, null, 2) + '\n', 'utf8');
     process.stdout.write('Review gates disabled with explicit opt-out reason.\n');
+  }
+
+  if (!skipWorkboardPatPrompt) {
+    process.stdout.write(WORKBOARD_PAT_INSTRUCTION_BLOCK);
+  } else {
+    process.stdout.write('Skipped WORKBOARD_MERGE_TOKEN PAT setup guidance (--skip-workboard-pat-prompt)\n');
+  }
+
+  // Fresh init also installs the managed workboard auto-approve workflow so
+  // consumers can opt into either the GitHub App path or the PAT fallback.
+  if (!configExists) {
+    const workboardWorkflowTarget = '.github/workflows/workboard-auto-approve.yml';
+    const workboardWorkflowSrc = path.join(REPO_ROOT, 'template', 'managed', ...workboardWorkflowTarget.split('/'));
+    const workboardWorkflowDest = path.join(targetDir, ...workboardWorkflowTarget.split('/'));
+    try {
+      const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      const managed = ensureFileClassBlock(cfg, 'managed');
+      if (addUnique(managed.files, workboardWorkflowTarget)) {
+        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+      }
+      if (existsSync(workboardWorkflowSrc)) {
+        mkdirSync(path.dirname(workboardWorkflowDest), { recursive: true });
+        copyFileSync(workboardWorkflowSrc, workboardWorkflowDest);
+        process.stdout.write(`Created ${workboardWorkflowTarget}\n`);
+      } else {
+        process.stderr.write(`Warning: workboard auto-approve workflow template not found at ${workboardWorkflowSrc}; skipping workflow copy.\n`);
+      }
+    } catch (err) {
+      process.stderr.write(`Warning: could not install workboard auto-approve workflow: ${err.message}\n`);
+    }
   }
 
   // Copy seeded template files that are missing
