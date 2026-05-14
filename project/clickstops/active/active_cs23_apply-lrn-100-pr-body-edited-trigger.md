@@ -1,9 +1,9 @@
 # CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs23/pr-body-trigger
+**Started:** 2026-05-14
 **Closed:** —
 **Filed by:** Pre-CS16 disposition of [LRN-100](../../../LEARNINGS.md#lrn-100) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. Recommended fix in the LRN itself: a one-line addition to `.github/workflows/harness-self-check.yml`. This CS executes that fix and adds a regression test so the trigger contract is mechanically locked.
 **Depends on:** None. May claim independently of CS16 / CS21.
@@ -83,7 +83,13 @@ CS23 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| Edit `.github/workflows/harness-self-check.yml` to add `types: [opened, synchronize, reopened, edited]` per C23-1 | pending | yoga-ah | one-line YAML edit |
+| Add `tests/cs23-pr-body-trigger.test.mjs` regression test per C23-3 | pending | yoga-ah | parses YAML via `js-yaml` and asserts trigger contract |
+| Audit other workflows' `pull_request:` trigger shapes per C23-4; record findings in this file's Notes section | pending | yoga-ah | grep `.github/workflows/*.yml` for trigger shape gaps |
+| Flip [LRN-100](../../../LEARNINGS.md#lrn-100) frontmatter `status: open` → `applied` with disposition-update line per C23-5 | pending | yoga-ah | post-content-PR-merge step |
+| Add CHANGELOG.md `[Unreleased] / Fixed` entry citing LRN-100 + this CS | pending | yoga-ah | distributed-surface touch (workflow file) |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, no managed/composed mirror needed for this surface | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Close-out: learnings + follow-ups — file follow-up CSs for C23-4 audit findings (if any) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 
 ## Notes / Learnings
 

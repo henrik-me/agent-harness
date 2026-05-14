@@ -1,9 +1,9 @@
 # CS44 — Apply CS41 R5 F-residual-2: align `harness copilot-engage` doc wording (`node(login:)` → `node(id:$id)` + `BOT_kgDOCnlnWA`) with shipped impl
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs43-45/cs41-residuals-bundle
+**Started:** 2026-05-14
 **Closed:** —
 **Filed by:** Pre-CS44 disposition of [CS41 § R5 Copilot disposition F-residual-2](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut — but **strongly preferred to land before CS42 tag** so the v0.5.0 release notes describe the actual identity-resolution mechanism, not the documented-but-not-shipped login-based one. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-118" but `LEARNINGS.md` LRN-118 documents the unrelated empty-cell linter semantics fix. The canonical reference is the **F-residual-2 anchor** in done_cs41 § R5.
@@ -76,7 +76,15 @@ CS44 close-out is permitted only when **all** of the following are true and reco
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| Edit `template/composed/OPERATIONS.md` § Copilot engagement procedure: `node(login:)` → `node(id:$id)` + `BOT_kgDOCnlnWA` per C44-2 | pending | yoga-ah | composed-mirror first per LRN-070 |
+| Add rationale sentence after the new wording (cite LRN-009 + ADR-0004 § ADR4-2) per C44-3 | pending | yoga-ah | one sentence, in same paragraph |
+| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` + refresh `.harness-lock.json` per C44-4 | pending | yoga-ah | DO NOT hand-edit root |
+| Edit `CHANGELOG.md` `[Unreleased] / Added` § CS41 row to use the canonical `node(id:` wording per C44-2 | pending | yoga-ah | corrects the line that inherited the stale wording |
+| Add CHANGELOG.md `[Unreleased] / Changed` bullet documenting this doc-correction (bundled w/ CS43 + CS45) | pending | yoga-ah | per Deliverable #6 |
+| Add `tests/cs44-docs-impl-alignment.test.mjs` (≥4 assertions) per C44-6 | pending | yoga-ah | watchdog asserting all 4 touchpoints reference `node(id:` + `BOT_kgDOCnlnWA` |
+| LEARNINGS.md LRN-009 cross-link bullet per C44-7 (skip if already present) | pending | yoga-ah | claim-time check |
+| Close-out: docs + restart state (bundled with CS43 + CS45) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
+| Close-out: learnings + follow-ups (bundled) | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim) |
 
 ## Notes / Learnings
 
