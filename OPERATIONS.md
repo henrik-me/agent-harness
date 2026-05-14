@@ -250,9 +250,9 @@ satisfies it for eligible workboard-only PRs.
 
 ### Workboard-first for out-of-CS work
 
-Before starting any out-of-CS work (hotfix, single-file follow-up, doc edit,
-post-CS cleanup, or other user-visible one-off), the orchestrator must update
-`WORKBOARD.md` — or the consumer repo's equivalent live coordination file — so
+Rule: before starting any out-of-CS work (hotfix, single-file follow-up, doc
+edit, post-CS cleanup, or other user-visible one-off), the orchestrator must
+update `WORKBOARD.md` — or the consumer repo's equivalent live coordination file — so
 the user can see the work in progress before the first implementation step.
 This is in addition to any planned-CS-file flow.
 

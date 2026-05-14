@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs49/operations-doctrine",
-  "resolved_sha": "82667e0a88d91b7e6d04f8d46df3e0745a104f42",
+  "resolved_sha": "7943268984fef7ee61d7c61c1cd5f9f442e98c4f",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:28:20.450Z",
+  "synced_at": "2026-05-14T23:31:23.664Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -84,7 +84,7 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "82de0df4b6283d7724762e19ab1adb579e5ac77454397b48c1fd0f84a3c82d88",
+      "rendered_hash": "3fac49bf28157952228c51f073214bf3c51c73694393f36c01b43f389b293f2a",
       "action": "updated",
       "blocks": [
         {
@@ -98,7 +98,7 @@
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "a7dd03689f5a3fbb1af6722de2c2a9c4dc276f2285bbee0c2c8245ee9acaa164"
+      "template_prose_hash": "54d55f5d003a034d2fb7a2a821323efbb567d648ccd5b28ee5de1ae09ada3a6d"
     },
     {
       "target": "REVIEWS.md",
