@@ -18,54 +18,66 @@ const OPERATIONS_DOCS = [
 
 function readRepoFile(relPath) {
   return readFileSync(path.join(REPO_ROOT, relPath), 'utf8')
-    .replace(/^﻿/, '')
-    .replace(/
-/g, '
-')
-    .replace(/
-/g, '
-');
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
 }
 
-function extractH2(content, heading) {
-  const headingLine = `## ${heading}`;
-  const start = content.indexOf(`
-${headingLine}
-`);
-  assert.notEqual(start, -1, `Missing section: ${headingLine}`);
-  const bodyStart = start + 1;
-  const next = content.indexOf('
-## ', bodyStart + headingLine.length);
-  return next === -1 ? content.slice(bodyStart) : content.slice(bodyStart, next);
+function extractHeading(content, level, heading) {
+  const lines = content.split('\n');
+  const marker = `${'#'.repeat(level)} ${heading}`;
+  let inFence = false;
+  let start = -1;
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    if (lines[idx].trim().startsWith('```')) inFence = !inFence;
+    if (!inFence && lines[idx].trim() === marker) {
+      start = idx;
+      break;
+    }
+  }
+
+  assert.notEqual(start, -1, `Missing section: ${marker}`);
+
+  const stopRe = new RegExp(`^#{1,${level}}\\s+`);
+  inFence = false;
+  let end = lines.length;
+  for (let idx = start + 1; idx < lines.length; idx++) {
+    if (lines[idx].trim().startsWith('```')) inFence = !inFence;
+    if (!inFence && stopRe.test(lines[idx])) {
+      end = idx;
+      break;
+    }
+  }
+
+  return lines.slice(start, end).join('\n');
+}
+
+function extractSubAgentDispatch(content) {
+  const startMarker = '\n## Sub-agent dispatch\n';
+  const endMarker = '\n## Copilot engagement procedure';
+  const start = content.indexOf(startMarker);
+  assert.notEqual(start, -1, 'Missing section: ## Sub-agent dispatch');
+  const end = content.indexOf(endMarker, start + startMarker.length);
+  assert.notEqual(end, -1, 'Missing section boundary: ## Copilot engagement procedure');
+  return content.slice(start + 1, end);
 }
 
 function extractH3(content, heading) {
-  const headingLine = `### ${heading}`;
-  const start = content.indexOf(`
-${headingLine}
-`);
-  assert.notEqual(start, -1, `Missing subsection: ${headingLine}`);
-  const bodyStart = start + 1;
-  const nextH3 = content.indexOf('
-### ', bodyStart + headingLine.length);
-  const nextH2 = content.indexOf('
-## ', bodyStart + headingLine.length);
-  const candidates = [nextH3, nextH2].filter((idx) => idx !== -1);
-  const next = candidates.length === 0 ? -1 : Math.min(...candidates);
-  return next === -1 ? content.slice(bodyStart) : content.slice(bodyStart, next);
+  return extractHeading(content, 3, heading);
 }
 
 describe('CS49 operations doctrine', () => {
   for (const doc of OPERATIONS_DOCS) {
     it(`${doc.id} OPERATIONS.md codifies orchestrator availability in Sub-agent dispatch`, () => {
-      const subAgentDispatch = extractH2(readRepoFile(doc.relPath), 'Sub-agent dispatch');
+      const subAgentDispatch = extractSubAgentDispatch(readRepoFile(doc.relPath));
       assert.match(subAgentDispatch, /^### Orchestrator availability invariant$/m);
       assert.match(subAgentDispatch, /delegate unless/);
       assert.match(subAgentDispatch, /When in doubt, dispatch/);
     });
 
     it(`${doc.id} OPERATIONS.md codifies sub-agent progress reporting and stall detection`, () => {
-      const subAgentDispatch = extractH2(readRepoFile(doc.relPath), 'Sub-agent dispatch');
+      const subAgentDispatch = extractSubAgentDispatch(readRepoFile(doc.relPath));
       assert.match(subAgentDispatch, /^### Sub-agent progress reporting$/m);
       assert.match(subAgentDispatch, /15 wall-minutes/);
       assert.match(subAgentDispatch, /stall/);
