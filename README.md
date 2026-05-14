@@ -2,7 +2,7 @@
 
 Multi-agent process harness — extracted from [`henrik-me/guesswhatisnext`](https://github.com/henrik-me/guesswhatisnext) for reuse across projects.
 
-> **Status:** v0.5.0 shipped (CS42, 2026-05-14) — v0.5.0 arc complete. Adds `harness copilot-engage <pr-number>` CLI (CS41) wrapping the documented Copilot review-engagement primitive, the `clickstop-implementer-not-reviewer` linter (CS41) enforcing model-independence at the agent-identity level, first-class `Implementer agent` + `Reviewer agent` columns in the `## Model audit` schema (CS41), `harness review-output` reviewer-output validator (CS40), and **two breaking-ish defaults**: `harness.config.json` `review_gates` now defaults to `enabled: true` on fresh `harness init` (CS41 — set `_opt_out_reason` to opt out) and `scripts/check-clickstop-plan-review.mjs --strict` defaults to `true` (CS42 per CS35b-10 — local lint now errors rather than warns on missing `## Plan review` attestations). v0.4.0 (CS39, 2026-05-13) shipped the #145 enforcement-doctrine arc (CS35–CS38b: `harness pr-evidence` PR-time gates B1+A3+A4+A5+A6+A16, canonical PR template skeleton + sync migration, `pr-evidence-lint.yml` pre-merge enforcement). See [`CHANGELOG.md`](CHANGELOG.md) for the full delta and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
+> **Status:** v0.5.1 shipped (Bugfix [#183](https://github.com/henrik-me/agent-harness/issues/183), 2026-05-14) — `cs-plan` linter false-positive fix surfaced by SI's v0.5.0 pin-bump (29 false positives across 8 SI CS files when `lib/`, `bin/`, `scripts/` ended up in the default forbidden-prefix list); `DEFAULT_FORBIDDEN_PREFIXES` shrunk to the 3 unambiguously harness-only `template/*` entries and inline backtick-delimited code spans now exempt alongside fenced blocks. Consumers can drop any `cs_plan_lint.forbidden_path_prefixes` workaround they applied to v0.5.0. v0.5.0 (CS42, 2026-05-14) shipped the v0.5.0 arc: adds `harness copilot-engage <pr-number>` CLI (CS41) wrapping the documented Copilot review-engagement primitive, the `clickstop-implementer-not-reviewer` linter (CS41) enforcing model-independence at the agent-identity level, first-class `Implementer agent` + `Reviewer agent` columns in the `## Model audit` schema (CS41), `harness review-output` reviewer-output validator (CS40), and **two breaking-ish defaults**: `harness.config.json` `review_gates` now defaults to `enabled: true` on fresh `harness init` (CS41 — set `_opt_out_reason` to opt out) and `scripts/check-clickstop-plan-review.mjs --strict` defaults to `true` (CS42 per CS35b-10 — local lint now errors rather than warns on missing `## Plan review` attestations). v0.4.0 (CS39, 2026-05-13) shipped the #145 enforcement-doctrine arc (CS35–CS38b: `harness pr-evidence` PR-time gates B1+A3+A4+A5+A6+A16, canonical PR template skeleton + sync migration, `pr-evidence-lint.yml` pre-merge enforcement). See [`CHANGELOG.md`](CHANGELOG.md) for the full delta and [`project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md`](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) for the roadmap.
 
 ## What this is
 
@@ -23,9 +23,9 @@ Three file classes:
 
 Two install models are supported:
 
-**Option B — install from GitHub by ref** (today, default install path): `npx -y github:henrik-me/agent-harness#<ref>` works anonymously now that the repo is public — no token required. `<ref>` is a semver tag (e.g. `v0.5.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility. (For private forks of this harness, see [`docs/private-consumption.md`](docs/private-consumption.md) for the `GITHUB_TOKEN` setup.)
+**Option B — install from GitHub by ref** (today, default install path): `npx -y github:henrik-me/agent-harness#<ref>` works anonymously now that the repo is public — no token required. `<ref>` is a semver tag (e.g. `v0.5.1`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility. (For private forks of this harness, see [`docs/private-consumption.md`](docs/private-consumption.md) for the `GITHUB_TOKEN` setup.)
 
-> **Note:** as of v0.2.0 the bare `npx -y "github:owner/repo#<sha>"` install path hits an npm 10.8.x/10.9.x `GitFetcher requires an Arborist constructor` regression on GitHub Actions runners. The harness's own reusable workflow (`harness-checks.yml`) bypasses this by cloning + invoking `node bin/harness.mjs` directly. External consumers running their own CI may want to do the same. Tracked as a known issue. (Still applies under v0.5.0 — same npm CLI versions on the runners.)
+> **Note:** as of v0.2.0 the bare `npx -y "github:owner/repo#<sha>"` install path hits an npm 10.8.x/10.9.x `GitFetcher requires an Arborist constructor` regression on GitHub Actions runners. The harness's own reusable workflow (`harness-checks.yml`) bypasses this by cloning + invoking `node bin/harness.mjs` directly. External consumers running their own CI may want to do the same. Tracked as a known issue. (Still applies under v0.5.1 — same npm CLI versions on the runners.)
 
 **Option C — install from npm by version** (planned for CS15+ post-public-flip; not active today): `npx -y @henrik-me/agent-harness@<version>` will work once the package is published. The `name` field in `package.json` already reserves the npm scope; the package is currently `private: true`. Same pinning advice via `harness.config.json` `version`.
 
@@ -33,9 +33,9 @@ Two install models are supported:
 
 ```bash
 # In a consumer repo:
-npx -y github:henrik-me/agent-harness#v0.5.0 init
+npx -y github:henrik-me/agent-harness#v0.5.1 init
 # review the generated harness.config.json, then:
-npx -y github:henrik-me/agent-harness#v0.5.0 sync
+npx -y github:henrik-me/agent-harness#v0.5.1 sync
 ```
 
 ## Repo layout

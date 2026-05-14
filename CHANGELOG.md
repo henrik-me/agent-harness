@@ -15,15 +15,22 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Changed
 
+- _(none yet)_
+
+### Removed
+
+- _(none yet)_
+
+## [0.5.1] — 2026-05-14
+
+### Changed
+
 - **Bugfix [#183](https://github.com/henrik-me/agent-harness/issues/183):** `scripts/check-cs-plan.mjs` — two narrow fixes for the `cs-plan` linter that surfaced as 29 false positives across 8 SI CS files when `henrik-me/sub-invaders` bumped the harness pin from `v0.3.1` to `v0.5.0`:
   - **Gap A — defaults too aggressive.** `DEFAULT_FORBIDDEN_PREFIXES` shrunk from 5 entries (`template/composed/`, `template/seeded/`, `lib/`, `bin/`, `scripts/`) to 3 unambiguously harness-only entries (`template/composed/`, `template/seeded/`, `template/managed/`). The dropped prefixes — `lib/`, `bin/`, `scripts/` — collide with universal consumer-repo dir names (SI has all three; nearly every Node consumer has at least `scripts/`). Consumers who DO want the stricter pre-#183 coverage can opt back in via `harness.config.json → cs_plan_lint.forbidden_path_prefixes` (the override semantics already worked correctly; this change only tightens the default).
   - **Gap B — inline code spans were not exempt.** The matcher now strips backtick-delimited inline code spans (`` `template/composed/foo` ``, `` ``with embedded text`` ``, etc.) before scanning each line, in addition to the existing fenced-code-block and harness-GitHub-URL exemptions. Inline code is the natural way humans reference paths in prose and learning entries; the prior behavior flagged correctly-fenced inline references as violations. Triple-backtick fenced blocks remain exempt as before; unmatched backticks leave the line scanned normally.
   - **Schema + docs aligned.** `schemas/harness.config.schema.json` description and `harness lint --explain cs-plan` text both updated with the new defaults and the inline-code-span exemption note. SI can now drop the `cs_plan_lint.forbidden_path_prefixes` override they added as a v0.5.0 workaround.
   - +3 regression tests (#9 default-prefix scope-narrowing, #10 opt-in restores lib/ enforcement, #11 inline-code spans exempt across single-/double-/triple-backtick forms); existing tests #2 / #7 / #8 + the `planned_cs02` fixture migrated from `lib/` to `template/managed/`. Self-host `harness lint --quiet` continues at 29/0/3.
-
-### Removed
-
-- _(none yet)_
+  - Shipped via [PR #184](https://github.com/henrik-me/agent-harness/pull/184) at squash `6750047`.
 
 ## [0.5.0] — 2026-05-14
 
