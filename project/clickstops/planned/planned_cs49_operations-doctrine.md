@@ -4,6 +4,7 @@
 **Owner:** Copilot CLI sub-agent
 **Branch:** `cs49/operations-doctrine`
 **Started:** 2026-05-14
+**Closed:** —
 **Filed by:** [Issue #139](https://github.com/henrik-me/agent-harness/issues/139) — codify orchestrator-availability invariant, sub-agent progress-reporting cadence, and workboard-first status for out-of-CS work.
 **Depends on:** None. Coordinates with concurrent CS48/CS50/CS51/CS52 by respecting their file-ownership boundaries: do not touch the dispatch-template Reporting subsection, § Enforcement model owned subsections, REVIEWS.md, workflow templates, `bin/`, `lib/`, or `scripts/checks/`.
 
