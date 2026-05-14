@@ -1,10 +1,10 @@
 # CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs23/pr-body-trigger
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Pre-CS16 disposition of [LRN-100](../../../LEARNINGS.md#lrn-100) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. Recommended fix in the LRN itself: a one-line addition to `.github/workflows/harness-self-check.yml`. This CS executes that fix and adds a regression test so the trigger contract is mechanically locked.
 **Depends on:** None. May claim independently of CS16 / CS21.
 
@@ -123,4 +123,34 @@ already covers their re-fire surface.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, close-out gate)
+**Date:** 2026-05-14T18:29:38Z
+**Branch HEAD SHA:** 8b1e321ba3af5da8fb1a502e55c611715338dd2e
+**R-round:** R1
+**Outcome:** GO
+**Evidence link:** https://github.com/henrik-me/agent-harness/pull/187
+
+### Per-deliverable outcome table
+
+| # | Deliverable (from CS plan) | Outcome | Rationale |
+|---|----------------------------|---------|-----------|
+| C23-1 | Trigger expansion scope — Add `types: [opened, synchronize, reopened, edited]` only to **`harness-self-check.yml`**. Leave other workflows unchanged unless the harvest surfaces a parallel failure mode. | match | |
+| C23-2 | Bot-edit guarding — No additional `if:` guard on the `pr-body` job. | match | |
+| C23-3 | Regression-test approach — Add a fixture-based test in `tests/cs23-pr-body-trigger.test.mjs` that parses `.github/workflows/harness-self-check.yml` with `js-yaml` and asserts `on.pull_request.types` contains `'edited'`. | match | |
+| C23-4 | Other workflows audit — Grep all `.github/workflows/*.yml` for `pull_request:` triggers without explicit `types:` and record findings in the active CS file's Notes section. | match | |
+| C23-5 | LRN-100 status flip — At CS23 close-out, flip LRN-100 frontmatter `status: open` → `applied` and append a disposition update line referencing CS23. | match | |
+| 1 | **Workflow edit:** `.github/workflows/harness-self-check.yml` — change the `pull_request:` block to include `types: [opened, synchronize, reopened, edited]`. | match | |
+| 2 | **Regression test:** `tests/cs23-pr-body-trigger.test.mjs` — minimum 2 assertions: `on.pull_request.types` is an array that includes `'edited'`, and includes `opened`, `synchronize`, `reopened`. | match | |
+| 3 | **CHANGELOG.md** entry under `## [Unreleased]` `### Fixed`. | match | |
+| 4 | **Audit notes** in active CS file's Notes section listing every workflow's `pull_request:` trigger shape. | match | |
+| 5 | **LRN-100 status flip** to `applied` with disposition-update note. | match | |
+
+### Test-coverage assessment
+
+**Result:** sufficient
+
+The added `tests/cs23-pr-body-trigger.test.mjs` directly covers the workflow-trigger contract: it fails if `types` is missing/non-array, if `edited` is absent, or if adding explicit `types` accidentally drops the three GitHub default activity types. I also verified the targeted test passes locally (`2 pass / 0 fail`), and PR #187 records the broader validation (`npm test`, `harness lint --quiet`, and sync check) with only known pre-existing unrelated full-suite failures.
+
+### Notes
+
+PR #187 shows repeated `harness-self-check` pull-request runs on the same head SHA `dcb98bc1b40a55ba76a476ada8c300e79b5fab1b` after body/edit round-trips: runs `25874191264`, `25874479457`, and `25874656759`, with `pr-body` succeeding each time.

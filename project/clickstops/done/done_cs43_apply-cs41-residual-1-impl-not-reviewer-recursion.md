@@ -1,10 +1,10 @@
 # CS43 — Apply CS41 R5 F-residual-1: recurse into nested CS subdirectories in `check-clickstop-implementer-not-reviewer.mjs`
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs43-45/cs41-residuals-bundle
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Pre-CS43 disposition of [CS41 § R5 Copilot disposition F-residual-1](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-117" but `LEARNINGS.md` LRN-117 documents the unrelated `cacheDir` null-destructure fix (a different CS41 bug). The canonical reference is the **F-residual-1 anchor** in done_cs41 § R5; this CS does NOT depend on the LEARNINGS.md numbering being reconciled.
 
@@ -100,4 +100,36 @@ CS43 close-out is permitted only when **all** of the following are true and reco
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, close-out gate)
+**Date:** 2026-05-14T18:29:31Z
+**Branch HEAD SHA:** 30f556ef6f63722deb656eec33d0a8afb24c871a
+**R-round:** R4 (close-out — supersedes R1 NEEDS-FIX on `60368ff`, R2 PASS on `b91ba2b`, R3 PASS on `3b2e1af`)
+**Outcome:** GO
+**Evidence link:** https://github.com/henrik-me/agent-harness/pull/188
+
+### Per-deliverable outcome table
+
+| # | Deliverable (from CS plan) | Outcome | Rationale |
+|---|----------------------------|---------|-----------|
+| C43-1 | Iteration strategy — recursive walk into subdirectories named `^(planned\|active\|done)_cs\d+[a-z]*_.*$`, skipping other directory names. | match |  |
+| C43-2 | Enforcement date — introduce `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE = '2026-05-14'`; skip done files closed strictly before it. | match |  |
+| C43-3 | Active/planned files inside nested dirs are always linted regardless of date. | match |  |
+| C43-4 | Failure mode for unparseable closed-date — warning, not error, then skip. | diverged | Implementation splits missing vs. unparseable dates: unparseable dates warn+skip, while missing dates lint normally to preserve existing CS41 fixture behavior. |
+| C43-5 | Test approach — fixtures for pre-enforcement skip, post-enforcement missing columns, active nested, unparseable close date, and flat iteration. | added | All planned fixture cases exist, plus an added planned-nested fixture/test that fixed the R1 blocking gap around `LINTED_SUBDIRS`. |
+| C43-6 | Coordinated docs — no OPERATIONS.md change; CHANGELOG `[Unreleased] / Changed` bullet. | match |  |
+| C43-7 | Forward-compat for CS42 strict-flip — grandfathering continues to apply under strict mode. | match |  |
+| 1 | **Linter extension:** `scripts/check-clickstop-implementer-not-reviewer.mjs` — replace the flat directory-walk loop at lines 260-276 with a recursive walker per C43-1. Add the `IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE` constant per C43-2. Add a small `parseClosedDate(content)` helper that extracts and parses the `**Closed:**` line; returns `null` on missing/malformed input (handled by C43-4 semantics). | diverged | The linter extension landed, but `parseClosedDate()` returns structured `{kind}` results rather than literal `null`, preserving the intended unparseable-date behavior while avoiding regressions for missing `Closed` lines. |
+| 2 | **Fixture set:** `tests/fixtures/cs43/{a-pre-enforcement,b-post-enforcement-missing-cols,c-active-nested,d-done-unparseable-close-date,e-flat-iteration-preserved}/...md` — 5 fixtures total per C43-5. | added | The five planned fixtures landed and a sixth `f-planned-nested` fixture was added to cover the planned subdir branch. |
+| 3 | **Test file:** `tests/cs43-impl-not-reviewer-recursion.test.mjs` — minimum 5 tests, one per fixture per C43-5. Cover both default and `--strict-agent-columns` modes for fixture (b). | added | The test file contains 7 tests, including the planned strict-mode variant and the added planned-nested coverage. |
+| 4 | **CHANGELOG.md** entry under `## [Unreleased]` `### Changed`: per C43-6. | match |  |
+| 5 | **Self-verify:** re-run `node scripts/check-clickstop-implementer-not-reviewer.mjs --dir project/clickstops` against the live harness self-host repo and confirm the 4 named pre-CS35 nested subfolders produce ZERO findings (grandfathering works), while any future CS subfolder would be linted. | diverged | Self-verify was run with the actual supported `--cwd .` flag; 3 of 4 named folders were silently grandfathered and the remaining `done_cs22` emitted one warning due to a pre-existing unparseable em-dash close date. |
+
+### Test-coverage assessment
+
+**Result:** sufficient
+
+`tests/cs43-impl-not-reviewer-recursion.test.mjs` covers the relevant CS43 decisions: pre-enforcement done CS skip, post-enforcement default warning and strict error, active nested linting, planned nested linting, unparseable closed-date warning+skip, and flat-file iteration preservation. The added planned fixture specifically closes the earlier R1 blocking gap.
+
+### Notes
+
+The only substantive implementation deviation is intentional and documented: missing `**Closed:**` lines lint normally, while unparseable values warn+skip. This preserves existing fixture compatibility without weakening the CS43 recursion/date-gate goal.

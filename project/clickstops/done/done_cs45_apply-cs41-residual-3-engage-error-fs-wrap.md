@@ -1,10 +1,10 @@
 # CS45 — Apply CS41 R5 F-residual-3: wrap fs errors in `EngageError` in `lib/copilot-engage.mjs:resolveCopilotIdentity`
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs43-45/cs41-residuals-bundle
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Pre-CS45 disposition of [CS41 § R5 Copilot disposition F-residual-3](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-119" but `LEARNINGS.md` LRN-119 documents the unrelated A3 architectural carve-out. The canonical reference is the **F-residual-3 anchor** in done_cs41 § R5.
 
@@ -115,4 +115,39 @@ CS45 close-out is permitted only when **all** of the following are true and reco
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, close-out gate)
+**Date:** 2026-05-14T18:29:31Z
+**Branch HEAD SHA:** 30f556ef6f63722deb656eec33d0a8afb24c871a
+**R-round:** R4 (close-out — supersedes R1 NEEDS-FIX on `60368ff`, R2 PASS on `b91ba2b`, R3 PASS on `3b2e1af`)
+**Outcome:** GO
+**Evidence link:** https://github.com/henrik-me/agent-harness/pull/188
+
+### Per-deliverable outcome table
+
+| # | Deliverable (from CS plan) | Outcome | Rationale |
+|---|----------------------------|---------|-----------|
+| C45-1 | Wrap both calls in a single try/catch. | match |  |
+| C45-2 | New `kind` value — introduce `'cache-write-failed'` and add it to the JSDoc enumeration. | match |  |
+| C45-3 | CLI side handler — branch on `err.kind === 'cache-write-failed'`, include offending path and `--cache-dir <writable-path>` hint, use stable fresh exit code. | match |  |
+| C45-4 | Test approach — two seam tests for mkdir/writeFile failures plus one CLI-level smoke. | match |  |
+| C45-5 | Idempotency / partial-write protection — rely on existing cache-stale recovery; no cleanup needed. | match |  |
+| C45-6 | OPERATIONS.md troubleshooting update through composed-mirror workflow. | match |  |
+| C45-7 | LRN status — file a new LRN documenting the typed-error/syscall audit lesson. | match |  |
+| 1 | **`lib/copilot-engage.mjs`** lines 201-202: wrap the two fs calls in a try/catch per C45-1; rethrow as `new EngageError(..., 'cache-write-failed', { cause: err })`. | match |  |
+| 2 | **`lib/copilot-engage.mjs`** `EngageError` class JSDoc: extend the `kind` enumeration with `'cache-write-failed'` per C45-2. | match |  |
+| 3 | **`bin/harness.mjs`** `cmdCopilotEngage`: add a branch handling `err.kind === 'cache-write-failed'` per C45-3; pick the next free exit code. | match |  |
+| 4 | **`tests/cli-copilot-engage.test.mjs`**: 3 new tests per C45-4. Update the existing exit-code matrix table comment if one exists. | match |  |
+| 5 | **`template/composed/OPERATIONS.md`** § Copilot engagement procedure: append the troubleshooting paragraph per C45-6. | match |  |
+| 6 | **`OPERATIONS.md`** root: regenerated via `harness sync --mode=apply --resolved-sha <sha>` per C45-6 (do NOT hand-edit). | match |  |
+| 7 | **`CHANGELOG.md`** `[Unreleased] / Changed`: "`harness copilot-engage` now reports filesystem cache-write failures via the typed `EngageError` (kind=`cache-write-failed`, exit code N) with a `--cache-dir` escape hatch hint (CS45)." Replace `N` with the actual code chosen. | match |  |
+| 8 | **`LEARNINGS.md`**: new LRN per C45-7. | match |  |
+
+### Test-coverage assessment
+
+**Result:** sufficient
+
+`tests/cli-copilot-engage.test.mjs` adds seam-level coverage for both raw fs failure points (`mkdir` EACCES and `writeFile` ENOSPC), asserting `EngageError.kind === 'cache-write-failed'` and cause preservation. The CLI smoke test is intentionally environment-tolerant because subprocess execution cannot inject `__testSeam`; it still checks typed-exit/no-stack behavior and conditionally verifies the `--cache-dir` hint when the cache-write path is reached. Combined with the unit seam tests, this is sufficient for CS45.
+
+### Notes
+
+Exit code **5** is correctly chosen as the next free code because code 4 was already used for auth/network paths. LRN-123 captures the typed-error doctrine for future syscall audits.
