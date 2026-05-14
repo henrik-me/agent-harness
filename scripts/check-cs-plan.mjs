@@ -5,13 +5,22 @@
  * Flags harness-repo-internal path references inside consumer-repo CS plans.
  *
  * Background (LRN-105): when an orchestrator copies a CS plan template from
- * the harness repo into a consumer repo, file paths like `template/composed/`,
- * `lib/`, `bin/`, and `scripts/` are correct relative to the harness repo but
- * wrong in the consumer repo (those paths either do not exist or refer to
- * different content). A sub-agent dispatched from such a plan will look for
- * the wrong path, waste a round-trip, and potentially make incorrect edits.
- * This linter catches those stale harness-perspective paths at lint time,
- * before dispatch, so they can be corrected to consumer-repo-relative paths.
+ * the harness repo into a consumer repo, file paths like `template/composed/`
+ * (and the other `template/*` siblings) are correct relative to the harness
+ * repo but wrong in the consumer repo (those paths either do not exist or
+ * refer to different content). A sub-agent dispatched from such a plan will
+ * look for the wrong path, waste a round-trip, and potentially make
+ * incorrect edits. This linter catches those stale harness-perspective paths
+ * at lint time, before dispatch, so they can be corrected to consumer-repo-
+ * relative paths.
+ *
+ * Default scope (post-issue #183): the prefix list is intentionally narrow —
+ * only `template/composed/`, `template/seeded/`, `template/managed/` are
+ * unambiguously harness-only. The original CS34 cut also defaulted on `lib/`,
+ * `bin/`, `scripts/`, but those collide with universal consumer-repo dir names
+ * and produced false positives across typical Node consumer layouts. Repos
+ * that DO want the stricter pre-#183 set re-add them via
+ * `harness.config.json → cs_plan_lint.forbidden_path_prefixes`.
  *
  * Self-host guard (Decision C34-5): when running inside the harness repo
  * itself (detected via package.json#name === '@henrik-me/agent-harness'), the
@@ -41,12 +50,14 @@ import path from 'node:path';
 // Constants
 // ---------------------------------------------------------------------------
 
+// Issue #183 (Gap A): defaults shrunk to harness-only template/* prefixes.
+// `lib/`, `bin/`, `scripts/` are universal consumer-repo dir names and produced
+// false positives across typical consumer layouts. Consumers who DO want the
+// stricter set can re-enable via `harness.config.json → cs_plan_lint.forbidden_path_prefixes`.
 const DEFAULT_FORBIDDEN_PREFIXES = [
   'template/composed/',
   'template/seeded/',
-  'lib/',
-  'bin/',
-  'scripts/',
+  'template/managed/',
 ];
 
 /** GitHub URL prefix for the harness repo — lines containing this are exempt. */
@@ -188,6 +199,25 @@ function collectMdFiles(dir) {
 }
 
 /**
+ * Strip backtick-delimited inline code spans from a single line.
+ *
+ * Issue #183 (Gap B): markdown inline code (`text`, ``text``, ```text```) is
+ * the natural way to reference paths in prose; treating only fenced blocks as
+ * exempt produced false positives in learning entries and prose discussions
+ * that quoted harness-perspective paths.
+ *
+ * The matcher requires balanced same-count backticks with no embedded
+ * backticks in the content (the common case). Unmatched / asymmetric backticks
+ * leave the line unchanged so the caller still scans them.
+ *
+ * @param {string} line
+ * @returns {string}
+ */
+function stripInlineCode(line) {
+  return line.replace(/(`+)([^`]+)\1/g, '');
+}
+
+/**
  * Scan a single .md file for forbidden-prefix violations.
  * Returns an array of violation message strings.
  */
@@ -216,11 +246,15 @@ function scanFile(filePath, forbiddenPrefixes) {
 
     if (inFencedBlock) continue;
 
+    // Issue #183 Gap B: strip inline-code spans before checking; backtick-quoted
+    // path references in prose are an explicit escape hatch, same as fenced blocks.
+    const scanLine = stripInlineCode(line);
+
     // Check each forbidden prefix.
     for (const prefix of forbiddenPrefixes) {
-      if (!line.includes(prefix)) continue;
+      if (!scanLine.includes(prefix)) continue;
       // Exempt lines that contain a harness GitHub URL (legitimate references).
-      if (line.includes(HARNESS_GITHUB_URL)) continue;
+      if (scanLine.includes(HARNESS_GITHUB_URL)) continue;
       violations.push(
         `VIOLATION: ${filePath}:${lineIdx + 1}: contains harness-repo path "${prefix}" outside a fenced code block (consumer-repo CS plans should use consumer-repo-relative paths; see LRN-105).`,
       );
