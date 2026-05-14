@@ -1,10 +1,10 @@
 # CS41 — `harness copilot-engage` CLI + `clickstop-implementer-not-reviewer` linter + flip default to opt-out
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs41/copilot-engage-and-default-flip
 **Closed:** —
-**Started:** —
+**Started:** 2026-05-13
 **Filed by:** Pre-CS41 disposition of [#145](https://github.com/henrik-me/agent-harness/issues/145) Phase 1.5 + Change 6 (Copilot engagement). Authored 2026-05-12 by `yoga-ah`. Second CS in the v0.5.0 arc.
 **Depends on:** [CS40](planned_cs40_check-review-output-linter.md), [CS35](planned_cs35_enforcement-doctrine-and-planning-locality.md). For the `copilot-engage` CLI: requires either (a) CS37 = PASS (GraphQL primitive shipped in v0.4.0), OR (b) a v0.5.0 follow-up CS that ships the GraphQL primitive (filed by CS37 close-out if spike was PARTIAL/FAIL — see C37-1b). At claim time, the orchestrator MUST verify which condition holds and either claim CS41 in full or split off the engage CLI into the follow-up CS.
 
@@ -89,7 +89,20 @@ Orchestrator owns OPERATIONS.md + CHANGELOG.md + REVIEWS.md prose changes outsid
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time) | planned | — | — |
+| T0 | pre-claim — review LEARNINGS.md `open` items tagged process/architectural; disposition before claim | done | yoga-ah | LRN-100 (CI workflow trigger) → CS23 planned; LRN-101 (CHANGELOG-on-every-CS) → CS24 planned. Both stable. |
+| T1 | claim PR (workboard/cs41-claim → main) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | in-progress | yoga-ah | this PR |
+| T2 | branch `cs41/copilot-engage-and-default-flip` from main | planned | yoga-ah | — |
+| T3 | implement `lib/copilot-engage.mjs` + `bin/harness.mjs copilot-engage` route per C41-1/2/3/4 (mutation + identity-cache + PR-ID resolution + poll loop + fork-PR rejection) | planned | yoga-ah | reuse `lib/github-graphql.mjs` from CS37 |
+| T4 | implement `tests/cli-copilot-engage.test.mjs` (≥6 cases per Deliverable 3): happy-path mutation+APPROVED, polling-loop timeout, --no-poll, fork-PR rejection, identity cache hit, identity cache stale | planned | yoga-ah | mock-based; field-validation rationale per plan.md autonomous decision #2 |
+| T5 | implement `scripts/check-clickstop-implementer-not-reviewer.mjs` per C41-5/6 + tests (≥5 cases) | planned | yoga-ah | parses `## Model audit` table; agent-identity overlap check |
+| T6 | REVIEWS.md + composed/REVIEWS.md add `Implementer agent` + `Reviewer agent` columns to `## Model audit` schema per C41-6 + C35-18 doctrine | planned | yoga-ah | Migration note: warn (not error) for one cycle |
+| T7 | extend `scripts/check-review-evidence.mjs` parser for new agent columns + `--strict-agent-columns` flag (default false in v0.5.0) per Deliverable 7; update tests (≥3 new) | planned | yoga-ah | backward-compat per C41-6 |
+| T8 | extend `template/managed/.github/pull_request_template.md` with new agent columns per Deliverable 8 | planned | yoga-ah | CS38a follow-up |
+| T9 | schema + init + sync updates per C41-7/8 (default-flip mechanics + migration messaging) | planned | yoga-ah | flip enabled default true; require `_opt_out_reason` |
+| T10 | `tests/sync-review-gates-default-flip.test.mjs` (≥3 cases) per Deliverable 10 | planned | yoga-ah | fresh-init + missing-block + opt-out-with-reason |
+| T11 | OPERATIONS.md § Copilot engagement procedure refresh — replace manual GraphQL recipe with `harness copilot-engage` invocation | planned | yoga-ah | root + composed mirror |
+| T12 | CHANGELOG.md entries per Deliverable 12 (Added: CLI + linter + agent columns; Changed: default flip + parser updates) | planned | yoga-ah | — |
+| T13 | validate (`harness lint` + tests + sync clean); R1 plan-vs-impl review; amendments; R2 (and Copilot review fixes if surfaced); admin-merge content PR; close-out PR | planned | yoga-ah | per LRN-064 + LRN-114 (avoid `replace($&)` in linters) |
 
 ## Notes / Learnings
 
