@@ -27,6 +27,7 @@ import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
 import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
+import { runReview, ReviewError } from '../lib/review.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +77,8 @@ Subcommands:
   composed-audit    Audit composed blocks from an existing harness (STUB)
   copilot-engage    Request Copilot review on a PR + poll for completion
                     (CS41 — pairs with A16)
+  review           Orchestrate rubber-duck + Copilot review and update PR body
+                    (CS52 — canonical content-PR review command)
   pack              Run npm pack --dry-run and verify file whitelist
   pr-evidence       Run PR-state evidence gates (B1, A3, A4, A5+A16, A6) against
                     a PR's commit graph + body markdown (CS36 + CS37)
@@ -383,6 +386,40 @@ Exit codes:
   0  pass (warnings allowed)
   1  at least one error (missing/malformed shape, R1 missing files, etc.)
   2  bad usage
+`.trimStart(),
+
+  review: `
+Usage: harness review <pr> [options]
+
+Orchestrate a content-PR review round: sanity-check the PR, compose the
+manual MVP rubber-duck prompt (GPT-5.5 by default, Sonnet 4.6 fallback only
+when permitted), trigger Copilot, wait for completed review evidence, update
+## Review log + ## Model audit in the PR body, and print a verdict.
+
+Positional:
+  <pr>  PR number (required, positive integer)
+
+Options:
+  --repo <owner/repo>      GitHub repo (default: auto-detect from git remote)
+  --rubber-duck-only      Skip Copilot trigger/poll; only run the rubber-duck leg
+  --copilot-only          Skip rubber-duck prompt/output; only trigger/poll Copilot
+  --model <id>            Reviewer model override: gpt-5.5 | sonnet-4.6
+  --round R<n>            Explicit review round (default: next available)
+  --dry-run               Print planned actions without dispatching/commenting
+  --no-poll               Dispatch only (print prompt / trigger Copilot), then exit
+  --timeout-minutes <n>   Max wait for review evidence (default: reviews.review_timeout_minutes or 30)
+  --help                  Print this help text
+
+Manual rubber-duck MVP:
+  Unless --copilot-only, --dry-run, or --no-poll is set, the CLI prints a
+  reviewer prompt. Dispatch that prompt to the approved reviewer model, then
+  paste the structured reviewer output to stdin and send EOF. No model API is
+  called by the harness CLI in v1.
+
+Exit codes:
+  0  Go verdict, dry-run complete, or --no-poll dispatch accepted
+  1  No-Go / unresolved Blocking finding / Copilot changes requested
+  2  bad usage, independence-policy refusal, or tooling/transport error
 `.trimStart(),
 
   'copilot-engage': `
@@ -2273,6 +2310,195 @@ async function cmdReviewOutput(args, _global) {
 // Subcommand: copilot-engage (CS41 — A16 engagement helper)
 // ---------------------------------------------------------------------------
 
+async function cmdReview(args, global) {
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(SUBCOMMAND_HELP.review);
+    process.exit(0);
+  }
+
+  let parsed;
+  try {
+    parsed = parseReviewArgs(args, global.cwd);
+  } catch (err) {
+    if (err instanceof ReviewError) {
+      die(`review: ${err.message}\n\n${SUBCOMMAND_HELP.review}`, 2);
+    }
+    throw err;
+  }
+
+  const actor = deriveReviewActor(global.cwd, global.config);
+  const promptRubberDuck = parsed.noPoll || parsed.copilotOnly || parsed.dryRun
+    ? null
+    : async (prompt) => {
+        process.stdout.write(`${prompt}\n`);
+        process.stderr.write(
+          '\nreview: dispatch the prompt above to the approved rubber-duck reviewer, ' +
+          'then paste the structured reviewer output to stdin and send EOF.\n',
+        );
+        const pasted = await readAllStdin();
+        if (!pasted.trim()) {
+          throw new ReviewError('no rubber-duck reviewer output was provided on stdin', 'manual-input-required');
+        }
+        return pasted;
+      };
+
+  try {
+    const result = await runReview({
+      cwd: global.cwd,
+      configPath: global.config,
+      repo: parsed.repo,
+      prNumber: parsed.prNumber,
+      reviewerModel: parsed.model,
+      round: parsed.round,
+      rubberDuckOnly: parsed.rubberDuckOnly,
+      copilotOnly: parsed.copilotOnly,
+      dryRun: parsed.dryRun,
+      noPoll: parsed.noPoll,
+      timeoutMinutes: parsed.timeoutMinutes,
+      actor,
+      reviewerAgent: actor,
+      promptRubberDuck,
+    });
+
+    if (result.status === 'dry-run') {
+      process.stdout.write(
+        `review: dry-run for ${result.repo}#${result.prNumber}\n` +
+        `  reviewer model: ${result.reviewerModel}\n` +
+        `  round: ${result.round}\n` +
+        result.actions.map((action) => `  - would ${action}`).join('\n') + '\n',
+      );
+    } else if (result.status === 'dispatched') {
+      if (result.rubberDuckPrompt) {
+        process.stdout.write(`${result.rubberDuckPrompt}\n`);
+      }
+      process.stdout.write(
+        `review: dispatched ${result.round} for ${result.repo}#${result.prNumber}; polling skipped (--no-poll)\n`,
+      );
+    } else {
+      process.stdout.write(
+        `review: ${result.verdict.outcome} for ${result.repo}#${result.prNumber} ` +
+        `(${result.round}, model=${result.reviewerModel})\n`,
+      );
+    }
+    process.exit(0);
+  } catch (err) {
+    if (err instanceof ReviewError) {
+      const code = reviewExitCode(err);
+      process.stderr.write(`review: ${err.message}\n`);
+      if (err.prompt) process.stderr.write(`${err.prompt}\n`);
+      process.exit(code);
+    }
+    throw err;
+  }
+}
+
+function parseReviewArgs(args, cwd) {
+  let prRaw = null;
+  let repo = null;
+  let rubberDuckOnly = false;
+  let copilotOnly = false;
+  let model = null;
+  let round = null;
+  let dryRun = false;
+  let noPoll = false;
+  let timeoutMinutes = null;
+
+  const requireValue = (i, flagName) => {
+    if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+      throw new ReviewError(`${flagName} requires a value`, 'bad-input');
+    }
+    return args[i + 1];
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--repo') {
+      repo = requireValue(i, '--repo');
+      i++;
+    } else if (a.startsWith('--repo=')) {
+      repo = a.slice('--repo='.length);
+    } else if (a === '--rubber-duck-only') {
+      rubberDuckOnly = true;
+    } else if (a === '--copilot-only') {
+      copilotOnly = true;
+    } else if (a === '--model') {
+      model = requireValue(i, '--model');
+      i++;
+    } else if (a.startsWith('--model=')) {
+      model = a.slice('--model='.length);
+    } else if (a === '--round') {
+      round = requireValue(i, '--round');
+      i++;
+    } else if (a.startsWith('--round=')) {
+      round = a.slice('--round='.length);
+    } else if (a === '--dry-run') {
+      dryRun = true;
+    } else if (a === '--no-poll') {
+      noPoll = true;
+    } else if (a === '--timeout-minutes') {
+      timeoutMinutes = Number(requireValue(i, '--timeout-minutes'));
+      i++;
+    } else if (a.startsWith('--timeout-minutes=')) {
+      timeoutMinutes = Number(a.slice('--timeout-minutes='.length));
+    } else if (!a.startsWith('-') && prRaw === null) {
+      prRaw = a;
+    } else if (!a.startsWith('-')) {
+      throw new ReviewError(`unexpected positional argument '${a}'`, 'bad-input');
+    } else {
+      throw new ReviewError(`unknown flag: ${a}`, 'bad-input');
+    }
+  }
+
+  if (prRaw === null) throw new ReviewError('<pr> is required', 'bad-input');
+  const prNumber = Number.parseInt(prRaw, 10);
+  if (!/^\d+$/.test(prRaw) || !Number.isInteger(prNumber) || prNumber < 1) {
+    throw new ReviewError(`<pr> must be a positive integer; got '${prRaw}'`, 'bad-input');
+  }
+  if (rubberDuckOnly && copilotOnly) {
+    throw new ReviewError('--rubber-duck-only and --copilot-only cannot be combined', 'bad-input');
+  }
+  if (model !== null && !['gpt-5.5', 'sonnet-4.6'].includes(model)) {
+    throw new ReviewError(`--model must be one of: gpt-5.5, sonnet-4.6; got '${model}'`, 'bad-input');
+  }
+  if (round !== null && !/^R\d+$/.test(round)) {
+    throw new ReviewError(`--round must match R<n> (for example R1); got '${round}'`, 'bad-input');
+  }
+  if (timeoutMinutes !== null && (!Number.isFinite(timeoutMinutes) || timeoutMinutes <= 0)) {
+    throw new ReviewError('--timeout-minutes must be a positive number', 'bad-input');
+  }
+  if (repo !== null && !parseRepoSlug(repo)) {
+    throw new ReviewError(`--repo must be 'owner/repo'; got '${repo}'`, 'bad-input');
+  }
+
+  return { prNumber, repo, rubberDuckOnly, copilotOnly, model, round, dryRun, noPoll, timeoutMinutes };
+}
+
+function deriveReviewActor(cwd, configOverride) {
+  const cfg = loadConfig(cwd, configOverride);
+  const suffix = cfg?.project?.agent_suffix;
+  if (!suffix) return process.env.GITHUB_ACTOR || 'harness-review';
+  const envName = cfg?.project?.agent_env_var ?? `HARNESS_AGENT_${suffix.toUpperCase()}_MACHINE`;
+  const machine = process.env[envName] ?? machineShortFromHostname(os.hostname());
+  const cloneSuffix = cloneSuffixFromDir(cwd);
+  return `${machine}-${suffix}${cloneSuffix ? `-${cloneSuffix}` : ''}`;
+}
+
+function readAllStdin() {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk) => { data += chunk; });
+    process.stdin.on('end', () => resolve(data));
+    process.stdin.on('error', reject);
+    process.stdin.resume();
+  });
+}
+
+function reviewExitCode(err) {
+  if (err.kind === 'no-go') return 1;
+  return 2;
+}
+
 async function cmdCopilotEngage(args, global) {
   if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(SUBCOMMAND_HELP['copilot-engage']);
@@ -2838,6 +3064,7 @@ async function main() {
     pack: cmdPack,
     'pr-evidence': cmdPrEvidence,
     'review-output': cmdReviewOutput,
+    review: cmdReview,
     'copilot-engage': cmdCopilotEngage,
     'plan-review-hash': cmdPlanReviewHash,
     version: cmdVersion,

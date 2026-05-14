@@ -97,5 +97,12 @@
       "A5",
       "A16"
     ]
+  },
+  "reviews": {
+    "rubber_duck_model": "gpt-5.5",
+    "fallback_model": "sonnet-4.6",
+    "copilot_trigger": "mention",
+    "review_timeout_minutes": 30,
+    "high_risk_clickstops": []
   }
 }
