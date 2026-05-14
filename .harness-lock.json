@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs46/issue-146-discoverability",
-  "resolved_sha": "f8394130bda6e4e658c72773e3e7324f5ed8015a",
+  "resolved_sha": "7a261bfa1787faf313d2bb5efe214e516cda1266",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T19:25:38.883Z",
+  "synced_at": "2026-05-14T19:47:21.712Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -16,7 +16,7 @@
       "source_template": "template/managed/TRACKING.md",
       "class": "managed",
       "rendered_hash": "2992facf535ef098e4fda707e860798c060d43f4e4a9b1bb61b064f10761861d",
-      "action": "updated"
+      "action": "skipped"
     },
     {
       "target": "RETROSPECTIVES.md",
@@ -85,7 +85,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "c7504ec0b9411151e3ffbf976a5686a740cb1892dd4e490558d2f973082224a1",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
