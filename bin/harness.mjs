@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
+import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -73,6 +74,8 @@ Subcommands:
   harvest           Run harvest procedure (STUB — full impl in later CS)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
+  copilot-engage    Request Copilot review on a PR + poll for completion
+                    (CS41 — pairs with A16)
   pack              Run npm pack --dry-run and verify file whitelist
   pr-evidence       Run PR-state evidence gates (B1, A3, A4, A5+A16, A6) against
                     a PR's commit graph + body markdown (CS36 + CS37)
@@ -122,7 +125,8 @@ Options:
                                           (default: discipline-only)
   --skip-constraint-detection           Skip the GitHub-tier detection step entirely
                                           (no constraints block written; useful in CI without network)
-  --enable-review-gates                 Opt the project into the PR-evidence gate set per CS38a; writes \`review_gates\` config block, migrates \`.github/pull_request_template.md\` to composed, and emits a branch-ruleset instruction block. Idempotent.
+  --enable-review-gates                 Opt the project into the PR-evidence gate set per CS38a; writes \`review_gates\` config block, migrates \`.github/pull_request_template.md\` to composed, and emits a branch-ruleset instruction block. Idempotent. Per CS41 C41-7, \`enabled: true\` is now the FRESH-init default; this flag is required only when migrating an existing config that lacks the \`review_gates\` block.
+  --disable-review-gates <reason>       Explicit opt-out from the PR-evidence gate set (CS41 C41-7/C41-8). Writes \`review_gates: { enabled: false, _opt_out_reason: "<reason>" }\` to harness.config.json, satisfying the \`harness sync --mode=check\` migration gate. Reason must be a non-empty string.
   --help                                Print this help
 `.trimStart(),
 
@@ -379,6 +383,37 @@ Exit codes:
   0  pass (warnings allowed)
   1  at least one error (missing/malformed shape, R1 missing files, etc.)
   2  bad usage
+`.trimStart(),
+
+  'copilot-engage': `
+Usage: harness copilot-engage <pr> [options]
+
+Request Copilot review on a PR via 'gh pr edit --add-reviewer' and poll the
+GitHub GraphQL API until a review at the current HEAD lands (or timeout).
+
+Positional:
+  <pr>  PR number (required, positive integer)
+
+Options:
+  --repo <owner/repo>    GitHub repo (default: auto-detect from current dir's git remote)
+  --poll-timeout <s>     Max seconds to poll (default: 300 = 5 minutes)
+  --poll-interval <s>    Polling interval in seconds (default: 30)
+  --no-poll              Return immediately after the requestReviews mutation
+  --submitted-after <ts> ISO-8601 floor for the review's submittedAt (default:
+                         the timestamp captured immediately before the engage
+                         request — guarantees a NEW review, matching the A5+A16
+                         ordering doctrine in scripts/check-copilot-review.mjs)
+  --cache-dir <path>     Identity-cache dir (default: ~/.cache/harness)
+  --cache-ttl <days>     Identity-cache TTL in days (default: 7)
+  --quiet                Suppress per-poll log lines; print only final result
+  --json                 Print machine-readable JSON result
+  --help                 Print this help text
+
+Exit codes:
+  0  Copilot review found at current HEAD (or --no-poll: mutation accepted)
+  2  bad usage (bad arguments, fork-source PR)
+  3  poll timeout (mutation accepted but no review within --poll-timeout)
+  4  auth or GraphQL error
 `.trimStart(),
 
   version: `
@@ -677,7 +712,9 @@ async function cmdInit(args, global) {
   const withScaffolds = [];
   let constraintDisposition = null;
   let skipConstraintDetection = false;
-  let enableReviewGates = false;
+  let enableReviewGates = true;
+  let enableReviewGatesExplicit = false;
+  let reviewGatesOptOutReason = null;
   const VALID_DISPOSITIONS = ['discipline-only', 'upgrade-pro', 'flip-public-when-ready'];
 
   for (let i = 0; i < args.length; i++) {
@@ -709,6 +746,19 @@ async function cmdInit(args, global) {
       skipConstraintDetection = true;
     } else if (a === '--enable-review-gates') {
       enableReviewGates = true;
+      enableReviewGatesExplicit = true;
+      reviewGatesOptOutReason = null;
+    } else if (a === '--disable-review-gates') {
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        die(`--disable-review-gates requires a non-empty reason\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      }
+      reviewGatesOptOutReason = args[++i].trim();
+      if (!reviewGatesOptOutReason) die(`--disable-review-gates requires a non-empty reason\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      enableReviewGates = false;
+    } else if (a.startsWith('--disable-review-gates=')) {
+      reviewGatesOptOutReason = a.slice('--disable-review-gates='.length).trim();
+      if (!reviewGatesOptOutReason) die(`--disable-review-gates= requires a non-empty reason\n\n${SUBCOMMAND_HELP['init']}`, 2);
+      enableReviewGates = false;
     } else if (!a.startsWith('-')) {
       targetDir = path.resolve(cwd, a);
     } else {
@@ -815,8 +865,33 @@ async function cmdInit(args, global) {
     }
   }
 
-  if (enableReviewGates) {
+  // CS41 / C41-7: review_gates is opt-out by default in v0.5.0+.
+  // For FRESH inits we always patch the seeded config + scaffold the workflow.
+  // For PRE-EXISTING configs we leave the file alone unless the caller passed
+  // `--enable-review-gates` explicitly — preserving the LRN-057 invariant that
+  // re-running `harness init` does not silently mutate existing repo state.
+  // Callers who already have a config but lack the block will be told to act
+  // by `harness sync --mode=check` (C41-8 migration error).
+  if (enableReviewGates && (!configExists || enableReviewGatesExplicit)) {
     enableReviewGatesForInit(targetDir, configDest);
+  } else if (reviewGatesOptOutReason !== null) {
+    if (!existsSync(configDest)) {
+      die(`harness init --disable-review-gates: harness.config.json not found at ${configDest}`, 1);
+    }
+    const config = readConfigForReviewGates(configDest);
+    if (!isPlainObject(config)) {
+      die('harness init --disable-review-gates: harness.config.json root must be an object.', 1);
+    }
+    if (config.review_gates !== undefined && !isPlainObject(config.review_gates)) {
+      die('harness init --disable-review-gates: "review_gates" must be an object when present.', 1);
+    }
+    config.review_gates = {
+      ...(config.review_gates ?? {}),
+      enabled: false,
+      _opt_out_reason: reviewGatesOptOutReason,
+    };
+    writeFileSync(configDest, JSON.stringify(config, null, 2) + '\n', 'utf8');
+    process.stdout.write('Review gates disabled with explicit opt-out reason.\n');
   }
 
   // Copy seeded template files that are missing
@@ -1155,6 +1230,32 @@ async function cmdSync(args, global, defaultMode = 'check') {
       "--ref is not yet implemented. To pin a harness version, set 'version' in harness.config.json.",
       2
     );
+  }
+
+  if (mode === 'check') {
+    const configPath = configOverride ?? path.join(cwd, 'harness.config.json');
+    if (existsSync(configPath)) {
+      try {
+        const config = JSON.parse(stripBOM(readFileSync(configPath, 'utf8')));
+        const gates = config.review_gates;
+        const reason = gates?._opt_out_reason;
+        const hasOptOutReason = typeof reason === 'string' && reason.trim().length > 0;
+        const hasConfigIdentity =
+          typeof config.version === 'string' &&
+          typeof config.project?.name === 'string' &&
+          typeof config.project?.agent_suffix === 'string';
+        if (hasConfigIdentity && config.version !== 'self' && (gates === undefined || (gates?.enabled === false && !hasOptOutReason))) {
+          process.stderr.write(
+            `ERROR: review_gates is now opt-out by default in v0.5.0. Either:\n` +
+            `  (a) run 'harness init --enable-review-gates' to opt in (recommended); or\n` +
+            `  (b) add '\"_opt_out_reason\": \"<reason>\"' to your review_gates block to explicitly opt out.\n`
+          );
+          process.exit(1);
+        }
+      } catch {
+        // Let the sync engine surface malformed JSON / schema errors with its existing diagnostics.
+      }
+    }
   }
 
   const { sync: syncFn } = await import('../lib/sync.mjs');
@@ -1649,6 +1750,7 @@ async function cmdLint(args, _global) {
       args: ['--dir', path.join(cwd, 'project', 'clickstops')],
       target: path.join(cwd, 'project', 'clickstops'),
     },
+    { name: 'clickstop-implementer-not-reviewer', script: 'check-clickstop-implementer-not-reviewer.mjs', args: ['--cwd', cwd], target: path.join(cwd, 'project', 'clickstops') },
     {
       // CS35b: plan-review attestation linter. Requires every planned/*.md and
       // active/*.md to carry a `## Plan review` H2 section with at least one
@@ -2157,6 +2259,256 @@ async function cmdReviewOutput(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: copilot-engage (CS41 — A16 engagement helper)
+// ---------------------------------------------------------------------------
+
+async function cmdCopilotEngage(args, global) {
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(SUBCOMMAND_HELP['copilot-engage']);
+    process.exit(0);
+  }
+
+  const parsed = parseCopilotEngageArgs(args, global.cwd);
+  const [owner, repo] = parsed.repo.split('/');
+  const headSha = detectGitHead(global.cwd);
+
+  if (!parsed.json && !parsed.quiet) {
+    process.stdout.write(
+      `copilot-engage: requesting ${owner}/${repo}#${parsed.prNumber} at HEAD ${shortDisplaySha(headSha)}\n`,
+    );
+  }
+
+  try {
+    const result = await engageCopilot({
+      owner,
+      repo,
+      prNumber: parsed.prNumber,
+      opts: {
+        headSha,
+        timeoutMs: parsed.timeoutMs,
+        intervalMs: parsed.intervalMs,
+        noPoll: parsed.noPoll,
+        cacheDir: parsed.cacheDir,
+        cacheTtlMs: parsed.cacheTtlMs,
+        submittedAfter: parsed.submittedAfter,
+        onPoll: parsed.quiet || parsed.json
+          ? undefined
+          : ({ attempts, polledMs }) => {
+              process.stdout.write(
+                `copilot-engage: poll ${attempts} (${Math.floor(polledMs / 1000)}s elapsed): ` +
+                  `waiting for Copilot review at HEAD ${shortDisplaySha(headSha)}\n`,
+              );
+            },
+      },
+    });
+
+    if (parsed.json) {
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    } else if (result.review) {
+      process.stdout.write(
+        `copilot-engage: ${result.login} review ${result.review.state} at ` +
+          `${shortDisplaySha(result.review.commit.oid)} submitted ${result.review.submittedAt}\n`,
+      );
+    } else {
+      process.stdout.write(`copilot-engage: ${result.login} review requested; polling skipped\n`);
+    }
+    process.exit(0);
+  } catch (err) {
+    if (err instanceof EngageError) {
+      const code = copilotEngageExitCode(err);
+      if (parsed.json) {
+        process.stderr.write(JSON.stringify({ error: err.message, kind: err.kind }, null, 2) + '\n');
+      } else {
+        process.stderr.write(`copilot-engage: ${err.message}\n`);
+      }
+      process.exit(code);
+    }
+    throw err;
+  }
+}
+
+function parseCopilotEngageArgs(args, cwd) {
+  let repo = null;
+  let prRaw = null;
+  let timeoutSeconds = 300;
+  let intervalSeconds = 30;
+  let noPoll = false;
+  let cacheDir = null;
+  let cacheTtlDays = 7;
+  let quiet = false;
+  let json = false;
+  let submittedAfter = null;
+
+  function requireValue(i, flagName) {
+    if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+      die(`copilot-engage: missing value for ${flagName}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+    }
+    return args[i + 1];
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--repo') {
+      repo = requireValue(i, '--repo');
+      i++;
+    } else if (a.startsWith('--repo=')) {
+      repo = a.slice('--repo='.length);
+    } else if (a === '--poll-timeout') {
+      timeoutSeconds = parseFiniteNumber(requireValue(i, '--poll-timeout'), '--poll-timeout');
+      i++;
+    } else if (a.startsWith('--poll-timeout=')) {
+      timeoutSeconds = parseFiniteNumber(a.slice('--poll-timeout='.length), '--poll-timeout');
+    } else if (a === '--poll-interval') {
+      intervalSeconds = parseFiniteNumber(requireValue(i, '--poll-interval'), '--poll-interval');
+      i++;
+    } else if (a.startsWith('--poll-interval=')) {
+      intervalSeconds = parseFiniteNumber(a.slice('--poll-interval='.length), '--poll-interval');
+    } else if (a === '--no-poll') {
+      noPoll = true;
+    } else if (a === '--cache-dir') {
+      cacheDir = path.resolve(cwd, requireValue(i, '--cache-dir'));
+      i++;
+    } else if (a.startsWith('--cache-dir=')) {
+      cacheDir = path.resolve(cwd, a.slice('--cache-dir='.length));
+    } else if (a === '--cache-ttl') {
+      cacheTtlDays = parseFiniteNumber(requireValue(i, '--cache-ttl'), '--cache-ttl');
+      i++;
+    } else if (a.startsWith('--cache-ttl=')) {
+      cacheTtlDays = parseFiniteNumber(a.slice('--cache-ttl='.length), '--cache-ttl');
+    } else if (a === '--quiet') {
+      quiet = true;
+    } else if (a === '--json') {
+      json = true;
+    } else if (a === '--submitted-after') {
+      submittedAfter = requireValue(i, '--submitted-after');
+      i++;
+    } else if (a.startsWith('--submitted-after=')) {
+      submittedAfter = a.slice('--submitted-after='.length);
+    } else if (!a.startsWith('-') && prRaw === null) {
+      prRaw = a;
+    } else if (!a.startsWith('-')) {
+      die(`copilot-engage: unexpected positional argument '${a}'\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+    } else {
+      die(`copilot-engage: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+    }
+  }
+
+  if (prRaw === null) {
+    die(`copilot-engage: <pr> is required\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+  }
+  const prNumber = Number.parseInt(prRaw, 10);
+  if (!/^\d+$/.test(prRaw) || !Number.isInteger(prNumber) || prNumber < 1) {
+    die(`copilot-engage: <pr> must be a positive integer; got '${prRaw}'`, 2);
+  }
+  if (timeoutSeconds < 0) {
+    die(`copilot-engage: --poll-timeout must be non-negative seconds`, 2);
+  }
+  if (intervalSeconds <= 0) {
+    die(`copilot-engage: --poll-interval must be positive seconds`, 2);
+  }
+  if (cacheTtlDays < 0) {
+    die(`copilot-engage: --cache-ttl must be non-negative days`, 2);
+  }
+
+  repo = repo || detectGitHubRepo(cwd);
+  if (!parseRepoSlug(repo)) {
+    die(`copilot-engage: --repo must be 'owner/repo'; got '${repo}'`, 2);
+  }
+
+  if (submittedAfter !== null) {
+    const submittedAfterMs = Date.parse(submittedAfter);
+    if (!Number.isFinite(submittedAfterMs)) {
+      die(`copilot-engage: --submitted-after must be an ISO-8601 timestamp; got '${submittedAfter}'`, 2);
+    }
+    submittedAfter = new Date(submittedAfterMs).toISOString();
+  }
+
+  return {
+    repo,
+    prNumber,
+    timeoutMs: timeoutSeconds * 1000,
+    intervalMs: intervalSeconds * 1000,
+    noPoll,
+    cacheDir,
+    cacheTtlMs: cacheTtlDays * 24 * 60 * 60 * 1000,
+    quiet,
+    json,
+    submittedAfter,
+  };
+}
+
+function parseFiniteNumber(raw, flagName) {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    die(`copilot-engage: ${flagName} must be a number; got '${raw}'`, 2);
+  }
+  return value;
+}
+
+function detectGitHubRepo(cwd) {
+  const r = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf8' });
+  if (r.status !== 0) {
+    die(
+      `copilot-engage: --repo is required when git remote 'origin' cannot be read. ` +
+        `Pass --repo <owner/repo>.`,
+      2,
+    );
+  }
+  const repo = parseGitHubRemote(r.stdout.trim());
+  if (!repo) {
+    die(
+      `copilot-engage: could not parse GitHub repo from origin remote '${r.stdout.trim()}'. ` +
+        `Pass --repo <owner/repo>.`,
+      2,
+    );
+  }
+  return repo;
+}
+
+function detectGitHead(cwd) {
+  const r = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' });
+  if (r.status !== 0) {
+    die(`copilot-engage: could not detect current HEAD via 'git rev-parse HEAD'`, 2);
+  }
+  const head = r.stdout.trim();
+  if (!/^[0-9a-f]{40}$/i.test(head)) {
+    die(`copilot-engage: git rev-parse HEAD returned an invalid SHA: '${head}'`, 2);
+  }
+  return head;
+}
+
+function parseGitHubRemote(remote) {
+  const sshPrefix = 'git@github.com:';
+  const httpsPrefix = 'https://github.com/';
+  let slug = null;
+  if (remote.startsWith(sshPrefix)) {
+    slug = remote.slice(sshPrefix.length);
+  } else if (remote.startsWith(httpsPrefix)) {
+    slug = remote.slice(httpsPrefix.length).split(/[?#]/, 1)[0];
+  }
+  if (!slug) return null;
+  if (slug.endsWith('.git')) slug = slug.slice(0, -4);
+  return parseRepoSlug(slug);
+}
+
+function parseRepoSlug(slug) {
+  const parts = slug.split('/');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  return `${parts[0]}/${parts[1]}`;
+}
+
+function copilotEngageExitCode(err) {
+  if (err.kind === 'fork-source' || err.kind === 'bad-input') return 2;
+  if (err.kind === 'timeout') return 3;
+  if (err.kind === 'auth-missing' || err.kind === 'network') return 4;
+  return 4;
+}
+
+function shortDisplaySha(sha) {
+  return typeof sha === 'string' && sha.length > 7 ? sha.slice(0, 7) : String(sha);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: pr-evidence (CS36 — B1, A3, A4, A6)
 // ---------------------------------------------------------------------------
 //
@@ -2464,6 +2816,7 @@ async function main() {
     pack: cmdPack,
     'pr-evidence': cmdPrEvidence,
     'review-output': cmdReviewOutput,
+    'copilot-engage': cmdCopilotEngage,
     'plan-review-hash': cmdPlanReviewHash,
     version: cmdVersion,
     whoami: cmdWhoami,

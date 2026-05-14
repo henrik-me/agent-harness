@@ -90,24 +90,86 @@ Orchestrator owns OPERATIONS.md + CHANGELOG.md + REVIEWS.md prose changes outsid
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T0 | pre-claim — review LEARNINGS.md `open` items tagged process/architectural; disposition before claim | done | yoga-ah | LRN-100 (CI workflow trigger) → CS23 planned; LRN-101 (CHANGELOG-on-every-CS) → CS24 planned. Both stable. |
-| T1 | claim PR (workboard/cs41-claim → main) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | in-progress | yoga-ah | this PR |
-| T2 | branch `cs41/copilot-engage-and-default-flip` from main | planned | yoga-ah | — |
-| T3 | implement `lib/copilot-engage.mjs` + `bin/harness.mjs copilot-engage` route per C41-1/2/3/4 (mutation + identity-cache + PR-ID resolution + poll loop + fork-PR rejection) | planned | yoga-ah | reuse `lib/github-graphql.mjs` from CS37 |
-| T4 | implement `tests/cli-copilot-engage.test.mjs` (≥6 cases per Deliverable 3): happy-path mutation+APPROVED, polling-loop timeout, --no-poll, fork-PR rejection, identity cache hit, identity cache stale | planned | yoga-ah | mock-based; field-validation rationale per plan.md autonomous decision #2 |
-| T5 | implement `scripts/check-clickstop-implementer-not-reviewer.mjs` per C41-5/6 + tests (≥5 cases) | planned | yoga-ah | parses `## Model audit` table; agent-identity overlap check |
-| T6 | REVIEWS.md + composed/REVIEWS.md add `Implementer agent` + `Reviewer agent` columns to `## Model audit` schema per C41-6 + C35-18 doctrine | planned | yoga-ah | Migration note: warn (not error) for one cycle |
-| T7 | extend `scripts/check-review-evidence.mjs` parser for new agent columns + `--strict-agent-columns` flag (default false in v0.5.0) per Deliverable 7; update tests (≥3 new) | planned | yoga-ah | backward-compat per C41-6 |
-| T8 | extend `template/managed/.github/pull_request_template.md` with new agent columns per Deliverable 8 | planned | yoga-ah | CS38a follow-up |
-| T9 | schema + init + sync updates per C41-7/8 (default-flip mechanics + migration messaging) | planned | yoga-ah | flip enabled default true; require `_opt_out_reason` |
-| T10 | `tests/sync-review-gates-default-flip.test.mjs` (≥3 cases) per Deliverable 10 | planned | yoga-ah | fresh-init + missing-block + opt-out-with-reason |
-| T11 | OPERATIONS.md § Copilot engagement procedure refresh — replace manual GraphQL recipe with `harness copilot-engage` invocation | planned | yoga-ah | root + composed mirror |
-| T12 | CHANGELOG.md entries per Deliverable 12 (Added: CLI + linter + agent columns; Changed: default flip + parser updates) | planned | yoga-ah | — |
-| T13 | validate (`harness lint` + tests + sync clean); R1 plan-vs-impl review; amendments; R2 (and Copilot review fixes if surfaced); admin-merge content PR; close-out PR | planned | yoga-ah | per LRN-064 + LRN-114 (avoid `replace($&)` in linters) |
+| T1 | claim PR (workboard/cs41-claim → main) — rename planned→active, set Status/Owner/Branch/Started, populate Tasks, update WORKBOARD | done | yoga-ah | PR #175 admin-merged at `10c5e82f3986aa6f335823d9c874e591e5dcde50` (2026-05-14T00:13:25Z) |
+| T2 | branch `cs41/copilot-engage-and-default-flip` from main | done | yoga-ah | branched + work in progress |
+| T3 | implement `lib/copilot-engage.mjs` + `bin/harness.mjs copilot-engage` route per C41-1/2/3/4 (mutation + identity-cache + PR-ID resolution + poll loop + fork-PR rejection) | done | yoga-ah (SA-1) | SA-1 dispatched as background general-purpose agent; lib + CLI + help wired; uses `node(id:"BOT_kgDOCnlnWA")` (verified live via gh-api smoke test) |
+| T4 | implement `tests/cli-copilot-engage.test.mjs` (≥6 cases per Deliverable 3): happy-path mutation+APPROVED, polling-loop timeout, --no-poll, fork-PR rejection, identity cache hit, identity cache stale | done | yoga-ah (SA-1) | tests pass; mock-based; lib-direct except CLI help/bad-input |
+| T5 | implement `scripts/check-clickstop-implementer-not-reviewer.mjs` per C41-5/6 + tests (≥5 cases) | done | yoga-ah (SA-2) | 7 cases including case-insensitive overlap + missing-columns warn/strict; registered in `harness lint` aggregator |
+| T6 | REVIEWS.md + composed/REVIEWS.md add `Implementer agent` + `Reviewer agent` columns to `## Model audit` schema per C41-6 + C35-18 doctrine | done | yoga-ah (orchestrator) | schema columns already landed in CS35 C35-18 as optional; CS41 prose updated to reflect required-in-v0.5.0 + warn-on-missing migration ramp + strict-flip in v0.6.0 per C42-6 |
+| T7 | extend `scripts/check-review-evidence.mjs` parser for new agent columns + `--strict-agent-columns` flag (default false in v0.5.0) per Deliverable 7; update tests (≥3 new) | done | yoga-ah (SA-2) | parser extended; flag wired; 23 cases pass total (orig + new) |
+| T8 | extend `template/managed/.github/pull_request_template.md` with new agent columns per Deliverable 8 | done | yoga-ah (SA-2) | managed PR template Model-audit skeleton extended with `Implementer agent` + `Reviewer agent` rows |
+| T9 | schema + init + sync updates per C41-7/8 (default-flip mechanics + migration messaging) | done | yoga-ah (SA-2) | `_opt_out_reason` added to `schemas/harness.config.schema.json`; `cmdInit` defaults `enabled: true` for FRESH inits only (preserves LRN-057 invariant for pre-existing configs) + new `--disable-review-gates <reason>` flag; `cmdSync --mode=check` errors with C41-8 migration message when block missing OR `enabled: false` without reason |
+| T10 | `tests/sync-review-gates-default-flip.test.mjs` (≥3 cases) per Deliverable 10 | done | yoga-ah (SA-2) | 3 cases: fresh-init writes block / missing-block sync error / opt-out-with-reason passes |
+| T11 | OPERATIONS.md § Copilot engagement procedure refresh — replace manual GraphQL recipe with `harness copilot-engage` invocation | done | yoga-ah (orchestrator) | root + composed mirror updated; manual fallback preserved as escape hatch; A5-ordering doctrine reconfirmation from CS40 PR #172 added |
+| T12 | CHANGELOG.md entries per Deliverable 12 (Added: CLI + linter + agent columns; Changed: default flip + parser updates) | done | yoga-ah (orchestrator) | `[Unreleased]` Added (CLI + linter + columns + OPERATIONS refresh) + Changed (default flip + sync migration error) |
+| T13 | validate (`harness lint` + tests + sync clean); R1 plan-vs-impl review; amendments; R2 (and Copilot review fixes if surfaced); admin-merge content PR; close-out PR | in-progress | yoga-ah | local validation: lint 29/0/3, full suite 913 (912 pass / 1 skip / 0 fail), self-host sync clean. R1 next. |
 
 ## Notes / Learnings
 
-(filled during execution)
+**Implementation observations (filled mid-flight):**
+
+- **SA-1 design pivot — Copilot identity resolution:** Verified live via `gh api graphql` that `SearchResultItem` cannot fragment-spread `... on Bot`. Working query is `node(id:"BOT_kgDOCnlnWA")` (the documented Copilot Bot node ID). Cached for 7d at `~/.cache/harness/copilot-id.json` per C41-2.
+- **SA-2 surfaced schema-path typo discrepancy:** Brief said `schemas/harness-config.schema.json` but canonical path is `schemas/harness.config.schema.json` (dot, not hyphen). SA-2 used the canonical path. No change required to brief — just an orchestrator note.
+- **Default-flip + LRN-057 collision (orchestrator post-SA fix):** SA-2's first cut had `enableReviewGatesForInit` always firing, which silently mutated pre-existing configs and broke `cs09-init.test.mjs` test 9 (LRN-057 invariant: re-running `harness init` must not modify pre-existing `harness.config.json`). Fixed by gating the default-on path on `(!configExists || enableReviewGatesExplicit)` so:
+  - FRESH inits get the new defaults (review_gates.enabled=true + PR-template migration).
+  - PRE-EXISTING configs without review_gates are left alone — `harness sync --mode=check` then fails-loud with the C41-8 migration message, prompting the consumer to opt in or opt out explicitly.
+  - Explicit `--enable-review-gates` still migrates pre-existing configs.
+- **LRN candidate: `cs09-init` test 8 expectation update:** `composed.files` now expected to include `.github/pull_request_template.md` after a fresh init (was previously a managed-only file). This is the visible signal that default-flip ran successfully on fresh inits.
+- **LRN candidate: `cs15d-aggregator` linter count drift:** Each new linter registered in `cmdLint` requires a one-line update to the `consumer-no-scaffolds` test's expected linter count. Worth converting to a `.length >= N` assertion or auto-derived count to avoid test churn each CS that adds a linter.
+
+**Validation snapshot (post-fix):** `harness lint --quiet`: 29 passed / 0 failed / 3 skipped. `node --test tests/`: 913 tests / 912 pass / 1 skipped / 0 fail. `harness sync --mode=check --cwd .`: no drift.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out)_
+**Reviewer:** GPT-5.5
+**Date:** 2026-05-14
+**Outcome:** R1 = Needs-fix (1 Blocking + 2 Non-blocking) → R2 = Go-with-amendments (3 Non-blocking, all addressed in the same content commit)
+
+### Transcript
+
+| # | Severity | File | Description | Status |
+|---|---|---|---|---|
+| 1 | Blocking | `lib/copilot-engage.mjs:264` | `copilot-engage` exits success on any Copilot review at HEAD, but `scripts/check-copilot-review.mjs:275` also enforces A5 ordering vs the latest local Go timestamp. A stale same-HEAD review predating a fresh local Go would falsely satisfy the engage CLI but fail A5+A16 in CI. | **Fixed.** Added `engageRequestedAt` floor captured BEFORE the mutation (`lib/copilot-engage.mjs:102-107`); poll now requires `submittedAt >= floor`. New `--submitted-after <iso>` CLI flag for explicit caller floor (max'd with engage-request floor). New regression test `rejects stale Copilot review on same HEAD that predates the engage request (A5 ordering — CS41 R1 #1)` and `honors --submitted-after caller floor when later than engage timestamp` in `tests/cli-copilot-engage.test.mjs`. |
+| 2 | Non-blocking | `OPERATIONS.md:796` | Documented invocation uses unsupported `--timeout-ms 300000`; CLI actually exposes `--poll-timeout <seconds>`. Same mismatch in composed mirror. | **Fixed.** Both root and composed OPERATIONS.md updated to `--poll-timeout 300` + `--submitted-after <iso>` documentation. Step 4 prose rewritten to describe the ordering invariant. |
+| 3 | Non-blocking | `bin/harness.mjs:120` | `cmdInit` implements `--disable-review-gates <reason>` but `harness init --help` does not document it. | **Fixed.** Init help (line ~128) now documents both `--enable-review-gates` (now FRESH-init default per C41-7) and `--disable-review-gates <reason>` (writes `_opt_out_reason` per C41-8). |
+
+### Verdict rationale
+
+R1 verdict was **Needs-fix** because the engage CLI's poll predicate did not match the A5+A16 gate's predicate — the central correctness claim of the CS. Specifically, the gate also requires `submittedAt > latestLocalGo` (A5 ordering doctrine, reconfirmed by CS40 PR #172). The CLI accepted any same-HEAD review, so a stale review predating a fresh local Go would falsely succeed locally then fail in CI.
+
+The fix captures `engageRequestedAt` immediately BEFORE the `gh pr edit` mutation and uses it as an implicit `submittedAfter` floor in the poll predicate (max'd against any caller-supplied `--submitted-after <iso>` for cases where the orchestrator wants to enforce a specific local-Go floor). This makes "engage CLI satisfied" ⊆ "A5+A16 gate satisfied" assuming the orchestrator records local Go BEFORE engaging — which is the documented doctrine.
+
+### R2 transcript (against committed HEAD `c72c1e1`)
+
+| # | Severity | File | Description | Status |
+|---|---|---|---|---|
+| R2-1 | Non-blocking | `active_cs41_copilot-engage-cli-and-default-flip.md:73` (Exit criterion E2) | Live sandbox PR engage+poll evidence is required by the plan but no end-to-end run was committed; only an identity-resolution `gh api graphql` smoke test was logged. | **Waived per plan.md autonomous decision #2.** The primitive (`gh pr edit --add-reviewer copilot-pull-request-reviewer`) is already field-tested in the CS37 spike (PR #160) and CS39 PR #169 where it successfully engaged Copilot end-to-end. The CLI is a thin wrapper around that primitive plus a polling predicate that mirrors `scripts/check-copilot-review.mjs` exactly (verified by R1 #1 fix). First real-PR usage will validate post-merge during this very PR's Copilot engagement step; risk accepted. Documented here as the canonical waiver. |
+| R2-2 | Non-blocking (suggestion) | `CHANGELOG.md:24` | Schema path documented as `schemas/harness-config.schema.json` (hyphen); canonical is `schemas/harness.config.schema.json` (dot). | **Fixed** in same content commit. |
+| R2-3 | Non-blocking (suggestion) | `REVIEWS.md:363-367` + composed mirror | Duplicate ramp paragraph said "v0.5.0 may upgrade missing agent columns to error", but the canonical statement (`REVIEWS.md:204-209`) says strict-flip happens in v0.6.0 per C42-6. Drift between the two paragraphs. | **Fixed** in same content commit; both root and composed mirror now align with the v0.6.0/C42-6 wording. |
+
+### R2 verdict rationale
+
+GPT-5.5 confirmed all three R1 findings are closed (cited specific file:line for each), confirmed the cache-file naming is consistent (no remaining `copilot-identity.json` references), and re-ran lint (29/0/3) + tests (915 / 914 pass / 1 skip) + sync (clean) against `c72c1e1`. The three R2 items are all non-blocking documentation/process items that can be addressed in the same content commit; R2-1 is an explicit waiver consistent with the plan's autonomous decision #2.
+
+### Post-R2 hotfix — null `cacheDir` regression discovered during live engage
+
+While running `harness copilot-engage 176 --no-poll` (the very R2-1 sandbox-PR exercise that was waived), the CLI failed with `TypeError: The "path" argument must be of type string. Received null`. Root cause: `resolveCopilotIdentity({ cacheDir = path.join(os.homedir(), '.cache', 'harness') })` used JS default-parameter destructuring, which does NOT apply when the argument is explicitly `null` (only when `undefined`). The CLI parser at `bin/harness.mjs:2336` initializes `cacheDir = null` and passes it through, so the default never fired. Fixed by explicitly checking `cacheDir == null` inside `resolveCopilotIdentity`. Added regression test `resolveCopilotIdentity falls back to ~/.cache/harness when cacheDir is null (CS41 PR #176 hotfix)` (`tests/cli-copilot-engage.test.mjs`). Re-ran full suite: 916 / 915 pass / 1 skip / 0 fail. This validates R2-1 in the affirmative — the live engage now works end-to-end against PR #176, retroactively converting the waiver into demonstrated evidence.
+
+### R3 verdict — Go (against committed HEAD `37caf32`)
+
+GPT-5.5 reviewed the post-R2 hotfix delta `cdc0245..37caf32` covering `lib/copilot-engage.mjs:174-201` (null-safe `effectiveCacheDir`), `tests/cli-copilot-engage.test.mjs:353-387` (regression test), and the active CS file's post-R2 hotfix prose. Verdict: **Go**, with one optional hardening suggestion (test could assert exact path equality to `path.join(os.homedir(), '.cache', 'harness')` instead of substring match). Independently re-ran lint (29/0/3) + tests (916 / 915 pass / 1 skip / 0 fail) + sync (clean) at `37caf32`; appended R3 row to PR body Review log at timestamp `2026-05-14T03:34:50Z`. Optional hardening suggestion deferred (would require another amend cycle for cosmetic test-tightening); surfaced as a learning candidate.
+
+### R4 fixes — Copilot-review findings on `37caf32`
+
+Live `harness copilot-engage 176` (R3 dogfood) returned a Copilot review at `2026-05-14T03:44:14Z` with 6 findings, all in CS41-owned files. Addressed all 6 in-band rather than deferring to CS42 because the cluster includes 2 real correctness bugs in the linters this CS ships:
+
+| # | File | Finding | Fix |
+|---|---|---|---|
+| 1 | `scripts/check-review-evidence.mjs:516-545` | Empty/whitespace-only agent cells trigger overlap error (`"".trim().toLowerCase() === "".trim().toLowerCase()`); per CS41 spec these should be treated as missing (warn-ramp) | Compute `*Trimmed` early; if empty, fall to missing-row path; only check overlap when both non-empty |
+| 2 | `scripts/check-clickstop-implementer-not-reviewer.mjs:233-251` | Same empty-cell overlap bug | Same fix; `missingAgentFinding()` message updated to "missing required agent row(s) (absent or empty)" |
+| 3 | `tests/sync-review-gates-default-flip.test.mjs:18-29` | `runHarness(args, cwd, env)` ignores the `cwd` parameter (subprocess always runs at REPO_ROOT) | Dropped unused `cwd` parameter; updated 3 call sites |
+| 4 | `template/managed/.github/pull_request_template.md:37-38` | `<github-login>` literal placeholder is not detected by `check-pr-body.mjs`; could leak into real PR bodies | Switched to italic `_(GitHub username of …)_` placeholder consistent with the rest of the template |
+| 5 | PR #176 description | Claims `lib/copilot-engage.mjs` exports `findLatestMatchingCopilotReview(...)` and `parseSubmittedAfter(...)`, but they are file-private | Will correct PR body in the R4 re-engage step (PR body is a non-source artefact) |
+| 6 | `REVIEWS.md:204-205` (+ composed mirror) | Model audit table conflated overlap-strict (CS41) with missing-columns warn-then-strict (v0.5.0 → v0.6.0 per C42-6) | Reworded both rows to distinguish the two enforcement axes |
+
+Added 4 regression tests (2 per linter) covering empty-cell and whitespace-only inputs in both default and `--strict-agent-columns` modes. Full suite: 920 / 919 pass / 1 skip / 0 fail; lint 29/0/3; sync clean.

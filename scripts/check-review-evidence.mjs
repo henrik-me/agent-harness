@@ -77,6 +77,7 @@ Options:
   --skip-reasons <csv>   Comma-separated skip reasons. "workboard-only" and
                          "bot-author" short-circuit to exit 0 (A3+A4 skipped).
                          "fork-source" does not skip A3/A4 (read-only gates).
+  --strict-agent-columns Treat missing Implementer/Reviewer agent rows as errors
   --quiet                Suppress per-finding output; print only the summary line
   --help                 Print this help text
 
@@ -89,6 +90,7 @@ Exit codes:
 let prBodyFile = null;
 let headSha = null;
 let skipReasons = new Set();
+let strictAgentColumns = false;
 let quiet = false;
 
 function requireValue(args, i, flag) {
@@ -112,6 +114,8 @@ for (let i = 0; i < argv.length; i++) {
     const csv = requireValue(argv, i, '--skip-reasons');
     skipReasons = new Set(csv.split(',').map((s) => s.trim()).filter(Boolean));
     i++;
+  } else if (a === '--strict-agent-columns') {
+    strictAgentColumns = true;
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
@@ -166,10 +170,16 @@ try {
 // ---------------------------------------------------------------------------
 
 const errors = [];
+const warnings = [];
 
 function logError(msg) {
   errors.push(msg);
   if (!quiet) process.stdout.write(`ERROR: ${msg}\n`);
+}
+
+function logWarning(msg) {
+  warnings.push(msg);
+  if (!quiet) process.stderr.write(`WARN:  ${msg}\n`);
 }
 
 // ---------------------------------------------------------------------------
@@ -458,8 +468,12 @@ function checkA3() {
 
   let implementerModelsRaw = null;
   let reviewerModelRaw = null;
+  let implementerAgentRaw = null;
+  let reviewerAgentRaw = null;
   let implementerModelsLine = headingLine;
   let reviewerModelLine = headingLine;
+  let implementerAgentLine = headingLine;
+  let reviewerAgentLine = headingLine;
 
   for (let i = 0; i < dataRows.length; i++) {
     const cells = dataRows[i];
@@ -473,6 +487,12 @@ function checkA3() {
     } else if (fieldName === 'reviewer model') {
       reviewerModelRaw = value;
       reviewerModelLine = rowLine;
+    } else if (fieldName === 'implementer agent') {
+      implementerAgentRaw = value;
+      implementerAgentLine = rowLine;
+    } else if (fieldName === 'reviewer agent') {
+      reviewerAgentRaw = value;
+      reviewerAgentLine = rowLine;
     }
   }
 
@@ -491,6 +511,34 @@ function checkA3() {
       `Fix: add a row "| Reviewer model | <single model id from C35-2 ladder> |" per REVIEWS.md §2.8.`
     );
     return;
+  }
+
+  const implementerAgentTrimmed = implementerAgentRaw === null ? '' : implementerAgentRaw.trim();
+  const reviewerAgentTrimmed = reviewerAgentRaw === null ? '' : reviewerAgentRaw.trim();
+
+  const missingAgentFields = [];
+  if (implementerAgentTrimmed === '') missingAgentFields.push('Implementer agent');
+  if (reviewerAgentTrimmed === '') missingAgentFields.push('Reviewer agent');
+  if (missingAgentFields.length > 0) {
+    const message =
+      `${prBodyFile}:${headingLine}: ` +
+      `## Model audit missing required agent row(s) (absent or empty): ${missingAgentFields.join(', ')}. ` +
+      `Fix: add rows "| Implementer agent | <github-login> |" and ` +
+      `"| Reviewer agent | <github-login> |" with distinct GitHub usernames per REVIEWS.md §2.8.`;
+    if (strictAgentColumns) logError(message);
+    else logWarning(message);
+  } else {
+    const implementerAgent = implementerAgentTrimmed.toLowerCase();
+    const reviewerAgent = reviewerAgentTrimmed.toLowerCase();
+    if (implementerAgent === reviewerAgent) {
+      logError(
+        `${prBodyFile}:${reviewerAgentLine}: ` +
+        `## Model audit agent-identity violation — Implementer agent and Reviewer agent ` +
+        `are both "${reviewerAgentTrimmed}" (case-insensitive compare). ` +
+        `Fix: dispatch a reviewer under a different GitHub identity and update ` +
+        `the Reviewer agent row at ${prBodyFile}:${reviewerAgentLine}.`
+      );
+    }
   }
 
   const implementerModels = implementerModelsRaw
@@ -535,6 +583,6 @@ checkA3();
 // ---------------------------------------------------------------------------
 
 process.stdout.write(
-  `check-review-evidence: ${errors.length} errors, 0 warnings\n`
+  `check-review-evidence: ${errors.length} errors, ${warnings.length} warnings\n`
 );
 process.exit(errors.length > 0 ? 1 : 0);

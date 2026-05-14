@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-13 (CS41 claimed: second CS in v0.5.0 arc — `harness copilot-engage` CLI + `check-clickstop-implementer-not-reviewer` linter + agent-identity columns in `## Model audit` schema + flip `review_gates.enabled` default to opt-out. CS40 done; v0.5.0 arc 2/3 in flight. yoga-ah active on cs41/copilot-engage-and-default-flip.)
+> **Last updated:** 2026-05-14 (CS41 mid-flight: T3–T12 done; T13 next — open content PR + R1/R2 plan-vs-impl + Copilot engagement + admin-merge + close-out. Local validation: lint 29/0/3, full suite 913 pass / 1 skip / 0 fail, sync clean.)
 
 ## Orchestrators
 
@@ -10,12 +10,12 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-13 |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-14 |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS41 | copilot-engage CLI + impl-not-reviewer linter + default-flip | active | yoga-ah | cs41/copilot-engage-and-default-flip | 2026-05-13 | — |
+| CS41 | copilot-engage CLI + impl-not-reviewer linter + default-flip | active | yoga-ah | cs41/copilot-engage-and-default-flip | 2026-05-14 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

@@ -28,6 +28,15 @@ _(Describe how this was tested. Include at minimum:)_
 - _(manual verification steps, if any)_
 - _(CI checks expected to pass)_
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | _(comma-separated, e.g. claude-opus-4.7-xhigh, gpt-5.4)_ |
+| Reviewer model | _(single id from C35-2 ladder, e.g. gpt-5.5)_ |
+| Implementer agent | _(GitHub username of implementing agent)_ |
+| Reviewer agent    | _(GitHub username of reviewing agent — MUST differ from Implementer agent per CS35 C35-18)_ |
+
 ## Notes
 
 _(Optional. Use this section for caveats, follow-up items, or anything a
