@@ -15,7 +15,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Changed
 
-- _(none yet)_
+- **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
 
 ### Removed
 
