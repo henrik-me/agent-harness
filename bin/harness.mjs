@@ -1406,9 +1406,10 @@ corrupt orchestration.
     bodies (compute via \`harness plan-review-hash <file>\`).
   - Done CS files are skipped — \`## Plan-vs-implementation review\`
     (CS03b, scripts/check-clickstop.mjs) covers the close-out surface.
-**Strictness asymmetry (per C35b-9, C35b-10):**
-  - Standalone \`harness lint\` mode: \`--strict\` defaults to false in v0.4.0
-    (warn-only on missing section); CS42 flips the default to true for v0.5.0.
+**Strictness asymmetry (per C35b-9, C35b-10, C42-7):**
+  - Standalone \`harness lint\` mode: \`--strict\` defaulted to false in v0.4.0
+    (warn-only on missing section); flipped to TRUE in v0.5.0 per CS42-7.
+    Pass \`--strict false\` to opt out.
   - PR-evidence A6 mode (CS36-aggregator): STRICT in both v0.4.0 and v0.5.0.
   - Schema/independence/hash/verdict violations are ALWAYS errors,
     regardless of mode or --strict.
@@ -1756,10 +1757,11 @@ async function cmdLint(args, _global) {
       // active/*.md to carry a `## Plan review` H2 section with at least one
       // attestation row (Round/Reviewer model/Plan author model(s)/Reviewer
       // agent/Reviewed sections hash/Timestamp/Verdict/Findings recap). In
-      // standalone mode (default), --strict=false in v0.4.0 — missing-section
-      // is warn-only — but schema/independence/hash/verdict violations are
-      // always errors. The pr-evidence A6 gate (CS36) runs the same script
-      // with --mode=pr-evidence which is STRICT regardless of --strict.
+      // standalone mode (default), --strict default flipped to true in v0.5.0
+      // (CS42-7) — missing-section is now an error by default; pass
+      // `--strict false` to opt out. Schema/independence/hash/verdict
+      // violations are always errors. The pr-evidence A6 gate (CS36) runs the
+      // same script with --mode=pr-evidence which is STRICT regardless.
       name: 'clickstop-plan-review',
       script: 'check-clickstop-plan-review.mjs',
       args: ['--dir', path.join(cwd, 'project', 'clickstops')],

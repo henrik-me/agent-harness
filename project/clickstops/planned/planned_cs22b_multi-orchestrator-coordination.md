@@ -80,6 +80,11 @@ Enable safe true-parallel orchestration: multiple agent IDs working on different
 
 Briefings MUST include all standard guards (no-commit preflight per [LRN-021](../../../LEARNINGS.md#lrn-021), schema source-of-truth per [LRN-039](../../../LEARNINGS.md#lrn-039), `requireValue` per [LRN-040](../../../LEARNINGS.md#lrn-040), explicit `--file` per [LRN-032](../../../LEARNINGS.md#lrn-032)).
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | b49116499e80 | 2026-05-14T04:50:00Z | Go-with-amendments | CS22b grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
 ## Tasks
 
 | Task | State | Owner | Notes |

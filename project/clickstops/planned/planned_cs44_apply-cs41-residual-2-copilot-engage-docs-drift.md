@@ -67,6 +67,11 @@ CS44 close-out is permitted only when **all** of the following are true and reco
 - **R2 (low):** ADR-0004 will continue to read `node(login:)` since ADRs are immutable. A new reader following the ADR-link from OPERATIONS.md may be momentarily confused. Mitigation: the rationale sentence (C44-3) explicitly cites ADR-0004 § ADR4-2 and LRN-009; a careful reader will see the LRN's "Disposition" section explains the spike outcome.
 - **OQ1 (defer to claim time):** Whether to also update `template/composed/REVIEWS.md` if it references the Copilot identity-resolution mechanism in any worked example. Default: probably not — REVIEWS.md is about review-evidence schemas, not identity resolution. Verify at claim time and add to the deliverable list if a citation exists.
 
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 042dc747f02d | 2026-05-14T04:50:00Z | Go-with-amendments | CS44 grandfather: filed in PR #178 between CS35b and CS42; missed Plan-review section at filing. Backfilled here per CS42-7. Plan content unchanged. |
 ## Tasks
 
 | Task | State | Owner | Notes |
