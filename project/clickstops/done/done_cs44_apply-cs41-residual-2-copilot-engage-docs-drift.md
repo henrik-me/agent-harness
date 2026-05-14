@@ -1,10 +1,10 @@
 # CS44 — Apply CS41 R5 F-residual-2: align `harness copilot-engage` doc wording (`node(login:)` → `node(id:$id)` + `BOT_kgDOCnlnWA`) with shipped impl
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs43-45/cs41-residuals-bundle
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Pre-CS44 disposition of [CS41 § R5 Copilot disposition F-residual-2](../done/done_cs41_copilot-engage-cli-and-default-flip.md#r5-copilot-disposition--copilot-r4-review-residuals) (CS41 close-out, 2026-05-14, admin-merged at squash SHA `cd11fbd`). Authored 2026-05-14 by `yoga-ah` per [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs).
 **Depends on:** None. Independent of CS42 (release v0.5.0); may claim before or after the v0.5.0 cut — but **strongly preferred to land before CS42 tag** so the v0.5.0 release notes describe the actual identity-resolution mechanism, not the documented-but-not-shipped login-based one. **Note (LRN-numbering):** done_cs41 R5 prose cites this residual as "LRN-118" but `LEARNINGS.md` LRN-118 documents the unrelated empty-cell linter semantics fix. The canonical reference is the **F-residual-2 anchor** in done_cs41 § R5.
 
@@ -94,4 +94,37 @@ CS44 close-out is permitted only when **all** of the following are true and reco
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, close-out gate)
+**Date:** 2026-05-14T18:29:31Z
+**Branch HEAD SHA:** 30f556ef6f63722deb656eec33d0a8afb24c871a
+**R-round:** R4 (close-out — supersedes R1 NEEDS-FIX on `60368ff`, R2 PASS on `b91ba2b`, R3 PASS on `3b2e1af`)
+**Outcome:** GO
+**Evidence link:** https://github.com/henrik-me/agent-harness/pull/188
+
+### Per-deliverable outcome table
+
+| # | Deliverable (from CS plan) | Outcome | Rationale |
+|---|----------------------------|---------|-----------|
+| C44-1 | Source of truth — shipped impl at `lib/copilot-engage.mjs:41-46` using `node(id:$id)` + hardcoded `COPILOT_NODE_ID = 'BOT_kgDOCnlnWA'`; docs updated, impl not changed. | match |  |
+| C44-2 | New doc wording — replace stale `node(login:)` wording with canonical `node(id:$id) { ... on Bot { databaseId login } }` + `BOT_kgDOCnlnWA`. | match |  |
+| C44-3 | Rationale for hardcoded ID — add sentence citing CS37 spike / LRN-009 / ADR-0004. | match |  |
+| C44-4 | Composed-file workflow — edit `template/composed/OPERATIONS.md`, then run sync to refresh root `OPERATIONS.md` and lock. | match |  |
+| C44-5 | ADR-0004 update out of scope. | match |  |
+| C44-6 | Test approach — add watchdog test asserting docs and implementation stay aligned. | match |  |
+| C44-7 | LRN-009 cross-link tightening. | match |  |
+| 1 | **`template/composed/OPERATIONS.md`** § Copilot engagement procedure (around line 803): replace the `node(login:)` / `... on Bot` wording per C44-2 + add the rationale sentence per C44-3. | match |  |
+| 2 | **`OPERATIONS.md`** root: regenerated via `harness sync --mode=apply --resolved-sha <sha>` per C44-4 (do NOT hand-edit). | match |  |
+| 3 | **`CHANGELOG.md`** `[Unreleased] / Added` § CS41 row (line 14 at HEAD `fa047cd`): replace the `node(login:)` / `... on Bot` wording per C44-2. | diverged | The CS41 row had moved to `[0.5.0] / Added` after CS42 release, so the implementation corrected that historical row in place and added a separate `[Unreleased] / Changed` CS44 bullet. |
+| 4 | **`tests/cs44-docs-impl-alignment.test.mjs`** (new): per C44-6, asserts the three doc paths and the source code stay in sync. Minimum 4 assertions (one per touchpoint). | added | The watchdog test landed with 9 assertions across the four touchpoints, exceeding the planned minimum. |
+| 5 | **`LEARNINGS.md`** [LRN-009](../../../LEARNINGS.md#lrn-009) body: append the cross-link bullet per C44-7 if not already present. | match |  |
+| 6 | **CHANGELOG.md** `[Unreleased] / Changed` (separate row from the CS41 fix): "`harness copilot-engage` documentation now matches the shipped `node(id:$id)` + hardcoded `BOT_kgDOCnlnWA` mechanism (CS44 — corrects doc drift inherited from ADR-0004 § ADR4-2)." | match |  |
+
+### Test-coverage assessment
+
+**Result:** sufficient
+
+`tests/cs44-docs-impl-alignment.test.mjs` directly guards the CS44 contract: root `OPERATIONS.md`, `template/composed/OPERATIONS.md`, `CHANGELOG.md`, and `lib/copilot-engage.mjs` all reference the canonical `node(id:)` mechanism and `BOT_kgDOCnlnWA`, and the stale `node(login:)` form is rejected. This is adequate for a documentation/implementation-alignment CS.
+
+### Notes
+
+The changelog location drift is acceptable: CS42 had already moved the CS41 entry from `[Unreleased]` to `[0.5.0]`, so correcting the released row plus adding a new `[Unreleased] / Changed` audit bullet is the right historical treatment.
