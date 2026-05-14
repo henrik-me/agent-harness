@@ -106,6 +106,13 @@ Every clickstop file begins with the following header block:
 
 `check-clickstop.mjs` (CS06) validates this structure on every lint run.
 
+> **Close-out gate reminder:** every `done/` clickstop file MUST also include a
+> `## Plan-vs-implementation review` H2 section with verbatim
+> `**Reviewer:**`, `**Date:**`, `**Outcome:**` field labels (see
+> [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](OPERATIONS.md#plan-vs-implementation-review-close-out-gate)
+> for the canonical skeleton). The skeleton above intentionally omits this
+> section because it's filled at close-out, not at file/claim time.
+
 ---
 
 ## Workboard state machine

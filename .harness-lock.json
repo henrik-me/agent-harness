@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs43-45/cs41-residuals-bundle",
-  "resolved_sha": "73c1d87184d2489ea08d6210766122b16d22622e",
+  "harness_ref": "cs46/issue-146-discoverability",
+  "resolved_sha": "7a261bfa1787faf313d2bb5efe214e516cda1266",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T17:26:54.459Z",
+  "synced_at": "2026-05-14T19:47:21.712Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -15,7 +15,7 @@
       "target": "TRACKING.md",
       "source_template": "template/managed/TRACKING.md",
       "class": "managed",
-      "rendered_hash": "c84a9100bb52ed9d2f990612851a027b0c7e4468cef3dd5ab4267206398faeb2",
+      "rendered_hash": "2992facf535ef098e4fda707e860798c060d43f4e4a9b1bb61b064f10761861d",
       "action": "skipped"
     },
     {
@@ -84,21 +84,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "fa5420b36e16904a9e4cfbf3fcda1c49b73800e803bc1509341c1d2c18356fe7",
-      "action": "updated",
+      "rendered_hash": "c7504ec0b9411151e3ffbf976a5686a740cb1892dd4e490558d2f973082224a1",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1577,
-            "end": 1579
+            "start": 1582,
+            "end": 1584
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "7dbd09269e45c4936c99bb4c0b6f6af910fa47815064af18a73709b87ea9f058"
+      "template_prose_hash": "c0f37d7ecabace24d593fc62661790f3f7b59d6d3ddfb7b21124463a8d9a0298"
     },
     {
       "target": "REVIEWS.md",
@@ -158,14 +158,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "bf6f82d6aabcbc314975fecf02b08f11848e47d3999d8f6401e3f01692686d1f",
+      "rendered_hash": "2e34475609c7b803e9f8fae79093bd5b6d570ac5896d8da7827a2be7b9f051c7",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "8d6e2a899af4774f3ee937892ef4cbc99f98b59e4d15340c08636fe31fd78ef5",
+      "rendered_hash": "7e8962bb8e0f1a0bca77d562df322d98e7ecba54693c6c390bee28993a798970",
       "action": "preserved"
     },
     {

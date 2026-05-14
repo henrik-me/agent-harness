@@ -132,6 +132,11 @@ rename. The section must contain:
 <prose summary — per-deliverable table + coverage assessment>
 ```
 
+> **Field labels are matched verbatim by `check-clickstop.mjs`** (case-sensitive,
+> bold-prefixed): `**Reviewer:**`, `**Date:**`, `**Outcome:**`. No aliases —
+> e.g. `**Verdict:**` instead of `**Outcome:**` will fail the linter. Copy the
+> code block above as-is when recording the review.
+
 **Blocking behaviour:**
 
 A `NEEDS-FIX` outcome blocks close-out. Fix the gap on the `cs<NN>/content`
