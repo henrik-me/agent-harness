@@ -238,6 +238,28 @@ requires GitHub Pro on private repos (see [LRN-001](LEARNINGS.md#lrn-001)).
 All PRs are opened, reviewed, and squash-merged through the normal review
 loop. The discipline replaces the missing mechanical enforcement.
 
+#### Required review status checks (review-gates)
+
+Content PRs MUST pass four PR-side status checks before merge:
+
+| Check | What it verifies |
+|---|---|
+| `review-log-evidence` | `## Review log` contains at least one real `Go` / `Conditional Go` row by GPT-5.5, or by an approved fallback with `## Model audit` fallback rationale populated; template placeholders fail the gate. |
+| `copilot-review-attached` | The configured Copilot PR reviewer (default `copilot-pull-request-reviewer[bot]`) has submitted a review; when missing, the workflow posts `@copilot review` as a best-effort trigger. |
+| `independence-invariant` | `## Model audit` has populated implementer/reviewer model rows and rejects implementer/reviewer model overlap except the GPT-5.5 allowance for non-HIGH-RISK CSs. |
+| `review-threads-resolved` | Every GitHub review thread on the PR is resolved. |
+
+The `review-gates.yml` workflow runs on every PR except PRs labeled
+`workboard-only`; workboard-only claim/close-out PRs are already constrained by
+the workboard-only validation path. Configure the gates under
+`harness.config.json → reviews`: `enforce_gates` controls workflow/ruleset
+installation, `require_copilot_review` lets consumers without Copilot reviews
+skip only the Copilot attachment gate, and `copilot_reviewer_slug` / `high_risk_clickstops`
+customize the reviewer login and risk list. `harness init --enable-review-gates`
+and `harness sync --mode=apply` inject the four contexts into
+`infra/main-protection-ruleset.json` `required_checks`; `sync --mode=check`
+fails when `reviews.enforce_gates=true` and the contexts are missing.
+
 **Public protected phase (CS15a+ in this repo):** The Ruleset authored and
 applied during CS15a enforces PR-required, ≥1 approving review, squash-only,
 linear history, deletion/non-fast-forward protection, required status checks,

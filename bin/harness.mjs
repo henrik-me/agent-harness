@@ -35,7 +35,15 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 const PR_TEMPLATE_TARGET = '.github/pull_request_template.md';
 const PR_EVIDENCE_WORKFLOW_TARGET = '.github/workflows/pr-evidence-lint.yml';
+const REVIEW_GATES_WORKFLOW_TARGET = '.github/workflows/review-gates.yml';
 const REVIEW_EVIDENCE_BLOCK_ID = 'pull-request.review-evidence';
+const REVIEW_GATE_REQUIRED_CHECKS = [
+  'review-log-evidence',
+  'copilot-review-attached',
+  'independence-invariant',
+  'review-threads-resolved',
+];
+const DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
 // Per C38a-6 + C37-1b PASS branch: gate_set when CS37 spike PASSED.
 // CS37 closed PASS (see docs/adr/0004-copilot-graphql-spike.md). The
 // `--graphql-spike-outcome` override flag specified in C38a-6 is deferred
@@ -46,16 +54,19 @@ const REVIEW_EVIDENCE_BLOCK_ID = 'pull-request.review-evidence';
 const DEFAULT_REVIEW_GATE_SET = ['B1', 'A3', 'A4', 'A5', 'A16'];
 const REVIEW_GATES_INSTRUCTION_BLOCK = `
 ══════════════════════════════════════════════════════════════════════
-  PR-evidence gates enabled. Manual step required:
-
-  Add the following status check to your branch ruleset for \`main\`:
+  Review gates enabled. Branch-ruleset contexts required:
 
     pr-evidence-lint / read-only-gates
+    review-log-evidence
+    copilot-review-attached
+    independence-invariant
+    review-threads-resolved
+
+  harness init/sync writes these contexts to infra/main-protection-ruleset.json
+  when reviews.enforce_gates=true. Apply that ruleset to main with maintainer
+  authority if your repository does not already automate ruleset updates.
 
   See: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository
-
-  This step is not automated because applying branch rulesets requires
-  maintainer authority that the harness CLI deliberately does not assume.
 ══════════════════════════════════════════════════════════════════════
 `.trimStart();
 
@@ -125,7 +136,7 @@ Options:
                                           (default: discipline-only)
   --skip-constraint-detection           Skip the GitHub-tier detection step entirely
                                           (no constraints block written; useful in CI without network)
-  --enable-review-gates                 Opt the project into the PR-evidence gate set per CS38a; writes \`review_gates\` config block, migrates \`.github/pull_request_template.md\` to composed, and emits a branch-ruleset instruction block. Idempotent. Per CS41 C41-7, \`enabled: true\` is now the FRESH-init default; this flag is required only when migrating an existing config that lacks the \`review_gates\` block.
+  --enable-review-gates                 Opt the project into the PR-evidence + REVIEWS.md gate set; writes \`review_gates\` and \`reviews\` config blocks, migrates \`.github/pull_request_template.md\` to composed, installs review workflows, and injects required status-check contexts into \`infra/main-protection-ruleset.json\`. Idempotent. Per CS41 C41-7, \`enabled: true\` is now the FRESH-init default; this flag is required only when migrating an existing config that lacks the \`review_gates\` block.
   --disable-review-gates <reason>       Explicit opt-out from the PR-evidence gate set (CS41 C41-7/C41-8). Writes \`review_gates: { enabled: false, _opt_out_reason: "<reason>" }\` to harness.config.json, satisfying the \`harness sync --mode=check\` migration gate. Reason must be a non-empty string.
   --help                                Print this help
 `.trimStart(),
@@ -582,6 +593,9 @@ function patchReviewGatesConfig(config) {
   if (config.review_gates !== undefined && !isPlainObject(config.review_gates)) {
     die('harness init --enable-review-gates: "review_gates" must be an object when present.', 1);
   }
+  if (config.reviews !== undefined && !isPlainObject(config.reviews)) {
+    die('harness init --enable-review-gates: "reviews" must be an object when present.', 1);
+  }
 
   config.review_gates = {
     ...(config.review_gates ?? {}),
@@ -589,21 +603,163 @@ function patchReviewGatesConfig(config) {
     copilot_required: true,
     gate_set: [...DEFAULT_REVIEW_GATE_SET],
   };
+  config.reviews = {
+    ...(config.reviews ?? {}),
+    enforce_gates: true,
+    require_copilot_review: true,
+    copilot_reviewer_slug: config.reviews?.copilot_reviewer_slug ?? 'copilot-pull-request-reviewer[bot]',
+    high_risk_clickstops: Array.isArray(config.reviews?.high_risk_clickstops)
+      ? config.reviews.high_risk_clickstops
+      : [...DEFAULT_HIGH_RISK_CLICKSTOPS],
+  };
 }
 
-function copyReviewGatesWorkflow(targetDir) {
-  const src = path.join(REPO_ROOT, 'template', 'managed', ...PR_EVIDENCE_WORKFLOW_TARGET.split('/'));
-  const dest = path.join(targetDir, ...PR_EVIDENCE_WORKFLOW_TARGET.split('/'));
+function copyManagedWorkflow(targetDir, workflowTarget) {
+  const src = path.join(REPO_ROOT, 'template', 'managed', ...workflowTarget.split('/'));
+  const dest = path.join(targetDir, ...workflowTarget.split('/'));
   if (!existsSync(src)) {
     process.stderr.write(
-      `Warning: PR-evidence workflow template not found at ${src}; skipping workflow copy.\n`
+      `Warning: workflow template not found at ${src}; skipping workflow copy.\n`
     );
     return;
   }
 
   mkdirSync(path.dirname(dest), { recursive: true });
   copyFileSync(src, dest);
-  process.stdout.write(`Created ${PR_EVIDENCE_WORKFLOW_TARGET}\n`);
+  process.stdout.write(`Created ${workflowTarget}\n`);
+}
+
+function getReviewRulesetPath(cwd) {
+  return path.join(cwd, 'infra', 'main-protection-ruleset.json');
+}
+
+function checkEntryContext(entry) {
+  if (typeof entry === 'string') return entry;
+  if (entry && typeof entry === 'object') return entry.context ?? entry.name ?? null;
+  return null;
+}
+
+function makeRequiredCheckEntry(existingArray, context) {
+  const objectMode = existingArray.some((entry) => entry && typeof entry === 'object' && !Array.isArray(entry));
+  return objectMode ? { context } : context;
+}
+
+function requiredChecksArrays(root) {
+  const arrays = [];
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'required_checks' && Array.isArray(value)) arrays.push(value);
+      else visit(value);
+    }
+  };
+  visit(root);
+  return arrays;
+}
+
+function ensureRulesetRequiredChecksObject(ruleset) {
+  let arrays = requiredChecksArrays(ruleset);
+  if (arrays.length > 0) return arrays;
+
+  if (!Array.isArray(ruleset.rules)) ruleset.rules = [];
+  let rule = ruleset.rules.find((entry) => entry?.type === 'required_status_checks');
+  if (!rule) {
+    rule = {
+      type: 'required_status_checks',
+      parameters: {
+        strict_required_status_checks_policy: true,
+        required_checks: [],
+      },
+    };
+    ruleset.rules.push(rule);
+  }
+  if (!isPlainObject(rule.parameters)) rule.parameters = {};
+  if (!Array.isArray(rule.parameters.required_checks)) rule.parameters.required_checks = [];
+  arrays = [rule.parameters.required_checks];
+  return arrays;
+}
+
+function minimalReviewRuleset() {
+  return {
+    name: 'main-protection',
+    target: 'branch',
+    enforcement: 'active',
+    conditions: {
+      ref_name: {
+        include: ['refs/heads/main'],
+        exclude: [],
+      },
+    },
+    rules: [
+      {
+        type: 'required_status_checks',
+        parameters: {
+          strict_required_status_checks_policy: true,
+          required_checks: [],
+        },
+      },
+    ],
+    bypass_actors: [],
+  };
+}
+
+function addReviewGateContextsToRuleset(ruleset) {
+  const arrays = ensureRulesetRequiredChecksObject(ruleset);
+  let changed = false;
+  for (const checks of arrays) {
+    const existing = new Set(checks.map(checkEntryContext).filter(Boolean));
+    for (const context of REVIEW_GATE_REQUIRED_CHECKS) {
+      if (!existing.has(context)) {
+        checks.push(makeRequiredCheckEntry(checks, context));
+        existing.add(context);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+function syncReviewGateRuleset({ cwd, mode, configPath }) {
+  const config = loadConfig(cwd, configPath);
+  if (config?.reviews?.enforce_gates !== true) {
+    return { drift: false, change: null };
+  }
+
+  const rulesetPath = getReviewRulesetPath(cwd);
+  let ruleset;
+  let existed = existsSync(rulesetPath);
+  if (existed) {
+    try {
+      ruleset = JSON.parse(stripBOM(readFileSync(rulesetPath, 'utf8')));
+    } catch (err) {
+      die(`Cannot parse ${rulesetPath}: ${err.message}`, 1);
+    }
+  } else {
+    ruleset = minimalReviewRuleset();
+  }
+
+  const before = existed ? JSON.stringify(ruleset, null, 2) + '\n' : null;
+  addReviewGateContextsToRuleset(ruleset);
+  const after = JSON.stringify(ruleset, null, 2) + '\n';
+  const drift = before !== after;
+  const action = !existed ? 'created' : (drift ? 'updated' : 'skipped');
+  if (mode === 'apply' && drift) {
+    mkdirSync(path.dirname(rulesetPath), { recursive: true });
+    writeFileSync(rulesetPath, after, 'utf8');
+  }
+  return {
+    drift,
+    change: {
+      target: 'infra/main-protection-ruleset.json',
+      class: 'managed',
+      action,
+      preview: mode === 'dry-run' && drift ? after : undefined,
+    },
+  };
 }
 
 function enableReviewGatesForInit(targetDir, configDest) {
@@ -619,6 +775,7 @@ function enableReviewGatesForInit(targetDir, configDest) {
 
   const managed = ensureFileClassBlock(config, 'managed');
   addUnique(managed.files, PR_EVIDENCE_WORKFLOW_TARGET);
+  addUnique(managed.files, REVIEW_GATES_WORKFLOW_TARGET);
 
   if (managed.files.includes(PR_TEMPLATE_TARGET)) {
     config = migrateFileClass(config, PR_TEMPLATE_TARGET, { local_blocks: [REVIEW_EVIDENCE_BLOCK_ID] });
@@ -634,7 +791,9 @@ function enableReviewGatesForInit(targetDir, configDest) {
   }
 
   writeFileSync(configDest, JSON.stringify(config, null, 2) + '\n', 'utf8');
-  copyReviewGatesWorkflow(targetDir);
+  copyManagedWorkflow(targetDir, PR_EVIDENCE_WORKFLOW_TARGET);
+  copyManagedWorkflow(targetDir, REVIEW_GATES_WORKFLOW_TARGET);
+  syncReviewGateRuleset({ cwd: targetDir, mode: 'apply', configPath: configDest });
   process.stdout.write(REVIEW_GATES_INSTRUCTION_BLOCK);
 }
 
@@ -1272,6 +1431,14 @@ async function cmdSync(args, global, defaultMode = 'check') {
       // When set, the override replaces <cwd>/harness.config.json entirely.
       configPath: configOverride ?? null,
     });
+
+    const rulesetResult = syncReviewGateRuleset({
+      cwd,
+      mode,
+      configPath: configOverride ?? path.join(cwd, 'harness.config.json'),
+    });
+    if (rulesetResult.change) result.changes.push(rulesetResult.change);
+    if (mode !== 'apply' && rulesetResult.drift) result.driftDetected = true;
 
     if (result.warnings.length > 0) {
       for (const w of result.warnings) {

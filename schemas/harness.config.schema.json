@@ -136,6 +136,39 @@
         }
       }
     },
+    "reviews": {
+      "type": "object",
+      "description": "Configuration for CS51 REVIEWS.md PR-side status checks. Fresh harness init defaults these gates on; consumers may opt out of Copilot-only enforcement when Copilot reviews are unavailable.",
+      "additionalProperties": false,
+      "properties": {
+        "enforce_gates": {
+          "type": "boolean",
+          "description": "When true, harness init/sync installs review-gates.yml and injects review-log-evidence, copilot-review-attached, independence-invariant, and review-threads-resolved into infra/main-protection-ruleset.json required_checks.",
+          "default": true
+        },
+        "require_copilot_review": {
+          "type": "boolean",
+          "description": "When true, the copilot-review-attached gate requires a submitted review by the configured Copilot reviewer. Set false only for repos where Copilot PR reviews are unavailable.",
+          "default": true
+        },
+        "copilot_reviewer_slug": {
+          "type": "string",
+          "description": "GitHub login/slug for the Copilot PR reviewer bot. Both the bare slug and [bot]-suffixed login are accepted by the checker.",
+          "default": "copilot-pull-request-reviewer[bot]",
+          "minLength": 1
+        },
+        "high_risk_clickstops": {
+          "type": "array",
+          "description": "Clickstop IDs for which the independence-invariant gate forbids implementer/reviewer model overlap even when the reviewer model is gpt-5.5.",
+          "items": {
+            "type": "string",
+            "pattern": "^CS\\d{2,}[A-Za-z]?$"
+          },
+          "uniqueItems": true,
+          "default": ["CS03", "CS11", "CS15a", "CS18b", "CS19"]
+        }
+      }
+    },
     "managed": {
       "$ref": "#/$defs/fileClass",
       "description": "Managed file class: the harness owns these files entirely and overwrites them on every 'harness sync'. No local edits survive a sync. Use 'composed' instead if a file needs local extension blocks."

@@ -11,7 +11,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
-- _(none yet — next entries land here)_
+- **CS51 / [#140](https://github.com/henrik-me/agent-harness/issues/140):** Add REVIEWS.md PR-side enforcement gates (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`), workflow template, config/ruleset sync hooks, and regression tests.
 
 ### Changed
 
