@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs51/review-gates",
-  "resolved_sha": "fd7cf403e1f4712325712b4d3222884525a5cfb3",
+  "resolved_sha": "10bf43f0add2a57830da273671ef51506b33e373",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:36:51.443Z",
+  "synced_at": "2026-05-14T23:43:17.409Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -64,7 +64,7 @@
       "target": ".github/workflows/review-gates.yml",
       "source_template": "template/managed/.github/workflows/review-gates.yml",
       "class": "managed",
-      "rendered_hash": "f321bc7c7903feb5c5a21c326dc42d6a34507569ce13daf3793d7059b1d1af14",
+      "rendered_hash": "771734744723e5934a226d5776e26b147031d25ccf7639ec0ac81b90ba021f16",
       "action": "skipped"
     },
     {
