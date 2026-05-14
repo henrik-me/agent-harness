@@ -16,7 +16,7 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| C48-1 | Scope boundary | Documentation wording + LRN + tests only; do not modify the CS41 lint rule. | The companion linter already exists as `scripts/check-clickstop-implementer-not-reviewer.mjs`; issue #142's remaining gap is dispatch-template ambiguity. |
+| C48-1 | Scope boundary | Documentation wording + LRN + tests only; do not modify lint implementation. | The CS48 briefing explicitly assigns dispatch-template wording, LRN docs, and tests; CS41 already shipped the companion `scripts/check-clickstop-implementer-not-reviewer.mjs` guard, while model-level PR gates and the planned `harness review` CLI remain companion-CS territory. |
 | C48-2 | Dispatch surface | Edit only the reporting/final-report surfaces in `template/composed/OPERATIONS.md`, then regenerate root `OPERATIONS.md` via `harness sync`. | Keeps composed source authoritative and avoids hand-editing generated root docs. |
 | C48-3 | Report field | Require `Implementer model used` for ledger and PR `## Model audit` provenance. | The orchestrator needs model provenance; it must not receive implementer review evidence as a substitute for independent review. |
 | C48-4 | Review pointer | Refer to the planned `harness review` CLI and independent reviewer dispatch, without claiming the CLI exists in CS48. | Companion CS52 owns the CLI; CS48 only reserves the wording and prevents pre-emption. |
@@ -48,9 +48,7 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | github-copilot-cli | cs48-plan-rubber-duck | 2846c6166d1a | 2026-05-14T23:32:45Z | Needs-Fix | R1 flagged hard-coded preflight and implicit lockfile scope; plan amended before writes. |
-| R2 | gpt-5.5 | github-copilot-cli | cs48-plan-rubber-duck-r2 | 2846c6166d1a | 2026-05-14T23:32:45Z | Go | R2 passed after preflight, lockfile, and planned-CLI wording amendments; commit after sync output noted. |
-
+| R1 | gpt-5.5 | github-copilot-cli | cs48-plan-rubber-duck-r2 | 6b03c7d029ff | 2026-05-14T23:57:19Z | Go-with-amendments | Draft gaps were fixed before filing: live preflight, sync lock scope, planned-CLI wording, and explicit post-sync commit boundary. |
 ## Tasks
 
 | Task | State | Owner | Notes |

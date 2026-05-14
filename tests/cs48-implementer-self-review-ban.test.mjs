@@ -50,6 +50,16 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
         content.includes(IMPLEMENTER_FIELD),
         `${relPath} must require ${IMPLEMENTER_FIELD} for ledger/model-audit provenance`,
       );
+      assert.match(
+        content,
+        /STATUS: complete \| partial \| blocked\nSUMMARY: <one paragraph>\nIMPLEMENTER MODEL USED:/,
+        `${relPath} must include IMPLEMENTER MODEL USED in the canonical report-shape block`,
+      );
+      assert.match(
+        content,
+        /SUMMARY: <one paragraph>\n {4}IMPLEMENTER MODEL USED:/,
+        `${relPath} must include IMPLEMENTER MODEL USED in the pasted mandatory preamble report shape`,
+      );
     }
   });
 
