@@ -17,6 +17,10 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 - _(none yet)_
 
+### Fixed
+
+- **CS23 / [LRN-100](https://github.com/henrik-me/agent-harness/blob/main/LEARNINGS.md#lrn-100):** `.github/workflows/harness-self-check.yml` `pull_request:` trigger now includes `types: [opened, synchronize, reopened, edited]` so `gh pr edit --body` re-fires the `pr-body` job — orchestrators no longer need to manually `gh run rerun --failed` after fixing a body-only failure. Adds `tests/cs23-pr-body-trigger.test.mjs` to mechanically lock the trigger contract.
+
 ### Removed
 
 - _(none yet)_
