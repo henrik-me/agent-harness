@@ -1,6 +1,6 @@
 # CS46 — Apply issue #146: surface canonical formats for workboard empty-state and clickstop Plan-vs-implementation review section
 
-**Status:** planned
+**Status:** active
 **Owner:** —
 **Branch:** —
 **Started:** —
@@ -70,7 +70,20 @@ Issue acceptance criteria #1 ("a consumer running `harness init` in a fresh repo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Edit `template/seeded/WORKBOARD.md` per C46-1 — replace `_(none)_` placeholder row with HTML comment + header-only canonical empty state | pending | yoga-ah | line 19; em-dash variant remains accepted |
+| Edit `template/composed/OPERATIONS.md` § Plan-vs-implementation review (close-out gate) per C46-2 — extend skeleton + add verbatim-labels callout | pending | yoga-ah | composed-mirror first per LRN-070 |
+| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` per C46-7 | pending | yoga-ah | DO NOT hand-edit root; two-pass workaround if prose hash drifts (CS43-45 finding) |
+| Extend `scripts/check-workboard.mjs` line 244 `logError` per C46-3 — append empty-table hint | pending | yoga-ah | self-documenting linter |
+| Extend `scripts/check-clickstop.mjs` lines 304-305 `logError` per C46-4 — append verbatim-labels hint | pending | yoga-ah | self-documenting linter |
+| Add `tests/cs46-empty-state-and-review-discoverability.test.mjs` per C46-5 + C46-8 (4+ fixture-based tests + fresh-init E2E) | pending | yoga-ah | use `os.tmpdir()` per LRN-094 |
+| Append cross-link in `template/managed/TRACKING.md` clickstop skeleton (lines ~87-105) per C46-9 | pending | yoga-ah | 1-2 sentence pointer to OPERATIONS.md skeleton |
+| Add `CHANGELOG.md` `[Unreleased] / Changed` bullet citing CS46 + issue #146 | pending | yoga-ah | per Deliverable #8 |
+| Self-checks: `node --test` (targeted) + `harness lint` + `harness sync --mode=check` + fresh-init acceptance per C46-8 + `check-pr-body` | pending | yoga-ah | per ## Self-checks section |
+| gpt-5.5 rubber-duck review of implementation (R2) | pending | yoga-ah | dispatched before opening content PR |
+| Open content PR with canonical Review log + Field/Value Model audit | pending | yoga-ah | Implementer: claude-opus-4.7-xhigh; Reviewer: gpt-5.5 |
+| Engage Copilot reviewer; address comments; merge | pending | yoga-ah | per OPERATIONS.md § Copilot engagement |
+| Close-out: docs + restart state | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
+| Close-out: learnings + follow-ups | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
 
 ## Notes / Learnings
 

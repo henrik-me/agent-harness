@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-14 (CS23 + CS43 + CS44 + CS45 closed out — all four merged sequentially via worktree-parallel orchestration. CS23 → PR #187 (`8b1e321`). CS43+44+45 → PR #188 bundle (`30f556e`). All four plan-vs-impl review gates: GO. Worktrees removed; orchestrator status flips back to 🟡 Idle.)
+> **Last updated:** 2026-05-14 (CS46 claimed — applies issue #146: surfaces canonical workboard empty-state and clickstop Plan-vs-implementation review formats with self-documenting linter hints. Owner: yoga-ah. Branch: `cs46/issue-146-discoverability`.)
 
 ## Orchestrators
 
@@ -10,13 +10,12 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟡 Idle | 2026-05-14 |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-05-14 |
 
 ## Active Work
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-
-_No active CS work — orchestrator is 🟡 Idle._
+| CS46 | Apply issue #146 — workboard empty-state + Plan-vs-impl review discoverability | implementing | yoga-ah | cs46/issue-146-discoverability | 2026-05-14 | _(none)_ |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
