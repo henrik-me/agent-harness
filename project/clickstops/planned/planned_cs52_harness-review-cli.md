@@ -20,7 +20,7 @@ Issue #141 records that the review-production side of the harness was still manu
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| C52-1 | CLI entry point | Add `harness review <pr>` with flags `--repo`, `--rubber-duck-only`, `--copilot-only`, `--model`, `--round`, `--dry-run`, `--no-poll`, and `--timeout-minutes`. | Mirrors issue #141 and gives orchestrators one memorable command for the full review-production path. |
+| C52-1 | CLI entry point | Add `harness review <pr>` with flags `--repo`, `--rubber-duck-only`, `--copilot-only`, `--model`, `--round`, `--dry-run`, `--no-poll`, and `--timeout-minutes`. Accept content branches following the repo convention `cs<NN>/<slug>` while still refusing workboard-only/fork PRs. | Mirrors issue #141 and gives orchestrators one memorable command for the full review-production path without rejecting current harness branch naming. |
 | C52-2 | Rubber-duck dispatch implementation | MVP is manual-provider based: the CLI composes and prints the guardrailed reviewer prompt, then consumes pasted structured reviewer output from stdin unless `--dry-run`, `--no-poll`, or `--copilot-only` is used. | The harness has no model-provider dependency and should not require API credentials in consumer repos. This still centralizes the independence guard, prompt shape, verdict parsing, and PR-body update. |
 | C52-3 | Copilot trigger | Default `reviews.copilot_trigger` is `mention`, posting `@copilot review` via `gh api`; `reviewer` remains supported for repos where reviewer attachment works. | The mention path avoids the collaborator-status trap called out in issue #141 while allowing the CS41 reviewer path where desired. |
 | C52-4 | Configuration | Add a `reviews` block to `harness.config.json` and schema with `rubber_duck_model`, `fallback_model`, `require_copilot_review`, `copilot_trigger`, `review_timeout_minutes`, and `high_risk_clickstops`. | Keeps review policy defaults visible and lets consumers disable Copilot production where unavailable without disabling PR-evidence verification globally. |
@@ -34,7 +34,7 @@ Issue #141 records that the review-production side of the harness was still manu
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: yoga-ah) | 52d7ad9a6541 | 2026-05-14T22:00:00Z | Go-with-amendments | Issue #141 plan accepted with manual rubber-duck MVP, explicit reviews config, docs/sync workflow, and network-free regression tests. |
+| R1 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: yoga-ah) | 83f0c05f6d4c | 2026-05-14T22:00:00Z | Go-with-amendments | Issue #141 plan accepted with manual rubber-duck MVP, explicit reviews config, docs/sync workflow, and network-free regression tests. |
 
 ## Deliverables
 

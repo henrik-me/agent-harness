@@ -12,6 +12,7 @@ import {
   computeVerdict,
   parseImplementerModels,
   ReviewError,
+  runReview,
   triggerCopilotReview,
 } from '../lib/review.mjs';
 
@@ -140,6 +141,59 @@ describe('CS52 review library helpers', () => {
     });
     assert.equal(changes.exitCode, 1);
     assert.match(changes.summary, /Copilot review requested changes/);
+  });
+
+  it('accepts csNN/slug content branches and refuses fork PRs', async () => {
+    const prJson = (overrides = {}) => JSON.stringify({
+      body: '',
+      headRefName: 'cs52/harness-review-cli',
+      headRefOid: HEAD,
+      baseRefOid: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      isCrossRepository: false,
+      labels: [],
+      url: 'https://github.com/henrik-me/agent-harness/pull/141',
+      ...overrides,
+    });
+
+    __testSeam.spawnSync = (cmd, args) => {
+      if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'view') {
+        return { status: 0, stdout: prJson(), stderr: '' };
+      }
+      if (cmd === 'git') return { status: 0, stdout: '', stderr: '' };
+      return { status: 1, stdout: '', stderr: `unexpected ${cmd} ${args.join(' ')}` };
+    };
+
+    const result = await runReview({
+      cwd: process.cwd(),
+      repo: 'henrik-me/agent-harness',
+      prNumber: 141,
+      rubberDuckOnly: true,
+      noPoll: true,
+      actor: 'yoga-ah',
+    });
+    assert.equal(result.status, 'dispatched');
+    assert.equal(result.csId, 'CS52');
+    assert.match(result.rubberDuckPrompt, /cs52\/harness-review-cli/);
+
+    __testSeam.spawnSync = (cmd, args) => {
+      if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'view') {
+        return { status: 0, stdout: prJson({ isCrossRepository: true }), stderr: '' };
+      }
+      if (cmd === 'git') return { status: 0, stdout: '', stderr: '' };
+      return { status: 1, stdout: '', stderr: `unexpected ${cmd} ${args.join(' ')}` };
+    };
+
+    await assert.rejects(
+      () => runReview({
+        cwd: process.cwd(),
+        repo: 'henrik-me/agent-harness',
+        prNumber: 141,
+        rubberDuckOnly: true,
+        noPoll: true,
+        actor: 'yoga-ah',
+      }),
+      (err) => err instanceof ReviewError && err.kind === 'bad-input' && /from a fork/.test(err.message),
+    );
   });
 
   it('triggers Copilot through gh api mention path without network in tests', () => {
