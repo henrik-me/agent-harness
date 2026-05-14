@@ -70,16 +70,16 @@ Issue acceptance criteria #1 ("a consumer running `harness init` in a fresh repo
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Edit `template/seeded/WORKBOARD.md` per C46-1 — replace `_(none)_` placeholder row with HTML comment + header-only canonical empty state | pending | yoga-ah | line 19; em-dash variant remains accepted |
-| Edit `template/composed/OPERATIONS.md` § Plan-vs-implementation review (close-out gate) per C46-2 — extend skeleton + add verbatim-labels callout | pending | yoga-ah | composed-mirror first per LRN-070 |
-| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` per C46-7 | pending | yoga-ah | DO NOT hand-edit root; two-pass workaround if prose hash drifts (CS43-45 finding) |
-| Extend `scripts/check-workboard.mjs` line 244 `logError` per C46-3 — append empty-table hint | pending | yoga-ah | self-documenting linter |
-| Extend `scripts/check-clickstop.mjs` lines 304-305 `logError` per C46-4 — append verbatim-labels hint | pending | yoga-ah | self-documenting linter |
-| Add `tests/cs46-empty-state-and-review-discoverability.test.mjs` per C46-5 + C46-8 (4+ fixture-based tests + fresh-init E2E) | pending | yoga-ah | use `os.tmpdir()` per LRN-094 |
-| Append cross-link in `template/managed/TRACKING.md` clickstop skeleton (lines ~87-105) per C46-9 | pending | yoga-ah | 1-2 sentence pointer to OPERATIONS.md skeleton |
-| Add `CHANGELOG.md` `[Unreleased] / Changed` bullet citing CS46 + issue #146 | pending | yoga-ah | per Deliverable #8 |
-| Self-checks: `node --test` (targeted) + `harness lint` + `harness sync --mode=check` + fresh-init acceptance per C46-8 + `check-pr-body` | pending | yoga-ah | per ## Self-checks section |
-| gpt-5.5 rubber-duck review of implementation (R2) | pending | yoga-ah | dispatched before opening content PR |
+| Edit `template/seeded/WORKBOARD.md` per C46-1 — replace `_(none)_` placeholder row with HTML comment + header-only canonical empty state | done | yoga-ah | line 19; em-dash variant remains accepted |
+| Edit `template/composed/OPERATIONS.md` § Plan-vs-implementation review (close-out gate) per C46-2 — extend skeleton + add verbatim-labels callout | done | yoga-ah | composed-mirror first per LRN-070 |
+| Run `harness sync --mode=apply --resolved-sha <sha>` to regenerate root `OPERATIONS.md` per C46-7 | done | yoga-ah | DO NOT hand-edit root; ran cleanly first try (no two-pass needed this time) |
+| Extend `scripts/check-workboard.mjs` line 244 `logError` per C46-3 — append empty-table hint | done | yoga-ah | self-documenting linter |
+| Extend `scripts/check-clickstop.mjs` lines 304-305 `logError` per C46-4 — append verbatim-labels hint | done | yoga-ah | self-documenting linter |
+| Add `tests/cs46-empty-state-and-review-discoverability.test.mjs` per C46-5 + C46-8 (4+ fixture-based tests + fresh-init E2E) | done | yoga-ah | 6 tests total (5 from plan + 1 R2 doc-drift guard); use `os.tmpdir()` per LRN-094 |
+| Append cross-link in `template/managed/TRACKING.md` clickstop skeleton (lines ~87-105) per C46-9 | done | yoga-ah | 1-2 sentence pointer to OPERATIONS.md skeleton |
+| Add `CHANGELOG.md` `[Unreleased] / Changed` bullet citing CS46 + issue #146 | done | yoga-ah | per Deliverable #8 |
+| Self-checks: `node --test` (targeted) + `harness lint` + `harness sync --mode=check` + fresh-init acceptance per C46-8 + `check-pr-body` | done | yoga-ah | 6/6 targeted tests pass; full `npm test` 951 pass / 0 fail; `harness lint --quiet` 29 passed / 0 failed / 3 skipped; `harness sync --mode=check` no drift |
+| gpt-5.5 rubber-duck review of implementation (R2) | done | yoga-ah | R2 returned NEEDS-FIX flagging incomplete C46-8 (test #5 only ran check-workboard, not full `harness lint`); R2.1 strengthened test #5 + added test #6 (doc-drift guard for OPERATIONS.md callout); see Notes below |
 | Open content PR with canonical Review log + Field/Value Model audit | pending | yoga-ah | Implementer: claude-opus-4.7-xhigh; Reviewer: gpt-5.5 |
 | Engage Copilot reviewer; address comments; merge | pending | yoga-ah | per OPERATIONS.md § Copilot engagement |
 | Close-out: docs + restart state | pending | yoga-ah | per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim); orchestrator action |
@@ -87,7 +87,10 @@ Issue acceptance criteria #1 ("a consumer running `harness init` in a fresh repo
 
 ## Notes / Learnings
 
-(filled during execution)
+- **Rubber-duck R2 (gpt-5.5, 2026-05-14):** flagged C46-8 implementation as incomplete — original test #5 only ran `check-workboard` against the seeded `WORKBOARD.md`, but the C46-8 contract (issue #146 AC #1) requires `harness lint --quiet` against the entire fresh-init consumer scaffold. **Fix (R2.1, commit `76cd581`):** test #5 now runs both `check-workboard --file <seeded-wb>` AND `harness --cwd <fresh-dir> lint --quiet`, asserting both exit 0. R2 also flagged a non-blocking doc-drift gap: the canonical OPERATIONS.md skeleton + verbatim-labels callout could regress without any CS46 test failing. **Fix (same commit):** new test #6 mechanically asserts the callout + all 4 keywords (`**Reviewer:**`, `**Date:**`, `**Outcome:**`, `**Verdict:**`) exist in BOTH `template/composed/OPERATIONS.md` AND root `OPERATIONS.md`. After R2.1, all 6 tests pass; full `npm test` 951 pass / 0 fail.
+- **Sync ran cleanly first try (no two-pass needed this time).** R3 risk in plan listed the LRN-from-CS43-45 two-pass workaround as a likely-needed step for OPERATIONS.md composed-mirror edits. In CS46, `harness sync --mode=apply --resolved-sha <head>` succeeded on first invocation — both `OPERATIONS.md` (composed callout) and `TRACKING.md` (managed close-out reminder) regenerated cleanly. The `template_prose_hash` was fresh because CS43-45 had already updated it the same session. Worth filing as a contextual addendum to the LRN: the two-pass workaround is needed only when the lock's recorded `template_prose_hash` is stale relative to the current consumer skeleton — back-to-back composed-mirror CSs in the same session avoid the trigger.
+- **Working-tree-loss gotcha (this session, 2026-05-14):** during initial implementation I lost all 5 source-file edits when a stray detached-HEAD checkout-to-tag intervened between editing and committing. Symptoms: `edit` tool calls succeeded, then `git status --short` showed only the new test file as untracked (the 5 modified files reverted). Recovery: re-applied the 5 edits and committed immediately before any other git operation. **Lesson:** for multi-file edits, `git add -A && git commit` BEFORE running any other repo-level command (especially `harness sync` and `git checkout`). Candidate for new LRN. **Note:** the root cause appears to have been an incidental detached-HEAD checkout on a tag that occurred outside my command flow; not directly attributable to `harness sync` itself.
+- **C46-8 fresh-init E2E acceptance evidence:** `node bin/harness.mjs --cwd <fresh-tmpdir> init` followed by `node bin/harness.mjs --cwd <fresh-tmpdir> lint --quiet` exits 0 against the freshly-init'd scaffold (no consumer modifications). Captured mechanically by test #5 in `tests/cs46-empty-state-and-review-discoverability.test.mjs`.
 
 ## Plan-vs-implementation review
 
