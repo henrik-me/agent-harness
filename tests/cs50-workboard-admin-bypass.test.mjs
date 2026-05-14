@@ -85,6 +85,7 @@ describe('CS50 — workboard admin-bypass workflow contract', () => {
       'admin merge step must use the PAT secret as GH_TOKEN',
     );
     assert.match(adminStep.run, /statusCheckRollup/, 'admin merge must re-check status checks before using --admin');
+    assert.match(adminStep.run, /reported_count/, 'admin merge must not treat an empty status rollup as green');
     assert.match(
       adminStep.run,
       /gh pr merge "\$PR_NUMBER"[\s\S]*--squash[\s\S]*--admin[\s\S]*--delete-branch/,
@@ -107,6 +108,8 @@ describe('CS50 — workboard admin-bypass workflow contract', () => {
       assert.ok(workflow.includes(allowed), `path allowlist missing ${allowed}`);
     }
     assert.match(workflow, /OUTSIDE the workboard-only allowlist/, 'path violations must remain hard failures');
+    assert.match(workflow, /issues: write/, 'workflow needs issues:write only to post validation failure comments');
+    assert.match(workflow, /workboard-auto-approve validation failed:/, 'invalid path validation must post a PR comment before failing');
     assert.match(workflow, /Checkout base repository \(never PR head\)/, 'workflow must not checkout untrusted PR head before secrets are used');
   });
 });

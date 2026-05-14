@@ -29,7 +29,7 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 | C50-5 | Secret absence | If neither App secrets nor `WORKBOARD_MERGE_TOKEN` are set, keep validation green and log `validation-only` with a manual-merge notice. | Backward compatible for consumers that have not created the PAT yet. |
 | C50-6 | PAT documentation | Document `WORKBOARD_MERGE_TOKEN`, `contents: write`, `pull-requests: write`, and that the PAT user's account must be a `main-protection` ruleset bypass actor; mention `gh auth refresh -s admin:org` only for managing bypass actors via gh/API. | Clarifies token permissions versus account/ruleset authority and avoids implying the PAT scope itself grants bypass. |
 | C50-7 | Init surface | Add `--skip-workboard-pat-prompt`; by default `harness init` prints PAT setup guidance and fresh init installs the managed workboard workflow. | New consumers see the fallback without reading issue history; CI/non-interactive runs can suppress the guidance. |
-| C50-8 | Regression tests | Add a CS50 test that parses workflow YAML, asserts App precedence + PAT gating + status re-check, preserves actor/path allowlists, and checks init/docs surfaces. | Locks the issue #138 contract mechanically without network access. |
+| C50-8 | Regression tests | Add a CS50 test that parses workflow YAML, asserts App precedence + PAT gating + status re-check, preserves actor/path allowlists, checks validation-failure comment wiring, and checks init/docs surfaces. | Locks the issue #138 contract mechanically without network access. |
 | C50-9 | Source-control discipline | Commit multi-file edits before running `harness sync`, then commit generated root `OPERATIONS.md` / lock updates separately. | Applies LRN-124 to avoid working-tree-loss during composed sync. |
 
 ## Plan review
@@ -40,7 +40,7 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 
 ## Deliverables
 
-1. **`.github/workflows/workboard-auto-approve.yml`** — add optional `WORKBOARD_MERGE_TOKEN` admin-merge fallback after existing validation, with App precedence, status-check re-check, clear PAT/App/manual path logs, and graceful secret absence.
+1. **`.github/workflows/workboard-auto-approve.yml`** — add optional `WORKBOARD_MERGE_TOKEN` admin-merge fallback after existing validation, with App precedence, status-check re-check, validation-failure PR comments for path violations, clear PAT/App/manual path logs, and graceful secret absence.
 2. **`template/managed/.github/workflows/workboard-auto-approve.yml`** — managed-template copy kept byte-identical to the live workflow for fresh consumers.
 3. **`template/composed/OPERATIONS.md`** — add `Workboard-only PR admin-bypass fallback` at the end of § Enforcement model documenting secret name, scopes, ruleset bypass actor requirement, setup path, graceful degradation, and security gating.
 4. **`OPERATIONS.md`** — regenerate from composed source via `node bin/harness.mjs sync --mode=apply --resolved-sha <sha>`.

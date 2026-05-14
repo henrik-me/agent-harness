@@ -51,6 +51,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  issues: write
 
 jobs:
   validate-and-approve:
@@ -146,9 +147,19 @@ jobs:
           echo "files-count=$files_count" >> "$GITHUB_OUTPUT"
 
       - name: Enforce path-allowlist (NO files outside WORKBOARD/CONTEXT/LEARNINGS/clickstops)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           fail() { echo "::error ::workboard-auto-approve: $*"; exit 1; }
+          comment_validation_failure() {
+            local msg="$1"
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -f body="workboard-auto-approve validation failed: ${msg}" \
+              >/dev/null || echo "::warning ::failed to post validation failure comment"
+          }
           # Allowed paths (exact OR prefix). Each line either an exact filename
           # or a path-prefix ending in `/`.
           cat > allowed-paths.txt <<'EOF'
@@ -201,6 +212,7 @@ jobs:
           done < pr-files.tsv
 
           if [ "$violations" -gt 0 ]; then
+            comment_validation_failure "$violations file path(s) outside allowlist; bot will NOT approve or merge. See workflow annotations for the offending path(s)."
             fail "$violations file path(s) outside allowlist; bot will NOT approve."
           fi
           echo "Path-allowlist check: OK ($(wc -l < pr-files.tsv | tr -d ' ') file(s) all in allowlist, including rename/copy sources)."
@@ -234,14 +246,19 @@ jobs:
           fi
 
           echo "Re-checking status checks before admin merge so --admin bypasses only the missing approval, not failing/pending CI."
+          status_filter='[.statusCheckRollup[] | select((.workflowName // "") != "workboard-auto-approve" and (.name // "") != "validate-and-approve" and (.context // "") != "validate-and-approve") ]'
           for attempt in $(seq 1 30); do
-            not_green="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json statusCheckRollup --jq '[.statusCheckRollup[] | select((.workflowName // "") != "workboard-auto-approve" and (.name // "") != "validate-and-approve" and (.context // "") != "validate-and-approve") | select((.state // .conclusion // .status // "") as $s | ($s != "SUCCESS" and $s != "SKIPPED" and $s != "NEUTRAL")) | ((.name // .context // "unknown") + ":" + (.state // .conclusion // .status // "unknown"))] | join("\n")')"
-            if [ -z "$not_green" ]; then
-              echo "Status-check re-check: OK (all reported non-workboard checks are green or neutral)."
+            reported_count="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json statusCheckRollup --jq "$status_filter | length")"
+            not_green="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json statusCheckRollup --jq "$status_filter | map(select(((.state // .conclusion // .status // \"\") != \"SUCCESS\") and ((.state // .conclusion // .status // \"\") != \"SKIPPED\") and ((.state // .conclusion // .status // \"\") != \"NEUTRAL\"))) | map((.name // .context // \"unknown\") + \":\" + (.state // .conclusion // .status // \"unknown\")) | join(\"\\n\")")"
+            if [ "$reported_count" -gt 0 ] && [ -z "$not_green" ]; then
+              echo "Status-check re-check: OK ($reported_count non-workboard check(s) reported green, skipped, or neutral)."
               break
             fi
+            if [ "$reported_count" -eq 0 ]; then
+              not_green="no non-workboard status checks reported yet"
+            fi
             if [ "$attempt" -eq 30 ]; then
-              echo "::notice ::WORKBOARD_MERGE_TOKEN admin merge skipped: non-workboard status checks are still not green after waiting. Re-run this workflow after checks finish or merge manually. Remaining:"
+              echo "::notice ::WORKBOARD_MERGE_TOKEN admin merge skipped: non-workboard status checks are absent or not green after waiting. Re-run this workflow after checks finish or merge manually. Remaining:"
               printf '%s\n' "$not_green"
               exit 0
             fi
