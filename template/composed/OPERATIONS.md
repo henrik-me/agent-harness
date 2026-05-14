@@ -245,7 +245,7 @@ Content PRs MUST pass four PR-side status checks before merge:
 | Check | What it verifies |
 |---|---|
 | `review-log-evidence` | `## Review log` contains at least one real `Go` / `Conditional Go` row by GPT-5.5, or by an approved fallback with `## Model audit` fallback rationale populated; template placeholders fail the gate. |
-| `copilot-review-attached` | The configured Copilot PR reviewer (default `copilot-pull-request-reviewer[bot]`) has submitted a review; when missing, the workflow posts `@copilot review` as a best-effort trigger. |
+| `copilot-review-attached` | The configured Copilot PR reviewer (default `copilot-pull-request-reviewer[bot]`) has submitted a review; when missing, the workflow posts `@copilot review` as a best-effort trigger, and comment-permission failures leave the gate failed with an actionable error. |
 | `independence-invariant` | `## Model audit` has populated implementer/reviewer model rows and rejects implementer/reviewer model overlap except the GPT-5.5 allowance for non-HIGH-RISK CSs. |
 | `review-threads-resolved` | Every GitHub review thread on the PR is resolved. |
 
