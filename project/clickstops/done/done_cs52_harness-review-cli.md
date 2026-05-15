@@ -92,4 +92,4 @@ No sub-agent fan-out is required for implementation. The surface is cross-cuttin
 
 ## Close-out compression note
 
-CS52 was implemented and merged via [PR #196](https://github.com/henrik-me/agent-harness/pull/196) (squash `80325b8`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14).
+CS52 was implemented and merged via [PR #196](https://github.com/henrik-me/agent-harness/pull/196) (squash `80325b8`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14). The `## Tasks` table above is the at-merge snapshot — only the explicit `Close-out: …` rows added in PR #204 reflect post-merge state.

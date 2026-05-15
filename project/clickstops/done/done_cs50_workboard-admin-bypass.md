@@ -79,4 +79,4 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 
 ## Close-out compression note
 
-CS50 was implemented and merged via [PR #197](https://github.com/henrik-me/agent-harness/pull/197) (squash `3726e75`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14).
+CS50 was implemented and merged via [PR #197](https://github.com/henrik-me/agent-harness/pull/197) (squash `3726e75`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14). The `## Tasks` table above is the at-merge snapshot — only the explicit `Close-out: …` rows added in PR #204 reflect post-merge state.
