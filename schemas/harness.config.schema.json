@@ -191,7 +191,6 @@
           "uniqueItems": true,
           "default": ["CS03", "CS11", "CS15a", "CS18b", "CS19"]
         }
-        }
       }
     },
     "managed": {

@@ -645,6 +645,18 @@ Run all of the following and include each result in SELF-CHECKS RUN:
    must exit 0 (LRN-049/050/051: no dot-notation placeholders, no relative-up
    paths, no self-referencing TODO/FIXME tokens in PR-template files).
 
+## Reporting independence (CS48 / issue #142)
+
+**Self-review carries zero review weight.** Any implementer self-review of
+the diff is a debugging aid, not a review-of-record. The orchestrator MUST
+dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
+pre-empt that step or present implementer self-review as review evidence.
+
+Required final report field: `Implementer model used` (the model-id(s)
+materially used for the sub-agent's work), so the orchestrator can update the
+CS sub-agent ledger and the PR-body `## Model audit` table.
+
 ## Mandatory report shape
 
 Reports missing any field are rejected; orchestrator re-dispatches with
@@ -654,6 +666,7 @@ missing fields explicitly listed.
     PREFLIGHT SHA: <sha>
     FINAL SHA: <sha>
     SUMMARY: <one paragraph>
+    IMPLEMENTER MODEL USED: <model-id(s) materially used for this work; used by the CS sub-agent ledger and PR-body ## Model audit>
     FILES CHANGED:
       - <path> (created | edited | deleted) — <one-line why> — <line count>
     SELF-CHECKS RUN:
@@ -761,9 +774,22 @@ Every sub-agent reports back with **exactly** this structure. A report
 missing any field is rejected; the orchestrator re-dispatches with the missing
 fields explicitly listed.
 
+#### Reporting independence (CS48 / issue #142)
+
+**Self-review carries zero review weight.** Any implementer self-review of
+the diff is a debugging aid, not a review-of-record. The orchestrator MUST
+dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
+pre-empt that step or present implementer self-review as review evidence.
+
+Required final report field: `Implementer model used` (the model-id(s)
+materially used for the sub-agent's work), so the orchestrator can update the
+CS sub-agent ledger and the PR-body `## Model audit` table.
+
 ```
 STATUS: complete | partial | blocked
 SUMMARY: <one paragraph>
+IMPLEMENTER MODEL USED: <model-id(s) materially used for this work; used by the CS sub-agent ledger and PR-body ## Model audit>
 FILES CHANGED:
   - <path> (created | edited | deleted) — <one-line why>
 SELF-CHECKS RUN:

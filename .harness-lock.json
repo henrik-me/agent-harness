@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs51/review-gates",
-  "resolved_sha": "a4032277eb9a4c8c78854f0ff14e4f76bfe113ef",
+  "harness_ref": "cs48/ban-implementer-self-review",
+  "resolved_sha": "b7d60d732da4af34b508aabf0d6735cc4770a94b",
   "config_schema_version": "unknown",
-  "synced_at": "2026-05-15T00:43:51.682Z",
+  "synced_at": "2026-05-15T00:55:38.049Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -43,7 +43,7 @@
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
-      "rendered_hash": "53f2f9531a24c986513e27b867f7a603f8bdd30e6e802ed4a90099c70132e5c2",
+      "rendered_hash": "e74dc53141972646d4ec732055589f78483e9fa7ee94c0db28d56e2618ef95da",
       "action": "skipped"
     },
     {
@@ -91,21 +91,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "d7c46091442467053bdec5c7ea7b6cd3d35b11578caa4954e16ad0304eeaff0e",
+      "rendered_hash": "6d8828d3bd05cd142ecb96be9360ecd738b8950fd371b95aa805bcde27bb001b",
       "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1700,
-            "end": 1702
+            "start": 1726,
+            "end": 1728
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "84eb011e71accd43029c74276285eec6ca586de5eca03ecd75de3f428f328ad4"
+      "template_prose_hash": "bfa4ef84566fc64d3dee0e03d957566551384ab71ff03b858f673fef43676ee2"
     },
     {
       "target": "REVIEWS.md",
@@ -165,7 +165,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "87cfb2a3120d725ef02fc99d3f5d7aa9dc2f5f7567e538e6562c9ff549ee9493",
+      "rendered_hash": "3570e5de55f7304c43cb580b73665097bb2f11995dfe6043b4e526c355f06908",
       "action": "preserved"
     },
     {
