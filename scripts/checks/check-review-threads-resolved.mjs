@@ -104,20 +104,33 @@ export async function runGraphqlCheck({ repo, prNumber, quiet = false, graphqlFn
   if (!match) return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: --repo must be owner/repo; got '${repo}'`] };
   if (!Number.isInteger(prNumber) || prNumber < 1) return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: --pr must be a positive integer; got '${prNumber}'`] };
 
-  let data;
+  const threads = [];
+  let cursor = null;
   try {
-    data = await graphqlFn(
-      `query($owner:String!, $name:String!, $num:Int!) {
-        repository(owner:$owner, name:$name) {
-          pullRequest(number:$num) {
-            reviewThreads(first:100) {
-              nodes { isResolved }
+    do {
+      const data = await graphqlFn(
+        `query($owner:String!, $name:String!, $num:Int!, $cursor:String) {
+          repository(owner:$owner, name:$name) {
+            pullRequest(number:$num) {
+              reviewThreads(first:100, after:$cursor) {
+                nodes { isResolved }
+                pageInfo { hasNextPage endCursor }
+              }
             }
           }
-        }
-      }`,
-      { owner: match[1], name: match[2], num: prNumber },
-    );
+        }`,
+        { owner: match[1], name: match[2], num: prNumber, cursor },
+      );
+      const pr = data.repository?.pullRequest;
+      if (!pr) return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: PR ${repo}#${prNumber} not found`] };
+      const connection = pr.reviewThreads ?? {};
+      threads.push(...(connection.nodes ?? []));
+      const pageInfo = connection.pageInfo ?? {};
+      if (pageInfo.hasNextPage && !pageInfo.endCursor) {
+        return { exitCode: 2, stdout, stderr: ['check-review-threads-resolved: GraphQL pageInfo.hasNextPage was true without endCursor'] };
+      }
+      cursor = pageInfo.hasNextPage ? pageInfo.endCursor : null;
+    } while (cursor);
   } catch (error) {
     if (error instanceof GraphQLError && error.kind === 'auth-missing') {
       return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: ${error.message}`] };
@@ -125,9 +138,6 @@ export async function runGraphqlCheck({ repo, prNumber, quiet = false, graphqlFn
     return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: GraphQL query failed: ${error.message}`] };
   }
 
-  const pr = data.repository?.pullRequest;
-  if (!pr) return { exitCode: 2, stdout, stderr: [`check-review-threads-resolved: PR ${repo}#${prNumber} not found`] };
-  const threads = pr.reviewThreads?.nodes ?? [];
   const unresolved = threads.filter((thread) => thread?.isResolved === false).length;
   if (unresolved > 0) {
     emit(`${unresolved} review thread${unresolved === 1 ? '' : 's'} unresolved on ${repo}#${prNumber}; resolve every PR review thread before merge.`);

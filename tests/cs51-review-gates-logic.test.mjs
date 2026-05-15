@@ -6,6 +6,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+import { runGraphqlCheck as runThreadsGraphqlCheck } from '../scripts/checks/check-review-threads-resolved.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const SCRIPTS = {
@@ -149,5 +151,27 @@ describe('CS51 review gate scripts', () => {
     const bad = run(SCRIPTS.threads, ['--pr-body', fail]);
     assert.equal(bad.status, 1, bad.stdout + bad.stderr);
     assert.match(bad.stdout, /unresolved/i);
+  });
+
+  it('review-threads-resolved paginates GraphQL reviewThreads before passing', async () => {
+    const calls = [];
+    const pages = [
+      { nodes: [{ isResolved: true }], pageInfo: { hasNextPage: true, endCursor: 'CURSOR_1' } },
+      { nodes: [{ isResolved: false }], pageInfo: { hasNextPage: false, endCursor: null } },
+    ];
+    const result = await runThreadsGraphqlCheck({
+      repo: 'owner/repo',
+      prNumber: 7,
+      graphqlFn: async (query, variables) => {
+        calls.push({ query, variables });
+        return { repository: { pullRequest: { reviewThreads: pages.shift() } } };
+      },
+    });
+
+    assert.equal(result.exitCode, 1, result.stdout.join('\n') + result.stderr.join('\n'));
+    assert.equal(calls.length, 2);
+    assert.match(calls[0].query, /pageInfo \{ hasNextPage endCursor \}/);
+    assert.deepEqual(calls.map((call) => call.variables.cursor), [null, 'CURSOR_1']);
+    assert.match(result.stdout.join('\n'), /1 review thread unresolved/);
   });
 });
