@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs52/harness-review-cli",
-  "resolved_sha": "77fb3f67ef79465a18290999663665deb6de1be4",
+  "harness_ref": "cs50/workboard-admin-bypass",
+  "resolved_sha": "1b7a86494f542d50a6c1165ceebdf4e781f36af7",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:47:33.445Z",
+  "synced_at": "2026-05-15T00:04:27.252Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -84,28 +84,28 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "237ace13b9be259215d41a4c59c2baf1a92d0364d4adc81820e255fb4ebb841c",
+      "rendered_hash": "c3eff1207e134215e25d0093e98f5d623836c099d9835d897807ce5500559b97",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1657,
-            "end": 1659
+            "start": 1678,
+            "end": 1680
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "a625407e533c63335ed02acd76d7038b0eda7672e00ff173d3e25d4f7ded7cc8"
+      "template_prose_hash": "b0a6f7f1d4602a8666294ff92892d76656bbd5258590efcadd73b86038c61cdf"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
       "rendered_hash": "7721ad01ac2757d5f486508cd1c5778bfc4050768a6e094968e19338d79b3864",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
