@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-14 (CS46 closed — applied issue #146: surfaced canonical workboard empty-state and clickstop Plan-vs-implementation review formats with self-documenting linter hints. Merged via PR #192. Orchestrator yoga-ah → 🟡 Idle.)
+> **Last updated:** 2026-05-14 (Post-v0.5.2 SI-feedback batch closed: CS48-CS52 + chore #200 + CS47 plan-filed #202 all merged. Main HEAD `f8fefeb`. Issues #138-#142 closed. yoga-ah → 🟡 Idle. Suggested next CSs: cut v0.6.0 (CS51+CS52 are minor-worthy) and claim CS47 itself.)
 
 ## Orchestrators
 

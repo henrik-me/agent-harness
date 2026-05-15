@@ -19,6 +19,11 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 - **CS48 / [#142](https://github.com/henrik-me/agent-harness/issues/142):** Dispatch reporting now states that implementer self-review carries zero review weight, replaces implementer review evidence with `Implementer model used` provenance, extends the clickstop implementer-not-reviewer lint rule to model overlap, and adds LRN-127 + regression coverage anchored to the Sub Invaders PR #28 review-evidence incident.
 - **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
+- **chore ([PR #200](https://github.com/henrik-me/agent-harness/pull/200)):** `scripts/check-pack.mjs` `DEFAULT_MAX_SIZE_BYTES` raised from 1MB (1048576) to 2MB (2097152). The accumulated CS49 + CS50 + CS51 + CS52 doctrine additions to OPERATIONS.md pushed the published `npm pack` size past the 1MB ceiling; bumping the default avoids gating release on doctrine growth. Tests still pin the violation path because they pass `--max-size-bytes 1` explicitly. Filed as LRN-128.
+
+### Documentation
+
+- **CS47 plan-filing ([PR #202](https://github.com/henrik-me/agent-harness/pull/202)):** File `project/clickstops/planned/planned_cs47_detached-head-investigation.md` per pre-claim disposition of LRN-124 (working-tree-loss doctrine). The plan investigates which `harness` CLI subcommand silently leaves HEAD detached at the most-recent release tag (5 confirmed live reproductions across CS46 + this PR; deterministic detach target = `v0.5.1` = `fe2c0b9`; offender is a SHARED helper called from at least `harness lint`, `harness plan-review-hash`, and `harness sync --mode=check`). Plan review: R1 Needs-Fix → R2 Go-with-amendments + R3 (Copilot R1 PRR-1..5 absorbed). No code changes; CS47 itself is the follow-up implementation work.
 
 ### Removed
 
