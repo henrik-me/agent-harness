@@ -69,6 +69,7 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 | Add changelog entry | done | yoga-ah | `[Unreleased] / Added` |
 | Self-checks: YAML parse, targeted test, lint, sync-check, PR-body lint | pending | yoga-ah | run after sync |
 | Open PR and engage Copilot | pending | yoga-ah | title closes #138 |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS50 lifecycle compressed (no `active/` rename). |
 | Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN for close-out compression filed in PR #204 |
 
 ## Plan-vs-implementation review
