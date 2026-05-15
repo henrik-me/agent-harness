@@ -752,7 +752,7 @@ Every sub-agent reports back with **exactly** this structure. A report
 missing any field is rejected; the orchestrator re-dispatches with the missing
 fields explicitly listed.
 
-## Reporting independence (CS48 / issue #142)
+#### Reporting independence (CS48 / issue #142)
 
 **Self-review carries zero review weight.** Any implementer self-review of
 the diff is a debugging aid, not a review-of-record. The orchestrator MUST

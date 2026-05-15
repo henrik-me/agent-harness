@@ -195,11 +195,21 @@ function missingAgentFinding(label, line, missingFields) {
 }
 
 function missingModelFinding(label, line, missingFields) {
-  logWarning(
+  logError(
     `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
     `Fix: add "| Implementer models | <comma-separated model ids> |" and ` +
     `"| Reviewer model | <single model id> |" rows whose values do not overlap.`
   );
+}
+
+function normalizeModelId(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/`/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-');
 }
 
 /**
@@ -352,25 +362,24 @@ function checkFile(filePath, subdir) {
   if (reviewerAgentTrimmed === '') missingFields.push('Reviewer agent');
   if (missingFields.length > 0) {
     missingAgentFinding(label, section.headingLine, missingFields);
-    return;
-  }
-
-  const implementerAgent = implementerAgentTrimmed.toLowerCase();
-  const reviewerAgent = reviewerAgentTrimmed.toLowerCase();
-  if (implementerAgent === reviewerAgent) {
-    logError(
-      `${label}:${reviewerAgentLine}: ## Model audit agent-identity violation — ` +
-      `Implementer agent and Reviewer agent are both "${reviewerAgentTrimmed}" ` +
-      `(case-insensitive compare). Fix: dispatch a reviewer under a different GitHub identity ` +
-      `and update the Reviewer agent row at ${label}:${reviewerAgentLine}.`
-    );
+  } else {
+    const implementerAgent = implementerAgentTrimmed.toLowerCase();
+    const reviewerAgent = reviewerAgentTrimmed.toLowerCase();
+    if (implementerAgent === reviewerAgent) {
+      logError(
+        `${label}:${reviewerAgentLine}: ## Model audit agent-identity violation — ` +
+        `Implementer agent and Reviewer agent are both "${reviewerAgentTrimmed}" ` +
+        `(case-insensitive compare). Fix: dispatch a reviewer under a different GitHub identity ` +
+        `and update the Reviewer agent row at ${label}:${reviewerAgentLine}.`
+      );
+    }
   }
 
   const implementerModels = (implementerModelsRaw === null ? '' : implementerModelsRaw)
     .split(',')
-    .map((m) => m.trim().toLowerCase())
+    .map(normalizeModelId)
     .filter(Boolean);
-  const reviewerModel = reviewerModelRaw === null ? '' : reviewerModelRaw.trim().toLowerCase();
+  const reviewerModel = reviewerModelRaw === null ? '' : normalizeModelId(reviewerModelRaw);
 
   const missingModelFields = [];
   if (implementerModels.length === 0) missingModelFields.push('Implementer models');
@@ -386,7 +395,7 @@ function checkFile(filePath, subdir) {
     logError(
       `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
       `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
-      `(case-insensitive compare). Fix: dispatch a reviewer whose model differs from every implementer model ` +
+      `(normalized family/version compare). Fix: dispatch a reviewer whose model differs from every implementer model ` +
       `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
     );
   }

@@ -2208,7 +2208,7 @@ rubber-duck review required by REVIEWS.md Phase 2.
 
 **Finding:** **Implementer self-review is not a rubber-duck review.** A
 self-review by the implementing agent does not satisfy `REVIEWS.md § Phase 2`.
-Always dispatch a separate reviewer sub-agent (or use the planned
+Always dispatch a separate reviewer sub-agent (or use the
 `harness review <pr>` CLI) whose model is independent from every implementer
 model used in the CS.
 

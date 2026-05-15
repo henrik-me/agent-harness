@@ -55,7 +55,28 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     const r = run(path.join(FIXTURES, 'model-overlap'));
     assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /model-independence violation/);
-    assert.match(r.stdout, /gpt-5\.5/);
+    assert.match(r.stdout, /gpt-5-5/);
+  });
+
+  it('model overlap still exits 1 when agent rows are missing', () => {
+    const r = run(path.join(FIXTURES, 'model-overlap-missing-agents'));
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /WARN:/);
+    assert.match(r.stdout, /missing required agent row/);
+    assert.match(r.stdout, /model-independence violation/);
+  });
+
+  it('model overlap normalizes documented family/version spelling variants', () => {
+    const r = run(path.join(FIXTURES, 'model-overlap-variant'));
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /model-independence violation/);
+    assert.match(r.stdout, /claude-opus-4-7/);
+  });
+
+  it('missing model columns exit 1 because independence cannot be verified', () => {
+    const r = run(path.join(FIXTURES, 'missing-models'));
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /missing required model row/);
   });
 
   it('missing columns default strict=false exits 0 with warning', () => {
@@ -93,6 +114,8 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
       '',
       '| Field | Value |',
       '|---|---|',
+      '| Implementer models | claude-opus-4.7 |',
+      '| Reviewer model | gpt-5.5 |',
       '| Implementer agent |   |',
       '| Reviewer agent | |',
       '',
@@ -113,6 +136,8 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
       '',
       '| Field | Value |',
       '|---|---|',
+      '| Implementer models | claude-opus-4.7 |',
+      '| Reviewer model | gpt-5.5 |',
       '| Implementer agent | |',
       '| Reviewer agent | |',
       '',
