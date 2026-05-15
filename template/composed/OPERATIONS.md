@@ -270,6 +270,28 @@ for owner override (LRN-080). Decision #23 activates the
 auto-merges. The global review-required rule stays in force; the bot's review
 satisfies it for eligible workboard-only PRs.
 
+### Workboard-first for out-of-CS work
+
+Rule: before starting any out-of-CS work (hotfix, single-file follow-up, doc
+edit, post-CS cleanup, or other user-visible one-off), the orchestrator must
+update `WORKBOARD.md` — or the consumer repo's equivalent live coordination file — so
+the user can see the work in progress before the first implementation step.
+This is in addition to any planned-CS-file flow.
+
+Use the existing `## Active Work` table shape: `CS-Task ID`, `Title`, `State`,
+`Owner`, `Branch`, `Last Updated`, and `Blocked Reason`. Record a short title,
+the branch, an in-progress state such as `🟢 Active`, the owner agent, the date,
+and the user-facing reason in `Title` (or `Blocked Reason` when blocked). Until
+the workboard schema grows a dedicated out-of-CS identifier, use the nearest
+CS-shaped tracking ID with a lowercase suffix (for example, `CS02h`) rather than
+inventing an arbitrary ID that `check-workboard.mjs` will reject.
+
+Example Active Work row for a downstream hotfix:
+
+```
+| CS02h | Hotfix torpedo-collision regression — restore user-visible gameplay correctness | 🟢 Active | yoga-si | hotfix/torpedo-collision | 2026-05-14 | — |
+```
+
 ---
 
 ## Dispatch
@@ -625,11 +647,13 @@ missing fields explicitly listed.
 
 ### Canonical reviewer preamble (CS35 C35-1)
 
-When dispatching a rubber-duck reviewer (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
+When dispatching a rubber-duck reviewer manually (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
 the orchestrator MUST paste the block below verbatim into the dispatch.
-Reviewer dispatch ownership lives with the orchestrator — the harness CLI
-never emits prompts, never paste-protocols, never calls an LLM API
-(per Decision C35-1).
+For content PRs on CS52+, prefer `harness review <pr>` (see
+[§ Reviewer dispatch via `harness review`](#reviewer-dispatch-via-harness-review-cs52));
+it composes the same guardrailed prompt for the manual MVP. The harness CLI
+still does not call an LLM API; the orchestrator dispatches the emitted prompt
+and paste-protocols the structured reviewer output.
 
 The block is delimited by sentinel markers so `tests/operations-reviewer-preamble.test.mjs`
 can assert presence and required-field coverage:
@@ -799,6 +823,57 @@ invariants may require 5–8 rounds ([LRN-024](LEARNINGS.md#lrn-024)).
 - Use `list_agents` to poll only when actively blocked on a result.
 - The orchestrator does **not** dispatch sub-agents speculatively — every
   dispatch maps to a parallelisation-table entry in the active CS plan.
+
+### Orchestrator availability invariant
+
+The orchestrator must remain available to receive and act on user instructions
+at all times. Treat delegation as the default: any task the orchestrator could
+plausibly delegate to a sub-agent — including out-of-CS hotfixes, one-off doc
+edits, single-file follow-ups, and post-CS cleanups — means the orchestrator
+should delegate unless (a) the work is so small that dispatch overhead exceeds
+the work, (b) the orchestrator must serialize the change with imminent
+sub-agent dispatch, or (c) the user explicitly asked the orchestrator to do it
+directly.
+
+When in doubt, dispatch. The orchestrator's primary job is coordination,
+triage, user responsiveness, and review-loop steering; implementation work is
+secondary when it would block those responsibilities.
+
+### Sub-agent progress reporting
+
+**Progress reporting (required):** every dispatch must require the sub-agent to
+emit a one-line update after each owned-file commit, or after each owned-file
+edit batch when the briefing prohibits commits, and after any tool invocation
+that takes more than 5 minutes. Each update states the current subtask,
+approximate completion percentage, and blockers if any.
+
+Silence longer than 15 wall-minutes without an update is a stall signal. The
+orchestrator should check the agent, re-brief, re-dispatch, or escalate rather
+than letting a silent background task consume the coordination slot invisibly.
+
+### Reviewer dispatch via `harness review` (CS52)
+
+For content PR review rounds, run the combined review orchestrator instead of
+hand-stitching the rubber-duck prompt, Copilot engagement, polling, and PR-body
+evidence updates:
+
+```
+harness review <pr> [--repo owner/name] [--model gpt-5.5|sonnet-4.6] [--round R<n>]
+```
+
+The command validates the target PR, refuses workboard-only or fork PRs,
+enforces the reviewer-model independence invariant, emits the manual MVP
+rubber-duck prompt, optionally triggers/polls Copilot, and idempotently updates
+`## Review log` plus `## Model audit`. Use `--dry-run` to preview the planned
+round, `--no-poll` to dispatch only, `--rubber-duck-only` for local review
+without Copilot, and `--copilot-only` for a Copilot retry after a valid local
+Go row is already recorded.
+
+Exit codes are operationally meaningful: `0` means Go / dispatch accepted,
+`1` means No-Go or unresolved Blocking finding, and `2` means usage, policy, or
+transport failure. Do not merge a content PR until the latest row for the
+current HEAD has a Go verdict and Copilot review evidence satisfying the A5/A16
+ordering gates in REVIEWS.md.
 
 ---
 

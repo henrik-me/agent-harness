@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-14 (CS46 close-out: LRN-124/125 added in `Applied` — 124 = working-tree-loss doctrine for multi-file edit batches (commit BEFORE any repo-level command, especially `harness sync` and any operation that may detach HEAD); 125 = Copilot-reviewer treats the PR body's review log as authoritative provenance — keep it in sync with `.harness-lock.json` `resolved_sha` when chasing R2+ comments)
+> **Last updated:** 2026-05-14 (CS49: LRN-126 added in `Applied` — downstream `sub-invaders` CS02 hotfix episode exposed the missing orchestrator-availability, progress-cadence, and workboard-first doctrine)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2126,6 +2126,26 @@ Plus an `if` guard on the `pr-body` job so it skips on bot edits / Dependabot ed
 **Disposition update (2026-05-11, `yoga-ah`, pre-CS16 gate):** Filed as planned [CS23 — Apply LRN-100: add `types: [edited]` to harness-self-check `pull_request:` trigger](../project/clickstops/planned/planned_cs23_apply-lrn-100-pr-body-edited-trigger.md). Status remains `open` until CS23 closes; will flip to `applied` at CS23 close-out per C23-5. Workaround documented above (`gh run rerun <run-id> --failed`) remains in force in the meantime.
 
 **Disposition update (CS23):** Applied via `cs23/pr-body-trigger` (PR `#187`); status flipped `open` → `applied`. `.github/workflows/harness-self-check.yml` now declares `types: [opened, synchronize, reopened, edited]` on `pull_request:`, so `gh pr edit --body` re-fires the `pr-body` job. Regression locked by `tests/cs23-pr-body-trigger.test.mjs`. Workaround (`gh run rerun <run-id> --failed`) is no longer required.
+
+### LRN-126
+
+```yaml
+id: LRN-126
+date: 2026-05-14
+category: process
+source_cs: CS49
+status: applied
+tags: [orchestrator-availability, sub-agents, progress-reporting, workboard, consumer-feedback]
+claim_area: orchestrator-loop
+```
+
+**Problem:** `OPERATIONS.md` described structured sub-agent dispatch inside planned CS work, but did not explicitly require the orchestrator to stay available by delegating plausible work, require periodic sub-agent progress updates, or update the workboard before starting out-of-CS work. The gap became user-visible in a downstream consumer hotfix: the `sub-invaders CS02 hotfix episode` handled a torpedo-collision regression directly and only surfaced status after completion.
+
+**Finding:** Downstream consumer incidents are valid harness-doctrine evidence. When a consumer hotfix shows the orchestrator becoming the implementer of record, the harness needs explicit operating rules: delegate unless a narrow exception applies, require progress updates so 15 wall-minutes of silence can be treated as a stall, and make `WORKBOARD.md` the first user-visible status update for out-of-CS work.
+
+**Evidence:** Issue #139 records the `henrik-me/sub-invaders` PR #23 torpedo-collision hotfix and related PR #24 planned-CS follow-up, plus the user's feedback that background agents should have been asked to do the work so the orchestrator stayed free to take action. CS49 codifies the three rules in `template/composed/OPERATIONS.md`, regenerates root `OPERATIONS.md`, and adds `tests/cs49-operations-doctrine.test.mjs` to pin the doctrine.
+
+**Disposition:** Applied in CS49. Future orchestrators must keep themselves available by defaulting to sub-agent dispatch, must require progress reporting with a 15 wall-minute stall threshold, and must update the workboard before starting any out-of-CS work unless the user explicitly directs otherwise.
 
 ### LRN-123
 

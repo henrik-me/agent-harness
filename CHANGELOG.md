@@ -12,6 +12,17 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 ### Added
 
 - **CS51 / [#140](https://github.com/henrik-me/agent-harness/issues/140):** Add REVIEWS.md PR-side enforcement gates (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`), workflow template, config/ruleset sync hooks, and regression tests.
+- **CS52 / [#141](https://github.com/henrik-me/agent-harness/issues/141):** Add `harness review <pr>` as the canonical content-PR review orchestrator. The new CLI validates content PRs, enforces reviewer independence, composes the manual rubber-duck prompt, can trigger/poll Copilot review, and updates PR-body `## Review log` / `## Model audit` evidence; schema, docs, and regression tests cover the new `reviews` config block and exit-code contract.
+
+### Changed
+
+- **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
+
+### Removed
+
+- _(none yet)_
+
+## [0.5.2] — 2026-05-14
 
 ### Changed
 

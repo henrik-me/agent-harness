@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs51/review-gates",
-  "resolved_sha": "10bf43f0add2a57830da273671ef51506b33e373",
-  "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:43:17.409Z",
+  "resolved_sha": "718fd2a6d1230594b1efc81ca204845d76bed63f",
+  "config_schema_version": "unknown",
+  "synced_at": "2026-05-15T00:21:53.334Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -91,41 +91,41 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "e7cbe895f8e5b52ebe2c59989b6876a903c23a55322effc8d48310402518b247",
+      "rendered_hash": "19a5e8ae80200d8eef69d3f2cd7885475bcd3c5d2c7b1123c1a573693dc640d7",
       "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1604,
-            "end": 1606
+            "start": 1679,
+            "end": 1681
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "3bc290015053ce030d1ad6f67d3f199fdeac7ff0658fce0ea79ef4b2a4d2dc39"
+      "template_prose_hash": "435277b52db22af80ac59fea664807f938082368bb7dce0920dbbe14b111ca04"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "538a7749062e61d4282a9df1873e3cfadba0c0091cd7af8a96a590f5f3cda9e4",
+      "rendered_hash": "5c14e47c1fe8827b3733d03b9a6b0664a0c4c19435cf52ee1cc59142812b1c87",
       "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
-            "start": 400,
-            "end": 417
+            "start": 423,
+            "end": 440
           },
           "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "f169fb29778627995d3608685aedb97ead7f624af4d5612f86f75b9111edc834"
+      "template_prose_hash": "27c1d07119a1386cd43ad491587ce067037a8f4bb493c0557919058eabec566a"
     },
     {
       "target": ".github/pull_request_template.md",
@@ -165,7 +165,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "ea6c8fbe4f2000238af8328ef0e2ee551c5695bd2b7f1f3183f2272e36182ba0",
+      "rendered_hash": "87cfb2a3120d725ef02fc99d3f5d7aa9dc2f5f7567e538e6562c9ff549ee9493",
       "action": "preserved"
     },
     {

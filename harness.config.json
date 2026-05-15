@@ -100,9 +100,13 @@
     ]
   },
   "reviews": {
-    "enforce_gates": true,
+    "rubber_duck_model": "gpt-5.5",
+    "fallback_model": "sonnet-4.6",
     "require_copilot_review": true,
+    "copilot_trigger": "mention",
     "copilot_reviewer_slug": "copilot-pull-request-reviewer[bot]",
+    "review_timeout_minutes": 30,
+    "enforce_gates": true,
     "high_risk_clickstops": [
       "CS03",
       "CS11",

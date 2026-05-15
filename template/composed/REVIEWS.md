@@ -123,6 +123,29 @@ Key observations from [LRN-024](LEARNINGS.md#lrn-024) and
 - Budget time and sub-agent slots accordingly when planning high-risk or
   user-facing CSs.
 
+### 2.4.1 Canonical orchestrator command (`harness review`)
+
+For content PR review rounds, the canonical orchestrator entry point is:
+
+```
+harness review <pr> [--repo owner/name] [--model gpt-5.5|sonnet-4.6] [--round R<n>] [--no-poll|--dry-run]
+```
+
+`harness.config.json` → `reviews.require_copilot_review` defaults to `true`;
+set it to `false` only for projects where Copilot review evidence is not
+required or unavailable.
+
+The command validates that the target is a content PR, enforces the reviewer
+independence invariant from the PR body's `## Model audit` / CS plan review
+evidence, emits the manual MVP rubber-duck prompt, optionally triggers and
+polls Copilot review, and appends the PR body's `## Review log` + `## Model
+audit` evidence when the round completes. Exit codes are: `0` = Go / dispatch
+accepted, `1` = No-Go or unresolved Blocking finding, `2` = usage, policy, or
+transport failure.
+
+Use `harness copilot-engage` only as a Copilot-only fallback when the combined
+review command is unavailable or unsuitable for a narrowly scoped retry.
+
 ### 2.5 What the reviewer examines
 
 The review scope depends on CS type:
