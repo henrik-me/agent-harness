@@ -55,7 +55,7 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     const r = run(path.join(FIXTURES, 'model-overlap'));
     assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /model-independence violation/);
-    assert.match(r.stdout, /gpt-5-5/);
+    assert.match(r.stdout, /claude-sonnet-4\.6/);
   });
 
   it('model overlap still exits 1 when agent rows are missing', () => {
@@ -70,7 +70,55 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     const r = run(path.join(FIXTURES, 'model-overlap-variant'));
     assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /model-independence violation/);
-    assert.match(r.stdout, /claude-opus-4-7/);
+    assert.match(r.stdout, /claude-opus-4\.7/);
+  });
+
+  it('GPT-5.5 model overlap is allowed for non-high-risk clickstops', () => {
+    const r = run(path.join(FIXTURES, 'gpt-overlap-allowed'));
+    assert.equal(r.status, 0, `stdout:\n${r.stdout}`);
+    assert.doesNotMatch(r.stdout, /model-independence violation/);
+  });
+
+  it('GPT-5.5 model overlap exits 1 for high-risk clickstops', () => {
+    const r = run(path.join(FIXTURES, 'gpt-overlap-high-risk'));
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /model-independence violation/);
+    assert.match(r.stdout, /gpt-5\.5/);
+  });
+
+  it('GPT-5.5 high-risk clickstops can be configured from harness.config.json', () => {
+    const cwd = mkdtempSync(path.join(scratch, 'config-high-risk-'));
+    const activeDir = path.join(cwd, 'project', 'clickstops', 'active');
+    mkdirSync(activeDir, { recursive: true });
+    writeFileSync(
+      path.join(cwd, 'harness.config.json'),
+      JSON.stringify({ reviews: { high_risk_clickstops: ['CS41'] } }),
+      'utf8',
+    );
+    writeFileSync(
+      path.join(activeDir, 'active_cs41_configured-high-risk.md'),
+      [
+        '# Configured High Risk CS',
+        '',
+        '## Model audit',
+        '',
+        '| Field | Value |',
+        '|---|---|',
+        '| Implementer models | gpt-5.5 |',
+        '| Reviewer model | gpt-5.5 |',
+        '| Implementer agent | yoga-ah |',
+        '| Reviewer agent | copilot |',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+    try {
+      const r = run(cwd);
+      assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+      assert.match(r.stdout, /model-independence violation/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 
   it('missing model columns exit 1 because independence cannot be verified', () => {
@@ -150,11 +198,68 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     assert.match(r.stdout, /missing required agent row/);
   });
 
-  it('temporary clickstop missing Model audit warns by default', () => {
+  it('active clickstop missing Model audit exits 1 because model independence cannot be verified', () => {
     const cwd = writeTempClickstop('active/active_cs41_no_audit.md', '# No audit here\n');
     const r = run(cwd);
-    assert.equal(r.status, 0, `stdout:\n${r.stdout}`);
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /WARN:/);
     assert.match(r.stdout, /Implementer agent, Reviewer agent/);
+    assert.match(r.stdout, /missing required model row/);
+  });
+
+  it('nested active clickstop missing Model audit exits 1 under recursive linting', () => {
+    const cwd = mkdtempSync(path.join(scratch, 'nested-active-'));
+    const file = path.join(
+      cwd,
+      'project',
+      'clickstops',
+      'active',
+      'active_cs48_nested-audit',
+      'active_cs48_nested-audit.md',
+    );
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, '# Nested active without audit\n', 'utf8');
+    try {
+      const r = run(cwd);
+      assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+      assert.match(r.stdout, /active\/active_cs48_nested-audit\/active_cs48_nested-audit\.md/);
+      assert.match(r.stdout, /missing required model row/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('planned clickstop missing Model audit remains warn-only for backlog planning files', () => {
+    const cwd = mkdtempSync(path.join(scratch, 'planned-only-'));
+    const file = path.join(cwd, 'project', 'clickstops', 'planned', 'planned_cs99_no_audit.md');
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, '# Planned only\n', 'utf8');
+    try {
+      const r = run(cwd);
+      assert.equal(r.status, 0, `stdout:\n${r.stdout}`);
+      assert.match(r.stdout, /WARN:/);
+      assert.match(r.stdout, /missing required model row/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('malformed active Model audit table exits 1 because model independence cannot be verified', () => {
+    const audit = [
+      '# Test',
+      '',
+      '## Model audit',
+      '',
+      '| Name | Detail |',
+      '|---|---|',
+      '| Implementer models | claude-opus-4.7 |',
+      '| Reviewer model | gpt-5.5 |',
+      '',
+    ].join('\n');
+    const cwd = writeTempClickstop('active/active_cs41_malformed_audit.md', audit);
+    const r = run(cwd);
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /WARN:/);
+    assert.match(r.stdout, /missing required model row/);
   });
 });
