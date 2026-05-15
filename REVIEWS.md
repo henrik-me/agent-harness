@@ -331,6 +331,24 @@ on `harness pr-evidence` (per C35-19); valid reasons: `workboard-only`,
 reasons from the GitHub event payload; `harness pr-evidence` itself MUST
 NOT call `gh pr view`.
 
+### Required PR-side gates
+
+The `review-gates.yml` workflow turns the review doctrine above into four
+required status checks for content PRs. PRs labeled `workboard-only` skip these
+checks because they are claim/close-out bookkeeping PRs, not implementation
+content.
+
+| Status check | How to satisfy it |
+|---|---|
+| `review-log-evidence` | Fill `## Review log` with at least one non-placeholder row whose verdict is `Go` or `Conditional Go` (the historical `Go-with-amendments` spelling is accepted) and whose reviewer model is GPT-5.5, or an approved fallback with `## Model audit` `Fallback rationale` populated. |
+| `copilot-review-attached` | Ensure the configured Copilot PR reviewer has submitted a review. If the gate fails because no review exists yet, it posts `@copilot review`; wait for Copilot to submit and rerun the check. If token permissions prevent the comment, the check remains failed and reports the posting error. Repos without Copilot reviews may set `reviews.require_copilot_review=false`. |
+| `independence-invariant` | Fill `## Model audit` with `Implementer models` and `Reviewer model`. The reviewer model must not appear in the implementer list unless the reviewer is GPT-5.5 on a non-HIGH-RISK CS; HIGH-RISK CSs forbid overlap regardless. |
+| `review-threads-resolved` | Resolve every GitHub PR review thread before merge. |
+
+`harness init --enable-review-gates` and `harness sync --mode=apply` install the
+workflow and add these four contexts to `infra/main-protection-ruleset.json`
+when `reviews.enforce_gates=true`.
+
 ---
 
 ## Phase 3 — Close-Out PR Review

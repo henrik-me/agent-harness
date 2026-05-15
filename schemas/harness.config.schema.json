@@ -138,7 +138,7 @@
     },
     "reviews": {
       "type": "object",
-      "description": "Configuration for the orchestrator-side `harness review <pr>` command (CS52): rubber-duck reviewer model defaults, fallback policy inputs, Copilot trigger mode, timeout, and project-specific HIGH-RISK clickstops.",
+      "description": "Configuration for the orchestrator-side `harness review <pr>` command (CS52) and CS51 REVIEWS.md PR-side status checks: rubber-duck reviewer model defaults, fallback policy inputs, Copilot trigger mode, timeout, gate enforcement toggles, and project-specific HIGH-RISK clickstops.",
       "additionalProperties": false,
       "properties": {
         "rubber_duck_model": {
@@ -153,10 +153,21 @@
           "default": "sonnet-4.6",
           "examples": ["sonnet-4.6"]
         },
+        "enforce_gates": {
+          "type": "boolean",
+          "description": "When true, harness init/sync installs review-gates.yml and injects review-log-evidence, copilot-review-attached, independence-invariant, and review-threads-resolved into infra/main-protection-ruleset.json required_checks.",
+          "default": true
+        },
         "require_copilot_review": {
           "type": "boolean",
-          "description": "When true, `harness review` triggers and waits for Copilot review evidence unless --rubber-duck-only is supplied. Set false for projects that cannot use Copilot reviews; --copilot-only still forces a retry when explicitly requested.",
+          "description": "When true, the copilot-review-attached gate requires a submitted review by the configured Copilot reviewer; `harness review` also triggers and waits for Copilot review evidence unless --rubber-duck-only is supplied. Set false for repos where Copilot PR reviews are unavailable.",
           "default": true
+        },
+        "copilot_reviewer_slug": {
+          "type": "string",
+          "description": "GitHub login/slug for the Copilot PR reviewer bot. Both the bare slug and [bot]-suffixed login are accepted by the checker.",
+          "default": "copilot-pull-request-reviewer[bot]",
+          "minLength": 1
         },
         "copilot_trigger": {
           "type": "string",
@@ -172,13 +183,14 @@
         },
         "high_risk_clickstops": {
           "type": "array",
-          "description": "Clickstop IDs (for example CS03 or CS15a) that forbid fallback reviewer models unless an explicit user waiver is recorded.",
+          "description": "Clickstop IDs (for example CS03 or CS15a) for which the independence-invariant gate forbids implementer/reviewer model overlap and `harness review` forbids fallback reviewer models unless an explicit user waiver is recorded.",
           "items": {
             "type": "string",
-            "pattern": "^CS\\d+[a-z]?$"
+            "pattern": "^CS\\d{2,}[A-Za-z]?$"
           },
           "uniqueItems": true,
-          "default": []
+          "default": ["CS03", "CS11", "CS15a", "CS18b", "CS19"]
+        }
         }
       }
     },

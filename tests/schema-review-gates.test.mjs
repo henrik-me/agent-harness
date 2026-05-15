@@ -25,6 +25,21 @@ function minimalConfig() {
 }
 
 describe('harness.config review_gates schema', () => {
+  it('accepts the CS51 reviews gate knobs', () => {
+    const validate = compile();
+    const cfg = {
+      ...minimalConfig(),
+      reviews: {
+        enforce_gates: true,
+        require_copilot_review: true,
+        copilot_reviewer_slug: 'copilot-pull-request-reviewer[bot]',
+        high_risk_clickstops: ['CS03', 'CS15a'],
+      },
+    };
+
+    assert.equal(validate(cfg), true, JSON.stringify(validate.errors));
+  });
+
   it('accepts the CS38a PASS gate set', () => {
     const validate = compile();
     const cfg = {
@@ -73,5 +88,18 @@ describe('harness.config review_gates schema', () => {
 
     assert.equal(validate(cfg), false);
     assert.match(JSON.stringify(validate.errors), /boolean/);
+  });
+
+  it('rejects invalid high-risk clickstop ids', () => {
+    const validate = compile();
+    const cfg = {
+      ...minimalConfig(),
+      reviews: {
+        high_risk_clickstops: ['cs3'],
+      },
+    };
+
+    assert.equal(validate(cfg), false);
+    assert.match(JSON.stringify(validate.errors), /high_risk_clickstops/);
   });
 });
