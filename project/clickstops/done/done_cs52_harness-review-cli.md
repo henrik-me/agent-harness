@@ -1,10 +1,10 @@
 # CS52 — `harness review <pr>` content-PR review orchestrator
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah
 **Branch:** —
 **Started:** —
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Issue [#141](https://github.com/henrik-me/agent-harness/issues/141) — consolidate ad-hoc rubber-duck dispatch, Copilot engagement, and PR-body review evidence updates into one canonical CLI command.
 **Depends on:** CS40 (`harness review-output`) and CS41 (`harness copilot-engage` / review gates default flip). May land independently after those are present on main.
 
@@ -79,6 +79,8 @@ No sub-agent fan-out is required for implementation. The surface is cross-cuttin
 | Add tests | in-progress | yoga-ah | CLI + library targeted tests. |
 | Update docs + changelog + planned CS file | in-progress | yoga-ah | Template docs first, root docs via sync. |
 | Validate, push, open PR, request Copilot | planned | yoga-ah | See Exit criteria. |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS52 lifecycle compressed (no `active/` rename). |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN-131 filed in PR #204 codifying lifecycle-compression doctrine. |
 
 ## Notes / Learnings
 
@@ -86,4 +88,10 @@ No sub-agent fan-out is required for implementation. The surface is cross-cuttin
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS52 was implemented and merged via [PR #196](https://github.com/henrik-me/agent-harness/pull/196) (squash `80325b8`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (opened 2026-05-15 to close out the implementer work merged 2026-05-14). The `## Tasks` table above is the at-merge snapshot — only the explicit `Close-out: …` rows added in PR #204 reflect post-merge state.

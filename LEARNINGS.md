@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-14 (post-v0.5.2: LRN-128 added — npm pack budget exceeded by accumulated CS49+50+51+52 doctrine; bump 1MB→2MB via PR #200; LRN-129 added — `read-only-gates` workflow does NOT auto-re-fire on `gh pr edit --body`; manual `gh run rerun <rid>` required after body edits; LRN-130 added — future-looking UTC timestamps in PR `## Review log` Go rows fail the Copilot-postdate gate; always use real current UTC via `[System.DateTime]::UtcNow.ToString(...)` or `date -u +'%Y-%m-%dT%H:%M:%SZ'`; LRN-124 disposition updated with PR #202 evidence — multi-subcommand confirmation that `harness lint`, `harness plan-review-hash`, and `harness sync --mode=check` share a common offending helper that detaches HEAD deterministically at the most-recent release tag.)
+> **Last updated:** 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2188,6 +2188,34 @@ claim_area: copilot-engagement
 **Evidence:** PR #192 in CS46 (https://github.com/henrik-me/agent-harness/pull/192). R1 (HEAD `2b094e48`) → 3 line comments fixed in `7a261bf` → R2 (HEAD `7a261bf`) flagged `resolved_sha=f8394130` as stale → re-ran `harness sync --resolved-sha 7a261bf` in `a56c0d7` → R3 (HEAD `a56c0d7`) flagged `resolved_sha=7a261bf` as stale (PR body's latest log row still said `analyzed_head=2b094e48`) → updated PR body review log to add R2/R3 rows with `analyzed_head=a56c0d7` → R4 returned "no new comments". CI `read-only-gates` then failed with `ERROR: stale Go verdict — analyzed_head="<fabricated 40-char>" but current PR HEAD="a56c0d766d124..."` because a hand-expanded short SHA was used. Real HEAD obtained via `git rev-parse HEAD`; PR body re-pushed; gate passed; PR admin-merged. See `scripts/check-review-evidence.mjs` for the gate logic and `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` for the canonical Field/Value model.
 
 **Disposition:** Applied. Discipline becomes part of OPERATIONS.md § "Copilot engagement procedure" — recommended insert: a single bullet under "When Copilot's R2+ review comment references lock provenance" linking to this LRN. Until OPERATIONS.md absorbs the doctrine, the rule above ("refresh lock + append review-log row + push together; use `git rev-parse HEAD` for full SHA") is the sufficient operational statement. Cross-reference: this LRN combines with LRN-124 (working-tree-loss doctrine) — both are CS46 close-out artifacts capturing iteration-discipline gotchas that surface only in self-host Copilot review chases.
+
+### LRN-131
+
+```yaml
+id: LRN-131
+date: 2026-05-14
+category: process
+source_cs: CS49
+status: applied
+tags: [cs-lifecycle, close-out-gate, plan-vs-impl-review, velocity-batch, procedural-debt, retroactive-cleanup]
+claim_area: orchestrator-loop
+```
+
+**Problem:** During the post-v0.5.2 SI-feedback velocity batch (5 parallel CSs: CS48 #198, CS49 #195, CS50 #197, CS51 #199, CS52 #196 — all merged 2026-05-14 over a few hours), the canonical CS lifecycle (`planned/ → active/ → done/` rename + GPT-5.5 plan-vs-implementation review at close-out + WORKBOARD/CONTEXT update + LRN harvest) was **compressed to "modify-planned-file-in-place + merge content PR + skip everything else"**. The 5 implementations shipped correctly and the Copilot reviewer attached on each content PR, but five `planned_csNN_*.md` files remained in `project/clickstops/planned/` with `**Status:** planned` and `**Closed:** —` fields after their implementations had merged. Discovered when the next orchestrator session was prompted to identify "what should the next session work on" — the 5 stale planned files in the directory looked unclaimed and would have caused a fresh orchestrator to attempt to re-claim already-shipped work.
+
+**Finding:** **The CS lifecycle is the single source of truth for "what's done" — when velocity pressure tempts an orchestrator to skip the `planned/ → active/ → done/` rename, the file system silently lies about repo state until the next orchestrator gets confused.** Two structural rules:
+- **Hygiene minimum:** even when skipping plan-vs-impl review (a defensible velocity tradeoff), the rename + Status/Closed/Owner field updates are NEVER skippable. They are the cheap part of the lifecycle and the part that determines whether the next orchestrator can read the directory listing accurately.
+- **Compressed close-out is a documentable choice, not a failure:** if velocity pressure justifies skipping the GPT-5.5 plan-vs-impl review (e.g., for an SI-feedback batch where Copilot review on the content PR is the sole independent-review evidence), record that explicitly via a `## Close-out compression note` section in the `done_csNN_*.md` file naming the merged PR, the squash SHA, and the rationale. Future retroactive review (if needed) then has an entry point.
+
+Concrete operational rule for any future velocity batch:
+1. After each content PR merges, IMMEDIATELY run `git mv project/clickstops/planned/planned_csNN_*.md project/clickstops/done/done_csNN_*.md`.
+2. In the same micro-PR (or chained into the next workboard PR), normalize Status / Closed / Owner / Plan-vs-impl-review fields. Acceptable minimum: `**Reviewer:** none (deferred — close-out compressed during <reason>)`, `**Date:** YYYY-MM-DD`, `**Outcome:** Deferred — see "## Close-out compression note" below`.
+3. If plan-vs-impl review is genuinely deferred (not just delayed), file a follow-up planned CS for "retroactive plan-vs-impl review sweep on CS<NN>-<MM>" so the procedural debt is tracked.
+4. NEVER let `planned_csNN_*.md` for merged work sit overnight — the directory IS the source of truth for "what's available to claim".
+
+**Evidence:** PR #204 (`chore/cs48-52-retroactive-closeout`, opened 2026-05-15 to close out work merged 2026-05-14): 5 `planned_csNN_*.md` files renamed to `done_csNN_*.md` retroactively, ~16 hours after their implementations merged. All 5 needed Status normalization (4 said "planned", 1 said "Closed: N/A"); 3 needed `## Plan-vs-implementation review` H2 added; 2 needed close-out tasks added to `## Tasks` table. None had a `## Close-out compression note` until this PR added the canonical text. Lint passed `30/0/3` after fixes (was failing `28/2/3` for the 5 close-out shape errors discovered by `check-clickstop.mjs`). The retroactive close-out PR itself is the artifact this LRN points future orchestrators at as the canonical "minimum-compliance close-out" template.
+
+**Disposition:** Applied. Doctrine candidate for `OPERATIONS.md` § Velocity-batch close-out compression: add a subsection enumerating the hygiene minimum (rename + Status/Closed/Owner) vs. the deferrable parts (plan-vs-impl review + LRN harvest), pointing at this LRN and at `done_cs48_*.md § Close-out compression note` as the canonical example. Cross-reference: LRN-126 (orchestrator-availability discipline) — the velocity pressure that creates this debt is itself a sub-agent-dispatch failure mode the orchestrator should mitigate by delegating close-out hygiene to a sub-agent rather than skipping it.
 
 ### LRN-127
 

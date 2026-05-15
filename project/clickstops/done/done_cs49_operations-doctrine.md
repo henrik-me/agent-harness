@@ -1,10 +1,10 @@
 # CS49 — Operations doctrine: orchestrator availability, progress reporting, and workboard-first out-of-CS work
 
-**Status:** planned
-**Owner:** Copilot CLI sub-agent
+**Status:** done
+**Owner:** yoga-ah
 **Branch:** `cs49/operations-doctrine`
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** [Issue #139](https://github.com/henrik-me/agent-harness/issues/139) — codify orchestrator-availability invariant, sub-agent progress-reporting cadence, and workboard-first status for out-of-CS work.
 **Depends on:** None. Coordinates with concurrent CS48/CS50/CS51/CS52 by respecting their file-ownership boundaries: do not touch the dispatch-template Reporting subsection, § Enforcement model owned subsections, REVIEWS.md, workflow templates, `bin/`, `lib/`, or `scripts/checks/`.
 
@@ -72,8 +72,20 @@ Issue #139 was filed after a `henrik-me/sub-invaders` post-CS hotfix episode: th
 | Add `LRN-126`, CS49 test, and CHANGELOG bullet | done | Copilot CLI | Source/doc/test batch committed before any harness command per LRN-124. |
 | Run `harness sync --mode=apply --resolved-sha <source-sha>` | done | Copilot CLI | Regenerated root `OPERATIONS.md` + `.harness-lock.json`; final sync check reports no drift. |
 | Validate targeted test, `harness lint --quiet`, `harness sync --mode=check`, and PR body | done | Copilot CLI | Targeted test 7/7, lint 29 passed / 0 failed / 3 skipped, sync check clean; PR body checked before opening PR. |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS49 lifecycle compressed (no `active/` rename). |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN-131 filed in PR #204 codifying lifecycle-compression doctrine. |
 | Push branch, open PR, and engage Copilot | pending | Copilot CLI | Title must close issue #139. |
 
 ## Notes
 
 - This CS intentionally does not add or change linter enforcement for out-of-CS workboard rows; current scope is doctrine and regression tests asserting the doctrine exists.
+
+## Plan-vs-implementation review
+
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS49 was implemented and merged via [PR #195](https://github.com/henrik-me/agent-harness/pull/195) (squash `aed6247`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (opened 2026-05-15 to close out the implementer work merged 2026-05-14). The `## Tasks` table above is the at-merge snapshot — only the explicit `Close-out: …` rows added in PR #204 reflect post-merge state.

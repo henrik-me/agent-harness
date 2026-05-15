@@ -1,10 +1,10 @@
 # CS48 — Ban implementer self-review as review evidence
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah
 **Branch:** `cs48/ban-implementer-self-review`
 **Started:** —
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Issue [#142](https://github.com/henrik-me/agent-harness/issues/142) — dispatch template, LRN, and clickstop implementer-not-reviewer lint follow-up.
 **Depends on:** CS41 supplied the first implementer-not-reviewer lint rule; CS48 extends it to model overlap. CS52 supplies the `harness review <pr>` CLI that CS48 references but does not modify.
 
@@ -57,6 +57,8 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | retroactive 2026-05-14 via PR #204 |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN for close-out compression filed in PR #204 |
 
 ## Notes / Learnings
 
@@ -64,4 +66,12 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below for the procedural debt and recommended retroactive review path.
+
+## Close-out compression note
+
+CS48 was implemented and merged via [PR #198](https://github.com/henrik-me/agent-harness/pull/198) (squash `5379097`) on 2026-05-14 as part of the SI-feedback velocity batch (CS48-CS52 + chore #200). The implementation PR modified `planned_cs48_*.md` in place rather than following the canonical `planned/ → active/ → done/` rename lifecycle, and the GPT-5.5 plan-vs-implementation review gate was skipped to ship 5 SI-feedback CSs in parallel. The Copilot-reviewer review on the content PR was the sole independent-review evidence. This file is retroactively renamed `planned/ → done/` (and Status / Closed / Owner fields normalized) in [PR #204](https://github.com/henrik-me/agent-harness/pull/204) (`chore/cs48-52-retroactive-closeout`, opened 2026-05-15 to close out the implementer work merged 2026-05-14) to restore lifecycle hygiene; the retroactive close-out is intentionally minimum-compliance (no plan-vs-impl review, no separate close-out PR for each CS) per the procedural-debt LRN that captures this pattern.
+
+> **Tasks-table-stale note:** the `## Tasks` table above is intentionally left as the at-merge plan snapshot (rows may show `pending` / `in-progress` / `planned` / `done` per the CS author's last edit). Treat the implementation merge (squash above) + this close-out compression note as the authoritative state — not the in-row task statuses. Only the explicit `Close-out: …` rows added in PR #204 reflect post-merge close-out hygiene.
