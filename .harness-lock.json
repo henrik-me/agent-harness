@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs51/review-gates",
-  "resolved_sha": "718fd2a6d1230594b1efc81ca204845d76bed63f",
-  "config_schema_version": "unknown",
-  "synced_at": "2026-05-15T00:21:53.334Z",
+  "harness_ref": "cs50/workboard-admin-bypass",
+  "resolved_sha": "1b7a86494f542d50a6c1165ceebdf4e781f36af7",
+  "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
+  "synced_at": "2026-05-15T00:04:27.252Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -61,13 +61,6 @@
       "action": "skipped"
     },
     {
-      "target": ".github/workflows/review-gates.yml",
-      "source_template": "template/managed/.github/workflows/review-gates.yml",
-      "class": "managed",
-      "rendered_hash": "771734744723e5934a226d5776e26b147031d25ccf7639ec0ac81b90ba021f16",
-      "action": "skipped"
-    },
-    {
       "target": "CONVENTIONS.md",
       "source_template": "template/composed/CONVENTIONS.md",
       "class": "composed",
@@ -91,41 +84,41 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "19a5e8ae80200d8eef69d3f2cd7885475bcd3c5d2c7b1123c1a573693dc640d7",
-      "action": "skipped",
+      "rendered_hash": "c3eff1207e134215e25d0093e98f5d623836c099d9835d897807ce5500559b97",
+      "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1679,
-            "end": 1681
+            "start": 1678,
+            "end": 1680
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "435277b52db22af80ac59fea664807f938082368bb7dce0920dbbe14b111ca04"
+      "template_prose_hash": "b0a6f7f1d4602a8666294ff92892d76656bbd5258590efcadd73b86038c61cdf"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "5c14e47c1fe8827b3733d03b9a6b0664a0c4c19435cf52ee1cc59142812b1c87",
+      "rendered_hash": "7721ad01ac2757d5f486508cd1c5778bfc4050768a6e094968e19338d79b3864",
       "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
-            "start": 423,
-            "end": 440
+            "start": 405,
+            "end": 422
           },
           "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "27c1d07119a1386cd43ad491587ce067037a8f4bb493c0557919058eabec566a"
+      "template_prose_hash": "00dbc1f9f6614c89432963acc4946d73cbaf089f8ee0adf1a7749575163ac073"
     },
     {
       "target": ".github/pull_request_template.md",
