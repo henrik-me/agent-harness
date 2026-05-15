@@ -2218,6 +2218,8 @@ Concrete operational rule for any future velocity batch:
 **Disposition:** Applied. Doctrine candidate for `OPERATIONS.md` § Velocity-batch close-out compression: add a subsection enumerating the hygiene minimum (rename + Status/Closed/Owner) vs. the deferrable parts (plan-vs-impl review + LRN harvest), pointing at this LRN and at `done_cs48_*.md § Close-out compression note` as the canonical example. Cross-reference: LRN-126 (orchestrator-availability discipline) — the velocity pressure that creates this debt is itself a sub-agent-dispatch failure mode the orchestrator should mitigate by delegating close-out hygiene to a sub-agent rather than skipping it.
 
 ### LRN-127
+
+```yaml
 date: 2026-05-14
 category: process
 source_cs: CS48

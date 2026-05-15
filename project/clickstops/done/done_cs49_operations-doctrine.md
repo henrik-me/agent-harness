@@ -72,6 +72,8 @@ Issue #139 was filed after a `henrik-me/sub-invaders` post-CS hotfix episode: th
 | Add `LRN-126`, CS49 test, and CHANGELOG bullet | done | Copilot CLI | Source/doc/test batch committed before any harness command per LRN-124. |
 | Run `harness sync --mode=apply --resolved-sha <source-sha>` | done | Copilot CLI | Regenerated root `OPERATIONS.md` + `.harness-lock.json`; final sync check reports no drift. |
 | Validate targeted test, `harness lint --quiet`, `harness sync --mode=check`, and PR body | done | Copilot CLI | Targeted test 7/7, lint 29 passed / 0 failed / 3 skipped, sync check clean; PR body checked before opening PR. |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS49 lifecycle compressed (no `active/` rename). |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN-131 filed in PR #204 codifying lifecycle-compression doctrine. |
 | Push branch, open PR, and engage Copilot | pending | Copilot CLI | Title must close issue #139. |
 
 ## Notes
@@ -86,4 +88,4 @@ Issue #139 was filed after a `henrik-me/sub-invaders` post-CS hotfix episode: th
 
 ## Close-out compression note
 
-CS49 was implemented and merged via [PR #195](https://github.com/henrik-me/agent-harness/pull/195) (squash `aed6247`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` on 2026-05-14 via PR #204.
+CS49 was implemented and merged via [PR #195](https://github.com/henrik-me/agent-harness/pull/195) (squash `aed6247`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14).

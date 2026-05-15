@@ -78,4 +78,4 @@ Issue #140 records a discipline-only failure mode observed downstream: content P
 
 ## Close-out compression note
 
-CS51 was implemented and merged via [PR #199](https://github.com/henrik-me/agent-harness/pull/199) (squash `86e4ab7`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` on 2026-05-14 via PR #204.
+CS51 was implemented and merged via [PR #199](https://github.com/henrik-me/agent-harness/pull/199) (squash `86e4ab7`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` in PR #204 (commit-dated 2026-05-14).
