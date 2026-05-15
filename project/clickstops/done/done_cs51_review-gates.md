@@ -1,10 +1,10 @@
 # CS51 — Enforce REVIEWS.md as required status checks
 
-**Status:** planned
+**Status:** done
 **Owner:** copilot
 **Branch:** `cs51/review-gates`
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Depends on:** Issue [#140](https://github.com/henrik-me/agent-harness/issues/140); no in-repo CS dependency.
 
 ## Goal
@@ -69,3 +69,13 @@ Issue #140 records a discipline-only failure mode observed downstream: content P
 
 - Scope was implemented in an isolated sibling worktree (`C:\src\agent-harness-cs51`) because another parallel CS had the primary worktree checked out on `cs49/operations-doctrine`.
 - The workflow clones the harness CLI into `.harness-ci/agent-harness` rather than assuming consumer repos contain `scripts/checks/`.
+
+## Plan-vs-implementation review
+
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS51 was implemented and merged via [PR #199](https://github.com/henrik-me/agent-harness/pull/199) (squash `86e4ab7`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` on 2026-05-14 via PR #204.

@@ -1,10 +1,10 @@
 # CS52 — `harness review <pr>` content-PR review orchestrator
 
-**Status:** planned
-**Owner:** —
+**Status:** done
+**Owner:** yoga-ah
 **Branch:** —
 **Started:** —
-**Closed:** —
+**Closed:** 2026-05-14
 **Filed by:** Issue [#141](https://github.com/henrik-me/agent-harness/issues/141) — consolidate ad-hoc rubber-duck dispatch, Copilot engagement, and PR-body review evidence updates into one canonical CLI command.
 **Depends on:** CS40 (`harness review-output`) and CS41 (`harness copilot-engage` / review gates default flip). May land independently after those are present on main.
 
@@ -86,4 +86,10 @@ No sub-agent fan-out is required for implementation. The surface is cross-cuttin
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS52 was implemented and merged via [PR #196](https://github.com/henrik-me/agent-harness/pull/196) (squash `80325b8`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale). Retroactively renamed `planned/ → done/` on 2026-05-14 via PR #204.
