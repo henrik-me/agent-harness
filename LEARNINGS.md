@@ -2288,13 +2288,15 @@ date: 2026-05-14
 category: operational
 source_cs: CS46
 status: applied
-tags: [github-actions, read-only-gates, pr-body-edit, gh-pr-edit, manual-rerun, copilot-engagement]
+tags: [github-actions, read-only-gates, pr-body-edit, gh-pr-edit, manual-rerun, copilot-engagement, consumer-template]
 claim_area: ci-workflows
 ```
 
-**Problem:** `.github/workflows/read-only-gates.yml` enforces PR-body postdate / review-evidence gates and runs on `pull_request:` triggers. When an orchestrator edits the PR body via `gh pr edit <num> --body <text>` or `gh pr edit <num> --body-file <path>` to add a new `## Review log` row (e.g., recording a Copilot review timestamp after a `harness copilot-engage` round), the underlying `pull_request` event type is `edited`. **`read-only-gates` workflow does NOT include `edited` in its `pull_request:` trigger types list** — so the gate does NOT auto-re-fire on body edits. The previous (pre-edit) failed gate run remains visible in the PR's "Checks" tab as a permanent red ❌, blocking merge even after the body edit fixed the underlying issue. Repeated multiple times during PR #202 close-out (Copilot review iterations all required body re-pushes; each one needed `gh run rerun <rid>` invoked manually).
+**Problem:** `.github/workflows/pr-evidence-lint.yml` (job `read-only-gates`) and `.github/workflows/review-gates.yml` enforce PR-body postdate / review-evidence gates. When an orchestrator edits the PR body via `gh pr edit <num> --body <text>` or `gh pr edit <num> --body-file <path>` to add a new `## Review log` row (e.g., recording a Copilot review timestamp after a `harness copilot-engage` round), the underlying `pull_request` event type is `edited`. **If the workflow's `pull_request:` trigger does NOT include `edited` in its `types:` list, the gate does NOT auto-re-fire on body edits** and the previous (pre-edit) failed run remains visible in the PR's "Checks" tab as a permanent red ❌, blocking merge even after the body edit fixed the underlying issue.
 
-**Finding:** **After any `gh pr edit --body[-file]` invocation that affects gate-relevant content (`## Review log`, `## Model audit`, `## Plan-vs-implementation review`), manually `gh run rerun <run-id>` the most-recent failed `read-only-gates` run for the PR.** The contrast with `harness-self-check.yml` is illuminating: CS23 (LRN-100, PR #187) added `types: [opened, synchronize, reopened, edited]` to `harness-self-check.yml`'s `pull_request:` trigger so `pr-body` job re-fires on body edits. **`read-only-gates.yml` did NOT receive the same fix** and is the next candidate for the same `types: [edited]` addition. Until then, the manual-rerun discipline is required.
+**Status in this repo (verified 2026-05-14, PR #203):** the harness repo's own `pr-evidence-lint.yml` (line 16) and `review-gates.yml` (line 9) BOTH already include `[opened, synchronize, reopened, edited]` (`review-gates.yml` also adds `labeled, unlabeled`). So **the harness repo itself does NOT exhibit this bug** — body edits DO auto-rerun the gates here. The discipline below applies primarily to **consumer repos** whose workflow templates may have been bootstrapped before the `[edited]` trigger was added everywhere.
+
+**Finding:** **After any `gh pr edit --body[-file]` invocation that affects gate-relevant content (`## Review log`, `## Model audit`, `## Plan-vs-implementation review`), check that the relevant gate workflows have re-fired:** `gh run list --branch <branch> --limit 5 --json conclusion,name,headSha,createdAt`. If the most-recent run for a gate workflow predates the body edit, that workflow's `pull_request:` trigger is missing `edited` — manually `gh run rerun <run-id>` for now, AND file a follow-up to add `types: [opened, synchronize, reopened, edited]` to the workflow's trigger (CS23 / LRN-100 fix pattern).
 
 Concrete operational sequence after a Copilot review round:
 1. `node bin/harness.mjs copilot-engage <pr> --no-poll` (request the review)
@@ -2302,12 +2304,12 @@ Concrete operational sequence after a Copilot review round:
 3. `gh pr view <pr> --json reviews --jq '.reviews[-1]'` (confirm Copilot review exists)
 4. Edit PR body to append a new `## Review log` row with `actor=copilot-pull-request-reviewer[bot]`, `analyzed_head=$(git rev-parse HEAD)`, `verdict=Go` (or whatever Copilot returned), `timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')`
 5. `gh pr edit <pr> --body-file <path>` to push the new body
-6. **`gh run list --workflow read-only-gates.yml --branch <branch> --limit 1` → `gh run rerun <id>`** ← the manual-rerun step that's easy to forget
+6. `gh pr checks <pr>` — if a gate workflow shows a stale red ❌, locate its workflow file and verify `types: [edited]` is present; if missing, `gh run rerun <id>` as a one-shot, then file a follow-up to fix the trigger.
 7. Re-poll `gh pr checks <pr>` until green
 
-**Evidence:** PR #202 close-out (2026-05-14): three Copilot review rounds (R1 → R2 → R3 PRR-1..5 absorbed). After each round, the gate-relevant body edits were pushed via `gh pr edit --body-file` but `gh pr checks 202` continued showing a red ❌ for the previous `read-only-gates` run until manual `gh run rerun <id>`. Identical pattern previously observed and documented for `pr-body` job in `harness-self-check.yml` pre-CS23 (LRN-100 → fixed in CS23 PR #187 by adding `types: [edited]`).
+**Evidence:** Verified live during PR #203 (this docs PR, 2026-05-14): `pr-evidence-lint` (`read-only-gates` job) and `review-gates` (`copilot-review-attached` etc.) both auto-re-fired on `gh pr edit --body-file` push (new run IDs `25899309340` and `25899309341` appeared within seconds). The CS23 fix (LRN-100, PR #187) added `types: [edited]` to `harness-self-check.yml`'s `pull_request:` trigger and the same pattern was subsequently applied to `pr-evidence-lint.yml` and `review-gates.yml`. Consumer repos pinned to harness `<v0.5.0` may lack the `[edited]` trigger in their templates and would still need the manual-rerun step.
 
-**Disposition:** Applied as operational discipline for the orchestrator playbook. **Follow-up CS candidate:** apply the CS23 fix pattern to `read-only-gates.yml` (add `types: [opened, synchronize, reopened, edited]` to its `pull_request:` trigger). Once that lands, this LRN's manual-rerun step becomes obsolete (status will flip to `applied → superseded`). Cross-reference: LRN-100, CS23 PR #187. Suggested venue: future CS as part of the same workflow-trigger consistency sweep.
+**Disposition:** Applied as orchestrator discipline. Status of harness-repo bug: **resolved** by `[edited]` triggers already shipped in the affected workflows. Consumer-repo doctrine: when bumping a consumer past v0.5.0, verify their `pr-evidence-lint.yml` and `review-gates.yml` (or equivalents) include `edited` in `pull_request: types:` — if not, file a workflow-trigger consistency CS in the consumer repo using CS23 as the template. Cross-reference: LRN-100, CS23 PR #187.
 
 ### LRN-130
 
