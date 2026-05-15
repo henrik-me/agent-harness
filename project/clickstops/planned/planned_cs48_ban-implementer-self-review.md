@@ -51,7 +51,7 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | github-copilot-cli | cs48-plan-review-r2 | 22d3112ff308 | 2026-05-15T00:12:35Z | Go-with-amendments | Content covers issue #142; commit merged origin/main so CS52 CLI reference is current and companion-owned. |
+| R1 | gpt-5.5 | github-copilot-cli | cs48-final-plan-review | 22d3112ff308 | 2026-05-15T00:16:12Z | Go | Covers issue #142 ACs after origin/main merge; CS52 owns harness review <pr> while CS48 wires the reporting doctrine. |
 ## Tasks
 
 | Task | State | Owner | Notes |
