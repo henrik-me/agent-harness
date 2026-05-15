@@ -4,9 +4,10 @@
  *
  * Scans planned/, active/, and done/ clickstop files for a `## Model audit` key-value
  * table. `Implementer agent` and `Reviewer agent` must be present and must
- * not match case-insensitively; `Implementer models` and `Reviewer model` must
- * not overlap case-insensitively. Missing agent/model rows warn by default;
- * pass --strict-agent-columns to turn missing agent warnings into errors.
+ * not match case-insensitively. `Implementer models` and `Reviewer model` must
+ * satisfy the PR-side model-independence policy: non-GPT reviewer overlaps fail;
+ * GPT-5.5 overlaps fail only for high-risk CSs. Missing model rows are errors;
+ * missing agent rows warn by default unless --strict-agent-columns is set.
  */
 
 import fs from 'node:fs';
@@ -14,6 +15,7 @@ import path from 'node:path';
 import { headingAnchor } from '../lib/doc-schema.mjs';
 
 const LINTED_SUBDIRS = ['planned', 'active', 'done'];
+const DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
 
 /**
  * CS43 — recurse into nested CS subdirectories under
@@ -35,7 +37,7 @@ const NESTED_CS_DIR_RE = /^(planned|active|done)_cs\d+[a-z]*_.*$/;
 const HELP = `\
 Usage: check-clickstop-implementer-not-reviewer.mjs [--cwd <dir>] [--strict-agent-columns] [--quiet] [--help]
 
-Validate that ` + '`## Model audit`' + ` records distinct Implementer/Reviewer agent values and non-overlapping Implementer/Reviewer model values.
+Validate that ` + '`## Model audit`' + ` records distinct Implementer/Reviewer agent values and model-independent Implementer/Reviewer values.
 
 Options:
   --cwd <dir>                 Consumer repo root (default: process.cwd())
@@ -45,7 +47,7 @@ Options:
 
 Exit codes:
   0  pass (or warnings only with default --strict-agent-columns=false)
-  1  agent-identity or model-independence overlap detected (or strict mode + missing agent columns)
+  1  agent-identity violation, model-independence violation, missing model columns, or strict mode + missing agent columns
   2  bad usage
 `;
 
@@ -194,23 +196,54 @@ function missingAgentFinding(label, line, missingFields) {
   }
 }
 
-function missingModelFinding(label, line, missingFields) {
-  logError(
-    `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
+function missingModelMessage(label, line, missingFields) {
+  return `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
     `Fix: add "| Implementer models | <comma-separated model ids> |" and ` +
-    `"| Reviewer model | <single model id> |" rows whose values do not overlap.`
-  );
+    `"| Reviewer model | <single model id> |" rows whose values do not overlap.`;
+}
+
+function missingModelFinding(label, line, missingFields) {
+  logError(missingModelMessage(label, line, missingFields));
+}
+
+function missingModelWarning(label, line, missingFields) {
+  logWarning(missingModelMessage(label, line, missingFields));
 }
 
 function normalizeModelId(value) {
-  return value
+  const compact = String(value ?? '')
     .trim()
     .toLowerCase()
     .replace(/`/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
+
+  const claude = compact.match(/^(?:claude-)?(opus|sonnet|haiku)-(\d+)-(\d+)/);
+  if (claude) return `claude-${claude[1]}-${claude[2]}.${claude[3]}`;
+
+  const gpt = compact.match(/^gpt-(\d+)-(\d+)/);
+  if (gpt) return `gpt-${gpt[1]}.${gpt[2]}`;
+
+  return compact;
 }
+
+function loadHighRiskClickstops() {
+  const configPath = path.join(cwd, 'harness.config.json');
+  if (!fs.existsSync(configPath)) return DEFAULT_HIGH_RISK_CLICKSTOPS;
+  try {
+    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (Array.isArray(cfg.reviews?.high_risk_clickstops)) {
+      return cfg.reviews.high_risk_clickstops.map((id) => String(id));
+    }
+  } catch (err) {
+    logError(`cannot parse harness.config.json reviews.high_risk_clickstops: ${err.message}`);
+  }
+  return DEFAULT_HIGH_RISK_CLICKSTOPS;
+}
+
+const PRIMARY_REVIEWER_MODEL = normalizeModelId('gpt-5.5');
+const HIGH_RISK_CLICKSTOPS = new Set(loadHighRiskClickstops().map((id) => id.toUpperCase()));
 
 /**
  * Parse the `**Closed:** YYYY-MM-DD` line from a clickstop body.
@@ -255,6 +288,28 @@ const ENFORCEMENT_DATE_MS = Date.parse(
   `${IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE}T00:00:00Z`,
 );
 
+function clickstopIdFromBasename(basename) {
+  const m = basename.match(/^(?:planned|active|done)_(cs\d+[a-z]*)_/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
+function shouldRequireModelAudit(subdir, basename) {
+  // Backlog planned files predate Model audit; active/new done files must not bypass it.
+  if (subdir === 'active') return true;
+  if (subdir !== 'done') return false;
+  const csId = clickstopIdFromBasename(basename);
+  const m = csId ? csId.match(/^CS(\d+)/) : null;
+  return m ? Number.parseInt(m[1], 10) >= 48 : true;
+}
+
+function missingAuditModelFinding(label, line, missingFields, subdir, basename) {
+  if (shouldRequireModelAudit(subdir, basename)) {
+    missingModelFinding(label, line, missingFields);
+  } else {
+    missingModelWarning(label, line, missingFields);
+  }
+}
+
 /**
  * Date-gate predicate per CS43 C43-2/C43-3/C43-4. Returns `true` if the
  * file should be linted, `false` if it is grandfathered out.
@@ -289,9 +344,9 @@ function shouldLintByDateGate(label, basename, content) {
   return true;
 }
 
-function checkFile(filePath, subdir) {
+function checkFile(filePath, labelPrefix, lifecycleSubdir = labelPrefix.split('/')[0]) {
   const basename = path.basename(filePath);
-  const label = `${subdir}/${basename}`;
+  const label = `${labelPrefix}/${basename}`;
   let content;
   try {
     content = fs.readFileSync(filePath, 'utf8')
@@ -307,12 +362,14 @@ function checkFile(filePath, subdir) {
   const section = extractSectionWithLineNumber(content, headingAnchor('Model audit'));
   if (!section) {
     missingAgentFinding(label, 1, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, 1, ['Implementer models', 'Reviewer model'], lifecycleSubdir, basename);
     return;
   }
 
   const { headerCells, dataRows, rowLineOffsets } = parseMarkdownTable(section.body);
   if (!headerCells || headerCells.length === 0) {
     missingAgentFinding(label, section.headingLine, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, section.headingLine, ['Implementer models', 'Reviewer model'], lifecycleSubdir, basename);
     return;
   }
 
@@ -321,6 +378,7 @@ function checkFile(filePath, subdir) {
   const valueIdx = colMap.get('value');
   if (fieldIdx === undefined || valueIdx === undefined) {
     missingAgentFinding(label, section.headingLine, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, section.headingLine, ['Implementer models', 'Reviewer model'], lifecycleSubdir, basename);
     return;
   }
 
@@ -392,12 +450,19 @@ function checkFile(filePath, subdir) {
 
   const overlap = implementerModels.filter((m) => m === reviewerModel);
   if (overlap.length > 0) {
-    logError(
-      `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
-      `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
-      `(normalized family/version compare). Fix: dispatch a reviewer whose model differs from every implementer model ` +
-      `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
-    );
+    const csId = clickstopIdFromBasename(basename);
+    const highRisk = csId ? HIGH_RISK_CLICKSTOPS.has(csId) : false;
+    if (reviewerModel !== PRIMARY_REVIEWER_MODEL || highRisk) {
+      const fix = reviewerModel === PRIMARY_REVIEWER_MODEL
+        ? 'obtain an independent GPT-5.5 review or explicit user waiver for this high-risk CS'
+        : 'dispatch an independent reviewer or use GPT-5.5 per the PR-side independence gate';
+      logError(
+        `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
+        `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
+        `(normalized family/version compare). Fix: ${fix} ` +
+        `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
+      );
+    }
   }
 }
 
@@ -455,7 +520,7 @@ function walkClickstopSubdir(dirPath, subdir) {
         if (!nested.isFile()) continue;
         if (!CS_FILE_RE.test(nested.name)) continue;
         filesChecked++;
-        checkFile(path.join(nestedPath, nested.name), nestedLabel);
+        checkFile(path.join(nestedPath, nested.name), nestedLabel, subdir);
       }
     }
     // Any other directory shape (e.g. unrecognised prefix or two-level nesting)
