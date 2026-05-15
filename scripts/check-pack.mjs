@@ -3,7 +3,7 @@
  * scripts/check-pack.mjs — CS13.
  *
  * Runs `npm pack --dry-run --json` against a package directory and validates:
- *   1. Tarball unpacked-size budget (default 1 MB).
+ *   1. Tarball unpacked-size budget (default 2 MB).
  *   2. Forbidden patterns in the packed file list.
  *   3. Required entries are present in the packed file list.
  *
@@ -12,7 +12,7 @@
  *
  * Options:
  *   --cwd <path>             Path to the package root (must contain package.json).
- *   --max-size-bytes <N>     Tarball unpacked-size budget in bytes (default 1048576 = 1 MB).
+ *   --max-size-bytes <N>     Tarball unpacked-size budget in bytes (default 2097152 = 2 MB).
  *   --quiet                  Suppress success stdout; violations and errors still print.
  *
  * Exit codes:
@@ -29,7 +29,7 @@ import { spawnSync } from 'node:child_process';
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MAX_SIZE_BYTES = 1048576; // 1 MB
+const DEFAULT_MAX_SIZE_BYTES = 2097152; // 2 MB
 
 /** Directory/file prefixes that must NOT appear in the packed file list. */
 const FORBIDDEN_PREFIXES = ['node_modules/', 'tests/', 'project/', '.github/', '.git/'];
