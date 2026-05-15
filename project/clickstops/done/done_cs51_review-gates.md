@@ -1,7 +1,7 @@
 # CS51 — Enforce REVIEWS.md as required status checks
 
 **Status:** done
-**Owner:** copilot
+**Owner:** yoga-ah
 **Branch:** `cs51/review-gates`
 **Started:** 2026-05-14
 **Closed:** 2026-05-14

@@ -1,7 +1,7 @@
 # CS49 — Operations doctrine: orchestrator availability, progress reporting, and workboard-first out-of-CS work
 
 **Status:** done
-**Owner:** Copilot CLI sub-agent
+**Owner:** yoga-ah
 **Branch:** `cs49/operations-doctrine`
 **Started:** 2026-05-14
 **Closed:** 2026-05-14

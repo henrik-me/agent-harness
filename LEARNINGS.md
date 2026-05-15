@@ -2220,6 +2220,7 @@ Concrete operational rule for any future velocity batch:
 ### LRN-127
 
 ```yaml
+id: LRN-127
 date: 2026-05-14
 category: process
 source_cs: CS48
