@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * scripts/check-clickstop-implementer-not-reviewer.mjs — Agent identity independence linter.
+ * scripts/check-clickstop-implementer-not-reviewer.mjs — Agent/model independence linter.
  *
  * Scans planned/, active/, and done/ clickstop files for a `## Model audit` key-value
  * table. `Implementer agent` and `Reviewer agent` must be present and must
- * not match case-insensitively. Missing agent rows warn by default in v0.5.0;
- * pass --strict-agent-columns to turn the migration warning into an error.
+ * not match case-insensitively; `Implementer models` and `Reviewer model` must
+ * not overlap case-insensitively. Missing agent/model rows warn by default;
+ * pass --strict-agent-columns to turn missing agent warnings into errors.
  */
 
 import fs from 'node:fs';
@@ -34,7 +35,7 @@ const NESTED_CS_DIR_RE = /^(planned|active|done)_cs\d+[a-z]*_.*$/;
 const HELP = `\
 Usage: check-clickstop-implementer-not-reviewer.mjs [--cwd <dir>] [--strict-agent-columns] [--quiet] [--help]
 
-Validate that ` + '`## Model audit`' + ` records distinct Implementer agent and Reviewer agent values.
+Validate that ` + '`## Model audit`' + ` records distinct Implementer/Reviewer agent values and non-overlapping Implementer/Reviewer model values.
 
 Options:
   --cwd <dir>                 Consumer repo root (default: process.cwd())
@@ -44,7 +45,7 @@ Options:
 
 Exit codes:
   0  pass (or warnings only with default --strict-agent-columns=false)
-  1  agent-identity overlap detected (or strict mode + missing columns)
+  1  agent-identity or model-independence overlap detected (or strict mode + missing agent columns)
   2  bad usage
 `;
 
@@ -193,6 +194,14 @@ function missingAgentFinding(label, line, missingFields) {
   }
 }
 
+function missingModelFinding(label, line, missingFields) {
+  logWarning(
+    `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
+    `Fix: add "| Implementer models | <comma-separated model ids> |" and ` +
+    `"| Reviewer model | <single model id> |" rows whose values do not overlap.`
+  );
+}
+
 /**
  * Parse the `**Closed:** YYYY-MM-DD` line from a clickstop body.
  *
@@ -307,8 +316,12 @@ function checkFile(filePath, subdir) {
 
   let implementerAgentRaw = null;
   let reviewerAgentRaw = null;
+  let implementerModelsRaw = null;
+  let reviewerModelRaw = null;
   let implementerAgentLine = section.headingLine;
   let reviewerAgentLine = section.headingLine;
+  let implementerModelsLine = section.headingLine;
+  let reviewerModelLine = section.headingLine;
 
   for (let i = 0; i < dataRows.length; i++) {
     const cells = dataRows[i];
@@ -322,6 +335,12 @@ function checkFile(filePath, subdir) {
     } else if (fieldName === 'reviewer agent') {
       reviewerAgentRaw = value;
       reviewerAgentLine = rowLine;
+    } else if (fieldName === 'implementer models') {
+      implementerModelsRaw = value;
+      implementerModelsLine = rowLine;
+    } else if (fieldName === 'reviewer model') {
+      reviewerModelRaw = value;
+      reviewerModelLine = rowLine;
     }
   }
 
@@ -344,6 +363,31 @@ function checkFile(filePath, subdir) {
       `Implementer agent and Reviewer agent are both "${reviewerAgentTrimmed}" ` +
       `(case-insensitive compare). Fix: dispatch a reviewer under a different GitHub identity ` +
       `and update the Reviewer agent row at ${label}:${reviewerAgentLine}.`
+    );
+  }
+
+  const implementerModels = (implementerModelsRaw === null ? '' : implementerModelsRaw)
+    .split(',')
+    .map((m) => m.trim().toLowerCase())
+    .filter(Boolean);
+  const reviewerModel = reviewerModelRaw === null ? '' : reviewerModelRaw.trim().toLowerCase();
+
+  const missingModelFields = [];
+  if (implementerModels.length === 0) missingModelFields.push('Implementer models');
+  if (reviewerModel === '') missingModelFields.push('Reviewer model');
+  if (missingModelFields.length > 0) {
+    const missingLine = implementerModels.length === 0 ? implementerModelsLine : reviewerModelLine;
+    missingModelFinding(label, missingLine, missingModelFields);
+    return;
+  }
+
+  const overlap = implementerModels.filter((m) => m === reviewerModel);
+  if (overlap.length > 0) {
+    logError(
+      `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
+      `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
+      `(case-insensitive compare). Fix: dispatch a reviewer whose model differs from every implementer model ` +
+      `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
     );
   }
 }

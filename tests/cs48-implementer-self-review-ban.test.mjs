@@ -19,14 +19,21 @@ const CALLOUT = '**Self-review carries zero review weight.**';
 const BANNED_FIELD = 'Self-review summary';
 const IMPLEMENTER_FIELD = 'Implementer model used';
 const PLANNED_REVIEW_CLI = 'planned `harness review` CLI';
+const DISPATCH_SURFACES = [
+  'template/composed/OPERATIONS.md',
+  'OPERATIONS.md',
+  'template/managed/.github/copilot-instructions.md',
+  '.github/copilot-instructions.md',
+];
+const OPERATIONS_SURFACES = ['template/composed/OPERATIONS.md', 'OPERATIONS.md'];
 
 function read(relPath) {
   return readFileSync(path.join(REPO_ROOT, relPath), 'utf8').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
 describe('CS48 — implementer self-review ban in dispatch template + LRN', () => {
-  it('1. dispatch template contains the verbatim zero-weight self-review callout', () => {
-    for (const relPath of ['template/composed/OPERATIONS.md', 'OPERATIONS.md']) {
+  it('1. dispatch surfaces contain the verbatim zero-weight self-review callout', () => {
+    for (const relPath of DISPATCH_SURFACES) {
       const content = read(relPath);
       assert.ok(
         content.includes(CALLOUT),
@@ -39,8 +46,8 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
     }
   });
 
-  it('2. dispatch template no longer asks for the stale self-review report field', () => {
-    for (const relPath of ['template/composed/OPERATIONS.md', 'OPERATIONS.md']) {
+  it('2. dispatch surfaces no longer ask for the stale self-review report field', () => {
+    for (const relPath of DISPATCH_SURFACES) {
       const content = read(relPath);
       assert.ok(
         !content.includes(BANNED_FIELD),
@@ -55,6 +62,10 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
         /STATUS: complete \| partial \| blocked\nSUMMARY: <one paragraph>\nIMPLEMENTER MODEL USED:/,
         `${relPath} must include IMPLEMENTER MODEL USED in the canonical report-shape block`,
       );
+    }
+
+    for (const relPath of OPERATIONS_SURFACES) {
+      const content = read(relPath);
       assert.match(
         content,
         /SUMMARY: <one paragraph>\n {4}IMPLEMENTER MODEL USED:/,
@@ -77,7 +88,7 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
       );
       assert.ok(
         content.includes('?startWave=N'),
-        `${relPath} must cite the concrete ?startWave=N blocking bug evidence`,
+        `${relPath} must cite the concrete SI PR #28 review-evidence incident`,
       );
     }
   });

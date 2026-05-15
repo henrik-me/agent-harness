@@ -51,6 +51,13 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     assert.match(r.stdout, /agent-identity violation/);
   });
 
+  it('model overlap exits 1', () => {
+    const r = run(path.join(FIXTURES, 'model-overlap'));
+    assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
+    assert.match(r.stdout, /model-independence violation/);
+    assert.match(r.stdout, /gpt-5\.5/);
+  });
+
   it('missing columns default strict=false exits 0 with warning', () => {
     const r = run(path.join(FIXTURES, 'missing'));
     assert.equal(r.status, 0, `stdout:\n${r.stdout}`);

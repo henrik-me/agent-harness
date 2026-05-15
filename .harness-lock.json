@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs48/ban-implementer-self-review",
-  "resolved_sha": "eb9839bbacdca9bbb520b8ef0d4757fe4dd788c5",
+  "resolved_sha": "7dfa2cf8a703ca753b07cbd83ee0f6f8b6f73b37",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:47:03.804Z",
+  "synced_at": "2026-05-15T00:06:04.827Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -43,8 +43,8 @@
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
-      "rendered_hash": "53f2f9531a24c986513e27b867f7a603f8bdd30e6e802ed4a90099c70132e5c2",
-      "action": "skipped"
+      "rendered_hash": "446a015f9759441149ef02425b2641e8d11b284ba666c42670fd72bfbe92ca0f",
+      "action": "updated"
     },
     {
       "target": ".github/workflows/harness-drift.yml",
@@ -85,7 +85,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "682c7f440ee93ac21cb89128b3f37d1ed9c15f3456b89e1c0b05a1a34713f468",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
@@ -158,7 +158,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "56253fc3a7f6eb3b688fbc1ed4674f225e3f321b94309ef3a9d4b8094b6e36d5",
+      "rendered_hash": "aa26f1e30c3e4cdd559bb851725e7ad1fd0679eeee1787feb9d5c308c59b50aa",
       "action": "preserved"
     },
     {

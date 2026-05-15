@@ -109,11 +109,24 @@ Every sub-agent prompt must include, in order:
 8. Findings to surface (learning candidates go in the report).
 9. Report shape (see below).
 
+### Reporting independence (CS48 / issue #142)
+
+**Self-review carries zero review weight.** Any implementer self-review of
+the diff is a debugging aid, not a review-of-record. The orchestrator MUST
+dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
+differs from every implementer model used in the CS. The planned `harness review` CLI will obtain the rubber-duck review; do not
+pre-empt that step or present implementer self-review as review evidence.
+
+Required final report field: `Implementer model used` (the model-id(s)
+materially used for the sub-agent's work), so the orchestrator can update the
+CS sub-agent ledger and the PR-body `## Model audit` table.
+
 ### Required report shape
 
 ```
 STATUS: complete | partial | blocked
 SUMMARY: <one paragraph>
+IMPLEMENTER MODEL USED: <model-id(s) materially used for this work; used by the CS sub-agent ledger and PR-body ## Model audit>
 FILES CHANGED:
   - <path> (created | edited | deleted) — <one-line why>
 SELF-CHECKS RUN:
