@@ -21,7 +21,8 @@
       ".github/CODEOWNERS",
       ".github/copilot-instructions.md",
       ".github/workflows/harness-drift.yml",
-      ".github/workflows/pr-evidence-lint.yml"
+      ".github/workflows/pr-evidence-lint.yml",
+      ".github/workflows/review-gates.yml"
     ]
   },
   "composed": {
@@ -103,7 +104,15 @@
     "fallback_model": "sonnet-4.6",
     "require_copilot_review": true,
     "copilot_trigger": "mention",
+    "copilot_reviewer_slug": "copilot-pull-request-reviewer[bot]",
     "review_timeout_minutes": 30,
-    "high_risk_clickstops": []
+    "enforce_gates": true,
+    "high_risk_clickstops": [
+      "CS03",
+      "CS11",
+      "CS15a",
+      "CS18b",
+      "CS19"
+    ]
   }
 }
