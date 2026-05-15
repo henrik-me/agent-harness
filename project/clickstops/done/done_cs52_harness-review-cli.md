@@ -79,6 +79,8 @@ No sub-agent fan-out is required for implementation. The surface is cross-cuttin
 | Add tests | in-progress | yoga-ah | CLI + library targeted tests. |
 | Update docs + changelog + planned CS file | in-progress | yoga-ah | Template docs first, root docs via sync. |
 | Validate, push, open PR, request Copilot | planned | yoga-ah | See Exit criteria. |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS52 lifecycle compressed (no `active/` rename). |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN-131 filed in PR #204 codifying lifecycle-compression doctrine. |
 
 ## Notes / Learnings
 

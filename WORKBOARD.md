@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-14 (Post-v0.5.2 retroactive close-out sweep: CS48-CS52 renamed `planned/ → done/` with close-out compression notes via PR #204 (after PR #203 docs refresh). Main HEAD `f8fefeb` pre-PR-204. Issues #138-#142 closed. yoga-ah → 🟡 Idle. **Suggested next CSs are priority-ordered in [CONTEXT.md § Suggested next CSs](CONTEXT.md#suggested-next-css-priority-ordered)** — top of list: cut v0.6.0 (CS51+CS52 are minor-worthy), then claim CS47.)
+> **Last updated:** 2026-05-15 (Post-v0.5.2 retroactive close-out sweep: CS48-CS52 renamed `planned/ → done/` with close-out compression notes via PR #204 (after PR #203 docs refresh). Issues #138-#142 closed. yoga-ah → 🟡 Idle. **Suggested next CSs are priority-ordered in [CONTEXT.md § Suggested next CSs](CONTEXT.md#suggested-next-css-priority-ordered)** — top of list: cut v0.6.0 (CS51+CS52 are minor-worthy), then claim CS47.)
 
 ## Orchestrators
 

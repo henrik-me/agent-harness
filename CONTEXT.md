@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last updated:** 2026-05-14 (post-v0.5.2 retroactive close-out sweep — CS48-CS52 renamed `planned/ → done/` with minimum-compliance close-out compression notes; PR #204. Main HEAD `f8fefeb` (pre-PR-204). Closed issues #138-#142 (full SI-feedback batch). v0.5.1 cut for `cs-plan` linter false-positive bugfix; v0.5.2 cut with CS46 + CS23/43/44/45 close-outs. Post-v0.5.2: CS49 #195, CS52 #196, CS50 #197, CS48 #198, CS51 #199, chore #200 (npm pack 1MB→2MB), CS47 plan-filed #202, docs sweep #203 (4 LRNs added incl. LRN-128/129/130 and LRN-124 amendment), retroactive close-out sweep #204. yoga-ah → 🟡 Idle.)
+> **Last updated:** 2026-05-15 (post-v0.5.2 retroactive close-out sweep — CS48-CS52 renamed `planned/ → done/` with minimum-compliance close-out compression notes via PR #204. Closed issues #138-#142 (full SI-feedback batch). v0.5.1 cut for `cs-plan` linter false-positive bugfix; v0.5.2 cut with CS46 + CS23/43/44/45 close-outs. Post-v0.5.2: CS49 #195, CS52 #196, CS50 #197, CS48 #198, CS51 #199, chore #200 (npm pack 1MB→2MB), CS47 plan-filed #202, docs sweep #203 (4 LRNs added incl. LRN-128/129/130 and LRN-124 amendment), retroactive close-out sweep #204. yoga-ah → 🟡 Idle.)
 
 > **🆕 New orchestrator picking this up?** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) first — its `## Quick Reference Checklist` (especially the Session Start bootstrap sanity check) is the deterministic entry door. Then read `## Suggested next CSs (priority-ordered)` directly below for what to work on first.
 
