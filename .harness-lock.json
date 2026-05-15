@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs50/workboard-admin-bypass",
-  "resolved_sha": "1b7a86494f542d50a6c1165ceebdf4e781f36af7",
+  "harness_ref": "cs48/ban-implementer-self-review",
+  "resolved_sha": "e306524eb64b4fba5ab1d9e88f6456f6bdeb0856",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-15T00:04:27.252Z",
+  "synced_at": "2026-05-15T00:43:01.560Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -43,7 +43,7 @@
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
-      "rendered_hash": "53f2f9531a24c986513e27b867f7a603f8bdd30e6e802ed4a90099c70132e5c2",
+      "rendered_hash": "e74dc53141972646d4ec732055589f78483e9fa7ee94c0db28d56e2618ef95da",
       "action": "skipped"
     },
     {
@@ -84,21 +84,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "c3eff1207e134215e25d0093e98f5d623836c099d9835d897807ce5500559b97",
-      "action": "updated",
+      "rendered_hash": "b2bb6f905547a648fb9732ed4a6a3361acb363eb5b4539e944418eb7bdde6bf1",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1678,
-            "end": 1680
+            "start": 1704,
+            "end": 1706
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "b0a6f7f1d4602a8666294ff92892d76656bbd5258590efcadd73b86038c61cdf"
+      "template_prose_hash": "05628afffa25d04b5a2e1812df4e957c7ac849218e1fdca2c7f75c844588f441"
     },
     {
       "target": "REVIEWS.md",
@@ -158,7 +158,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "87cfb2a3120d725ef02fc99d3f5d7aa9dc2f5f7567e538e6562c9ff549ee9493",
+      "rendered_hash": "3dc32e25552da15b7a19c95d5d21a57b45bb7f65c447a9e5d61de7898ecb3642",
       "action": "preserved"
     },
     {
