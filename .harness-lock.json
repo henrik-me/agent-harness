@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs49/operations-doctrine",
-  "resolved_sha": "7943268984fef7ee61d7c61c1cd5f9f442e98c4f",
+  "harness_ref": "cs52/harness-review-cli",
+  "resolved_sha": "77fb3f67ef79465a18290999663665deb6de1be4",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-14T23:31:23.664Z",
+  "synced_at": "2026-05-14T23:47:33.445Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -84,41 +84,41 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "3fac49bf28157952228c51f073214bf3c51c73694393f36c01b43f389b293f2a",
+      "rendered_hash": "237ace13b9be259215d41a4c59c2baf1a92d0364d4adc81820e255fb4ebb841c",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1631,
-            "end": 1633
+            "start": 1657,
+            "end": 1659
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "54d55f5d003a034d2fb7a2a821323efbb567d648ccd5b28ee5de1ae09ada3a6d"
+      "template_prose_hash": "a625407e533c63335ed02acd76d7038b0eda7672e00ff173d3e25d4f7ded7cc8"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "fd486ecbb5369dae4462c7c196baaccfb1db0f9fa522cbd2047c0eb49ee347da",
-      "action": "skipped",
+      "rendered_hash": "7721ad01ac2757d5f486508cd1c5778bfc4050768a6e094968e19338d79b3864",
+      "action": "updated",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
-            "start": 382,
-            "end": 399
+            "start": 405,
+            "end": 422
           },
           "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "2d6d46c6702b54529402f7cf754c2e6b87b570a79166b5da62c25a137b5e5379"
+      "template_prose_hash": "00dbc1f9f6614c89432963acc4946d73cbaf089f8ee0adf1a7749575163ac073"
     },
     {
       "target": ".github/pull_request_template.md",
