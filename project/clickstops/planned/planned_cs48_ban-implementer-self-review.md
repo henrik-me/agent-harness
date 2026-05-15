@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Issue [#142](https://github.com/henrik-me/agent-harness/issues/142) — dispatch template, LRN, and clickstop implementer-not-reviewer lint follow-up.
-**Depends on:** CS41 supplied the first implementer-not-reviewer lint rule; CS48 extends it to model overlap. Companion CS52 planned `harness review` CLI is referenced as planned, not invoked here.
+**Depends on:** CS41 supplied the first implementer-not-reviewer lint rule; CS48 extends it to model overlap. CS52 supplies the `harness review <pr>` CLI that CS48 references but does not modify.
 
 ## Goal
 
@@ -16,10 +16,10 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| C48-1 | Scope boundary | Documentation wording + LRN + tests + model-overlap lint extension. | Issue #142 acceptance requires `clickstop-implementer-not-reviewer` to catch model independence violations; CS48 keeps PR-side gates and the planned `harness review` CLI in companion-CS territory. |
+| C48-1 | Scope boundary | Documentation wording + LRN + tests + model-overlap lint extension. | Issue #142 acceptance requires `clickstop-implementer-not-reviewer` to catch model independence violations; CS48 keeps PR-side gates and `harness review <pr>` implementation details in companion-CS territory. |
 | C48-2 | Dispatch surface | Edit reporting/final-report surfaces in `template/composed/OPERATIONS.md` and `template/managed/.github/copilot-instructions.md`, then regenerate root files via `harness sync`. | Keeps template sources authoritative and avoids hand-editing generated root docs. |
 | C48-3 | Report field | Require `Implementer model used` for ledger and PR `## Model audit` provenance. | The orchestrator needs model provenance; it must not receive implementer review evidence as a substitute for independent review. |
-| C48-4 | Review pointer | Refer to the planned `harness review` CLI and independent reviewer dispatch, without claiming the CLI exists in CS48. | Companion CS52 owns the CLI; CS48 only reserves the wording and prevents pre-emption. |
+| C48-4 | Review pointer | Refer to the `harness review <pr>` CLI and independent reviewer dispatch, without modifying the CLI implementation. | CS52 owns the CLI; CS48 only wires the wording and prevents implementer self-review from pre-empting independent review. |
 | C48-5 | LRN number | Use LRN-127, the next available ID after CS49 claimed LRN-126. | Maintains the project learning sequence while preserving existing out-of-order close-out entries. |
 | C48-6 | Template inheritance | Add the same LRN-127 to `template/seeded/LEARNINGS.md` because `harness.config.json` classifies `LEARNINGS.md` as seeded. | Consumers inherit the lesson on init; there is no managed LEARNINGS template. |
 | C48-7 | Test strategy | Add regression tests asserting the callout, stale field absence, implementer-model field, planned-CLI pointer, SI PR #28 review-evidence incident, and model-overlap lint failure. | Mechanical drift guard for all issue #142 acceptance criteria in scope. |
@@ -51,7 +51,7 @@ Make the sub-agent dispatch/reporting template explicit that implementer self-re
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | github-copilot-cli | cs48-plan-review | 5fd00340fb66 | 2026-05-15T00:06:59Z | Go | Covers issue #142 ACs including model-overlap lint, managed dispatch surface, and SI fixture-consistent LRN wording. |
+| R1 | gpt-5.5 | github-copilot-cli | cs48-plan-review-r2 | 22d3112ff308 | 2026-05-15T00:12:35Z | Go-with-amendments | Content covers issue #142; commit merged origin/main so CS52 CLI reference is current and companion-owned. |
 ## Tasks
 
 | Task | State | Owner | Notes |

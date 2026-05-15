@@ -607,7 +607,7 @@ Run all of the following and include each result in SELF-CHECKS RUN:
 **Self-review carries zero review weight.** Any implementer self-review of
 the diff is a debugging aid, not a review-of-record. The orchestrator MUST
 dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
-differs from every implementer model used in the CS. The planned `harness review` CLI will obtain the rubber-duck review; do not
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
 Required final report field: `Implementer model used` (the model-id(s)
@@ -638,11 +638,13 @@ missing fields explicitly listed.
 
 ### Canonical reviewer preamble (CS35 C35-1)
 
-When dispatching a rubber-duck reviewer (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
+When dispatching a rubber-duck reviewer manually (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
 the orchestrator MUST paste the block below verbatim into the dispatch.
-Reviewer dispatch ownership lives with the orchestrator — the harness CLI
-never emits prompts, never paste-protocols, never calls an LLM API
-(per Decision C35-1).
+For content PRs on CS52+, prefer `harness review <pr>` (see
+[§ Reviewer dispatch via `harness review`](#reviewer-dispatch-via-harness-review-cs52));
+it composes the same guardrailed prompt for the manual MVP. The harness CLI
+still does not call an LLM API; the orchestrator dispatches the emitted prompt
+and paste-protocols the structured reviewer output.
 
 The block is delimited by sentinel markers so `tests/operations-reviewer-preamble.test.mjs`
 can assert presence and required-field coverage:
@@ -734,7 +736,7 @@ fields explicitly listed.
 **Self-review carries zero review weight.** Any implementer self-review of
 the diff is a debugging aid, not a review-of-record. The orchestrator MUST
 dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
-differs from every implementer model used in the CS. The planned `harness review` CLI will obtain the rubber-duck review; do not
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
 Required final report field: `Implementer model used` (the model-id(s)
@@ -852,6 +854,30 @@ approximate completion percentage, and blockers if any.
 Silence longer than 15 wall-minutes without an update is a stall signal. The
 orchestrator should check the agent, re-brief, re-dispatch, or escalate rather
 than letting a silent background task consume the coordination slot invisibly.
+
+### Reviewer dispatch via `harness review` (CS52)
+
+For content PR review rounds, run the combined review orchestrator instead of
+hand-stitching the rubber-duck prompt, Copilot engagement, polling, and PR-body
+evidence updates:
+
+```
+harness review <pr> [--repo owner/name] [--model gpt-5.5|sonnet-4.6] [--round R<n>]
+```
+
+The command validates the target PR, refuses workboard-only or fork PRs,
+enforces the reviewer-model independence invariant, emits the manual MVP
+rubber-duck prompt, optionally triggers/polls Copilot, and idempotently updates
+`## Review log` plus `## Model audit`. Use `--dry-run` to preview the planned
+round, `--no-poll` to dispatch only, `--rubber-duck-only` for local review
+without Copilot, and `--copilot-only` for a Copilot retry after a valid local
+Go row is already recorded.
+
+Exit codes are operationally meaningful: `0` means Go / dispatch accepted,
+`1` means No-Go or unresolved Blocking finding, and `2` means usage, policy, or
+transport failure. Do not merge a content PR until the latest row for the
+current HEAD has a Go verdict and Copilot review evidence satisfying the A5/A16
+ordering gates in REVIEWS.md.
 
 ---
 

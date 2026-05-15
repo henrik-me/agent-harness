@@ -11,7 +11,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
-- _(none yet — next entries land here)_
+- **CS52 / [#141](https://github.com/henrik-me/agent-harness/issues/141):** Add `harness review <pr>` as the canonical content-PR review orchestrator. The new CLI validates content PRs, enforces reviewer independence, composes the manual rubber-duck prompt, can trigger/poll Copilot review, and updates PR-body `## Review log` / `## Model audit` evidence; schema, docs, and regression tests cover the new `reviews` config block and exit-code contract.
 
 ### Changed
 

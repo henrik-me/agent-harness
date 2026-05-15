@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs48/ban-implementer-self-review",
-  "resolved_sha": "7dfa2cf8a703ca753b07cbd83ee0f6f8b6f73b37",
+  "resolved_sha": "3458ff9e85440f494e9c9839410effce693c5f4c",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-15T00:06:04.827Z",
+  "synced_at": "2026-05-15T00:11:40.143Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
@@ -43,7 +43,7 @@
       "target": ".github/copilot-instructions.md",
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
-      "rendered_hash": "446a015f9759441149ef02425b2641e8d11b284ba666c42670fd72bfbe92ca0f",
+      "rendered_hash": "e74dc53141972646d4ec732055589f78483e9fa7ee94c0db28d56e2618ef95da",
       "action": "updated"
     },
     {
@@ -84,41 +84,41 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "682c7f440ee93ac21cb89128b3f37d1ed9c15f3456b89e1c0b05a1a34713f468",
-      "action": "skipped",
+      "rendered_hash": "32c03a0e21eede1b5b6419fa39a52004d027f8593fa33e7fb9dfa6090227260d",
+      "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1657,
-            "end": 1659
+            "start": 1683,
+            "end": 1685
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "88f86f15ea2939a20c0abfcb224dfb1c810a91fca995e1552993f09786986455"
+      "template_prose_hash": "96db5d6df11301f619b2257b4211f21cba207a60991edde9fa6617a9c5a3531b"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "fd486ecbb5369dae4462c7c196baaccfb1db0f9fa522cbd2047c0eb49ee347da",
+      "rendered_hash": "7721ad01ac2757d5f486508cd1c5778bfc4050768a6e094968e19338d79b3864",
       "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
-            "start": 382,
-            "end": 399
+            "start": 405,
+            "end": 422
           },
           "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "2d6d46c6702b54529402f7cf754c2e6b87b570a79166b5da62c25a137b5e5379"
+      "template_prose_hash": "00dbc1f9f6614c89432963acc4946d73cbaf089f8ee0adf1a7749575163ac073"
     },
     {
       "target": ".github/pull_request_template.md",
@@ -158,7 +158,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "aa26f1e30c3e4cdd559bb851725e7ad1fd0679eeee1787feb9d5c308c59b50aa",
+      "rendered_hash": "3dc32e25552da15b7a19c95d5d21a57b45bb7f65c447a9e5d61de7898ecb3642",
       "action": "preserved"
     },
     {

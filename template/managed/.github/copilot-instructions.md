@@ -114,7 +114,7 @@ Every sub-agent prompt must include, in order:
 **Self-review carries zero review weight.** Any implementer self-review of
 the diff is a debugging aid, not a review-of-record. The orchestrator MUST
 dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
-differs from every implementer model used in the CS. The planned `harness review` CLI will obtain the rubber-duck review; do not
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
 Required final report field: `Implementer model used` (the model-id(s)

@@ -67,7 +67,7 @@ evidence instead of requiring independent, SHA-pinned review-of-record output.
 template now states that self-review carries zero review weight, asks for
 `Implementer model used` instead of implementer review evidence, extends the
 clickstop implementer-not-reviewer lint rule to model overlap, and points
-orchestrators at the planned `harness review` CLI for the independent
+orchestrators at the `harness review <pr>` CLI for the independent
 rubber-duck review. Regression coverage lives in
 `tests/cs48-implementer-self-review-ban.test.mjs`.
 
