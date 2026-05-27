@@ -80,7 +80,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - Add LRN-137 to `LEARNINGS.md` with YAML frontmatter conforming to `schemas/learning.schema.json`: `id: LRN-137`, `date: 2026-05-27`, `category: process`, `source_cs: CS55`, `status: open`, `tags: [...]`, and optionally `claim_area`. Do NOT add `applied_in_cs` or any other non-schema field — the schema sets `additionalProperties: false`.
 - Body problem/finding/evidence should cite SI PR #79, the three `read-only-gates` failures, the pre-v0.6.0 SI template root cause, and the admin-squash commit `cbaa608b8196e03ebb09e168562501c105930622`.
 - At close-out, transition `status: open` to `status: applied` (schema enum is `open|applied|obsolete|deferred`; `closed` is NOT an allowed value). CS linkage continues to be captured by `source_cs: CS55`; reference Hard Rule § 6 and the `OPERATIONS.md` procedure in the entry body, not in frontmatter.
-- **Exit criteria:** `node scripts/validate-schemas.mjs` accepts LRN-137 and LRN-137 is closed before CS55 close-out merges.
+- **Exit criteria:** `node scripts/validate-schemas.mjs` accepts LRN-137 and LRN-137 is transitioned to `status: applied` (per D55-5; `closed` is not in the schema enum) before CS55 close-out merges.
 
 ### T5 — Add operating-model context note
 
@@ -121,7 +121,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - Update `WORKBOARD.md` to remove the active row or mark done per current workboard convention.
 - Transition LRN-137 to `status: applied` (per D55-5 / T4 — `closed` is not in the schema enum; `applied_in_cs` is rejected by `additionalProperties: false`). CS linkage remains in `source_cs: CS55`.
 - Refresh `CONTEXT.md` if the operating-model note needs final PR/tag links.
-- **Exit criteria:** done CS file exists with plan-vs-implementation review recorded, WORKBOARD is clean, LRN-137 is closed, and validation still passes.
+- **Exit criteria:** done CS file exists with plan-vs-implementation review recorded, WORKBOARD is clean, LRN-137 is at `status: applied` (per D55-5; `closed` is not in the schema enum), and validation still passes.
 
 ## Validation
 

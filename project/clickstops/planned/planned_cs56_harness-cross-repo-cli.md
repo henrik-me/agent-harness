@@ -171,7 +171,7 @@ node bin/harness.mjs cross-repo open-issue \
 ### T7 — Validating implementation
 
 - Run `node --test tests/cross-repo.test.mjs` first.
-- Run full `node --test`; record the count delta, e.g. `N → N+14 tests; all pass`.
+- Run full `node --test`; record the count delta, e.g. `N → N+16 tests; all pass` (16 cross-repo test cases per T5).
 - Run `node -c lib/cross-repo.mjs`.
 - Run `node bin/harness.mjs lint --quiet` or `harness lint --quiet`; expected self-host baseline after CS54/CS55 should be verified at claim time, currently planned as `30/0/3`.
 - Run `node scripts/validate-schemas.mjs`.
