@@ -2269,6 +2269,88 @@ LRN-093 documented the parent fact ("Windows tooling defaults to CRLF") but stop
 
 **Disposition:** Open. Follow-up CS candidate (CS54b or equivalent): add `.tmp/` to root `.gitignore` (option 1) as a 1-commit hygiene PR; defer option 2 (linter-respects-gitignore) to a separate scoped CS because it has broader behavioral implications for the lint suite. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #3. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
 
+### LRN-134
+
+```yaml
+id: LRN-134
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [cross-repo, pin-bump, pr-body, review-evidence, model-audit, review-log, si-orchestration]
+claim_area: cross-repo-orchestration
+```
+
+**Problem:** Cross-repo pin-bump PRs opened by the harness orchestrator against consumer repos (e.g. `henrik-me/sub-invaders`) lacked the canonical `## Model audit` and `## Review log` H2 sections in the PR body, so the consumer-side `read-only-gates` workflow (`check-review-evidence.mjs`) failed with `A3 (independence) cannot be verified` and `A4 (stale-diff currency) cannot be verified`, blocking auto-merge. The harness CS53 plan treated SI-side merge as non-blocking (per C53-4) and shipped the bump PR with only Summary / Changes / Testing sections — assuming the SI PR template would populate the missing sections. It does not (SI's `.github/pull_request_template.md` was authored pre-v0.6.0 and uses the old `| Role | Model |` schema, not the v0.6.0 strict `| Field | Value |` schema). Net: even non-blocking pin-bump PRs need full review-evidence sections in the body, because v0.6.0's strict default rejects the pre-v0.6.0 template output.
+
+**Finding:** **Every cross-repo PR opened by the harness orchestrator — including pin-bump PRs — must include the canonical `## Review log` (6-column: timestamp | analyzed_head | actor | model | verdict | evidence_link) and `## Model audit` (4-row | Field | Value | with Implementer models / Reviewer model / Implementer agent / Reviewer agent) sections in the PR body at opening time, NOT relying on the consumer's PR template.** Two reinforcing reasons:
+
+1. Consumer PR templates can lag the harness version (no auto-sync of `.github/pull_request_template.md` from harness composed/managed unless it's listed in `managed.files` in `harness.config.json` — which SI's is not).
+2. v0.6.0 strict-flip default (`--strict-agent-columns`) means a template-output without the new agent rows hard-fails A3.
+
+The fix has two layers:
+- **Orchestrator-side (immediate):** Add to OPERATIONS.md § Cross-repo pin-bump procedure: PR body MUST include both sections inline at PR-open time. The harness CLI could (CS54+) emit a canonical body template via `harness cross-repo pin-bump-body --consumer <repo>`.
+- **Consumer-side (longer):** Consumer `.github/pull_request_template.md` should be in `managed.files` (or at least scaffold-refreshable) so a `harness sync --mode=apply` propagates schema updates. Today the template is a one-time scaffold; v0.6.0's strict-flip surfaced the staleness gap.
+
+**Evidence:** SI PR #79 (v0.5.1 -> v0.6.0 pin bump, opened 2026-05-27T08:01:43Z) failed `read-only-gates` at first run (job 78033638259) with the two A3/A4 errors. Body initially had Summary/Changes/Testing only. Pre-CS53 precedent SI PR #62 (v0.5.0 -> v0.5.1 bump) had included both sections by historical accident (operator memory), not by doctrine. CS53 close-out shipped without the doctrine codified, so SI PR #79 inherited the gap. Fix applied during CS53 close-out: PR body amended via `gh pr edit 79 --body-file <utf8nobom-lf-tmp>` to add the canonical sections; 6 Copilot inline findings (4 false-positives on dual `reviews.*` / `review_gates.*` schema blocks, 2 real cosmetic doc cleanups) dispositioned and resolved; PR admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` (2026-05-27T17:01:48Z).
+
+**Disposition:** Open. Two-part follow-up CS (CS54a — orchestrator side; CS54b — consumer-template side, scheduled separately because it requires re-classifying `.github/pull_request_template.md` as a managed/composed file in consumer harness.config.json):
+- CS54a (planned): codify cross-repo pin-bump checklist in `OPERATIONS.md` and the managed `template/managed/.github/copilot-instructions.md` mirror. Optionally add a `harness cross-repo` CLI sub-command emitting the canonical body skeleton.
+- CS54b (planned): refresh `template/managed/.github/pull_request_template.md` to v0.6.0 strict schema and document the upgrade path for existing consumers (manual one-time copy, since this is a managed/scaffolded file class).
+
+Cross-reference: LRN-125 (Copilot review chase — analogous "PR body must include canonical artefacts" pattern); LRN-127 (independence invariant — same family of review-evidence integrity issues).
+
+### LRN-135
+
+```yaml
+id: LRN-135
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [review-evidence, narrow-re-attest, stale-diff, A4-gate, rubber-duck-loop]
+claim_area: review-loops
+```
+
+**Problem:** Every new commit on a content PR invalidates the latest `## Review log` Go row's `analyzed_head` field. The naïve fix is a full re-review at each new HEAD, but this is expensive (full GPT-5.5 round-trip, full diff re-read) and overkill for commits that are trivial doc-only or single-line cleanups added in response to Copilot inline feedback. CS53 used the technique 3x (PR #208 R1 GO-with-amendments at `b5948a6` → narrow R2 at `14aa3d3` → narrow R3 at `b07e78d`), but the pattern is not documented in `OPERATIONS.md` or `REVIEWS.md`, so future orchestrators (or LLM-rotated-out future-me) will either (a) skip the re-review and ship stale `analyzed_head` (blocking A4) or (b) burn a full re-review every time.
+
+**Finding:** **Document the "narrow re-attest" pattern.** A narrow re-attest is a short rubber-duck dispatch (sync, ≤1min) where the briefing prompt explicitly says "R1 already cleared the diff; only re-verify the trivial delta from `<prev-head>` to `<new-head>` is innocuous; return Go or Needs-Fix." The reviewer is told NOT to re-review the diff. The Review log gets a new row with the new `analyzed_head`, the same `actor` annotated `(narrow R2)` / `(narrow R3)`, and a one-paragraph summary. Three rules:
+
+1. Only valid when the delta is genuinely trivial (≤20 lines, doc-only or 1-2 line code cleanups responding to Copilot inline findings, no behavior change).
+2. R1 must have been a full-diff review at a prior HEAD, and that R1's Go must still be in the Review log table.
+3. The reviewer model and reviewer agent stay the same as R1; only the timestamp + `analyzed_head` change.
+
+The pattern is the cheap mitigation for A4 (stale-diff) — much cheaper than re-running a full review on every commit. It is NOT a substitute for full re-review when the delta is substantive (e.g., new test coverage, refactored module).
+
+**Evidence:** CS53 PR #208: R1 full GPT-5.5 review at `b5948a6` (verdict GO-with-amendments, 1 NB recommendation); commit `14aa3d3` added the recommended doc clarification (1 line); R2 narrow re-attest at `14aa3d3` (verdict GO, 0 findings, summary "delta is the recommended doc line; innocuous"); commit `b07e78d` fixed Copilot's R1 "rows" finding (1 line); R3 narrow re-attest at `b07e78d` (verdict GO, 0 findings). All 3 reviews recorded in PR body Review log table. Same pattern used on SI PR #79 R2 narrow re-attest at `c6155b9...` after body amendment (verdict GO, 0 findings, summary "delta is PR-body sections + known-limitations note; diff is unchanged").
+
+**Disposition:** Open. Follow-up CS candidate (CS54a or sibling): add `OPERATIONS.md § Narrow re-attest` doctrine and a short worked example. Mention in `REVIEWS.md § A4 (stale-diff currency)` as the recommended mitigation when delta is doc-only/trivial. Cross-reference: LRN-125 (Copilot review chase analogue — "PR body push triggers another review cycle"); REVIEWS.md § 2.7 (Review log schema).
+
+### LRN-136
+
+```yaml
+id: LRN-136
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [review-log, schema, format, model-column, regression-risk]
+claim_area: review-evidence
+```
+
+**Problem:** The `Model` column in `## Review log` rows MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`, `claude-sonnet-4.6`) — NOT decorated with parenthetical annotations like `gpt-5.5 (reviewer)` or `gpt-5.5 (R2)`. The `scripts/check-review-log-evidence.mjs` parser does a strict equality check against the configured reviewer model identifier; any decoration fails with `reviewer model 'gpt-5.5 (reviewer)' is not gpt-5.5`. The fact is present in agent memory but not documented in `LEARNINGS.md`, `REVIEWS.md`, or as schema validation — so it is rediscovered each time a new orchestrator drafts a Review log row (~quarterly cadence given LLM rotation).
+
+**Finding:** **Lock the bare-model-id rule into REVIEWS.md § 2.7 (Review log schema) and add a regression test in `tests/check-review-log-evidence.test.mjs` that fails when `Model = 'gpt-5.5 (reviewer)'`.** The fix is purely documentation + test:
+
+1. REVIEWS.md § 2.7 Model column description: add "MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`); decorations like `gpt-5.5 (reviewer)`, `gpt-5.5 (R2)`, `gpt-5.5 (PvI)` are not permitted — use the `actor` column (e.g. `rubber-duck (PvI R2)`) for round/role annotations instead."
+2. Add a fixture test: a Review log row with decorated `Model` column should produce a clear error from `check-review-log-evidence.mjs` saying "decorated model identifier; use bare `<model>` and put annotations in the actor column".
+
+The orchestrator side: agent memories already capture the rule, but the parser-side regression test and the doc would catch the issue at lint-time instead of CI-failure-time.
+
+**Evidence:** Memory `review evidence` already records this fact ("Review log Model column format requires bare reviewer-model identifier"). CS53 PR #208 R1 Review log row used `gpt-5.5` correctly (drafted with memory present). However, the agent-side memory mechanism only protects orchestrators with this specific memory loaded; the harness toolchain provides no parser-side or schema-side protection. Pattern matches LRN-128 (orchestrator self-review at close-out gate) — both are "agent-side memory protects, tool-side does not" gaps where memory rotation is the failure mode.
+
+**Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.7` and add the regression fixture in `tests/check-review-log-evidence.test.mjs`. Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.7 (Review log schema canonical location).
+
 ### LRN-127
 
 ```yaml
