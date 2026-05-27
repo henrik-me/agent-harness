@@ -52,7 +52,7 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 | R4 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T07:45:00Z | Go | Narrow reattest after Copilot R1 nits on PR #206 (Background SHA + Deliverable 2 lockfile notation). Diff=2 edits, both verified; no regression; cap inapplicable (R3=Go). |
 | R5 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T08:55:00Z | Go | Narrow reattest after Copilot R2 nit (Exit criteria #4 lockfile notation). Hash unchanged; only out-of-scope Exit criteria #4 lockfile wording fix; no regressions. |
 | R7 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 60614ce8831c | 2026-05-27T09:30:00Z | Go | Verifies Copilot R4 fixes: C53-4 brace-expansion ⇒ explicit 3 calls; R2 wording ⇒ correct `--generate-notes` fallback; T0d ⇒ REVIEWS.md §2.4 calibration baseline (not hard cap). No regressions. |
-| R8 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | aeede29b692c | 2026-05-27T09:45:00Z | Go | Narrow reattest after Copilot R5 in-scope nit fix: C53-4 PowerShell example rewritten to `foreach` (no pipe) so inline-code in a GFM table cell copies cleanly. Out-of-scope R5 fixes (R2 PS `Select-String -Path`, T0b/T0c/T0d state flips) noted; no hash-scoped regression. |
+| R8 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | aeede29b692c | 2026-05-27T09:45:00Z | Go | Narrow reattest after Copilot R5: C53-4 PowerShell example rewritten to `foreach` (no pipe) so inline-code in table cell copies cleanly. Out-of-scope R5 fixes noted; no regression. |
 
 ## Deliverables
 
