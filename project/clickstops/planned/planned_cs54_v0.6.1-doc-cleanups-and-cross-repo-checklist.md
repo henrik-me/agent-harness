@@ -209,7 +209,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R1 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | cccb7251bcdb | 2026-05-27T17:30:00Z | Needs-Fix | T6 cited wrong reviews.* fields; T5 inconsistent (Model audit vs Review log) + wrong test path; nonexistent harness sync --consumer. |
 | R2 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | bbdeaf3327d4 | 2026-05-27T17:40:00Z | Needs-Fix | T6/Deliverables + T5 + CLI fixes verified; one residual stale `reviews.primary_model` in Background must be replaced. |
 | R3 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | bbdeaf3327d4 | 2026-05-27T17:45:00Z | Go | Narrow re-attest after trivial Background delta; lists exact 8 reviews.* schema fields from lines 144-184; no made-up names. |
-| R4 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 43bacd049c23 | 2026-05-27T17:27:30Z | Go | Post-Copilot-R1 amendments verified: D54-3 narrowly scoped (no normalisation behavior change); T5/Deliverables retargeted at real PR-side gate + test. |
+| R4 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 43bacd049c23 | 2026-05-27T17:50:00Z | Go | Post-Copilot-R1 amendments verified: D54-3 narrowly scoped (no normalisation behavior change); T5/Deliverables retargeted at real PR-side gate + test. |
 
 ## Notes / Learnings
 
