@@ -11,12 +11,31 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- _(none yet)_
+
+### Changed
+
+- _(none yet)_
+
+### Documentation
+
+- _(none yet)_
+
+### Removed
+
+- _(none yet)_
+
+## [0.6.0] — 2026-05-27
+
+### Added
+
 - **CS51 / [#140](https://github.com/henrik-me/agent-harness/issues/140):** Add REVIEWS.md PR-side enforcement gates (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`), workflow template, config/ruleset sync hooks, and regression tests.
 - **CS52 / [#141](https://github.com/henrik-me/agent-harness/issues/141):** Add `harness review <pr>` as the canonical content-PR review orchestrator. The new CLI validates content PRs, enforces reviewer independence, composes the manual rubber-duck prompt, can trigger/poll Copilot review, and updates PR-body `## Review log` / `## Model audit` evidence; schema, docs, and regression tests cover the new `reviews` config block and exit-code contract.
 - **CS50 / [#138](https://github.com/henrik-me/agent-harness/issues/138):** Add an optional `WORKBOARD_MERGE_TOKEN` PAT admin-bypass fallback for validated workboard-only PRs so consumer repos without the G3 App can claim/close out without human admin merges.
 
 ### Changed
 
+- **CS53 / C53-5 (C42-6 promise fulfilled):** `scripts/check-review-evidence.mjs` `--strict-agent-columns` is now the **default** behavior; missing `Implementer agent` / `Reviewer agent` columns in the `## Model audit` table are errors rather than warnings. Pass `--no-strict-agent-columns` (new flag) to opt out for transitional consumers. Closes the v0.5.0-era CS42 C42-6 commitment recorded in REVIEWS.md.
 - **CS48 / [#142](https://github.com/henrik-me/agent-harness/issues/142):** Dispatch reporting now states that implementer self-review carries zero review weight, replaces implementer review evidence with `Implementer model used` provenance, extends the clickstop implementer-not-reviewer lint rule to model overlap, and adds LRN-127 + regression coverage anchored to the Sub Invaders PR #28 review-evidence incident.
 - **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
 - **chore ([PR #200](https://github.com/henrik-me/agent-harness/pull/200)):** `scripts/check-pack.mjs` `DEFAULT_MAX_SIZE_BYTES` raised from 1MB (1048576) to 2MB (2097152). The accumulated CS49 + CS50 + CS51 + CS52 doctrine additions to OPERATIONS.md pushed the published `npm pack` size past the 1MB ceiling; bumping the default avoids gating release on doctrine growth. Tests still pin the violation path because they pass `--max-size-bytes 1` explicitly. Filed as LRN-128.

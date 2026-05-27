@@ -164,7 +164,7 @@ describe('scripts/check-review-evidence.mjs', () => {
   it('case 1: clean review log + audit → exit 0', () => {
     const body = buildPrBody({
       reviewLogRows: [makeReviewRow(VALID_HEAD)],
-      modelAuditRows: CLEAN_AUDIT,
+      modelAuditRows: CLEAN_AUDIT_WITH_AGENTS,
     });
     const file = writeBody('case1.md', body);
     const r = run(file, VALID_HEAD);
@@ -189,17 +189,32 @@ describe('scripts/check-review-evidence.mjs', () => {
     assert.doesNotMatch(r.stderr, /WARN:/);
   });
 
-  it('CS41: missing agent rows with default strict=false → exit 0 and warn to stderr', () => {
+  it('CS41 / CS53 C53-5: missing agent rows with --no-strict-agent-columns → exit 0 and warn to stderr', () => {
+    // CS53 C53-5 (CS42 C42-6 promise): default flipped to strict=true in v0.6.0.
+    // The legacy warn-ramp behavior remains accessible via --no-strict-agent-columns
+    // for transitional consumers.
     const body = buildPrBody({
       reviewLogRows: [makeReviewRow(VALID_HEAD)],
       modelAuditRows: CLEAN_AUDIT,
     });
     const file = writeBody('cs41_missing_agents_warn.md', body);
-    const r = run(file, VALID_HEAD);
+    const r = run(file, VALID_HEAD, ['--no-strict-agent-columns']);
     assert.equal(r.status, 0, `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
     assert.match(r.stderr, /WARN:/);
     assert.match(r.stderr, /missing required agent row/);
     assert.match(r.stdout, /1 warnings/);
+  });
+
+  it('CS53 C53-5: missing agent rows with default strict (v0.6.0+) → exit 1', () => {
+    const body = buildPrBody({
+      reviewLogRows: [makeReviewRow(VALID_HEAD)],
+      modelAuditRows: CLEAN_AUDIT,
+    });
+    const file = writeBody('cs53_missing_agents_default_strict.md', body);
+    const r = run(file, VALID_HEAD);
+    assert.equal(r.status, 1, `expected exit 1; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
+    assert.match(r.stdout, /ERROR:/);
+    assert.match(r.stdout, /missing required agent row/);
   });
 
   it('CS41: missing agent rows with --strict-agent-columns → exit 1', () => {
@@ -229,11 +244,12 @@ describe('scripts/check-review-evidence.mjs', () => {
     assert.match(r.stdout, /agent-identity violation/);
   });
 
-  it('CS41 (R4 fix): empty agent cells → warn-as-missing, NOT overlap (default strict=false)', () => {
-    // Both rows present but values are empty → previously triggered overlap
-    // because "".trim().toLowerCase() === "".trim().toLowerCase(). Per CS41
-    // spec, empty cells are semantically "missing" and should fall under the
-    // warn-ramp, not the overlap-strict path.
+  it('CS41 (R4 fix) / CS53 C53-5: empty agent cells with --no-strict-agent-columns → warn-as-missing, NOT overlap', () => {
+    // CS53 C53-5: default flipped to strict=true in v0.6.0; legacy warn-ramp behavior
+    // requires --no-strict-agent-columns. Both rows present but values are empty →
+    // previously triggered overlap because "".trim().toLowerCase() === "".trim().toLowerCase().
+    // Per CS41 spec, empty cells are semantically "missing" and should fall under the
+    // warn-ramp (when opted-in via --no-strict-agent-columns), not the overlap-strict path.
     const body = buildPrBody({
       reviewLogRows: [makeReviewRow(VALID_HEAD)],
       modelAuditRows: [
@@ -243,7 +259,7 @@ describe('scripts/check-review-evidence.mjs', () => {
       ],
     });
     const file = writeBody('cs41_agent_empty.md', body);
-    const r = run(file, VALID_HEAD);
+    const r = run(file, VALID_HEAD, ['--no-strict-agent-columns']);
     assert.equal(r.status, 0, `expected exit 0; stdout=\n${r.stdout}\nstderr=\n${r.stderr}`);
     assert.doesNotMatch(r.stdout, /agent-identity violation/);
     assert.match(r.stderr, /WARN:/);
@@ -341,7 +357,7 @@ describe('scripts/check-review-evidence.mjs', () => {
         makeReviewRow(OTHER_HEAD),  // earlier Go row (stale SHA but not latest)
         makeReviewRow(VALID_HEAD),  // latest Go row (current SHA)
       ],
-      modelAuditRows: CLEAN_AUDIT,
+      modelAuditRows: CLEAN_AUDIT_WITH_AGENTS,
     });
     const file = writeBody('case6a.md', body);
     const r = run(file, VALID_HEAD);
@@ -497,7 +513,7 @@ describe('scripts/check-review-evidence.mjs', () => {
     // With a valid clean body, fork-source should still pass (checks run)
     const body = buildPrBody({
       reviewLogRows: [makeReviewRow(VALID_HEAD)],
-      modelAuditRows: CLEAN_AUDIT,
+      modelAuditRows: CLEAN_AUDIT_WITH_AGENTS,
     });
     const file = writeBody('bonus_fork.md', body);
     const r = run(file, VALID_HEAD, ['--skip-reasons', 'fork-source']);
