@@ -101,8 +101,10 @@ When the harness orchestrator opens a pin-bump PR against a consumer repo
    consumer PR template is pre-current-version)
 6. ## Review log — canonical 6-column schema with R1 local rubber-duck Go
    at the PR HEAD
-7. ## Model audit — canonical 4-row | Field | Value | schema with
+7. ## Model audit — canonical `| Field | Value |` table with required rows
    Implementer models / Reviewer model / Implementer agent / Reviewer agent
+   (plus the optional Notes row when warranted; cross-repo pin-bump PRs
+   should NOT delete the Notes row unless empty)
 
 Do NOT rely on the consumer's .github/pull_request_template.md to populate
 these sections. Consumer templates can lag the harness version because
@@ -217,6 +219,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R9 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:50:00Z | Go | Post-Copilot-R6 narrow re-attest: WORKBOARD banner-only delta (a9e3836); plan file untouched, Decisions/Deliverables hash unchanged. |
 | R10 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T19:05:00Z | Go | Post-Copilot-R7 narrow re-attest: Depends-on header reworded (outside hash scope); LRN-136 + WORKBOARD banner fixed elsewhere; hash unchanged. |
 | R11 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:20:00Z | Go | Post-Copilot-R8 substantive: D54-1 reworded to acknowledge the narrow gate behavior change in D54-3 (semver-patch defensible: no breaking change for well-formed inputs). |
+| R12 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:35:00Z | Go | Post-Copilot-R9 narrow re-attest: T5 Model audit reworded to allow optional Notes row; LRN-133 disposition uses PR #210 ref (not branch SHA) per squash-merge policy. Hash unchanged. |
 
 ## Notes / Learnings
 
