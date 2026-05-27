@@ -33,7 +33,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck dispatched (orchestrator: copilot-cli) | ac2480d7ea68 | 2026-05-27T15:30:00Z | Go-with-amendments | Amend validation (add text-encoding), make T6 post-merge, clarify CS54 ordering/sub-agent scope, and move Plan review section. All amendments applied in this revision. |
 | R2 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | f5a7af339815 | 2026-05-27T15:35:00Z | Go | Narrow re-attest after Copilot R1 PR feedback: SI issue title prefix unified to [harness:cs55]; check-text-encoding validation rewritten to single --dir . form. |
-| R3 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | a6a12c8381a6 | 2026-05-27T16:55:00Z | Go | Narrow re-attest after Copilot R3 PR feedback: D55-5 + T4 LRN frontmatter aligned to learning.schema.json (status: applied not closed; no applied_in_cs field — additionalProperties:false); D55-8 clarified planning-only parallelism (CS56 claim/impl waits for CS55 merge). |
+| R3 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | a6a12c8381a6 | 2026-05-27T16:55:00Z | Go | Narrow re-attest after Copilot R3: D55-5/T4 LRN frontmatter aligned to learning.schema.json (status: applied; no applied_in_cs); D55-8 clarified planning-only parallelism. |
 
 ## Deliverables
 
