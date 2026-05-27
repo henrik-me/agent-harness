@@ -1,9 +1,9 @@
 # CS53 — Release v0.6.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs53/release-v0.6.0
+**Started:** 2026-05-27
 **Closed:** —
 **Filed by:** `omni-ah` (Copilot CLI / Claude Opus 4.7 1M) per [CONTEXT.md § Suggested next CSs](../../../CONTEXT.md#suggested-next-css-priority-ordered) item #1; queued by `yoga-ah` at the post-v0.5.2 retroactive close-out sweep (PR #204, 2026-05-15).
 **Depends on:** None. The v0.6.0 `[Unreleased]` CHANGELOG arc (CS48 #198, CS49 #195, CS50 #197, CS51 #199, CS52 #196, chore PR #200, CS47 plan-filing PR #202) is already merged to `main`. CS47 (detached-HEAD fix) is **out of scope** here per C53-6 — it ships in a later patch.
@@ -132,3 +132,7 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 ## Notes / Learnings
 
 (filled during execution)
+
+## Plan-vs-implementation review
+
+(filled by orchestrator at the close-out gate; populated with GPT-5.5 rubber-duck verdict + verbatim findings per OPERATIONS.md § Plan-vs-implementation review (close-out gate))
