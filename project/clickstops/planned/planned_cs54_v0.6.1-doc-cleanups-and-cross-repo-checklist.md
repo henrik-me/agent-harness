@@ -220,7 +220,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R10 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T19:05:00Z | Go | Post-Copilot-R7 narrow re-attest: Depends-on header reworded (outside hash scope); LRN-136 + WORKBOARD banner fixed elsewhere; hash unchanged. |
 | R11 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:20:00Z | Go | Post-Copilot-R8 substantive: D54-1 reworded to acknowledge the narrow gate behavior change in D54-3 (semver-patch defensible: no breaking change for well-formed inputs). |
 | R12 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:35:00Z | Go | Post-Copilot-R9 narrow re-attest: T5 Model audit reworded to allow optional Notes row; LRN-133 disposition uses PR #210 ref (not branch SHA) per squash-merge policy. Hash unchanged. |
-| R13 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:48:00Z | Go | Post-Copilot-R10 narrow re-attest: 4 attribution/anchor cleanups (Background tag vs commit; CONTEXT+LRN-133 don't imply CS54 work in flight; LRN-134 anchor points to CS54-T2 future section). Hash unchanged. |
+| R13 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:48:00Z | Go | Post-Copilot-R10 narrow re-attest: 4 attribution/anchor cleanups (tag-vs-commit; CONTEXT/LRN-133 attribution; LRN-134 anchor to CS54-T2). Hash unchanged. |
 
 ## Notes / Learnings
 
