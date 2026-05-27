@@ -120,7 +120,7 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 1. Phase 0 plan-review loop landed `Go` or `Go-with-amendments` (latest row); `cs53/plan-filing` PR merged to `main`.
 2. Content PR (`cs53/release-v0.6.0`) squash-merged to `main`; `## Plan-vs-implementation review` section in the active/done file ends in `Outcome: GO`.
 3. CHANGELOG `## [0.6.0] — <date>` section exists with em-dash; `awk '/^## \[0\.6\.0\] — /' CHANGELOG.md` returns the header.
-4. `package.json` version is `0.6.0`; lockfile coherent (root + `packages.""`).
+4. `package.json` version is `0.6.0`; lockfile coherent (root `version` + `packages[""].version`).
 5. Tag `v0.6.0` exists at the content-PR squash SHA; `release.yml` workflow run succeeded; GitHub Release page is **published** (not draft).
 6. `harness lint --quiet` + `node --test` + `harness sync --mode=check` all clean on `main` post-merge.
 7. Cross-repo SI PR opened in `henrik-me/sub-invaders` (PR number recorded in CS53 close-out notes); SI-side merge is NOT a CS53 exit criterion per C53-4.
