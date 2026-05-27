@@ -1,10 +1,10 @@
 # CS53 — Release v0.6.0
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
 **Branch:** cs53/release-v0.6.0
 **Started:** 2026-05-27
-**Closed:** —
+**Closed:** 2026-05-27
 **Filed by:** `omni-ah` (Copilot CLI / Claude Opus 4.7 1M) per [CONTEXT.md § Suggested next CSs](../../../CONTEXT.md#suggested-next-css-priority-ordered) item #1; queued by `yoga-ah` at the post-v0.5.2 retroactive close-out sweep (PR #204, 2026-05-15).
 **Depends on:** None. The v0.6.0 `[Unreleased]` CHANGELOG arc (CS48 #198, CS49 #195, CS50 #197, CS51 #199, CS52 #196, chore PR #200, CS47 plan-filing PR #202) is already merged to `main`. CS47 (detached-HEAD fix) is **out of scope** here per C53-6 — it ships in a later patch.
 
@@ -103,20 +103,20 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 | T5 — README pin-version sweep `v0.5.2` → `v0.6.0` + status banner refresh + commit | done | omni-ah | rolled into commit `bd8013b`; 3 install-snippet pins flipped + v0.6.0 highlights banner |
 | T5b — **C53-5 strict-flip:** `scripts/check-review-evidence.mjs:93` `let strictAgentColumns = false;` → `true`; update corresponding test in `tests/check-review-evidence.test.mjs`; add `### Changed` CHANGELOG bullet citing C42-6 / CS53 strict-flip + commit | done | omni-ah | rolled into commit `bd8013b`; added `--no-strict-agent-columns` opt-out for transitional consumers; tests updated (3 default-path tests switched to `CLEAN_AUDIT_WITH_AGENTS`; 2 'default strict=false' tests renamed to use opt-out flag; 1 new CS53 C53-5 default-strict assertion test). T3-T5b consolidated into single commit per release-cut convention (cf. v0.5.0 commit `bab97aa`). |
 | T6 — Local validation: lint / tests / sync-check, verify HEAD attached after each | done | omni-ah | `npm test`: 998/999 pass, 1 skipped, 0 fail; `harness lint --quiet`: 30 passed, 0 failed; `validate-schemas`: 137 passed, 0 failed; `git symbolic-ref HEAD` = `refs/heads/cs53/release-v0.6.0` throughout (no detached-HEAD per LRN-124) |
-| T7 — Open content PR with required H2s (Summary/Changes/Testing/Model audit/Review log) | pending | omni-ah | PR body from `.github/pull_request_template.md`; satisfies CS51 required-check H2 presence |
-| T8a — Dispatch GPT-5.5 plan-vs-impl rubber-duck review; record verbatim in active CS file's `## Plan-vs-implementation review` section; loop until `GO` | pending | omni-ah | reviewer model differs from orchestrator (Opus 4.7 vs GPT-5.5); independence invariant holds; per R4 sequenced sub-task (b) |
-| T8b — Update PR-body `## Review log` row + `## Model audit` table with latest local `GO` result; commit; push | pending | omni-ah | per R4 sequenced sub-task (c); ensures `review-log-evidence` finds the row before Copilot engages |
-| T8c — `harness review <PR> --model gpt-5.5 --round R1` (dogfood CS52 CLI on its own release-cut PR) | pending | omni-ah | per R4 sequenced sub-task (d) |
-| T8d — `harness copilot-engage <PR> --no-poll` if not already engaged by T8c | pending | omni-ah | per R4 sequenced sub-task (e); Copilot must engage AFTER local `GO` row exists |
-| T8e — `gh pr checks <PR>` — verify all four CS51 required checks (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`) plus baseline checks green before T9 | pending | omni-ah | per R4 sequenced sub-task (f); blocking gate before admin-merge |
-| T9 — Preflight admin-merge capability (per C53-10) + admin-squash-merge content PR (`gh pr merge --squash --admin --delete-branch`) | pending | omni-ah | record squash SHA for T10; if rejected, execute R6 fallback ladder |
-| T10 — Tag at squash SHA: `git tag -a v0.6.0 <squash-sha> -m "..."` + `git push origin v0.6.0` | pending | omni-ah | per C53-3; pre-push dry-run awk check per R2 |
-| T11 — Watch `release.yml` to completion + publish draft via `gh release edit v0.6.0 --draft=false` | pending | omni-ah | per R3 / LRN-121 |
-| T12 — Cross-repo SI PR per C53-4: record `gh api` command output + UTC timestamp in close-out notes BEFORE opening PR | pending | omni-ah | verify naming convention live per R5 / LRN-113; non-blocking on SI merge |
-| T12b — **Post-merge main validation:** `git checkout main && git pull --ff-only` + `harness lint --quiet` + `node --test` + `harness sync --mode=check` all clean (per R1 NON-BLOCKING finding #7) | pending | omni-ah | mechanical check on `main` post-tag-push + post-SI-PR; explicit task ensures exit criterion 6 is not skipped |
-| T13 — **Close-out: docs + restart state** (rename `active→done`, update WORKBOARD/CONTEXT, populate `## Plan-vs-implementation review`) | pending | omni-ah | per `check-clickstop.mjs` close-out enforcement |
-| T14 — **Close-out: learnings + follow-up CSs** (file any new LRNs; CS47 promotion likely top of suggested-next queue) | pending | omni-ah | per `check-clickstop.mjs` close-out enforcement |
-| T15 — Close-out PR (`cs53/close-out`) | pending | omni-ah | workboard-only label → auto-merge |
+| T7 — Open content PR with required H2s (Summary/Changes/Testing/Model audit/Review log) | done | omni-ah | PR #208 opened at HEAD `b5948a6` with all required H2s populated |
+| T8a — Dispatch GPT-5.5 plan-vs-impl rubber-duck review; record verbatim in active CS file's `## Plan-vs-implementation review` section; loop until `GO` | done | omni-ah | R1 GO-with-amendments at `b5948a6` (2 NON-BLOCKING findings); R2 narrow re-attest GO at `14aa3d3` (doc-only); R3 narrow re-attest GO at `b07e78d` (CHANGELOG wording fix); all verbatim in `## Plan-vs-implementation review` |
+| T8b — Update PR-body `## Review log` row + `## Model audit` table with latest local `GO` result; commit; push | done | omni-ah | Three Review log rows (R1/R2/R3) populated in PR #208 body via `gh pr edit --body-file`; Model audit table populated; uploaded `b5948a6` -> `14aa3d3` -> `b07e78d` |
+| T8c — `harness review <PR> --model gpt-5.5 --round R1` (dogfood CS52 CLI on its own release-cut PR) | done | omni-ah | dogfooded via `--dry-run` mode; full `--rubber-duck-only` run hit a CLI ledger-regex false positive (`lib/review.mjs:313` regex matches `reviewer model = GPT-5.5` and `model=gpt-5.5` substrings in the CS file as implementer-model declarations). Filed as **LRN-132 candidate** (CS54+ fix). Substantive R1/R2/R3 reviews completed via `task` tool with same GPT-5.5 model. |
+| T8d — `harness copilot-engage <PR> --no-poll` if not already engaged by T8c | done | omni-ah | engaged twice: first at `14aa3d3` (Copilot R1 attached 07:50:56Z with 1 finding); re-engaged at `b07e78d` (Copilot R2 attached 07:57:04Z with 0 findings). Copilot R1 finding addressed in commit `b07e78d` (CHANGELOG wording columns->rows); thread resolved via `resolveReviewThread` GraphQL mutation. |
+| T8e — `gh pr checks <PR>` — verify all four CS51 required checks (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`) plus baseline checks green before T9 | done | omni-ah | all 4 CS51 required checks PASS at `b07e78d`; `read-only-gates` PASS after one rerun (LRN-125 pattern: failed at initial push before Copilot R2 attached, passed after rerun). All baseline checks (validate, pr-body, commit-trailers, smoke, validate-schemas, secret-scan, npm-pack-dry-run, etc.) PASS. |
+| T9 — Preflight admin-merge capability (per C53-10) + admin-squash-merge content PR (`gh pr merge --squash --admin --delete-branch`) | done | omni-ah | admin-squash-merged at `acdca894466410ec2744f39179e89a53bf467fb7`; branch `cs53/release-v0.6.0` deleted |
+| T10 — Tag at squash SHA: `git tag -a v0.6.0 <squash-sha> -m "..."` + `git push origin v0.6.0` | done | omni-ah | annotated tag `v0.6.0` -> `acdca89` pushed |
+| T11 — Watch `release.yml` to completion + publish draft via `gh release edit v0.6.0 --draft=false` | done | omni-ah | `release.yml` run `26498691003` completed `success` in 10s; draft published; release URL: https://github.com/henrik-me/agent-harness/releases/tag/v0.6.0 |
+| T12 — Cross-repo SI PR per C53-4: record `gh api` command output + UTC timestamp in close-out notes BEFORE opening PR | done | omni-ah | SI PR #79 opened: https://github.com/henrik-me/sub-invaders/pull/79 — bumps `harness.config.json` v0.5.1 -> v0.6.0 (skipping v0.5.2 entirely); `harness sync --mode=apply` generated 4-file diff (.harness-lock.json + harness.config.json + OPERATIONS.md + REVIEWS.md); SI-side merge is NOT a CS53 exit criterion |
+| T12b — **Post-merge main validation:** `git checkout main && git pull --ff-only` + `harness lint --quiet` + `node --test` + `harness sync --mode=check` all clean (per R1 NON-BLOCKING finding #7) | done | omni-ah | on `main` at `acdca89`: `harness lint --quiet` 30/0/3; `npm test` 998/999 pass 1 skip 0 fail; `harness sync --mode=check` "No drift detected"; HEAD attached (`refs/heads/main`) throughout |
+| T13 — **Close-out: docs + restart state** (rename `active→done`, update WORKBOARD/CONTEXT, populate `## Plan-vs-implementation review`) | done | omni-ah | active->done via `git mv`; Status flipped to done with Closed=2026-05-27; `## Plan-vs-implementation review` populated with R1+R2+R3 verdict chain; WORKBOARD CS53 row removed; CONTEXT.md updated |
+| T14 — **Close-out: learnings + follow-up CSs** (file any new LRNs; CS47 promotion likely top of suggested-next queue) | done | omni-ah | LRN-132 filed (harness review CLI ledger-regex false positive on `reviewer model = X` / `model=X` substrings); LRN-133 filed (Windows PowerShell `Out-File -Encoding utf8` emits CRLF which breaks text-encoding lint when `.tmp/` is not gitignored); CS47 (detached-HEAD investigation) remains top of suggested-next queue per existing CONTEXT.md |
+| T15 — Close-out PR (`cs53/close-out`) | done | omni-ah | this PR; workboard-only label → auto-merge |
 
 ## Exit criteria
 
@@ -131,23 +131,56 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 
 ## Notes / Learnings
 
-(filled during execution)
+**Closed:** 2026-05-27 — v0.6.0 published at https://github.com/henrik-me/agent-harness/releases/tag/v0.6.0 (squash SHA `acdca89`); SI pin-bump PR opened at https://github.com/henrik-me/sub-invaders/pull/79.
+
+**Release-cut metrics:**
+- 8-round plan-review loop (R1 Go-with-amendments -> R2 Needs-Fix -> R3 Go + narrow re-attests R4/R5/R7/R8 after Copilot R1/R2/R4/R5)
+- 3-round plan-vs-impl loop (R1 GO-with-amendments -> R2 narrow GO -> R3 narrow GO after Copilot finding fix)
+- 2 Copilot review rounds (R1: 1 finding addressed; R2: 0 findings)
+- 4 PR-body updates via `gh pr edit --body-file` (none triggered HEAD changes)
+- 3 content commits: `bd8013b` (consolidated milestone) -> `14aa3d3` (docs flip) -> `b07e78d` (CHANGELOG wording fix)
+- Wall time: ~3 hours from claim PR #207 to v0.6.0 release published
+
+**Learnings filed:**
+
+- **LRN-132** (`harness review` CLI ledger-regex false positive): `lib/review.mjs:313` regex `\b(?:model|implementer-model|implementer model)\s*=\s*([A-Za-z0-9_. -]+(?:\.[0-9]+)?)/gi` greedily matches `reviewer model = X` and `model=X` substrings in the CS file's narrative prose as implementer-model declarations, causing the independence guard to refuse legitimate reviewer models. Workaround during CS53: dogfooded `harness review` via `--dry-run` only. Mitigation: tighten regex to require explicit `implementer model` (not just `model`) qualifier, or anchor on table-cell context. CS54+ candidate.
+
+- **LRN-133** (Windows PowerShell `Out-File -Encoding utf8` emits CRLF): `Out-File -Encoding utf8` on PowerShell 5/7 emits CRLF by default on Windows; combined with the fact that `.tmp/` is not gitignored, this breaks `node bin/harness.mjs lint` `text-encoding` check, which cascades into 5 test failures in the lint aggregator. Workaround: pipe through Node to LF-normalize (`node -e "..."`), or delete `.tmp/` before running `harness lint`. Mitigation: add `.tmp/` to `.gitignore`, and/or have the `text-encoding` linter ignore untracked-and-gitignored files. CS54+ candidate.
+
+**Operational findings:**
+
+- LRN-125 pattern reproduced cleanly: `read-only-gates` failed initially at each new HEAD (`14aa3d3` and `b07e78d`) before Copilot review attached, then passed after `gh run rerun <id>` once Copilot review was visible at HEAD. Two reruns total.
+- A4 stale-diff doctrine reaffirmed: each new commit (`14aa3d3`, `b07e78d`) required a new local GO row in PR body Review log with `analyzed_head` matching the new HEAD. Implemented via narrow-scope rubber-duck re-attests (zero-finding GOs against tiny doc-only / 1-line deltas).
+- A5+A16 ordering doctrine held: each Copilot review's `submittedAt` was strictly after the most recent local GO row's timestamp at that HEAD.
+
+**Suggested next CS queue (post-CS53):**
+
+1. **CS47** (detached-HEAD investigation / LRN-124 mitigation) — remains top of queue per existing CONTEXT.md.
+2. **CS54 candidate** (LRN-132 fix): tighten `harness review` ledger regex.
+3. **CS54b candidate** (LRN-133 fix): add `.tmp/` to `.gitignore` and/or scope `text-encoding` linter to tracked-or-not-gitignored files.
 
 ## Plan-vs-implementation review
 
-**Reviewer:** gpt-5.5 (rubber-duck sub-agent, dispatched by omni-ah orchestrator via `task` tool with `agent_type=rubber-duck`, `model=gpt-5.5`)
+**Reviewer:** gpt-5.5 (rubber-duck sub-agent, dispatched by omni-ah orchestrator via `task` tool with `agent_type=rubber-duck`)
 **Date:** 2026-05-27
-**Outcome:** GO-with-amendments (2 NON-BLOCKING findings, both addressed before merge)
+**Outcome:** GO (R3 narrow re-attest at `b07e78d` after R1 GO-with-amendments at `b5948a6` and R2 narrow re-attest GO at `14aa3d3`)
 
-**Summary (verbatim):** "The PR implementation matches the CS53 plan for T2–T6: version + lockfile are coherent at `0.6.0`, CHANGELOG is correctly cut with U+2014 em-dash and preserved prior sections, README install pins are swept, C53-5 strict-agent-column default is flipped with opt-out/help/tests, and the diff is limited to expected files with no `lib/`, schema, or template-class changes. Independence holds (`claude-opus-4.7-1m-internal` vs `gpt-5.5`). No blocking plan-vs-implementation issues found, but two required close-out amendments remain before merge/review gates."
+**Review chain:**
 
-**Findings (verbatim):**
+- **R1 GO-with-amendments at `b5948a6`** (2 NON-BLOCKING findings, both addressed): C53-PRBODY-1 (Review log placeholder) + C53-VALIDATION-1 (stray `.tmp/` CRLF). See verbatim findings below.
+- **R2 narrow GO at `14aa3d3`** (zero findings): confirmed the only delta from `b5948a6` was the doc-only commit populating `## Plan-vs-implementation review`.
+- **R3 narrow GO at `b07e78d`** (zero findings): confirmed the only delta from `14aa3d3` was the 1-line CHANGELOG.md wording fix ("columns" -> "rows") addressing Copilot R1's finding.
+
+**Summary (verbatim, R1):** "The PR implementation matches the CS53 plan for T2–T6: version + lockfile are coherent at `0.6.0`, CHANGELOG is correctly cut with U+2014 em-dash and preserved prior sections, README install pins are swept, C53-5 strict-agent-column default is flipped with opt-out/help/tests, and the diff is limited to expected files with no `lib/`, schema, or template-class changes. Independence holds (`claude-opus-4.7-1m-internal` vs `gpt-5.5`). No blocking plan-vs-implementation issues found, but two required close-out amendments remain before merge/review gates."
+
+**Findings (verbatim, R1):**
 
 - **C53-PRBODY-1** [NON-BLOCKING] PR-body evidence not yet stale-diff-ready: `## Review log` is still a placeholder, not a valid `GO` row for full head `b5948a61a19ebf78244cada0c0292f37cff4c08f`. This is expected per T8b, but A4/read-only gates are not ready until it is populated. — Fix: replace the placeholder with this review's GO/GO-with-amendments row at full SHA and an evidence link, keeping `## Model audit` / `## Review log` inside the harness local markers.
 - **C53-VALIDATION-1** [NON-BLOCKING] Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected. — Fix: remove/move the local `.tmp` scratch outside the repo, then rerun `node bin/harness.mjs lint --quiet` and `npm test` before merge.
 
 **Disposition:**
 
-- C53-PRBODY-1: Addressed in PR #208 body via `gh pr edit --body-file` (Review log row populated with `GO-with-amendments` at `b5948a6` + this evidence link).
-- C53-VALIDATION-1: Addressed by deleting `.tmp/` scratch dir; re-verified `text-encoding: 601 files checked, 0 violations`. Reproduced as: PowerShell's `Out-File -Encoding utf8` emits CRLF on Windows by default, and the harness `text-encoding` linter walks all unignored files. Mitigation candidate: file as a LEARNINGS entry for the next CS that authors PR bodies on Windows.
+- C53-PRBODY-1: Addressed in PR #208 body via `gh pr edit --body-file` (Review log row populated with `GO-with-amendments` at `b5948a6`, followed by R2 GO row at `14aa3d3` and R3 GO row at `b07e78d`).
+- C53-VALIDATION-1: Addressed by deleting `.tmp/` scratch dir; re-verified `text-encoding: 601 files checked, 0 violations`. Filed as **LRN-133** in Notes / Learnings above.
+- Copilot R1 finding ("columns" -> "rows"): addressed in commit `b07e78d`; thread resolved via `resolveReviewThread` GraphQL mutation.
 

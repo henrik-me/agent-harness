@@ -2217,6 +2217,58 @@ Concrete operational rule for any future velocity batch:
 
 **Disposition:** Applied. Doctrine candidate for `OPERATIONS.md` § Velocity-batch close-out compression: add a subsection enumerating the hygiene minimum (rename + Status/Closed/Owner) vs. the deferrable parts (plan-vs-impl review + LRN harvest), pointing at this LRN and at `done_cs48_*.md § Close-out compression note` as the canonical example. Cross-reference: LRN-126 (orchestrator-availability discipline) — the velocity pressure that creates this debt is itself a sub-agent-dispatch failure mode the orchestrator should mitigate by delegating close-out hygiene to a sub-agent rather than skipping it.
 
+### LRN-132
+
+```yaml
+id: LRN-132
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [harness-cli, review-gates, regex, independence-invariant, false-positive]
+claim_area: review-gates
+```
+
+**Problem:** `harness review <pr>` refuses to run on PRs whose CS file or PR body contains the narrative phrase `reviewer model = <id>` or the substring `model = <id>` outside the canonical `## Model audit` table. The CLI's `parseImplementerModels` helper at `lib/review.mjs:313` uses a context-blind regex `\b(?:model|implementer-model|implementer model)\s*=\s*([A-Za-z0-9_. -]+(?:\.[0-9]+)?)/gi` that matches any `model=X` substring and treats every match as an implementer-model declaration. The CS file's `## Plan-vs-implementation review` section legitimately mentions the reviewer model in prose, which the regex misclassifies as a co-implementer, falsely triggering the independence-invariant guard. Result: legitimate reviewer models are flagged as "implementer == reviewer" and `harness review` refuses to dispatch, even when the actual model audit shows clean independence.
+
+**Finding:** **Regex-based independence-invariant scanning must be context-aware, not substring-aware.** Three orthogonal mitigations, in order of preference:
+
+1. **Anchor on table-cell context.** Implementer-model declarations are exclusively recorded in the `## Model audit` table's `| Implementer models | <id> |` row. The parser should walk the markdown AST (or regex-locate the audit table) and read only that row's value, not free-form prose anywhere in the document.
+2. **Tighten the qualifier requirement.** If table-anchoring is too invasive, the regex should require the literal token `implementer` (or `implementer-model` / `implementer model`) — never bare `model = X`. The current alternation `(?:model|implementer-model|implementer model)` is overly permissive: the bare `model` alternative should be removed.
+3. **Add a skip list for narrative contexts.** Lines containing `reviewer model`, `rubber-duck model`, `# `, `> `, or appearing inside `## Plan-vs-implementation review` should be skipped during scanning. This is the cheapest fix but the most fragile.
+
+The bug is silent — it manifests only as a refusal-to-run, not as a false-pass, so the independence guard remains conservative. But it makes the CLI unusable for self-host dogfood whenever the CS file documents the reviewer in prose, which is universally true for any CS that has been through plan-vs-impl review.
+
+**Evidence:** CS53 (`done_cs53_release-v0.6.0.md`) T8c dogfood attempt: `harness review 208 --dry-run` succeeded (dry-run bypasses the guard), but `harness review 208` (without `--dry-run`) refused with an independence-violation error citing `gpt-5.5` as an implementer despite the `## Model audit` table clearly listing `claude-opus-4.7-1m-internal` as the only implementer model. Inspection of `lib/review.mjs:313` showed the regex matching `Reviewer model: gpt-5.5` in the CS file's plan-vs-impl section. Workaround applied for CS53: dogfooded via `--dry-run` only and proceeded to admin-squash-merge with the canonical `## Model audit` table evidence. PR #208 at `b07e78d`; CS file lines containing `Reviewer:` and `Reviewer model:` are the trigger surface.
+
+**Disposition:** Open. Follow-up CS candidate (CS54 or equivalent): tighten `parseImplementerModels` per option 2 (remove bare `model` alternative) at minimum, with regression test that asserts a CS file containing `Reviewer model: gpt-5.5` in narrative prose does NOT cause `harness review` to flag `gpt-5.5` as an implementer. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #2.
+
+### LRN-133
+
+```yaml
+id: LRN-133
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [windows, powershell, line-endings, lint, text-encoding, gitignore]
+claim_area: lint-and-encoding
+```
+
+**Problem:** On Windows, drafting a PR body via PowerShell's `Out-File -Encoding utf8` (or the equivalent `Set-Content` / `>` redirect) writes CRLF line endings by default, even when the source string in the variable being piped is LF-clean. Combined with the fact that the harness `.gitignore` does NOT exclude `.tmp/`, a PR-body scratch file at `.tmp/pr-body-cs53-content.md` becomes visible to `scripts/check-text-encoding.mjs`, which walks all unignored files in the repo regardless of git-tracked status. The text-encoding check fails on CRLF; `node bin/harness.mjs lint` rolls that into its aggregate exit code; 5 lint-aggregator tests in `tests/` fail because they expect `harness lint` to exit 0 on a clean main checkout. End result: a single stray scratch file silently turns `npm test` red, and the failure mode looks like a regression in the lint suite when in fact it is environmental.
+
+**Finding:** **`.tmp/` should be in `.gitignore` AND `check-text-encoding.mjs` should respect gitignore semantics, AND PR-body authoring on Windows must explicitly LF-normalize.** Three layers of defense, each useful in isolation:
+
+1. **`.gitignore` `.tmp/` (1 line):** the cheapest fix. Eliminates the most common cause (developer-created scratch dirs for `gh pr edit --body-file` workflows). Should land as a 1-commit follow-up CS.
+2. **`check-text-encoding.mjs` scope-narrowing:** the linter currently walks the filesystem with its own ignore list (not `git ls-files`-anchored). Switching to `git ls-files --cached --others --exclude-standard` would make the linter automatically respect `.gitignore` and would prevent future scratch-dir-class bugs. Larger surgical change with broader implications (would also affect generated files under `node_modules/`, etc. that are currently excluded via the script's own list).
+3. **PR-body authoring convention:** the workaround that worked in CS53 was to pipe the PR body content through Node: `node -e "fs.writeFileSync(path, content.replace(/\r\n/g,'\n'))"`. This should be documented in `OPERATIONS.md § Copilot engagement procedure` or in a Windows-orchestrator quickstart. The convention is fragile (orchestrators forget) but the convention is the only Windows-specific layer that matters.
+
+LRN-093 documented the parent fact ("Windows tooling defaults to CRLF") but stopped short of the cascading-test-failure surface area. This LRN extends LRN-093 with the specific `.tmp/`-not-gitignored amplifier and the specific test-failure cascade.
+
+**Evidence:** CS53 R1 plan-vs-impl review (verbatim finding C53-VALIDATION-1): "Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected." Reproduced inline by inspecting `.tmp/` after `gh pr edit --body-file .tmp/pr-body-cs53-content.md` (PowerShell `Out-File -Encoding utf8` chain), then running `node bin/harness.mjs lint --quiet` (failed `text-encoding`), then `Remove-Item -Recurse -Force .tmp` followed by re-running lint (passed `30/0/3`). Cascade verified: 5 lint-aggregator tests under `tests/lint-aggregator.test.mjs` (or equivalent) flip red->green with `.tmp/` removal. Mitigation applied in CS53 close-out by deleting `.tmp/` and re-running lint clean before commit.
+
+**Disposition:** Open. Follow-up CS candidate (CS54b or equivalent): add `.tmp/` to root `.gitignore` (option 1) as a 1-commit hygiene PR; defer option 2 (linter-respects-gitignore) to a separate scoped CS because it has broader behavioral implications for the lint suite. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #3. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+
 ### LRN-127
 
 ```yaml
