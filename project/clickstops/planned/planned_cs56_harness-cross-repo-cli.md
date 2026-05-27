@@ -21,7 +21,7 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
 | D56-1 | Subcommand surface | `harness cross-repo open-issue --repo OWNER/NAME --title STRING --body-file PATH [--label LABEL ...]`. No `open-pr` surface. Other future cross-repo write actions such as `add-comment` are out of scope for CS56. | Keeps Phase B narrow and aligned to the user-confirmed issue-only handoff pattern. |
-| D56-2 | Repo validation | `--repo` MUST parse as `OWNER/NAME` and MUST NOT equal `henrik-me/agent-harness`. Harness-internal issues should use plain `gh issue create`, not this handoff command. | Prevents self-loop confusion and reserves this command for non-harness repository handoffs. |
+| D56-2 | Repo validation | `--repo` MUST parse as `OWNER/NAME` and, after normalizing both sides to lowercase (`repo.toLowerCase() !== 'henrik-me/agent-harness'`), MUST NOT equal the harness repo. GitHub owner/name slugs are case-insensitive in the URL/API; the test suite covers mixed-case variants (`Henrik-Me/agent-harness`, `HENRIK-ME/AGENT-HARNESS`, `henrik-me/Agent-Harness`) to prevent bypass. Harness-internal issues should use plain `gh issue create`, not this handoff command. | Prevents self-loop confusion and reserves this command for non-harness repository handoffs; closes a case-bypass attack surface. |
 | D56-3 | Default label | Always add `harness-orchestrator`; additional repeated `--label` flags append and cannot replace/remove the default. If `--label` is omitted, the issue still ships with `harness-orchestrator` (no labels means default-only, not unlabeled). | Gives every issue created by the command a uniform routing label per Q4. Aligns with CS55 D55-3 ("uniform default; supplemental labels permitted as additions"). |
 | D56-4 | Idempotency | Before creating, run `gh issue list --repo OWNER/NAME --search "TITLE in:title" --state open --json number,title,url`. Compare results against the **exact** input title (case-sensitive `===` against `result.title`); only an exact match short-circuits. If an exact-title open issue exists, print its URL to stdout, emit `existing open issue matched; no new issue created` to stderr, and exit 0. If no exact match exists, create the issue and print the new URL to stdout. CLOSED issues never short-circuit (always create new). **Title uniqueness contract:** all CS-driven handoff issue titles MUST be prefixed with `[harness:cs<NN>]` (e.g. `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`) so that two different CSes targeting the same consumer repo cannot accidentally collapse onto the same issue. The CLI does NOT enforce this prefix (it's a doctrine rule documented in OPERATIONS.md § Cross-repo procedures), but the test suite asserts the example uses it. Race condition: two concurrent invocations both seeing "no match" can create duplicates; acceptable risk at current scale, documented in README. | Avoids duplicate handoff issues while keeping successful output scriptable; the prefix convention scales to many consumer repos without collision. |
 | D56-5 | Body input | Require `--body-file`; do not support `--body`. The file must exist and be a regular file (no directories, no `/dev/stdin`); missing/non-file path emits `CrossRepoError(kind: 'body-file-missing')` and exits 1. | File-based bodies avoid shell-escape footguns and encourage reusable issue templates. |
@@ -37,6 +37,7 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-sonnet-4.6 | rubber-duck dispatched (orchestrator: copilot-cli) | 9f3e53301d03 | 2026-05-27T15:30:00Z | Go-with-amendments | Dispatch insertion stale; CS55 label rule reconciled; README quick-ref absent; added tests for gh failures/body-file/closed-open. All amendments applied. |
+| R2 | gpt-5.5 | claude-sonnet-4.6 | narrow re-attest (orchestrator: copilot-cli) | 84ee40bd3d9c | 2026-05-27T15:35:00Z | Go | Narrow re-attest after Copilot R1 PR feedback: D56-2 + T2 self-loop guard switched to case-insensitive comparison; T5 test 2 expanded to cover mixed-case bypass attempts; T5 test 6 typo fix. |
 
 ## Deliverables
 
@@ -70,7 +71,7 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 - Export `openIssue({ repo, title, bodyFile, labels = [] })` returning a structured result, for example `{ url, created: boolean, number?: number, title }`.
 - Validate:
   - `repo` matches `^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`.
-  - `repo !== 'henrik-me/agent-harness'`.
+  - `repo.toLowerCase() !== 'henrik-me/agent-harness'` (case-insensitive comparison — GitHub slugs are case-insensitive in the URL/API, so `Henrik-Me/agent-harness`, `HENRIK-ME/AGENT-HARNESS`, and `henrik-me/Agent-Harness` MUST all be rejected; do not let casing bypass the self-loop guard).
   - `title` is non-empty after trimming.
   - `bodyFile` exists and is a file; the library does not infer consumer roots from `import.meta.url`.
   - `labels` are non-empty strings after trimming.
@@ -120,11 +121,11 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 Add targeted `node --test` coverage with fake-`gh` via the `HARNESS_CROSS_REPO_GH_BIN` env-var seam introduced in D56-10. Fake-`gh` shims are written into `os.tmpdir()` per LRN-094 (never under REPO_ROOT). Test cases:
 
 1. `cross-repo open-issue requires repo title and body-file flags` — each missing flag exits 2 with usage on stderr.
-2. `cross-repo open-issue rejects henrik-me/agent-harness self-loop repo` — exits 2 with the self-loop error message.
+2. `cross-repo open-issue rejects henrik-me/agent-harness self-loop repo` — exits 2 with the self-loop error message. Covers case-insensitive variants: `henrik-me/agent-harness`, `Henrik-Me/agent-harness`, `HENRIK-ME/AGENT-HARNESS`, `henrik-me/Agent-Harness` all rejected (D56-2 contract).
 3. `cross-repo open-issue rejects malformed repo slugs` — e.g. `foo`, `foo/bar/baz`, `foo/`, `/bar` all exit 2.
 4. `cross-repo open-issue --body-file rejects missing path` — non-existent file path exits 1 with `body-file-missing` error.
 5. `cross-repo open-issue --body-file rejects non-file path` — directory path or symlink-to-directory exits 1 with `body-file-missing` error.
-6. `cross-repo open-issue happy path` — fake-gh returns `[]` from `issue list` then `{"url":"..."}`. from `issue create`; asserts stdout is exactly `<url>\n`, stderr is empty on success, exit 0.
+6. `cross-repo open-issue happy path` — fake-gh returns `[]` from `issue list` then `{"url":"..."}` from `issue create`; asserts stdout is exactly `<url>\n`, stderr is empty on success, exit 0.
 7. `openIssue returns existing open issue URL on exact title match` — fake-gh `issue list` returns `[{"title":"<exact>","url":"<url>","number":42}]`; asserts no `issue create` call, stdout = `<url>\n`, stderr contains `existing open issue matched; no new issue created`.
 8. `openIssue ignores closed exact-title issues and creates new` — fake-gh `issue list --state open` returns `[]` (closed issues filtered out by `--state open`); asserts `issue create` IS invoked.
 9. `openIssue applies harness-orchestrator label when --label omitted` — fake-gh asserts `issue create` argv contains `--label harness-orchestrator` exactly once and no other `--label` flags.

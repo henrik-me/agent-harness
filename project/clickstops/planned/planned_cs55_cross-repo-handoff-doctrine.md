@@ -32,6 +32,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck dispatched (orchestrator: copilot-cli) | ac2480d7ea68 | 2026-05-27T15:30:00Z | Go-with-amendments | Amend validation (add text-encoding), make T6 post-merge, clarify CS54 ordering/sub-agent scope, and move Plan review section. All amendments applied in this revision. |
+| R2 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | f5a7af339815 | 2026-05-27T15:35:00Z | Go | Narrow re-attest after Copilot R1 PR feedback: SI issue title prefix unified to [harness:cs55]; check-text-encoding validation rewritten to single --dir . form. |
 
 ## Deliverables
 
@@ -40,7 +41,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - `LEARNINGS.md` — file LRN-137 with frontmatter containing `id: LRN-137`, `category: process`, `status: open` initially, and `applied_in_cs: CS55` when closed. Body evidence: SI PR #79 chase, three `read-only-gates` failures, `cbaa608b8196e03ebb09e168562501c105930622`, Hard Rule § 6, and the `OPERATIONS.md` procedure.
 - `CONTEXT.md` — add a 2-3 sentence operating-model note pointing future orchestrators to Hard Rule § 6 and `OPERATIONS.md § Cross-repo procedures`.
 - `WORKBOARD.md` — update during claim and close-out only, per normal CS lifecycle.
-- GitHub issue in `henrik-me/sub-invaders` — title `[harness sync] Adopt v0.6.x cross-repo handoff doctrine`, label `harness-orchestrator`, and body asking the SI agent to run `harness sync` after CS55 merges, adopt the reciprocal issue-only rule, and validate on the SI side. This is a CS task, not a file deliverable.
+- GitHub issue in `henrik-me/sub-invaders` — title `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`, label `harness-orchestrator`, and body asking the SI agent to run `harness sync` after CS55 merges, adopt the reciprocal issue-only rule, and validate on the SI side. The `[harness:cs55]` prefix is required by the CS56 D56-4 title-uniqueness contract so future cross-repo issues do not collide. This is a CS task, not a file deliverable.
 
 ## Tasks
 
@@ -100,7 +101,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - Run `node scripts/validate-schemas.mjs` to verify LRN-137 frontmatter, especially the required `id:` field.
 - Run `npm test` because CS55 touches process docs consumed by harness checks; record the test count delta if tests change (expected: no test files changed, so no count increase).
 - Run `node scripts/check-templates.mjs --dir template --cwd .` because template files are modified.
-- Run `node scripts/check-text-encoding.mjs --dir template LEARNINGS.md CONTEXT.md --quiet` over owned paths (BOM/LF check is always-on in `harness lint` but run explicitly with owned paths to surface any CRLF leakage early; see `bin/harness.mjs:2099-2104`).
+- Run `node scripts/check-text-encoding.mjs --dir . --quiet` to scan the whole repo (the script accepts only one `--dir` and is gitignore-aware by default, so a repo-root scan covers `template/`, `LEARNINGS.md`, and `CONTEXT.md` in one invocation without scanning `node_modules` / `.git`).
 - **Exit criteria:** all commands exit 0, or any failure is fixed before PR open.
 
 ### T8 — Plan-vs-implementation review
@@ -124,7 +125,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - `harness lint` exits 0; record any reported check counts in the active CS file.
 - `node scripts/validate-schemas.mjs` exits 0 and accepts LRN-137 frontmatter.
 - `node scripts/check-templates.mjs --dir template --cwd .` exits 0 after edits under `template/`.
-- `node scripts/check-text-encoding.mjs --dir template LEARNINGS.md CONTEXT.md --quiet` exits 0.
+- `node scripts/check-text-encoding.mjs --dir . --quiet` exits 0 (single `--dir` per script; repo-root scan with default gitignore-awareness covers all owned paths).
 - `npm test` exits 0; expected test count delta is `0` unless implementation discovers a necessary docs-linter regression test.
 - Manual review confirms Hard Rule § 6 is inserted after § 5, `OPERATIONS.md` has exactly one `## Cross-repo procedures` H2, and the SI issue body demonstrates the new issue-only pattern.
 
