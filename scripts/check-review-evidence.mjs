@@ -77,7 +77,11 @@ Options:
   --skip-reasons <csv>   Comma-separated skip reasons. "workboard-only" and
                          "bot-author" short-circuit to exit 0 (A3+A4 skipped).
                          "fork-source" does not skip A3/A4 (read-only gates).
-  --strict-agent-columns Treat missing Implementer/Reviewer agent rows as errors
+  --strict-agent-columns Treat missing Implementer/Reviewer agent rows as errors (DEFAULT
+                         since v0.6.0; CS53 C53-5 / CS42 C42-6 promise)
+  --no-strict-agent-columns
+                         Opt out of strict-agent-columns (transitional flag; missing
+                         agent rows become warnings rather than errors)
   --quiet                Suppress per-finding output; print only the summary line
   --help                 Print this help text
 
@@ -90,7 +94,7 @@ Exit codes:
 let prBodyFile = null;
 let headSha = null;
 let skipReasons = new Set();
-let strictAgentColumns = false;
+let strictAgentColumns = true;
 let quiet = false;
 
 function requireValue(args, i, flag) {
@@ -116,6 +120,8 @@ for (let i = 0; i < argv.length; i++) {
     i++;
   } else if (a === '--strict-agent-columns') {
     strictAgentColumns = true;
+  } else if (a === '--no-strict-agent-columns') {
+    strictAgentColumns = false;
   } else if (a === '--quiet') {
     quiet = true;
   } else if (a === '--help' || a === '-h') {
