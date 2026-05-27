@@ -22,10 +22,10 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - **D55-2 — No escape hatch:** Even urgent cross-repo work routes through an issue. Rationale: this is an orchestrator constraint; the human user can always self-merge, run `gh`, or otherwise act directly if they choose.
 - **D55-3 — Uniform default label:** Every handoff issue MUST always carry the `harness-orchestrator` label as the routing default. Supplemental labels (e.g. `harness-sync`, `release-blocker`) are permitted as additions and never replace or remove the default. Rationale: one predictable v1 routing label is enough for triage, while CS56's `--label` repeated flag can append context labels without weakening discoverability.
 - **D55-4 — OPERATIONS.md ownership and ordering:** CS55 owns all `OPERATIONS.md` changes for the cross-repo doctrine (the `## Cross-repo procedures` H2 + the `### Handoff pattern: issue-only, never direct PR` H3). CS54-T3's `### Cross-repo pin-bump PR body checklist` is a sibling H3 under the same H2. Ordering contract: whichever CS lands FIRST creates the `## Cross-repo procedures` H2 plus its own H3; whichever CS lands SECOND rebases on `main`, leaves the existing H2 untouched, and only adds its sibling H3. Neither CS may re-create the H2 if it already exists.
-- **D55-5 — LRN-137 lifecycle:** File LRN-137 in this CS and close it in this CS. The frontmatter must include `id: LRN-137` per `lib/doc-schema.mjs:51-56`; start as `status: open`, then transition to `status: closed` with `applied_in_cs: CS55` at close-out.
+- **D55-5 — LRN-137 lifecycle:** File LRN-137 in this CS and transition it to terminal state in this CS. The frontmatter must conform to `schemas/learning.schema.json` (status enum: `open|applied|obsolete|deferred`; `additionalProperties: false`, so no `applied_in_cs` field). Start as `status: open`; at close-out transition to `status: applied`. CS linkage is captured by the schema-required `source_cs: CS55` field; reference the applying CS in the entry body if additional narrative is needed.
 - **D55-6 — SI issue as demonstration:** The SI tracking issue is the meta-demonstration of the rule applied to its own rollout. It must be labeled `harness-orchestrator`, link to Hard Rule § 6, and ask the SI agent to adopt the reciprocal "work-via-issue-only from harness orchestrator" rule.
 - **D55-7 — No config changes:** Do not edit `harness.config.json` or schema. The rule is normative process doctrine, not a data-driven repo allowlist or config switch.
-- **D55-8 — No CLI guardrail:** CS55 is doc-only and does not add the `harness cross-repo` CLI guardrail. That implementation belongs to CS56, which can proceed in parallel because it owns a different surface.
+- **D55-8 — No CLI guardrail:** CS55 is doc-only and does not add the `harness cross-repo` CLI guardrail. That implementation belongs to CS56. The two CS plans may be drafted and reviewed in parallel (planning-only parallelism), but CS56 implementation/claim is sequential: per CS56 D56-11, CS56 MUST NOT be claimed or open its content PR until CS55's content PR has merged to `main`, so that CS56's CLI codifies a doctrine already in force.
 
 ## Plan review
 
@@ -33,6 +33,7 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck dispatched (orchestrator: copilot-cli) | ac2480d7ea68 | 2026-05-27T15:30:00Z | Go-with-amendments | Amend validation (add text-encoding), make T6 post-merge, clarify CS54 ordering/sub-agent scope, and move Plan review section. All amendments applied in this revision. |
 | R2 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | f5a7af339815 | 2026-05-27T15:35:00Z | Go | Narrow re-attest after Copilot R1 PR feedback: SI issue title prefix unified to [harness:cs55]; check-text-encoding validation rewritten to single --dir . form. |
+| R3 | gpt-5.5 | claude-opus-4.7-1m-internal | narrow re-attest (orchestrator: copilot-cli) | a6a12c8381a6 | 2026-05-27T16:55:00Z | Go | Narrow re-attest after Copilot R3 PR feedback: D55-5 + T4 LRN frontmatter aligned to learning.schema.json (status: applied not closed; no applied_in_cs field — additionalProperties:false); D55-8 clarified planning-only parallelism (CS56 claim/impl waits for CS55 merge). |
 
 ## Deliverables
 
@@ -74,9 +75,9 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 
 ### T4 — File and close LRN-137
 
-- Add LRN-137 to `LEARNINGS.md` with YAML frontmatter including `id: LRN-137`, `date: 2026-05-27`, `category: process`, `source_cs: CS55`, `status: open`, `tags`, `claim_area`, and `applied_in_cs: -` or the repository's accepted open-value convention.
+- Add LRN-137 to `LEARNINGS.md` with YAML frontmatter conforming to `schemas/learning.schema.json`: `id: LRN-137`, `date: 2026-05-27`, `category: process`, `source_cs: CS55`, `status: open`, `tags: [...]`, and optionally `claim_area`. Do NOT add `applied_in_cs` or any other non-schema field — the schema sets `additionalProperties: false`.
 - Body problem/finding/evidence should cite SI PR #79, the three `read-only-gates` failures, the pre-v0.6.0 SI template root cause, and the admin-squash commit `cbaa608b8196e03ebb09e168562501c105930622`.
-- At close-out, transition `status: open` to `status: closed` and set `applied_in_cs: CS55`, linking Hard Rule § 6 and the `OPERATIONS.md` procedure.
+- At close-out, transition `status: open` to `status: applied` (schema enum is `open|applied|obsolete|deferred`; `closed` is NOT an allowed value). CS linkage continues to be captured by `source_cs: CS55`; reference Hard Rule § 6 and the `OPERATIONS.md` procedure in the entry body, not in frontmatter.
 - **Exit criteria:** `node scripts/validate-schemas.mjs` accepts LRN-137 and LRN-137 is closed before CS55 close-out merges.
 
 ### T5 — Add operating-model context note
