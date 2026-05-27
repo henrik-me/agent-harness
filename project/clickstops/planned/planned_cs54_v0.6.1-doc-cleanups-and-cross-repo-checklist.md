@@ -214,6 +214,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R6 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 2f2c22c4e9b5 | 2026-05-27T18:10:00Z | Needs-Fix | Caught false "gate already implicitly rejects" claim; fallback-rationale path makes decorated cells silently pass today. |
 | R7 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 86b3d487ab9c | 2026-05-27T18:20:00Z | Go | D54-3/T5/Deliverables now accurately state the live PR-side fallback-rationale gap; explicit decoration check placed before reviewerModelApproved(). |
 | R8 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:35:00Z | Go | Post-Copilot-R5 narrow re-attest: Goal item 2 anchor reworded as NEW H3; Deliverables/T3 heading levels aligned (H3); REVIEWS bullet backtick nesting fixed. |
+| R9 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:50:00Z | Go | Post-Copilot-R6 narrow re-attest: WORKBOARD banner-only delta (a9e3836); plan file untouched, Decisions/Deliverables hash unchanged. |
 
 ## Notes / Learnings
 
