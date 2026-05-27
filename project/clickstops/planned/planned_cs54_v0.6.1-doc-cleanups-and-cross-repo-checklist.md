@@ -224,6 +224,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R14 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T18:43:00Z | Go | Post-Copilot-R11 narrow re-attest: LRN-134 uses full path scripts/check-review-evidence.mjs; R13 recap trimmed to <200. Hash unchanged. |
 | R15 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T18:50:00Z | Go | Post-Copilot-R14 narrow re-attest: LRN-133 Finding/Disposition reconciled (gitignore APPLIED); LRN-134+R13 recap CS54-T2→T3; R6-R10 timestamps re-sequenced. Hash unchanged. |
 | R16 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:03:00Z | Go | Post-Copilot-R15 narrow re-attest: LRN-133 Disposition "TBD" placeholder dropped (PR #210 ref is canonical pre-merge). Hash unchanged. |
+| R17 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:09:00Z | Go | Post-Copilot-R16 narrow re-attest: LRN-133 Problem reworded to past tense ("did NOT exclude at the time of CS53") with cross-ref to Finding/Disposition. Hash unchanged. |
 
 ## Notes / Learnings
 
