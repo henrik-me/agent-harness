@@ -79,7 +79,7 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
   - `gh issue list --repo <repo> --search "<title> in:title" --state open --json number,title,url`.
   - Parse JSON fail-closed; malformed JSON becomes `CrossRepoError(kind: 'parse-failed')` with a clear message.
   - Exact-title match returns existing issue URL without creating.
-  - Miss invokes `gh issue create --repo <repo> --title <title> --body-file <bodyFile> --label harness-orchestrator` plus every additional label.
+  - Miss invokes `gh issue create --repo <repo> --title <title> --body-file <bodyFile> --label harness-orchestrator` plus every additional label. Captures stdout from `gh issue create` as plain text (the real `gh` CLI prints the new issue URL as a single line to stdout, with NO `--json` flag available on `gh issue create`); trim trailing whitespace and validate it parses as a URL before returning.
 - Exit criteria:
   - Library can be unit-tested without live network through an injectable `gh` runner or fake binary seam.
   - Success output is data-only; warnings/errors are available for CLI stderr handling.
@@ -125,7 +125,7 @@ Add targeted `node --test` coverage with fake-`gh` via the `HARNESS_CROSS_REPO_G
 3. `cross-repo open-issue rejects malformed repo slugs` — e.g. `foo`, `foo/bar/baz`, `foo/`, `/bar` all exit 2.
 4. `cross-repo open-issue --body-file rejects missing path` — non-existent file path exits 1 with `body-file-missing` error.
 5. `cross-repo open-issue --body-file rejects non-file path` — directory path or symlink-to-directory exits 1 with `body-file-missing` error.
-6. `cross-repo open-issue happy path` — fake-gh returns `[]` from `issue list` then `{"url":"..."}` from `issue create`; asserts stdout is exactly `<url>\n`, stderr is empty on success, exit 0.
+6. `cross-repo open-issue happy path` — fake-gh returns `[]` from `issue list --json ...` (JSON output) then `https://github.com/foo/bar/issues/123\n` from `issue create` (plain text — matches real `gh issue create` stdout format; `gh issue create` does NOT accept `--json`); asserts stdout is exactly `<url>\n`, stderr is empty on success, exit 0.
 7. `openIssue returns existing open issue URL on exact title match` — fake-gh `issue list` returns `[{"title":"<exact>","url":"<url>","number":42}]`; asserts no `issue create` call, stdout = `<url>\n`, stderr contains `existing open issue matched; no new issue created`.
 8. `openIssue ignores closed exact-title issues and creates new` — fake-gh `issue list --state open` returns `[]` (closed issues filtered out by `--state open`); asserts `issue create` IS invoked.
 9. `openIssue applies harness-orchestrator label when --label omitted` — fake-gh asserts `issue create` argv contains `--label harness-orchestrator` exactly once and no other `--label` flags.
