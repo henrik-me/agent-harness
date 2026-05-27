@@ -50,6 +50,7 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 | R2 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | f05666006e53 | 2026-05-27T06:30:00Z | Needs-Fix | 6/7 R1 findings ✅; 1 MAJOR (Background line 27 still said 'deferred again', contradicting C53-5/T5b) + 2 NON-BLOCKING (hash row append, duplicate T6); all amended for R3. |
 | R3 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | f05666006e53 | 2026-05-27T07:05:00Z | Go | R2 fixes verified: Background/Goal wording aligned, T5b/T6 ordering fixed, review table ready for R2+R3 append. No new MAJOR or NON-BLOCKING findings. Mergeable as-is. |
 | R4 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T07:45:00Z | Go | Narrow reattest after Copilot R1 nits on PR #206 (Background SHA + Deliverable 2 lockfile notation). Diff=2 edits, both verified; no regression; cap inapplicable (R3=Go). |
+| R5 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T08:55:00Z | Go | Narrow reattest after Copilot R2 nit (Exit criteria #4 lockfile notation). Hash unchanged; only out-of-scope Exit criteria #4 lockfile wording fix; no regressions. |
 
 ## Deliverables
 
