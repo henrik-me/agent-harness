@@ -10,7 +10,7 @@
 
 ## Goal
 
-Cut harness release `v0.6.0` with the existing `CHANGELOG.md [Unreleased]` arc as the release notes. Mirror the procedural shape of [CS39](../done/done_cs39_release-v0.4.0.md) and [CS42](../done/done_cs42_release-v0.5.0.md) exactly: CHANGELOG transform, `package.json` bump, README pin sweep, content-PR squash, tag at the squash SHA, publish the draft release, file a SI cross-repo pin-bump SUB-CS. Execute the entire arc under "user-away" autonomy: every gate (plan review, plan-vs-impl review, workboard auto-merge, admin content-merge under maintainer credentials) is achievable without interactive user approval beyond the standing grants already given at plan-approval time.
+Cut harness release `v0.6.0` with the existing `CHANGELOG.md [Unreleased]` arc as the release notes. Follow the **standard release-cut shape** established by CS39 and CS42 (CHANGELOG transform, `package.json` bump, README pin sweep, content-PR squash, tag at the squash SHA, publish the draft release, file a SI cross-repo pin-bump SUB-CS), **plus** a CS47-style plan-filing preamble PR (PR #202 precedent) ahead of claim per CS35b plan-review attestation doctrine, **plus** the in-release C42-6 strict-flip per C53-5 R1 amendment. Execute the entire arc under "user-away" autonomy: every gate (plan review, plan-vs-impl review, workboard auto-merge, admin content-merge under maintainer credentials, with documented fallback if `--admin` is rejected) is achievable without interactive user approval beyond the standing grants given at plan-approval time.
 
 ## Background
 
@@ -24,7 +24,7 @@ Plus CS48 (ban implementer self-review), CS49 (orchestrator-availability doctrin
 Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 
 - **LRN-124 (detached-HEAD trap)** remains unfixed; every `harness lint` / `harness sync` / `harness plan-review-hash` invocation may silently leave HEAD detached at the most-recent release tag (currently `v0.5.2 = 13ce97a` per `git tag --list`). Mitigation is operational only: **commit-first discipline** before every harness CLI call, plus `git symbolic-ref HEAD` verification after.
-- **C42-6 deferred decision** (warn-not-error → error-flip for `--strict-agent-columns`) is **deferred again** per C53-5; it does not belong folded into a release-cut.
+- **C42-6 strict-flip** (`--strict-agent-columns` warn → error) is now **in scope for CS53** per C53-5 R1 amendment, reversing the earlier "deferred again" stance. REVIEWS.md (root + `template/composed/REVIEWS.md` line 232 + line 408-409) has publicly promised this lands in v0.6.0 since the v0.5.0 cut; deferring a second time would ship documentation that contradicts release behaviour. The flip is mechanically small (one-line default change in `scripts/check-review-evidence.mjs:93` plus a corresponding test update plus a `### Changed` CHANGELOG bullet) and matches the established CS42 T7 strict-flip pattern.
 - **CS51's new required status checks** apply to the CS53 content PR itself. The PR body must be authored so that `review-log-evidence`, `copilot-review-attached`, `independence-invariant`, and `review-threads-resolved` all pass.
 
 ## Decisions
@@ -95,7 +95,6 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 | T3 — `npm version 0.6.0 --no-git-tag-version` + commit | pending | omni-ah | commit msg: `chore(release): bump package.json + lockfile to 0.6.0` |
 | T4 — CHANGELOG transform: `[Unreleased]` → `[0.6.0] — <date>` + re-seed empty `[Unreleased]` + commit | pending | omni-ah | em-dash U+2014; commit msg: `docs(changelog): promote [Unreleased] → [0.6.0] — <date>` |
 | T5 — README pin-version sweep `v0.5.2` → `v0.6.0` + status banner refresh + commit | pending | omni-ah | commit msg: `docs(readme): pin sweep v0.5.2 → v0.6.0 + v0.6.0 highlights banner` |
-| T6 — Local validation: lint / tests / sync-check, verify HEAD attached after each | pending | omni-ah | per-call HEAD + `git status --short` snapshot diff |
 | T5b — **C53-5 strict-flip:** `scripts/check-review-evidence.mjs:93` `let strictAgentColumns = false;` → `true`; update corresponding test in `tests/check-review-evidence.test.mjs`; add `### Changed` CHANGELOG bullet citing C42-6 / CS53 strict-flip + commit | pending | omni-ah | commit msg: `feat(linter): flip --strict-agent-columns default to true (C42-6 v0.6.0 strict-flip)`; ensures REVIEWS.md v0.6.0 promise lands in this release per R1 MAJOR #2 |
 | T6 — Local validation: lint / tests / sync-check, verify HEAD attached after each | pending | omni-ah | per-call HEAD + `git status --short` snapshot diff |
 | T7 — Open content PR with required H2s (Summary/Changes/Testing/Model audit/Review log) | pending | omni-ah | PR body from `.github/pull_request_template.md`; satisfies CS51 required-check H2 presence |
