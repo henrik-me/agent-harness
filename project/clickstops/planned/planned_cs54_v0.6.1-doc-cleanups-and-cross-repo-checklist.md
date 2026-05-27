@@ -45,14 +45,14 @@ Both propagated to all v0.6.0 consumers via `harness sync` (e.g. SI has them on 
 The 4 false-positive findings about `reviews.*` / `review_gates.*`:
 
 Both blocks are valid in `schemas/harness.config.schema.json`:
-- `review_gates.*` (L107) — install-time gate-set selection per CS37 (`enabled`, `copilot_required`, `gate_set`).
+- `review_gates.*` (L107) — install-time gate-set selection per CS37 (`enabled`, `_opt_out_reason` (required when `enabled=false` per v0.5.0+), `copilot_required`, `gate_set`).
 - `reviews.*` (L139) — runtime `harness review` behavior per CS52: `rubber_duck_model`, `fallback_model`, `enforce_gates`, `require_copilot_review`, `copilot_reviewer_slug`, `copilot_trigger`, `review_timeout_minutes`, `high_risk_clickstops`.
 
 The dual nomenclature is genuinely confusing — even Copilot conflated them across 4 separate inline comments. A short disambiguation section in REVIEWS.md will help future LLM reviewers and human contributors.
 
 ## Decisions
 
-- **D54-1** — Ship as **v0.6.1** patch release (not v0.7.0). All 7 tasks are documentation, tests, or template-text fixes; no schema migrations, no CLI behavior changes, no breaking changes.
+- **D54-1** — Ship as **v0.6.1** patch release (not v0.7.0). The 7 tasks are documentation, tests, template-text fixes, and one narrowly scoped behavior change in the PR-side gate `scripts/checks/check-review-log-evidence.mjs` (D54-3); no schema migrations, no `harness` CLI command added/changed/removed, no breaking changes for consumers (existing well-formed Review log rows continue to pass; only previously-silent-pass decorated cells start failing with a clearer error). Compatible with semver patch.
 - **D54-2** — **Codify the cross-repo pin-bump PR body checklist in OPERATIONS.md** (not just LEARNINGS.md). LRN-134 surfaced that CS53's SI PR #79 was blocked because the orchestrator forgot to inline the canonical audit sections in the cross-repo body. Bake the checklist into the operational runbook so future cross-repo pin-bumps cannot omit it.
 - **D54-3** — **Lock the Review log Model column bare-id rule by closing the live PR-side-gate gap** (LRN-136), not just docs. A row like `| ... | gpt-5.5 (R2) | ... |` (decorated bare id) silently passes today on cross-model reviews: `scripts/checks/check-review-log-evidence.mjs` `reviewerModelApproved()` (lines 168-179) approves any reviewer model when `## Model audit` has populated `Fallback rationale`, so the decoration is never detected. The CS54 fix is scoped narrowly to **detect decorated parentheticals on the Model column** (e.g. `gpt-5.5 (reviewer)`) *before* the approval call and emit a clear error — it does NOT change the existing model-display-name → bare-id normalisation behavior in `scripts/checks/check-independence-invariant.mjs` (which intentionally accepts `Claude Opus 4.7` → `claude-opus-4.7`).
 - **D54-4** — **Document the narrow re-attest pattern** (LRN-135) primarily as procedure in `OPERATIONS.md ### Narrow re-attest after trivial commits` (where the rubber-duck workflow lives) and as a brief cross-reference + doctrine note in `REVIEWS.md § Plan review` (since the pattern is a recognised plan-review round type). The PR-side stale-diff gate is `REVIEWS.md § PR-evidence gates` A4 — the narrow re-attest is the recommended *mitigation* for A4-triggered stale-diff conditions when the delta is doc-only/trivial. CS53 used it 3 times under pressure with zero documentation; future orchestrators should not have to reverse-engineer it from old PR threads.
@@ -216,6 +216,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R8 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:35:00Z | Go | Post-Copilot-R5 narrow re-attest: Goal item 2 anchor reworded as NEW H3; Deliverables/T3 heading levels aligned (H3); REVIEWS bullet backtick nesting fixed. |
 | R9 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:50:00Z | Go | Post-Copilot-R6 narrow re-attest: WORKBOARD banner-only delta (a9e3836); plan file untouched, Decisions/Deliverables hash unchanged. |
 | R10 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T19:05:00Z | Go | Post-Copilot-R7 narrow re-attest: Depends-on header reworded (outside hash scope); LRN-136 + WORKBOARD banner fixed elsewhere; hash unchanged. |
+| R11 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:20:00Z | Go | Post-Copilot-R8 substantive: D54-1 reworded to acknowledge the narrow gate behavior change in D54-3 (semver-patch defensible: no breaking change for well-formed inputs). |
 
 ## Notes / Learnings
 
