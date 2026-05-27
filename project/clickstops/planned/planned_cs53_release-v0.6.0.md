@@ -23,7 +23,7 @@ Plus CS48 (ban implementer self-review), CS49 (orchestrator-availability doctrin
 
 Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 
-- **LRN-124 (detached-HEAD trap)** remains unfixed; every `harness lint` / `harness sync` / `harness plan-review-hash` invocation may silently leave HEAD detached at the most-recent release tag (currently `v0.5.2 = 13ce97a` per `git tag --list`). Mitigation is operational only: **commit-first discipline** before every harness CLI call, plus `git symbolic-ref HEAD` verification after.
+- **LRN-124 (detached-HEAD trap)** remains unfixed; every `harness lint` / `harness sync` / `harness plan-review-hash` invocation may silently leave HEAD detached at the most-recent release tag (currently `v0.5.2 → 73c7f49` per `git rev-parse --short v0.5.2`). Mitigation is operational only: **commit-first discipline** before every harness CLI call, plus `git symbolic-ref HEAD` verification after.
 - **C42-6 strict-flip** (`--strict-agent-columns` warn → error) is now **in scope for CS53** per C53-5 R1 amendment, reversing the earlier "deferred again" stance. REVIEWS.md (root + `template/composed/REVIEWS.md` line 232 + line 408-409) has publicly promised this lands in v0.6.0 since the v0.5.0 cut; deferring a second time would ship documentation that contradicts release behaviour. The flip is mechanically small (one-line default change in `scripts/check-review-evidence.mjs:93` plus a corresponding test update plus a `### Changed` CHANGELOG bullet) and matches the established CS42 T7 strict-flip pattern.
 - **CS51's new required status checks** apply to the CS53 content PR itself. The PR body must be authored so that `review-log-evidence`, `copilot-review-attached`, `independence-invariant`, and `review-threads-resolved` all pass.
 
@@ -53,7 +53,7 @@ Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
 ## Deliverables
 
 1. **`CHANGELOG.md`** — promote `## [Unreleased]` → `## [0.6.0] — <date>` (em-dash U+2014 per C53-2); re-seed empty `[Unreleased]` block with the standard `### Added / ### Changed / ### Documentation / ### Removed` skeleton.
-2. **`package.json` (+ lockfile)** — bump `0.5.2 → 0.6.0` via `npm version 0.6.0 --no-git-tag-version` (this updates root + `packages."" ` version fields cleanly per CS42 T4 precedent).
+2. **`package.json` (+ lockfile)** — bump `0.5.2 → 0.6.0` via `npm version 0.6.0 --no-git-tag-version` (this updates root `version` + the lockfile root package entry `packages[""].version` cleanly per CS42 T4 precedent).
 3. **`README.md`** — pin-version sweep `v0.5.2` → `v0.6.0` (status banner refresh; install snippets if any pin v0.5.2; per CS42 T6 precedent — note README is sync-excluded).
 4. **`project/clickstops/planned/planned_cs53_release-v0.6.0.md`** (this file) — fully populated `## Plan review` table with at least one row reaching `Go` or `Go-with-amendments` verdict.
 5. **`project/clickstops/active/active_cs53_release-v0.6.0.md`** — at claim time (T-Claim); same content rename-only.
