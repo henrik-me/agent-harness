@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-27 (CS53 closed: v0.6.0 published at https://github.com/henrik-me/agent-harness/releases/tag/v0.6.0 (squash SHA `acdca89`); SI pin-bump PR https://github.com/henrik-me/sub-invaders/pull/79 opened. LRN-132 (harness review ledger-regex false positive) + LRN-133 (Windows PowerShell CRLF) filed; CS47 detached-HEAD fix remains top of suggested-next queue.)
+> **Last updated:** 2026-05-27 (CS53 fully closed + SI PR #79 squash-merged at `cbaa608b`. **CS54 planned** (`planned_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) for v0.6.1 patch bundling 2 real Copilot-surfaced template defects + LRN-134/135/136 codification + `reviews.*` / `review_gates.*` schema disambiguation. See the CS54 plan `## Plan review` table for the authoritative round/hash status (avoiding banner drift). CS47 detached-HEAD fix still top of suggested-next queue; CS54 second priority.)
 
 ## Orchestrators
 

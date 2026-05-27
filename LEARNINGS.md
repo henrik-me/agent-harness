@@ -2255,11 +2255,11 @@ tags: [windows, powershell, line-endings, lint, text-encoding, gitignore]
 claim_area: lint-and-encoding
 ```
 
-**Problem:** On Windows, drafting a PR body via PowerShell's `Out-File -Encoding utf8` (or the equivalent `Set-Content` / `>` redirect) writes CRLF line endings by default, even when the source string in the variable being piped is LF-clean. Combined with the fact that the harness `.gitignore` does NOT exclude `.tmp/`, a PR-body scratch file at `.tmp/pr-body-cs53-content.md` becomes visible to `scripts/check-text-encoding.mjs`, which walks all unignored files in the repo regardless of git-tracked status. The text-encoding check fails on CRLF; `node bin/harness.mjs lint` rolls that into its aggregate exit code; 5 lint-aggregator tests in `tests/` fail because they expect `harness lint` to exit 0 on a clean main checkout. End result: a single stray scratch file silently turns `npm test` red, and the failure mode looks like a regression in the lint suite when in fact it is environmental.
+**Problem:** On Windows, drafting a PR body via PowerShell's `Out-File -Encoding utf8` (or the equivalent `Set-Content` / `>` redirect) writes CRLF line endings by default, even when the source string in the variable being piped is LF-clean. Combined with the fact that the harness `.gitignore` did NOT exclude `.tmp/` at the time of CS53 (layer-1 fix subsequently APPLIED in PR #210; see Finding/Disposition below), a PR-body scratch file at `.tmp/pr-body-cs53-content.md` became visible to `scripts/check-text-encoding.mjs`, which walks all unignored files in the repo regardless of git-tracked status. The text-encoding check fails on CRLF; `node bin/harness.mjs lint` rolls that into its aggregate exit code; 5 lint-aggregator tests in `tests/` fail because they expect `harness lint` to exit 0 on a clean main checkout. End result: a single stray scratch file silently turns `npm test` red, and the failure mode looks like a regression in the lint suite when in fact it is environmental.
 
 **Finding:** **`.tmp/` should be in `.gitignore` AND `check-text-encoding.mjs` should respect gitignore semantics, AND PR-body authoring on Windows must explicitly LF-normalize.** Three layers of defense, each useful in isolation:
 
-1. **`.gitignore` `.tmp/` (1 line):** the cheapest fix. Eliminates the most common cause (developer-created scratch dirs for `gh pr edit --body-file` workflows). Should land as a 1-commit follow-up CS.
+1. **`.gitignore` `.tmp/` (1 line):** the cheapest fix. Eliminates the most common cause (developer-created scratch dirs for `gh pr edit --body-file` workflows). **APPLIED** in PR #210 (post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136); see Disposition below for full traceability.
 2. **`check-text-encoding.mjs` scope-narrowing:** the linter currently walks the filesystem with its own ignore list (not `git ls-files`-anchored). Switching to `git ls-files --cached --others --exclude-standard` would make the linter automatically respect `.gitignore` and would prevent future scratch-dir-class bugs. Larger surgical change with broader implications (would also affect generated files under `node_modules/`, etc. that are currently excluded via the script's own list).
 3. **PR-body authoring convention:** the workaround that worked in CS53 was to pipe the PR body content through Node: `node -e "fs.writeFileSync(path, content.replace(/\r\n/g,'\n'))"`. This should be documented in `OPERATIONS.md § Copilot engagement procedure` or in a Windows-orchestrator quickstart. The convention is fragile (orchestrators forget) but the convention is the only Windows-specific layer that matters.
 
@@ -2267,7 +2267,90 @@ LRN-093 documented the parent fact ("Windows tooling defaults to CRLF") but stop
 
 **Evidence:** CS53 R1 plan-vs-impl review (verbatim finding C53-VALIDATION-1): "Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected." Reproduced inline by inspecting `.tmp/` after `gh pr edit --body-file .tmp/pr-body-cs53-content.md` (PowerShell `Out-File -Encoding utf8` chain), then running `node bin/harness.mjs lint --quiet` (failed `text-encoding`), then `Remove-Item -Recurse -Force .tmp` followed by re-running lint (passed `30/0/3`). Cascade verified: 5 lint-aggregator tests under `tests/lint-aggregator.test.mjs` (or equivalent) flip red->green with `.tmp/` removal. Mitigation applied in CS53 close-out by deleting `.tmp/` and re-running lint clean before commit.
 
-**Disposition:** Open. Follow-up CS candidate (CS54b or equivalent): add `.tmp/` to root `.gitignore` (option 1) as a 1-commit hygiene PR; defer option 2 (linter-respects-gitignore) to a separate scoped CS because it has broader behavioral implications for the lint suite. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #3. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+**Disposition:** Open (partially applied in PR #210 — the post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136). Layer 1 (add `.tmp/` to root `.gitignore`) APPLIED in PR #210. The orchestrator itself reproduced the bug by accidentally committing `.tmp/` session scratch files inside PR #210, which motivated the in-PR fix. Two follow-up scopes remain open: (option 2) scope-narrow `check-text-encoding.mjs` to respect gitignore semantics (e.g. switch to `git ls-files --cached --others --exclude-standard`) — broader behavioral implications for the lint suite; (option 3) document the Windows PowerShell `Out-File -Encoding utf8` LF-normalisation convention in `OPERATIONS.md § Copilot engagement procedure`. Both are good candidates for a separate small surgical CS. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+
+### LRN-134
+
+```yaml
+id: LRN-134
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [cross-repo, pin-bump, pr-body, review-evidence, model-audit, review-log, si-orchestration]
+claim_area: cross-repo-orchestration
+```
+
+**Problem:** Cross-repo pin-bump PRs opened by the harness orchestrator against consumer repos (e.g. `henrik-me/sub-invaders`) lacked the canonical `## Model audit` and `## Review log` H2 sections in the PR body, so the consumer-side `read-only-gates` workflow (`scripts/check-review-evidence.mjs`) failed with `A3 (independence) cannot be verified` and `A4 (stale-diff currency) cannot be verified`, blocking auto-merge. The harness CS53 plan treated SI-side merge as non-blocking (per C53-4) and shipped the bump PR with only Summary / Changes / Testing sections — assuming the SI PR template would populate the missing sections. It does not (SI's `.github/pull_request_template.md` was authored pre-v0.6.0 and uses the old `| Role | Model |` schema, not the v0.6.0 strict `| Field | Value |` schema). Net: even non-blocking pin-bump PRs need full review-evidence sections in the body, because v0.6.0's strict default rejects the pre-v0.6.0 template output.
+
+**Finding:** **Every cross-repo PR opened by the harness orchestrator — including pin-bump PRs — must include the canonical `## Review log` (6-column: timestamp | analyzed_head | actor | model | verdict | evidence_link) and `## Model audit` (`| Field | Value |` table with required rows Implementer models / Reviewer model / Implementer agent / Reviewer agent, plus the optional Notes row when warranted) sections in the PR body at opening time, NOT relying on the consumer's PR template.** Two reinforcing reasons:
+
+1. Consumer PR templates can lag the harness version (no auto-sync of `.github/pull_request_template.md` from harness composed/managed unless it's listed in `managed.files` in `harness.config.json` — which SI's is not).
+2. v0.6.0 strict-flip default (`--strict-agent-columns`) means a template-output without the new agent rows hard-fails A3.
+
+The fix has two layers:
+- **Orchestrator-side (immediate):** Add to OPERATIONS.md (new `## Cross-repo procedures` → `### Cross-repo pin-bump PR body checklist` section, to be created by CS54 T3): PR body MUST include both sections inline at PR-open time. The harness CLI could (CS54+) emit a canonical body template via `harness cross-repo pin-bump-body --consumer <repo>`.
+- **Consumer-side (longer):** Consumer `.github/pull_request_template.md` should be in `managed.files` (or at least scaffold-refreshable) so a `harness sync --mode=apply` propagates schema updates. Today the template is a one-time scaffold; v0.6.0's strict-flip surfaced the staleness gap.
+
+**Evidence:** SI PR #79 (v0.5.1 -> v0.6.0 pin bump, opened 2026-05-27T08:01:43Z) failed `read-only-gates` at first run (job 78033638259) with the two A3/A4 errors. Body initially had Summary/Changes/Testing only. Pre-CS53 precedent SI PR #62 (v0.5.0 -> v0.5.1 bump) had included both sections by historical accident (operator memory), not by doctrine. CS53 close-out shipped without the doctrine codified, so SI PR #79 inherited the gap. Fix applied during CS53 close-out: PR body amended via `gh pr edit 79 --body-file <utf8nobom-lf-tmp>` to add the canonical sections; 6 Copilot inline findings (4 false-positives on dual `reviews.*` / `review_gates.*` schema blocks, 2 real cosmetic doc cleanups) dispositioned and resolved; PR admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` (2026-05-27T17:01:48Z).
+
+**Disposition:** Open. Two-part follow-up CS (CS54a — orchestrator side; CS54b — consumer-template side, scheduled separately because it requires re-classifying `.github/pull_request_template.md` as a managed/composed file in consumer harness.config.json):
+- CS54a (planned): codify cross-repo pin-bump checklist in `OPERATIONS.md` and the managed `template/managed/.github/copilot-instructions.md` mirror. Optionally add a `harness cross-repo` CLI sub-command emitting the canonical body skeleton.
+- CS54b (planned): refresh `template/managed/.github/pull_request_template.md` to v0.6.0 strict schema and document the upgrade path for existing consumers (manual one-time copy, since this is a managed/scaffolded file class).
+
+Cross-reference: LRN-125 (Copilot review chase — analogous "PR body must include canonical artefacts" pattern); LRN-127 (independence invariant — same family of review-evidence integrity issues).
+
+### LRN-135
+
+```yaml
+id: LRN-135
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [review-evidence, narrow-re-attest, stale-diff, A4-gate, rubber-duck-loop]
+claim_area: review-loops
+```
+
+**Problem:** Every new commit on a content PR invalidates the latest `## Review log` Go row's `analyzed_head` field. The naïve fix is a full re-review at each new HEAD, but this is expensive (full GPT-5.5 round-trip, full diff re-read) and overkill for commits that are trivial doc-only or single-line cleanups added in response to Copilot inline feedback. CS53 used the technique 3x (PR #208 R1 GO-with-amendments at `b5948a6` → narrow R2 at `14aa3d3` → narrow R3 at `b07e78d`), but the pattern is not documented in `OPERATIONS.md` or `REVIEWS.md`, so future orchestrators (or LLM-rotated-out future-me) will either (a) skip the re-review and ship stale `analyzed_head` (blocking A4) or (b) burn a full re-review every time.
+
+**Finding:** **Document the "narrow re-attest" pattern.** A narrow re-attest is a short rubber-duck dispatch (sync, ≤1min) where the briefing prompt explicitly says "R1 already cleared the diff; only re-verify the trivial delta from `<prev-head>` to `<new-head>` is innocuous; return Go or Needs-Fix." The reviewer is told NOT to re-review the diff. The Review log gets a new row with the new `analyzed_head`, the same `actor` annotated `(narrow R2)` / `(narrow R3)`, and a one-paragraph summary. Three rules:
+
+1. Only valid when the delta is genuinely trivial (≤20 lines, doc-only or 1-2 line code cleanups responding to Copilot inline findings, no behavior change).
+2. R1 must have been a full-diff review at a prior HEAD, and that R1's Go must still be in the Review log table.
+3. The reviewer model and reviewer agent stay the same as R1; only the timestamp + `analyzed_head` change.
+
+The pattern is the cheap mitigation for A4 (stale-diff) — much cheaper than re-running a full review on every commit. It is NOT a substitute for full re-review when the delta is substantive (e.g., new test coverage, refactored module).
+
+**Evidence:** CS53 PR #208: R1 full GPT-5.5 review at `b5948a6` (verdict GO-with-amendments, 1 NB recommendation); commit `14aa3d3` added the recommended doc clarification (1 line); R2 narrow re-attest at `14aa3d3` (verdict GO, 0 findings, summary "delta is the recommended doc line; innocuous"); commit `b07e78d` fixed Copilot's R1 "rows" finding (1 line); R3 narrow re-attest at `b07e78d` (verdict GO, 0 findings). All 3 reviews recorded in PR body Review log table. Same pattern used on SI PR #79 R2 narrow re-attest at `c6155b9...` after body amendment (verdict GO, 0 findings, summary "delta is PR-body sections + known-limitations note; diff is unchanged").
+
+**Disposition:** Open. Follow-up CS candidate (CS54a or sibling): add `OPERATIONS.md § Narrow re-attest` doctrine and a short worked example. Mention in `REVIEWS.md § Plan review` as the recommended mitigation when delta is doc-only/trivial (also reference the PR-side A4 stale-diff gate in `REVIEWS.md § PR-evidence gates`). Cross-reference: LRN-125 (Copilot review chase analogue — "PR body push triggers another review cycle"); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
+
+### LRN-136
+
+```yaml
+id: LRN-136
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [review-log, schema, format, model-column, regression-risk]
+claim_area: review-evidence
+```
+
+**Problem:** The `Model` column in `## Review log` rows MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`, `claude-sonnet-4.6`) — NOT decorated with parenthetical annotations like `gpt-5.5 (reviewer)` or `gpt-5.5 (R2)`. The rule is enforced today only by orchestrator memory: the PR-side gate `scripts/checks/check-review-log-evidence.mjs` does NOT reject decorated identifiers. Its `reviewerModelApproved()` (lines 168-179) approves any reviewer model when `## Model audit` has a populated (non-placeholder) `Fallback rationale` — common on cross-model reviews — so a decorated cell like `gpt-5.5 (R2)` normalises to `gpt-5.5-r2`, fails the primary `gpt-5.5` check, and silently PASSES via the fallback path. The fact is present in agent memory but not documented in `LEARNINGS.md`, `REVIEWS.md`, or enforced by the PR-side gate — so it is rediscovered each time a new orchestrator drafts a Review log row (~quarterly cadence given LLM rotation).
+
+**Finding:** **Lock the bare-model-id rule by closing the live PR-side-gate gap, locking the rule into REVIEWS.md § 2.8 (PR body requirements, which contains the Review log schema), and adding a regression test alongside `tests/cs51-review-gates-logic.test.mjs` (which covers `scripts/checks/check-review-log-evidence.mjs`).** Three deliverables:
+
+1. `scripts/checks/check-review-log-evidence.mjs`: add an explicit decoration-detection check on the raw `model` cell BEFORE `reviewerModelApproved()` (which can otherwise let decorated cells pass via the fallback-rationale path). Emit a clear error: ``decorated model identifier "<value>"; use bare "<bare>" and put annotations in the actor column``.
+2. REVIEWS.md § 2.8 (under the Review log schema description) Model column description: add "MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`); decorations like `gpt-5.5 (reviewer)`, `gpt-5.5 (R2)`, `gpt-5.5 (PvI)` are not permitted — use the `actor` column (e.g. `rubber-duck (PvI R2)`) for round/role annotations instead."
+3. Add a fixture test (extend `tests/cs51-review-gates-logic.test.mjs` or co-locate in a new `tests/check-review-log-evidence.test.mjs`): a Review log row with decorated `Model` column AND a populated `Fallback rationale` in `## Model audit` (the path that silently passes today) should be REJECTED with the explicit decorated-identifier error.
+
+The orchestrator side: agent memories already capture the rule, but the parser-side regression test and the doc would catch the issue at lint-time instead of CI-failure-time.
+
+**Evidence:** Memory `review evidence` already records this fact ("Review log Model column format requires bare reviewer-model identifier"). CS53 PR #208 R1 Review log row used `gpt-5.5` correctly (drafted with memory present). However, the agent-side memory mechanism only protects orchestrators with this specific memory loaded; the harness toolchain provides no parser-side or schema-side protection. Pattern matches LRN-128 (orchestrator self-review at close-out gate) — both are "agent-side memory protects, tool-side does not" gaps where memory rotation is the failure mode.
+
+**Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.8` (Review log schema lives there, NOT § 2.7 which is Finding disposition) and add the regression fixture as a new case in `tests/cs51-review-gates-logic.test.mjs` (or a new co-located `tests/check-review-log-evidence.test.mjs`). The gate script lives at `scripts/checks/check-review-log-evidence.mjs` (not `scripts/check-review-log-evidence.mjs` — early CS53 draft used a stale path). Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
 
 ### LRN-127
 
