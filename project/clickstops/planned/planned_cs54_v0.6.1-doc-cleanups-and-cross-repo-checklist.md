@@ -22,7 +22,7 @@ CS54b (sibling, scheduled separately): refresh `template/managed/.github/pull_re
 
 ## Background
 
-CS53 shipped v0.6.0 on 2026-05-27 (tag `acdca89`, harness main HEAD `028fdfd`). The cross-repo pin-bump PR (SI PR #79) was opened immediately and ran into three rounds of `read-only-gates` failures:
+CS53 shipped v0.6.0 on 2026-05-27 (tag `v0.6.0` at commit `acdca89`; harness main HEAD `028fdfd`). The cross-repo pin-bump PR (SI PR #79) was opened immediately and ran into three rounds of `read-only-gates` failures:
 
 1. **First failure (08:02:51Z):** PR body lacked `## Model audit` + `## Review log` sections (A3 + A4). Root cause: SI's `.github/pull_request_template.md` is pre-v0.6.0 (uses old `| Role | Model |` schema) and CS53 plan treated SI-side merge as non-blocking, so the PR opened without inline canonical sections.
 2. **Second failure (16:41:02Z):** Same as above; gate ran before body amendment landed.
@@ -220,6 +220,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R10 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T19:05:00Z | Go | Post-Copilot-R7 narrow re-attest: Depends-on header reworded (outside hash scope); LRN-136 + WORKBOARD banner fixed elsewhere; hash unchanged. |
 | R11 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:20:00Z | Go | Post-Copilot-R8 substantive: D54-1 reworded to acknowledge the narrow gate behavior change in D54-3 (semver-patch defensible: no breaking change for well-formed inputs). |
 | R12 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:35:00Z | Go | Post-Copilot-R9 narrow re-attest: T5 Model audit reworded to allow optional Notes row; LRN-133 disposition uses PR #210 ref (not branch SHA) per squash-merge policy. Hash unchanged. |
+| R13 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 5c40242b24c7 | 2026-05-27T19:48:00Z | Go | Post-Copilot-R10 narrow re-attest: 4 attribution/anchor cleanups (Background tag vs commit; CONTEXT+LRN-133 don't imply CS54 work in flight; LRN-134 anchor points to CS54-T2 future section). Hash unchanged. |
 
 ## Notes / Learnings
 
