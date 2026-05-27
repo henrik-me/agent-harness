@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Post-CS53 close-out doc-sweep (2026-05-27 by `omni-ah` during SI PR #79 unblock). Triggered by 6 Copilot review findings on `henrik-me/sub-invaders` PR #79 (the v0.6.0 pin-bump): 2 real-but-minor cosmetic doc cleanups in v0.6.0 composed templates (deferred here per `## Known limitations / follow-ups` in SI PR #79 body) + 4 false-positives about the dual `reviews.*` / `review_gates.*` schema blocks (noted as a doc-clarity follow-up because the dual nomenclature is genuinely confusing even though both blocks are valid). Surfaces LRN-134 (cross-repo pin-bump PR body checklist), LRN-135 (narrow re-attest pattern documentation), and LRN-136 (Review log Model column bare-id rule).
-**Depends on:** None. Pure doc/test PR; may claim independently. Small enough to ship in a single sitting.
+**Depends on:** None. Docs/templates + tooling/tests PR (includes a behavior change in `scripts/checks/check-review-log-evidence.mjs` per D54-3, plus version bump/tag/release steps); no schema migrations. May claim independently. Small enough to ship in a single sitting.
 
 ## Goal
 
@@ -215,6 +215,7 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 | R7 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 86b3d487ab9c | 2026-05-27T18:20:00Z | Go | D54-3/T5/Deliverables now accurately state the live PR-side fallback-rationale gap; explicit decoration check placed before reviewerModelApproved(). |
 | R8 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:35:00Z | Go | Post-Copilot-R5 narrow re-attest: Goal item 2 anchor reworded as NEW H3; Deliverables/T3 heading levels aligned (H3); REVIEWS bullet backtick nesting fixed. |
 | R9 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T18:50:00Z | Go | Post-Copilot-R6 narrow re-attest: WORKBOARD banner-only delta (a9e3836); plan file untouched, Decisions/Deliverables hash unchanged. |
+| R10 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: omni-ah) | 88491e88ad78 | 2026-05-27T19:05:00Z | Go | Post-Copilot-R7 narrow re-attest: Depends-on header reworded (outside hash scope); LRN-136 + WORKBOARD banner fixed elsewhere; hash unchanged. |
 
 ## Notes / Learnings
 

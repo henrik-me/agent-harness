@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-27 (CS53 fully closed + SI PR #79 squash-merged at `cbaa608b`. **CS54 planned** (`planned_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) for v0.6.1 patch bundling 2 real Copilot-surfaced template defects + LRN-134/135/136 codification + `reviews.*` / `review_gates.*` schema disambiguation. Plan reviews through R8 (latest: Go, hash `88491e88ad78`); see CS54 plan `## Plan review` table for full history. CS47 detached-HEAD fix still top of suggested-next queue; CS54 second priority.)
+> **Last updated:** 2026-05-27 (CS53 fully closed + SI PR #79 squash-merged at `cbaa608b`. **CS54 planned** (`planned_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) for v0.6.1 patch bundling 2 real Copilot-surfaced template defects + LRN-134/135/136 codification + `reviews.*` / `review_gates.*` schema disambiguation. See the CS54 plan `## Plan review` table for the authoritative round/hash status (avoiding banner drift). CS47 detached-HEAD fix still top of suggested-next queue; CS54 second priority.)
 
 ## Orchestrators
 
