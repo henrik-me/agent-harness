@@ -187,12 +187,13 @@ node bin/harness.mjs cross-repo open-issue \
 
 ### T8 — Plan-vs-implementation review
 
-- Before opening the content PR, dispatch the GPT-5.5 plan-vs-implementation review required by `OPERATIONS.md § Plan-vs-implementation review (close-out gate)`.
+- After the content PR has merged to `main` and BEFORE the close-out PR opens (per `OPERATIONS.md § Plan-vs-implementation review (close-out gate)`), dispatch the GPT-5.5 plan-vs-implementation review against the actual landed diff.
 - Reviewer must be independent from every implementer model used.
-- Record the review result in the active CS file's `## Plan-vs-implementation review` section.
-- NEEDS-FIX blocks PR/close-out until addressed and re-reviewed.
+- Record the review result in the active CS file's `## Plan-vs-implementation review` section before the close-out PR opens.
+- NEEDS-FIX blocks close-out until addressed and re-reviewed (a follow-up content PR re-runs the gate against the new landed diff before close-out resumes).
 - Exit criteria:
   - Latest plan-vs-implementation review verdict is `Go` or `Go-with-amendments` with amendments applied.
+  - Review evidence references the merged content-PR HEAD, not an earlier draft.
 
 ### T9 — Closing out CS56
 
