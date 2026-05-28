@@ -1,10 +1,10 @@
 # CS56 — `harness cross-repo` CLI guardrail
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah (Copilot CLI orchestrator, claude-opus-4.7-1m-internal)
-**Branch:** cs56/content
+**Branch:** cs56/content (merged at e44f6a6 via PR #216)
 **Started:** 2026-05-28
-**Closed:** —
+**Closed:** 2026-05-28
 **Filed by:** Copilot CLI planner sub-agent (2026-05-27)
 **Depends on:** CS55 — cross-repo handoff doctrine must exist before this CLI enforces it; CS56 may land only after CS55 merges.
 
@@ -56,16 +56,16 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 Claim CS56 (workboard) | done | omni-ah | Rename planned→active; verify CS55 merged first. |
-| T2 Implement `lib/cross-repo.mjs` | planned | omni-ah | `openIssue` + `CrossRepoError` per D56-2/D56-3/D56-4/D56-5. |
-| T3 Register `cmdCrossRepo` in `bin/harness.mjs` | planned | omni-ah | Insert in dispatch map per D56-7 (after composed-audit, before pack). |
-| T4 Update top-level help (TOP_HELP + SUBCOMMAND_HELP) | planned | omni-ah | Document `cross-repo open-issue`, no `open-pr`. |
-| T5 Write `tests/cross-repo.test.mjs` | planned | omni-ah | 20 test cases per D56-10; fake-`gh` via `HARNESS_CROSS_REPO_GH_BIN` seam. |
-| T6 Update README CLI quick reference | planned | omni-ah | New `## CLI quick reference (cross-repo)` H2 per D56-8. |
-| T7 Validate implementation | planned | omni-ah | `harness lint`, `npm test`, `validate-schemas`, no-`gh pr create` audit. |
-| T8 Plan-vs-implementation review | planned | omni-ah | gpt-5.5 reviewer (independent from impl model); record in `## Plan-vs-implementation review`. |
-| Close-out: update workboard/context restart-state docs | planned | omni-ah | Rename active→done; WORKBOARD clean; CONTEXT.md refresh. |
-| Close-out: file learnings/follow-up (LRN-138+ if any) | planned | omni-ah | File implementation learnings, link from done CS file. |
+| T1 Claim CS56 (workboard) | done | omni-ah | PR #215 merged at 49caca8 (2026-05-28). |
+| T2 Implement `lib/cross-repo.mjs` | done | omni-ah | 291 lines; `openIssue` + `CrossRepoError` per D56-2/3/4/5; merged in PR #216 / e44f6a6. Implementation-PR validation: lint 30/0/3; node --test 1020/0/1; validate-schemas 143/0. |
+| T3 Register `cmdCrossRepo` in `bin/harness.mjs` | done | omni-ah | Dispatch entry inserted after `composed-audit`, before `pack` per D56-7. |
+| T4 Update top-level help (TOP_HELP + SUBCOMMAND_HELP) | done | omni-ah | TOP_HELP row + `SUBCOMMAND_HELP['cross-repo']` block. |
+| T5 Write `tests/cross-repo.test.mjs` | done | omni-ah | 22 cases (20 planned + 2 added post-R1: path-traversal, D56-6 equal-form). |
+| T6 Update README CLI quick reference | done | omni-ah | New `## CLI quick reference (cross-repo)` H2 added. |
+| T7 Validate implementation | done | omni-ah | Implementation-PR validation: harness lint 30/0/3; node --test 1020/0/1; validate-schemas 143/0; existing-surface audit 0 matches. Close-out PR re-validated: lint 30/0/3; validate-schemas 144/0 (post-LRN-138). |
+| T8 Plan-vs-implementation review | done | omni-ah | gpt-5.5 R1 NEEDS-FIX → R2 Go (narrow re-attest); see `## Plan-vs-implementation review`. |
+| Close-out: update workboard/context restart-state docs | done | omni-ah | This PR. |
+| Close-out: file learnings/follow-up (LRN-138+ if any) | done | omni-ah | LRN-138 filed: agent CLI flags accepting file paths require cwd-containment to prevent exfiltration. |
 
 ### T1 — Claiming CS56
 
@@ -240,14 +240,66 @@ Acceptance checks for CS56 implementation:
 - Existing PR-surface audit: `bin/` and `lib/` have no `gh pr create` or `gh pr --` matches. If a match appears later, D56-9 must be revisited before merge.
 - No `OPERATIONS.md` changes are included in the CS56 diff.
 
-## Notes / Learnings
-
 ## Plan-vs-implementation review
 
-_(Populated post-implementation; see OPERATIONS.md § "Plan-vs-implementation review (close-out gate)")_
+**Reviewer:** gpt-5.5
+**Date:** 2026-05-28
+**Outcome:** Go (after NEEDS-FIX→Go cycle)
 
-- CS56 is Phase B of the cross-repo handoff plan and must remain separate from CS55 per Q1/Q7.
-- User-confirmed rule scope is any repo other than `henrik-me/agent-harness`; this CLI enforces that by rejecting the harness repo and by exposing only issue creation for non-harness repos.
-- Pre-plan audit found no existing `harness cross-repo` subcommand and no `gh pr create` / `gh pr --` surface in `bin/` or `lib/`.
-- Existing tests demonstrate fake-`gh` seams via `CHECK_REVIEW_OUTPUT_GH_BIN` in `tests/check-review-output.test.mjs` (scoped to `gh pr view/edit`); CS56 introduces its own `HARNESS_CROSS_REPO_GH_BIN` seam scoped to `gh issue list/create` and `gh label create` (per D56-3 preflight and D56-10) to avoid cross-contamination between fakes.
-- Current `bin/harness.mjs` dispatcher (`bin/harness.mjs:3299-3315`) is not globally alphabetized; CS56 inserts a new entry between `composed-audit` and `pack` (i.e. on a new line after line 3306) without globally reordering.
+R1 (at ff2b226) verdict NEEDS-FIX surfaced two findings:
+- **Blocking:** `--body-file` accepted relative `../../secret` paths and out-of-tree symlinks; `gh issue create --body-file` would upload them (path-traversal / data-exfiltration surface).
+- **Non-blocking:** `--flag=value` forms bypassed the D56-6 dash-prefix/empty-value guard that already protected `--flag value` form.
+
+Amendments at 2baf510:
+- `cmdCrossRepo` now realpath-resolves both `global.cwd` and `--body-file`; `path.relative()` must not start with `..` or be absolute (exit 2 otherwise). ENOENT falls through to library's `body-file-missing` for clearer error.
+- Shared `extractValue(flag, eqValue, i)` helper applies the D56-6 guard to both `--flag value` and `--flag=value` forms.
+- Tests 21 (path-traversal rejection via sibling tmpdir body-file) and 22 (8 sub-cases for empty/dash-prefixed equal-form values) added; `runCli` test helper updated to spawn child with `cwd: scratch` so absolute bodyFile paths under tmpdir pass containment.
+
+R2 (at 2baf510) narrow re-attest on the R1→R2 delta: verdict **Go**, both findings materially fixed, no new blocking issues.
+
+| Decision / Task | Implementation evidence (PR #216 / e44f6a6) | Conformance |
+|---|---|---|
+| D56-1 surface | `lib/cross-repo.mjs` exports `openIssue`; `cmdCrossRepo` action verb `open-issue` only; no accepted `open-pr` action / no `open-pr` implementation path anywhere (intentional `open-pr` mentions in help text, README, and tests assert its absence). | Conforms |
+| D56-2 repo validation | Library validates `OWNER/NAME` regex + `.toLowerCase() !== 'henrik-me/agent-harness'`; tests 2-6 cover mixed-case bypass. | Conforms |
+| D56-3 label preflight (non-mutating) | `preflightLabels` runs `gh label create` without `--force`; "already exists" stderr (case-insensitive) treated as success; tests 17-19. | Conforms |
+| D56-4 idempotency | `findExistingOpenIssue` calls `gh issue list --state open`; exact-title `===` match short-circuits; closed issues never match. | Conforms |
+| D56-5 body-file only | Library accepts `--body-file` only; no `--body`; missing/non-file → `body-file-missing`. | Conforms |
+| D56-6 flag guards | Shared `extractValue` rejects empty + dash-prefixed values for both forms (post-R1 fix). | Conforms (after R2 fix) |
+| D56-7 dispatch insertion | `'cross-repo': cmdCrossRepo` inserted between `'composed-audit'` and `pack`; map not globally reordered. | Conforms |
+| D56-8 docs ownership | README-only edit; OPERATIONS.md untouched in CS56 diff. | Conforms |
+| D56-9 existing PR-surface audit | Post-merge audit: 0 `gh pr create` / `gh pr --` matches in bin/lib. | Conforms |
+| D56-10 test seam | `HARNESS_CROSS_REPO_GH_BIN` env-var; fake-gh under `os.tmpdir()` (LRN-094); detected `.mjs/.js/.cjs` paths spawned via `process.execPath`. | Conforms |
+| D56-11 no schema change | `schemas/` untouched. | Conforms |
+| T1 claim CS56 | Workboard claim PR #215 merged at 49caca8. | Conforms |
+| T2 implement library | `lib/cross-repo.mjs` 291 lines. | Conforms |
+| T3 register handler | Dispatch entry + import in `bin/harness.mjs`. | Conforms |
+| T4 update help | TOP_HELP row + `SUBCOMMAND_HELP['cross-repo']` block. | Conforms |
+| T5 write tests | `tests/cross-repo.test.mjs` 22 cases. | Conforms |
+| T6 README quick reference | `## CLI quick reference (cross-repo)` H2. | Conforms |
+| T7 validate | lint 30/0/3; node --test 1020/0/1; validate-schemas 143/0 at impl-PR; existing-surface audit 0. | Conforms |
+| T8 plan-vs-impl review | This section. | Conforms |
+| T9 close-out (rename, WORKBOARD/CONTEXT, LRN-138) | This PR (cs56/close). | Conforms |
+| Path-traversal security (post-R1) | `realpathSync`-based cwd containment in `cmdCrossRepo`; test 21. | Conforms |
+| D56-6 fidelity (post-R1) | Shared `extractValue` helper; test 22 (8 sub-cases). | Conforms |
+
+**Per-deliverable outcome:**
+
+| Deliverable | Shipped at | Outcome |
+|---|---|---|
+| `lib/cross-repo.mjs` (NEW, 291 lines) | e44f6a6 | Conforms — generic library; CLI-layer containment kept out per D56-7 split. |
+| `bin/harness.mjs` (EDIT) | e44f6a6 | Conforms — handler, dispatch entry, TOP_HELP, SUBCOMMAND_HELP, realpath cwd containment, shared `extractValue`. |
+| `tests/cross-repo.test.mjs` (NEW, 22 cases) | e44f6a6 | Conforms — exceeds plan (20 → 22 after R1 path-traversal + D56-6 equal-form cases). |
+| `README.md` (EDIT) | e44f6a6 | Conforms — new `## CLI quick reference (cross-repo)` H2 with `[harness:cs<NN>]` prefix example. |
+| `WORKBOARD.md` (EDIT) | 8d5aed8 (this PR) | Conforms — CS56 row cleared from Active Work. |
+| `LEARNINGS.md` (EDIT) | 8d5aed8 (this PR) | Conforms — LRN-138 filed (path-traversal containment pattern). |
+
+**Test-coverage assessment:** sufficient. All 11 plan decisions (D56-1…D56-11) and the two post-R1 amendments have dedicated coverage in `tests/cross-repo.test.mjs` (cases 1-22). Path-traversal regression is locked at test 21; D56-6 equal-form regression at test 22 (8 sub-cases). Library-only error paths (`gh-failed`, `parse-failed`, `body-file-missing`, `label-provision-failed`) all have explicit cases. No untested decision paths.
+
+## Notes / Learnings
+
+- CS56 is Phase B of the cross-repo handoff plan; CS55 (doctrine + Hard Rule §6 + LRN-137) preceded it and merged at 00998a0.
+- User-confirmed rule scope: any repo other than `henrik-me/agent-harness`. CLI enforces by rejecting the harness repo (case-insensitive) and exposing only issue creation for non-harness repos.
+- Pre-plan audit found no existing `harness cross-repo` subcommand and no `gh pr create` / `gh pr --` surface in `bin/` or `lib/`; post-merge re-audit confirms still 0 matches.
+- Existing tests demonstrate fake-`gh` seams via `CHECK_REVIEW_OUTPUT_GH_BIN` (scoped to `gh pr view/edit`); CS56 introduces its own `HARNESS_CROSS_REPO_GH_BIN` seam scoped to `gh issue list/create` and `gh label create` to avoid cross-contamination between fakes.
+- `bin/harness.mjs` dispatcher is not globally alphabetized; CS56 inserts the new entry between `composed-audit` and `pack` without globally reordering (preserved as plan-time decision D56-7).
+- **LRN-138 candidate (filed below):** agent-driven CLI flags that accept file paths must default to cwd-containment (realpath check) to prevent implicit exfiltration via downstream tools that upload file contents (`gh issue create --body-file`, `curl --data-binary @file`, etc.). The library layer can remain generic; the CLI layer is the right place for the containment policy. Surfaced by gpt-5.5 R1 on PR #216.

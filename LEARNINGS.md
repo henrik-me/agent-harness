@@ -2352,6 +2352,33 @@ The orchestrator side: agent memories already capture the rule, but the parser-s
 
 **Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.8` (Review log schema lives there, NOT § 2.7 which is Finding disposition) and add the regression fixture as a new case in `tests/cs51-review-gates-logic.test.mjs` (or a new co-located `tests/check-review-log-evidence.test.mjs`). The gate script lives at `scripts/checks/check-review-log-evidence.mjs` (not `scripts/check-review-log-evidence.mjs` — early CS53 draft used a stale path). Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
 
+### LRN-138
+
+```yaml
+id: LRN-138
+date: 2026-05-28
+category: architectural
+source_cs: CS56
+status: applied
+tags: [security, cli, path-traversal, exfiltration, agent-safety, body-file, cross-repo]
+claim_area: cli-security
+```
+
+**Problem:** Agent-driven CLI flags that accept file paths and forward them to downstream tools that upload file CONTENTS create an implicit exfiltration surface. `harness cross-repo open-issue --body-file PATH` was originally implemented as a thin pass-through to `gh issue create --body-file <PATH>`. Validation only checked that the file existed and was a regular file — relative paths like `../../secret` and out-of-tree symlinks both passed validation, after which `gh` would happily read the file and upload its contents to the target GitHub repository as a public issue body. A misbehaving (or jailbroken) agent could therefore exfiltrate any file the orchestrator can read by filing a one-line issue handoff.
+
+**Finding:** **CLI flags that accept file paths whose CONTENTS will be transmitted to a third party must default to cwd-containment.** Concretely:
+
+1. The CLI layer resolves both `global.cwd` and the user-supplied path with `realpathSync()` (so symlinks cannot escape via target resolution).
+2. Compute `const rel = path.relative(cwdReal, pathReal)`. Reject if **any** of the following holds (segment-safe check): `rel === '..'` OR `rel.startsWith('..' + path.sep)` OR `path.isAbsolute(rel)`. The shipped CS56 implementation uses the simpler `rel.startsWith('..') || path.isAbsolute(rel)` form, which is **secure for containment** (it cannot let an out-of-tree path through) but is **over-restrictive**: it also rejects legitimate in-tree filenames that literally begin with `..` (e.g. a file named `..foo` or a directory called `..config`, which `path.relative()` can return as `..foo` / `..config` for an in-tree target). New cross-repo CLI surfaces should use the segment-safe form to avoid those false rejections; both forms are equally secure, but the segment-safe form is preferable because it avoids false rejections of valid in-tree paths.
+3. Containment lives in the CLI layer; the library can remain generic so programmatic consumers (and tests) can pass absolute paths under `os.tmpdir()` or other roots they trust.
+4. ENOENT on realpath of the user path should fall through to the library's existing missing-file error for a clearer message; only containment failures use exit 2 with a path-traversal message.
+
+This rule generalizes beyond `--body-file`: any future `--attachment-file`, `--content-file`, `--payload-file`, etc. should apply the same containment by default. The threat is not "user passes wrong path" — it is "agent is convinced to pass an interesting path".
+
+**Evidence:** gpt-5.5 plan-vs-implementation review R1 on CS56 PR #216 at commit `ff2b226` flagged the path-traversal bypass as a blocking finding. Fix at commit `2baf5102d43a2ed0c0fc96c3fcdff284b7f9153b`: `bin/harness.mjs` `cmdCrossRepo` applies realpath-based cwd containment. Test 21 in `tests/cross-repo.test.mjs` exercises the rejection path via a sibling tmpdir body-file. R2 narrow re-attest at 2baf510 verdict Go.
+
+**Disposition:** Applied at CS56 close-out. The CS56 implementation is the canonical reference for the **realpath + `path.relative` containment approach** (CLI-layer policy, library remains generic, ENOENT fallthrough to library missing-file error); however, the **preferred predicate going forward is the segment-safe form** shown in the Finding above (`rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)`), NOT the simpler `rel.startsWith('..') || path.isAbsolute(rel)` form that CS56 currently uses. New cross-repo CLI surfaces (`add-comment`, `attach-file`, etc.) that take file path inputs MUST apply the same cwd-containment approach by default, using the segment-safe predicate; a deviation requires explicit decision in the CS plan with rationale. Migrating CS56's shipped code to the segment-safe predicate is a low-priority follow-on (both forms are equally secure for containment; the simpler form just over-restricts on legitimate `..`-prefixed filenames). Cross-reference: LRN-137 (cross-repo handoff doctrine — this LRN hardens the CLI that implements it); CS56 (the surface this rule was discovered on).
+
 ### LRN-137
 
 ```yaml
