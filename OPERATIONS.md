@@ -782,7 +782,7 @@ dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
 differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
-Required final report field: `Implementer model used` (the model-id(s)
+Required final report field: `IMPLEMENTER MODEL USED` (the model-id(s)
 materially used for the sub-agent's work), so the orchestrator can update the
 CS sub-agent ledger and the PR-body `## Model audit` table.
 
@@ -924,7 +924,7 @@ dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
 differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
-Required final report field: `Implementer model used` (the model-id(s)
+Required final report field: `IMPLEMENTER MODEL USED` (the model-id(s)
 materially used for the sub-agent's work), so the orchestrator can update the
 CS sub-agent ledger and the PR-body `## Model audit` table.
 

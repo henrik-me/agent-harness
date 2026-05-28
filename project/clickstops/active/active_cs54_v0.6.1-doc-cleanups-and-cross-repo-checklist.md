@@ -73,8 +73,8 @@ The dual nomenclature is genuinely confusing — even Copilot conflated them acr
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 Fix stray fence at `template/composed/OPERATIONS.md:680` | pending | omni-ah | Cosmetic; doctrine content unaffected. |
-| T2 Fix prose vs label case at OPERATIONS.md:656 | pending | omni-ah | `Implementer model used` (prose) ↔ `IMPLEMENTER MODEL USED:` (label). |
+| T1 ~Fix stray fence at `template/composed/OPERATIONS.md:680`~ | dropped | omni-ah | NO-OP. Plan misdiagnosed: the ``` at L809 is the legitimate close of the ```text fence opened at L684 (canonical preamble block). Removing it broke `composed-blocks:OPERATIONS.md` (orphan markers). Confirmed by `node bin/harness.mjs lint` post-revert. Copilot's original finding on SI PR #79 was a false positive — the plan inherited it without fact-checking. **Learning candidate (LRN-139?):** F1-F5 fact-claim verification doctrine (REVIEWS.md § 2.6a, shipped in PR #219) should also apply to PLAN reviews, not just PR reviews. |
+| T2 Fix prose vs label case at OPERATIONS.md | done | omni-ah | Both occurrences (L785, L927) of the prose `Implementer model used` (backtick code span describing the report field) normalised to `IMPLEMENTER MODEL USED` to match the report-shape label convention (matches STATUS / PREFLIGHT SHA / FINAL SHA / SUMMARY all-caps pattern). |
 | T3 Codify cross-repo pin-bump checklist (LRN-134) | pending | omni-ah | NEW H3 under OPERATIONS.md `## Cross-repo procedures`; mirror into managed copilot-instructions. |
 | T4 Document narrow re-attest pattern (LRN-135) | pending | omni-ah | OPERATIONS.md H3 + REVIEWS.md cross-refs (Plan review + A4 gate). |
 | T5 Lock Review log Model bare-id rule (LRN-136) | pending | omni-ah | REVIEWS.md § 2.8 doctrine + narrow PR-side gate fix in `scripts/checks/check-review-log-evidence.mjs` + regression test. |
@@ -82,7 +82,7 @@ The dual nomenclature is genuinely confusing — even Copilot conflated them acr
 | T7 Cut v0.6.1 release | pending | omni-ah | CHANGELOG + package.json bump + README pin sweep + tag + GitHub release. |
 | T8 Plan-vs-implementation review | pending | omni-ah | gpt-5.5 close-out gate; record verdict in `## Plan-vs-implementation review`. |
 | Close-out: update workboard/context restart-state docs | pending | omni-ah | Update WORKBOARD + CONTEXT; rename active→done. |
-| Close-out: file learnings/follow-up (LRN-139+ if any) | pending | omni-ah | File any new LRNs surfaced during implementation; disposition LRN-134/135/136 as APPLIED. |
+| Close-out: file learnings/follow-up (LRN-139+ if any) | pending | omni-ah | File LRN-139 (plan-review fact-claim verification gap); disposition LRN-134/135/136 as APPLIED. |
 
 ### T1 — Fix stray fence at `template/composed/OPERATIONS.md:680`
 
