@@ -192,8 +192,8 @@ record.
     MUST explicitly require: (a) every `--flag` mentioned exists in
     `bin/harness.mjs` help text or library code; (b) every file path
     mentioned exists in the tree; (c) every doctrine claim (`required`,
-    `enforces`, `mandatory`, `recommended`) matches the cited source's
-    wording verbatim or via a documented synonym; (d) every LRN/CS scope
+    `enforces`, `mandatory`, `recommended`, `optional`) matches the cited
+    source's wording verbatim or via a documented synonym; (d) every LRN/CS scope
     summary respects the source entry's Problem/Finding scope (no
     generalisation beyond what the source asserts); (e) cross-doc claims
     (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
