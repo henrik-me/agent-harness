@@ -391,14 +391,16 @@ still act directly outside the orchestrator at any time.)
    gh issue list \
      --repo OWNER/NAME \
      --label harness-orchestrator \
+     --state all \
      --search "[harness:csNN] <title terms> in:title"
    ```
 
-   If exactly one open issue matches, do NOT create a duplicate; reuse
-   the existing URL and report it (idempotency: re-asking the same
-   status question must return the same issue). If multiple matches
-   exist, that is a coordination drift — surface it as an escalation
-   rather than creating a third.
+   If exactly one issue matches (open or closed within the relevant
+   window), do NOT create a duplicate; reuse the existing URL and
+   report it (idempotency: re-asking the same status question must
+   return the same issue). If multiple matches exist, that is a
+   coordination drift — surface it as an escalation rather than
+   creating a third.
 
 2. **Label preflight (D55-3).** Ensure the routing label exists in the
    target repo. Invoke:
@@ -420,8 +422,9 @@ still act directly outside the orchestrator at any time.)
    the originating CS that motivates the cross-repo handoff. Example:
    `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`. The
    `[harness:csNN]` prefix is the stable identifier used by step 1's
-   pre-create search (per CS56 D56-4 amendment); it prevents collision
-   with future cross-repo handoff issues.
+   pre-create search; it prevents collision with future cross-repo
+   handoff issues. (CS55 establishes this convention; CS56's `harness
+   cross-repo open-issue` CLI will enforce it programmatically.)
 
 4. **Required body fields** (markdown):
    - **CS reference:** the originating harness CS (e.g. `CS55`) and a
