@@ -1,9 +1,9 @@
 # CS54 — v0.6.1 doc cleanups + cross-repo pin-bump checklist
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs54/v0.6.1-doc-cleanups
+**Started:** 2026-05-28
 **Closed:** —
 **Filed by:** Post-CS53 close-out doc-sweep (2026-05-27 by `omni-ah` during SI PR #79 unblock). Triggered by 6 Copilot review findings on `henrik-me/sub-invaders` PR #79 (the v0.6.0 pin-bump): 2 real-but-minor cosmetic doc cleanups in v0.6.0 composed templates (deferred here per `## Known limitations / follow-ups` in SI PR #79 body) + 4 false-positives about the dual `reviews.*` / `review_gates.*` schema blocks (noted as a doc-clarity follow-up because the dual nomenclature is genuinely confusing even though both blocks are valid). Surfaces LRN-134 (cross-repo pin-bump PR body checklist), LRN-135 (narrow re-attest pattern documentation), and LRN-136 (Review log Model column bare-id rule).
 **Depends on:** None. Docs/templates + tooling/tests PR (includes a behavior change in `scripts/checks/check-review-log-evidence.mjs` per D54-3, plus version bump/tag/release steps); no schema migrations. May claim independently. Small enough to ship in a single sitting.
@@ -70,6 +70,19 @@ The dual nomenclature is genuinely confusing — even Copilot conflated them acr
 - Close-out tag `v0.6.1` at the squash-merge SHA; release notes published per OPERATIONS.md § Release cut.
 
 ## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| T1 Fix stray fence at `template/composed/OPERATIONS.md:680` | pending | omni-ah | Cosmetic; doctrine content unaffected. |
+| T2 Fix prose vs label case at OPERATIONS.md:656 | pending | omni-ah | `Implementer model used` (prose) ↔ `IMPLEMENTER MODEL USED:` (label). |
+| T3 Codify cross-repo pin-bump checklist (LRN-134) | pending | omni-ah | NEW H3 under OPERATIONS.md `## Cross-repo procedures`; mirror into managed copilot-instructions. |
+| T4 Document narrow re-attest pattern (LRN-135) | pending | omni-ah | OPERATIONS.md H3 + REVIEWS.md cross-refs (Plan review + A4 gate). |
+| T5 Lock Review log Model bare-id rule (LRN-136) | pending | omni-ah | REVIEWS.md § 2.8 doctrine + narrow PR-side gate fix in `scripts/checks/check-review-log-evidence.mjs` + regression test. |
+| T6 Disambiguate `reviews.*` vs `review_gates.*` blocks | pending | omni-ah | Short § in REVIEWS.md; no schema change. |
+| T7 Cut v0.6.1 release | pending | omni-ah | CHANGELOG + package.json bump + README pin sweep + tag + GitHub release. |
+| T8 Plan-vs-implementation review | pending | omni-ah | gpt-5.5 close-out gate; record verdict in `## Plan-vs-implementation review`. |
+| Close-out: update workboard/context restart-state docs | pending | omni-ah | Update WORKBOARD + CONTEXT; rename active→done. |
+| Close-out: file learnings/follow-up (LRN-139+ if any) | pending | omni-ah | File any new LRNs surfaced during implementation; disposition LRN-134/135/136 as APPLIED. |
 
 ### T1 — Fix stray fence at `template/composed/OPERATIONS.md:680`
 
@@ -232,3 +245,6 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 - 2 of the 6 Copilot findings on SI PR #79 are real and must be fixed in this CS (T1 + T2). The other 4 are documentation-clarity items addressed by T6.
 - CS54b (sibling, separate planned file) will refresh `template/managed/.github/pull_request_template.md` to v0.6.0+ strict schema. Scheduled separately because it touches consumer-side scaffold semantics.
 
+## Plan-vs-implementation review
+
+_To be completed at close-out (see OPERATIONS.md § "Plan-vs-implementation review (close-out gate)" for the canonical skeleton)._

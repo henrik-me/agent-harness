@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-28 (CS56 closed — `harness cross-repo open-issue` CLI guardrail shipped; LRN-138 filed on path-traversal containment pattern. CS54 v0.6.1 patch bundle remains in queue.)
+> **Last updated:** 2026-05-28 (CS54 claimed by omni-ah — v0.6.1 patch bundle: 2 cosmetic template fixes + cross-repo pin-bump checklist (LRN-134) + narrow re-attest doc (LRN-135) + Review log bare-id PR-side gate (LRN-136) + reviews/review_gates disambiguation + v0.6.1 release cut.)
 
 ## Orchestrators
 
@@ -24,5 +24,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS54       | v0.6.1 doc cleanups + cross-repo pin-bump checklist | claimed | omni-ah | cs54/v0.6.1-doc-cleanups | 2026-05-28 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
