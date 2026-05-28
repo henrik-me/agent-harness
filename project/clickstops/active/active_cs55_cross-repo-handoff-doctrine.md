@@ -1,9 +1,9 @@
 # CS55 — Cross-repo handoff doctrine
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs55/content
+**Started:** 2026-05-28
 **Closed:** —
 **Filed by:** Copilot CLI planner sub-agent (2026-05-27)
 **Depends on:** None.
@@ -54,6 +54,20 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - GitHub issue in `henrik-me/sub-invaders` — title `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`, label `harness-orchestrator`, and body asking the SI agent to run `harness sync` after CS55 merges, adopt the reciprocal issue-only rule, and validate on the SI side. The `[harness:cs55]` prefix is required by the CS56 D56-4 title-uniqueness contract so future cross-repo issues do not collide. This is a CS task, not a file deliverable.
 
 ## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| T1 Claim CS55 (workboard) | done | omni-ah | Rename planned→active, update WORKBOARD. |
+| T2 Hard Rule § 6 in managed copilot-instructions | planned | omni-ah | Cross-repo handoff: file issues, never commit. |
+| T3 OPERATIONS.md cross-repo handoff doctrine | planned | omni-ah | H2 + handoff H3; scope C35-13 paragraph (R12). |
+| T3a Re-render managed/composed root mirrors | planned | omni-ah | `harness sync --mode=apply`. |
+| T4 File and close LRN-137 | planned | omni-ah | Schema-conformant; status open→applied. |
+| T5 Add CONTEXT.md operating-model note | planned | omni-ah | 2-3 sentences referencing Hard Rule § 6. |
+| T6 File SI tracking issue (post-content, pre-closeout) | planned | omni-ah | Label `harness-orchestrator` preflight without `--force`. |
+| T7 Validate CS55 changes | planned | omni-ah | `harness lint`, `npm test`, schema validation. |
+| T8 Plan-vs-implementation review | planned | omni-ah | gpt-5.5 reviewer; record in `## Plan-vs-implementation review`. |
+| Close-out: update workboard/context restart-state docs | planned | omni-ah | Rename active→done; WORKBOARD clean; CONTEXT.md refresh. |
+| Close-out: file learnings/follow-up (LRN-137 status applied) | planned | omni-ah | Transition LRN-137 open→applied per D55-5. |
 
 ### T1 — Claim CS55
 
@@ -148,6 +162,10 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 - `node scripts/check-text-encoding.mjs --dir . --quiet` exits 0 (single `--dir` per script; repo-root scan with default gitignore-awareness covers all owned paths).
 - `npm test` exits 0; expected test count delta is `0` unless implementation discovers a necessary docs-linter regression test.
 - Manual review confirms Hard Rule § 6 is inserted after § 5, `OPERATIONS.md` has exactly one `## Cross-repo procedures` H2, and the SI issue body demonstrates the new issue-only pattern.
+
+## Plan-vs-implementation review
+
+_(To be filled after content PR merges, before close-out PR. Per OPERATIONS.md § Plan-vs-implementation review (close-out gate).)_
 
 ## Notes / Learnings
 
