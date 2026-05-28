@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-27 (CS53 fully closed + SI PR #79 squash-merged at `cbaa608b`. **CS54 planned** (`planned_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) for v0.6.1 patch bundling 2 real Copilot-surfaced template defects + LRN-134/135/136 codification + `reviews.*` / `review_gates.*` schema disambiguation. See the CS54 plan `## Plan review` table for the authoritative round/hash status (avoiding banner drift). CS47 detached-HEAD fix still top of suggested-next queue; CS54 second priority.)
+> **Last updated:** 2026-05-28 (CS55 claim — cross-repo handoff doctrine. CS54/CS56 plans remain in queue: CS54 v0.6.1 patch bundle, CS56 cross-repo CLI guardrail (CS55 precondition).)
 
 ## Orchestrators
 
@@ -10,7 +10,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| omni-ah  | OMNI         | C:\src\agent-harness | 🟡 Idle | 2026-05-27 |
+| omni-ah  | OMNI         | C:\src\agent-harness | 🟢 Active | 2026-05-28 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟡 Idle | 2026-05-14 |
 
 ## Active Work
@@ -24,5 +24,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS55       | Cross-repo handoff doctrine | 🟡 Claimed | omni-ah | cs55/content | 2026-05-28 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
