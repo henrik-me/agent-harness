@@ -185,6 +185,43 @@ exactly one of these labels:
 | **Non-blocking** | Real issue worth tracking, but safe to defer. Examples: debt items, minor inconsistency, opportunistic improvement. | Soft gate — must be recorded in the close-out entry; may not silently vanish. |
 | **Suggestion** | Optional improvement at the orchestrator's discretion. No gate. | No gate — record or discard. |
 
+### 2.6a Rubber-duck scope — fact-claim verification (PR #218 doctrine)
+
+The reviewer's job is not only to read the diff. A "Go" verdict is only valid
+when the reviewer has affirmatively verified that every factual claim in the
+diff matches the cited shipped surface. This applies to all CS types, but is
+the **dominant failure mode for documentation and prose PRs** — where the
+diff itself looks coherent but the claims it makes about CLI behaviour,
+doctrine, file paths, or prior LRN/CS entries can be wrong without the
+reviewer noticing.
+
+**Required checks for every Go verdict on a doc/prose-heavy PR:**
+
+| # | Check | Source of truth |
+|---|---|---|
+| F1 | Every `--flag` mentioned exists in the CLI surface. | `bin/harness.mjs` (`SUBCOMMAND_HELP` blocks and `cmdXxx` argument parsers); `lib/<module>.mjs` for behaviour. |
+| F2 | Every file path mentioned exists in the tree (or is explicitly described as not-yet-existing). | Repo filesystem at the analyzed HEAD. |
+| F3 | Every doctrine-strength claim (`required`, `mandatory`, `enforces`, `recommended`, `optional`) matches the cited source's wording verbatim or via a documented synonym. | Cited doc (OPERATIONS.md, REVIEWS.md, INSTRUCTIONS.md, README.md, etc.). |
+| F4 | Every summary of a LEARNINGS.md or CS entry stays within the source entry's stated scope. No generalisation beyond what the Problem / Finding / Decision text asserts. | The LRN/CS entry itself. |
+| F5 | Cross-doc claims are mutually consistent. If the diff says "OPERATIONS.md says X" or "the CLI does Y", verify that OPERATIONS.md actually says X and the CLI actually does Y at the analyzed HEAD. | The other doc(s) and code referenced. |
+
+**Reviewer prompt obligation.** When dispatching a rubber-duck for a doc PR,
+the orchestrator MUST include language equivalent to: *"verify F1–F5 above
+against the shipped surfaces — do not rely on the diff being internally
+coherent."* The canonical reviewer preamble's `**scope:**` field already
+references this expectation (see
+[OPERATIONS.md § Reviewer dispatch — canonical preamble](OPERATIONS.md#reviewer-dispatch--canonical-preamble)).
+
+**Empirical motivation.** PR #218 (CS55+CS56 doc backfill) required 4 Copilot
+review rounds to surface 8 unique fact-claim errors — every one of which the
+rubber-duck pre-review missed because the dispatch prompt asked the reviewer
+to verify the diff was coherent, not to cross-check claims against shipped
+code/help text/doctrine. Examples of what was missed: nonexistent CLI flag
+(`--idempotent`), nonexistent file path (`template/composed/INSTRUCTIONS.md`),
+"enforces" overclaim contradicting CLI help text that says "doctrine; not
+enforced", and LRN-138 summary that generalised the entry beyond its
+"contents transmitted to a third party" scope.
+
 ### 2.7 Finding disposition
 
 **Blocking findings:** must be addressed before merge via one of:
