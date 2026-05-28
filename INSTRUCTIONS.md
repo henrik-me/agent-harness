@@ -190,7 +190,9 @@ record.
     that's been paraphrased into a different requirement-level, and LRN/CS
     references whose summarised scope overstates the source. Reviewer prompts
     MUST explicitly require: (a) every `--flag` mentioned exists in
-    `bin/harness.mjs` help text or library code; (b) every file path
+    `bin/harness.mjs` help text, library code, or pass-through
+    `scripts/*.mjs` (e.g. `harness review-output` forwards to
+    `scripts/check-review-output.mjs`); (b) every file path
     mentioned exists in the tree; (c) every doctrine claim (`required`,
     `enforces`, `mandatory`, `recommended`, `optional`) matches the cited
     source's wording verbatim or via a documented synonym; (d) every LRN/CS scope

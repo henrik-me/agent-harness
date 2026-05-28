@@ -199,7 +199,7 @@ reviewer noticing.
 
 | # | Check | Source of truth |
 |---|---|---|
-| F1 | Every `--flag` mentioned exists in the CLI surface. | `bin/harness.mjs` (`SUBCOMMAND_HELP` blocks and `cmdXxx` argument parsers); `lib/<module>.mjs` for behaviour. |
+| F1 | Every `--flag` mentioned exists in the CLI surface. | `bin/harness.mjs` (`SUBCOMMAND_HELP` blocks and `cmdXxx` argument parsers); `lib/<module>.mjs` for behaviour; `scripts/*.mjs` for pass-through subcommands (e.g. `harness review-output` forwards to `scripts/check-review-output.mjs`). |
 | F2 | Every file path mentioned exists in the tree (or is explicitly described as not-yet-existing). | Repo filesystem at the analyzed HEAD. |
 | F3 | Every doctrine-strength claim (`required`, `mandatory`, `enforces`, `recommended`, `optional`) matches the cited source's wording verbatim or via a documented synonym. | Cited doc (OPERATIONS.md, REVIEWS.md, INSTRUCTIONS.md, README.md, etc.). |
 | F4 | Every summary of a LEARNINGS.md or CS entry stays within the source entry's stated scope. No generalisation beyond what the Problem / Finding / Decision text asserts. | The LRN/CS entry itself. |

@@ -832,7 +832,9 @@ and any sub-agent reports. Produce findings classified per
 REVIEWS.md § 2.6 (Blocking | Non-blocking | Suggestion). For doc-heavy or
 prose PRs, you MUST ALSO perform fact-claim verification per REVIEWS.md
 § 2.6a: (F1) every `--flag` mentioned actually exists in `bin/harness.mjs`
-help text or library code; (F2) every file path mentioned actually exists
+help text, library code, or pass-through `scripts/*.mjs` (e.g.
+`harness review-output` forwards to `scripts/check-review-output.mjs`);
+(F2) every file path mentioned actually exists
 in the tree at this HEAD; (F3) every doctrine-strength claim (`required`,
 `mandatory`, `enforces`, `recommended`, `optional`) matches the cited
 source's wording verbatim or via a documented synonym; (F4) every LRN/CS
