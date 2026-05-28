@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-05-28 (CS55 claim — cross-repo handoff doctrine. CS54/CS56 plans remain in queue: CS54 v0.6.1 patch bundle, CS56 cross-repo CLI guardrail (CS55 precondition).)
+> **Last updated:** 2026-05-28 (CS55 closed — cross-repo handoff doctrine merged + LRN-137 applied + SI tracking issue #80 filed. CS54/CS56 plans remain in queue: CS54 v0.6.1 patch bundle, CS56 cross-repo CLI guardrail (CS55 precondition cleared).)
 
 ## Orchestrators
 
@@ -24,6 +24,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS55       | Cross-repo handoff doctrine | 🟡 Claimed | omni-ah | cs55/content | 2026-05-28 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

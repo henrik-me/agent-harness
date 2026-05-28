@@ -1,10 +1,10 @@
 # CS55 — Cross-repo handoff doctrine
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
-**Branch:** cs55/content
+**Branch:** cs55/content → cs55/close
 **Started:** 2026-05-28
-**Closed:** —
+**Closed:** 2026-05-28
 **Filed by:** Copilot CLI planner sub-agent (2026-05-27)
 **Depends on:** None.
 
@@ -165,10 +165,46 @@ SI PR #79 exposed the missing doctrine while chasing the v0.6.0 pin-bump into `h
 
 ## Plan-vs-implementation review
 
-_(To be filled after content PR merges, before close-out PR. Per OPERATIONS.md § Plan-vs-implementation review (close-out gate).)_
+**Reviewer:** gpt-5.5 (rubber-duck)
+**Date:** 2026-05-28T01:30:00Z
+**Outcome:** Go-for-close-out (R1 NEEDS-FIX on D55-6/T6 resolved by SI #80 body amendment; R2 narrow re-attest verdict Go)
+
+| Decision / Task | Plan reference | Implementation evidence | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|
+| D55-1 | Rule applies to any repo other than `henrik-me/agent-harness`. | `.github/copilot-instructions.md` L65-72; `OPERATIONS.md` L357-369; merged at `a34b197`. | Pass | Scope is codified in hard rule and procedure. |
+| D55-2 | Even urgent cross-repo work routes through an issue; no escape hatch. | `.github/copilot-instructions.md` L79-81; `OPERATIONS.md` L369-371; merged at `a34b197`. | Pass | No-escape-hatch doctrine is explicit. |
+| D55-3 | Every handoff issue MUST carry `harness-orchestrator`; label preflight without `--force`. | `OPERATIONS.md` L405-419, L450-453; SI #80 label verified live. | Pass | Label doctrine and live SI label are present. |
+| D55-4 | CS55 owns `## Cross-repo procedures` H2 + handoff H3; CS54 adds sibling later. | `template/composed/OPERATIONS.md` L357-364; root mirror `OPERATIONS.md` L357-364. | Pass | H2/H3 added exactly once in template and mirror. |
+| D55-5 | File LRN-137 open; transition to `applied` at close-out; schema conformant. | `LEARNINGS.md` LRN-137; `validate-schemas.mjs` exits 0; status transitions to `applied` in this close-out PR. | Pass | LRN-137 is schema-valid; transition applied in this PR. |
+| D55-6 | SI issue must be labeled, link Hard Rule § 6, and ask reciprocal work-via-issue-only adoption. | SI #80 body amended to include csPath permalink, Hard Rule § 6 template+mirror permalinks, OPERATIONS.md L357 permalink, and an explicit "Reciprocal adoption ask (per D55-6)". | Pass | Re-attest verdict Go after issue-body amendment. |
+| D55-7 | Do not edit `harness.config.json` or schema. | `git show --name-only a34b197` lists docs + lock only; no `harness.config.json` or `schemas/`. | Pass | No config or schema changes found. |
+| T1 | Claim CS55. | `active_cs55_*.md` existed at PR #213 base; WORKBOARD Active Work row populated; renamed to `done_` in this close-out PR. | Pass | Claim → active → done lifecycle fulfilled. |
+| T2 | Insert Hard Rule § 6 in managed copilot instructions. | `template/managed/.github/copilot-instructions.md` L65-81; root mirror L65-81. | Pass | Hard Rule § 6 present before separator. |
+| T3 | Add OPERATIONS cross-repo handoff doctrine and scope C35-13. | `template/composed/OPERATIONS.md` L96-103, L357-464; root mirror L96-103, L357-464. | Pass | Procedure and C35-13 scoping present. |
+| T3a | Re-render root mirrors via `harness sync --mode=apply`. | Root mirrors show matching content; `harness sync --mode=check` reports no drift. | Pass | Template changes reflected in root mirrors. |
+| T4 | File LRN-137 and transition. | LRN-137 filed (status: open) in PR #213; transitioned to `status: applied` in this close-out PR. | Pass | Lifecycle complete. |
+| T5 | Add CONTEXT.md operating-model note. | `CONTEXT.md` L3 summarises Hard Rule § 6, Cross-repo procedures, and consumer-agent ownership. | Pass | Context note is present and discoverable. |
+| T6 | File SI tracking issue post-content, pre-closeout. | https://github.com/henrik-me/sub-invaders/issues/80 (label `harness-orchestrator`, title `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`, body amended to include reciprocal adoption ask + permalinks). | Pass | SI #80 satisfies D55-6 after amendment. |
+| T7 | Validate. | `harness lint` 30/0/3 (verified at PR #213 HEAD `54b5fe1` and `cs55/close` HEAD); `validate-schemas` 0 failed; `npm test` 0 failed; check-templates + check-text-encoding pass. | Pass | All required validation evidence is green. |
+| T8 | Plan-vs-implementation review by independent gpt-5.5 reviewer. | This table (R1: NEEDS-FIX on D55-6/T6; R2 narrow re-attest at SI #80 amended: Go-for-close-out). | Pass | Independent review completed; final verdict Go-for-close-out. |
+| T9 | Close out CS55: active → done, WORKBOARD clean, LRN-137 applied. | This close-out PR: rename active→done; LRN-137 → applied; WORKBOARD row removed; CONTEXT.md refreshed; SI #80 URL recorded below. | Pass | Close-out complete. |
+
+**Overall verdict:** Go-for-close-out
+**Reviewer model:** gpt-5.5
+**Reviewer agent:** rubber-duck
+**Analyzed HEAD (content PR):** a34b1974b43675070cc9e281ad389c67d624b40a
+**Reviewed at:** 2026-05-28T01:20:00Z (R1); 2026-05-28T01:30:00Z (R2 narrow re-attest after SI #80 body amendment)
+**Independence invariant:** PASS (implementer claude-opus-4.7-1m-internal Anthropic; reviewer gpt-5.5 OpenAI)
 
 ## Notes / Learnings
 
 - CS55 deliberately supersedes the earlier session-plan escape-hatch wording: the user confirmed no orchestrator escape hatch for this doctrine.
 - CS55 and CS56 are separate plans. CS55 is doc-only; CS56 owns any CLI guardrail work.
 - Existing `template/composed/OPERATIONS.md` has no `## Cross-repo procedures` H2 at plan time, so CS55 implementation should expect to create it unless CS54 lands first.
+
+### Close-out artefacts
+
+- **Content PR:** https://github.com/henrik-me/agent-harness/pull/213 (merged at `a34b1974b43675070cc9e281ad389c67d624b40a`, 2026-05-28T01:14:38Z).
+- **SI tracking issue (T6 / D55-6 demonstration):** https://github.com/henrik-me/sub-invaders/issues/80 (label `harness-orchestrator`; title `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`; body amended post-plan-vs-impl-R1 to satisfy D55-6 with Hard Rule § 6 permalinks and an explicit reciprocal adoption ask).
+- **LRN-137:** transitioned `open` → `applied` in this close-out PR.
+- **Next:** CS56 (`harness cross-repo open-issue` CLI guardrail) is queued in `planned/` and depends on CS55 merged; it codifies this doctrine programmatically.

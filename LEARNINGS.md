@@ -2359,7 +2359,7 @@ id: LRN-137
 date: 2026-05-28
 category: process
 source_cs: CS55
-status: open
+status: applied
 tags: [cross-repo, handoff, doctrine, orchestrator-scope, harness-orchestrator-label, si-orchestration]
 claim_area: cross-repo-orchestration
 ```
