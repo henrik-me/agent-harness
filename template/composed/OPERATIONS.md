@@ -523,11 +523,18 @@ locally (UTF-8, LF, no BOM) and grep for `^## Model audit`,
 missing, fix before opening — amending after `read-only-gates` fails
 is more expensive than fixing before open.
 
-**Sequencing rule (PR body push triggers A4 invalidation):** If the
-body is amended via `gh pr edit --body-file` after R1, treat that
-body push as a HEAD-changing event for purposes of A4 (stale-diff
-currency). Use the narrow re-attest pattern (next section) to refresh
-the Review log `analyzed_head` without burning a full re-review.
+**Sequencing rule (PR body push triggers re-attest):** If the
+body is amended via `gh pr edit --body-file` after R1, the commit
+SHA does NOT change — A4 stale-diff currency is unaffected because
+A4 compares the latest Go row's `analyzed_head` against the actual
+commit SHA. However, **review-evidence currency** is affected: the
+Review log table itself, Copilot review provenance, and reviewer
+narratives are PR-body artefacts that the rubber-duck and Copilot
+reviewers may not have seen at R1. Use the narrow re-attest pattern
+(next section) to refresh the Review log + Copilot provenance at the
+post-body-push state. Adds a new Review log row at the unchanged
+commit SHA — the timestamp shifts forward; the `analyzed_head` is
+identical to the prior row.
 
 **Idempotency note:** the issue-creation rules above (one open issue
 per workstream, `[harness:csNN]` title prefix) apply unchanged. The
