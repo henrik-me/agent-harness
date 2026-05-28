@@ -2369,7 +2369,7 @@ claim_area: cli-security
 **Finding:** **CLI flags that accept file paths whose CONTENTS will be transmitted to a third party must default to cwd-containment.** Concretely:
 
 1. The CLI layer resolves both `global.cwd` and the user-supplied path with `realpathSync()` (so symlinks cannot escape via target resolution).
-2. Compute `path.relative(cwdReal, pathReal)`. If the result starts with `..` or `path.isAbsolute()` is true, the path is outside cwd — reject with exit 2.
+2. Compute `const rel = path.relative(cwdReal, pathReal)`. Reject if **any** of the following holds (segment-safe check — avoids false positives on legitimate filenames like `..foo`): `rel === '..'` OR `rel.startsWith('..' + path.sep)` OR `path.isAbsolute(rel)`. The shipped CS56 implementation uses the simpler `rel.startsWith('..') || path.isAbsolute(rel)` form, which is secure (no real filesystem path starts with `..` as a literal filename prefix on the platforms harness targets) but the segment-safe form is recommended for new code to avoid edge-case false rejections.
 3. Containment lives in the CLI layer; the library can remain generic so programmatic consumers (and tests) can pass absolute paths under `os.tmpdir()` or other roots they trust.
 4. ENOENT on realpath of the user path should fall through to the library's existing missing-file error for a clearer message; only containment failures use exit 2 with a path-traversal message.
 
