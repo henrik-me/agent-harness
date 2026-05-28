@@ -342,6 +342,17 @@ round before the file can be merged.
 A latest `Needs-Fix` blocks the merge of the plan file (file an amendment
 and a new attestation row to clear).
 
+**Narrow re-attest rounds (LRN-135):** When a follow-up plan-review round
+addresses ONLY a trivial doc-only delta in response to a prior reviewer
+finding — same reviewer model, same reviewer agent, no new scope — it
+MAY be filed as a narrow re-attest row (R2/R3/...) with the same
+verdict cadence as full rounds. See
+[OPERATIONS.md § Narrow re-attest after trivial commits](OPERATIONS.md)
+for the procedure, preconditions, and ledger requirements. The PR-side
+counterpart is documented under § PR-evidence gates A4 (stale-diff
+currency) — narrow re-attest is the recommended mitigation when the
+delta would otherwise trigger a full re-review.
+
 Example block (paste into the plan file after `## Decisions`, before
 `## Deliverables`; compute the hash via `harness plan-review-hash <file>`):
 
