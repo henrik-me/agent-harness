@@ -425,10 +425,14 @@ still act directly outside the orchestrator at any time.)
    pre-create search; it prevents collision with future cross-repo
    handoff issues. (CS55 establishes this convention; CS56's `harness
    cross-repo open-issue` CLI is the supported handoff path — it
-   applies the `harness-orchestrator` label and performs the
-   idempotent exact-title search programmatically. The `[harness:csNN]`
-   prefix itself remains doctrine: the CLI does not enforce it on the
-   `--title` value.)
+   applies the `harness-orchestrator` label and performs an idempotent
+   exact-title search programmatically. **Two important caveats:** (a)
+   the CLI does NOT enforce the `[harness:csNN]` prefix on `--title`
+   (the prefix remains doctrine that operators must apply themselves);
+   and (b) the CLI's idempotency only searches **open** issues
+   (`gh issue list --state open`), so step 1's all-state pre-create
+   check for relevant closed issues remains an operator responsibility
+   when reusing a recently-closed tracking issue is desired.)
 
 4. **Required body fields** (markdown):
    - **CS reference:** the originating harness CS (e.g. `CS55`) and a
