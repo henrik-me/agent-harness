@@ -471,6 +471,106 @@ target repo. (A consumer-repo agent may close the issue once the
 consumer-side PR merges; that closure is the consumer's signal, not
 the orchestrator's prerequisite for harness close-out.)
 
+### Cross-repo pin-bump PR body checklist (CS54)
+
+When the consumer-repo agent opens a cross-repo PR in response to a
+harness-filed issue (typically a harness pin bump in a consumer repo
+such as `henrik-me/sub-invaders`), the PR body MUST include the
+canonical evidence sections at PR-open time, NOT relying on the
+consumer's `.github/pull_request_template.md` to inject them. Two
+reasons (per LRN-134):
+
+1. Consumer PR templates can lag the harness version (the template is
+   not in the managed file class by default, so `harness sync` does
+   not auto-refresh it).
+2. Since v0.6.0 the strict-flip default (`--strict-agent-columns`)
+   requires the new `Implementer agent` / `Reviewer agent` rows in
+   `## Model audit`; a pre-v0.6.0 template would silently produce an
+   A3 hard-fail on `read-only-gates`.
+
+This checklist is consumer-side doctrine but the harness orchestrator
+MUST include it verbatim in every cross-repo handoff issue body
+(under "Verification steps" / "Acceptance criteria") so the consumer
+agent has a single source of truth.
+
+**Required PR body sections (in this order):**
+
+1. `## Summary` — one paragraph describing the cross-repo change.
+2. `## Changes` — bulleted per-file enumeration of the consumer-side
+   diff.
+3. `## Testing` — what was run to verify the consumer-side change works
+   (lint, tests, manual smoke).
+4. `## Model audit` — `| Field | Value |` table with the required rows:
+   - `Implementer models` (model IDs that materially produced the
+     change)
+   - `Reviewer model` (rubber-duck reviewer model)
+   - `Implementer agent` (the orchestrator's identity, e.g. `omni-ah`)
+   - `Reviewer agent` (the reviewer's identity, e.g. `rubber-duck`)
+   - Optional `Fallback rationale` when the reviewer model overlaps
+     the implementer list (per REVIEWS.md § 2.2).
+5. `## Review log` — 6-column table: `timestamp | analyzed_head |
+   actor | model | verdict | evidence_link`. At least one `Go` (or
+   `Conditional Go`) row at the current PR HEAD before merge. The
+   `model` column MUST be the bare reviewer-model identifier (e.g.
+   `gpt-5.5`); decorations like `gpt-5.5 (R2)` are not permitted —
+   put round / role annotations in the `actor` column instead (see
+   REVIEWS.md § 2.8).
+6. Plan link to the originating harness CS file.
+
+**Pre-open self-check:** before `gh pr create`, draft the body file
+locally (UTF-8, LF, no BOM) and grep for `^## Model audit`,
+`^## Review log`, `Implementer agent`, `Reviewer agent`. If any
+missing, fix before opening — amending after `read-only-gates` fails
+is more expensive than fixing before open.
+
+**Sequencing rule (PR body push triggers A4 invalidation):** If the
+body is amended via `gh pr edit --body-file` after R1, treat that
+body push as a HEAD-changing event for purposes of A4 (stale-diff
+currency). Use the narrow re-attest pattern (next section) to refresh
+the Review log `analyzed_head` without burning a full re-review.
+
+**Idempotency note:** the issue-creation rules above (one open issue
+per workstream, `[harness:csNN]` title prefix) apply unchanged. The
+PR-body checklist is per-PR; the issue-creation guard is
+per-workstream.
+
+### Narrow re-attest after trivial commits (CS54)
+
+When a content PR receives small follow-on commits in response to
+Copilot inline findings (typical: doc-only or 1-2 line code cleanups,
+no behaviour change), a full rubber-duck re-review on every new HEAD
+is overkill. The "narrow re-attest" pattern (per LRN-135) is the
+cheap mitigation that keeps A4 (stale-diff currency) green without
+re-paying the full GPT-5.5 round-trip.
+
+**Three preconditions:**
+
+1. The delta is genuinely trivial: ≤ 20 lines, doc-only or 1-2 line
+   code cleanups responding to Copilot inline findings, no behaviour
+   change.
+2. R1 was a full-diff review at a prior HEAD, and that R1's `Go` row
+   is still present in the Review log table.
+3. The reviewer model and reviewer agent stay the same as R1; only
+   the `timestamp` + `analyzed_head` (and optional one-paragraph
+   delta summary) change.
+
+**Dispatch shape (sync, ≤ 1 min):** brief the same rubber-duck model
+with: "R1 already cleared the diff; only re-verify the trivial delta
+from `<prev-head>` to `<new-head>` is innocuous; return `Go` or
+`Needs-Fix`. Do NOT re-review the diff." Append the result as a new
+Review log row with the new `analyzed_head`, the same model, the
+same actor annotated `(narrow R2)` / `(narrow R3)`, and a
+one-paragraph summary.
+
+**Not a substitute for full re-review when the delta is substantive
+(e.g. new test coverage, refactored module).** When in doubt, run a
+full review.
+
+Cross-refs: REVIEWS.md § Plan review (recommended mitigation when CS
+plan delta is doc-only); REVIEWS.md § PR-evidence gates (A4
+stale-diff currency); LRN-125 (Copilot review chase analogue — body
+push triggers another review cycle).
+
 ---
 
 ## Sub-agent dispatch
