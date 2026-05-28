@@ -182,6 +182,27 @@ record.
   template change. Use GPT-5.5 rubber-duck. Record the model used and timestamp in
   the PR body. Fallback rules and independence invariant are in
   [REVIEWS.md](REVIEWS.md).
+  - **Rubber-duck scope — fact-claim verification (REVIEWS.md § 2.6a).** A "Go"
+    verdict is only valid when the reviewer has verified that every factual
+    claim in the diff matches the cited shipped surface. For docs and prose
+    PRs this is the dominant failure mode: a reviewer who only reads the diff
+    will miss CLI flags that don't exist, file paths that don't exist, doctrine
+    that's been paraphrased into a different requirement-level, and LRN/CS
+    references whose summarised scope overstates the source. Reviewer prompts
+    MUST explicitly require: (a) every `--flag` mentioned exists in
+    `bin/harness.mjs` help text, library code, or pass-through
+    `scripts/*.mjs` (e.g. `harness review-output` forwards to
+    `scripts/check-review-output.mjs`); (b) every file path
+    mentioned exists in the tree; (c) every doctrine claim (`required`,
+    `enforces`, `mandatory`, `recommended`, `optional`) matches the cited
+    source's wording verbatim or via a documented synonym; (d) every LRN/CS scope
+    summary respects the source entry's Problem/Finding scope (no
+    generalisation beyond what the source asserts); (e) cross-doc claims
+    (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
+    Pattern verified on PR #218: 3 substantive Copilot rounds caught 7
+    fact-claim issues (R4 returned 0 findings) that the rubber-duck
+    pre-review missed because the review prompt did not require
+    cross-surface verification.
 - **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim`,
   `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs.
 - **Commit trailers:** every commit must include
