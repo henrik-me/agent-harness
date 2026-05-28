@@ -88,9 +88,19 @@ the canonical `project/clickstops/{planned,active,done}/**` arc:
    into `project/clickstops/planned/planned_csNN_<slug>.md` BEFORE claiming.
    Session storage is non-durable; any agent restart, model swap, or handoff
    must succeed from the repo alone (per Decision C35-11).
-3. Issues filed by the agent are forbidden (Decision C35-13). GitHub issues
-   are an INBOUND channel from external contributors / the user; the agent
+3. Issues filed by the agent are forbidden in the harness repo
+   (Decision C35-13). GitHub issues in `henrik-me/agent-harness` are an
+   INBOUND channel from external contributors / the user; the agent
    reads them as input to file CSs but never opens them.
+
+   **Scope clarification (CS55 / LRN-137):** C35-13 applies to the
+   harness repo only. Cross-repo handoff issues filed into OTHER
+   repositories (e.g. `henrik-me/sub-invaders`) are governed by Hard
+   Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md`
+   and the `## Cross-repo procedures` section below. In those repos,
+   the orchestrator MUST file an issue (rather than commit/push/PR
+   directly) and is expected to create exactly one tracking issue
+   labeled `harness-orchestrator` per cross-repo workstream.
 
 ### Plan-vs-implementation review (close-out gate)
 
@@ -341,6 +351,117 @@ If you need to leave a CS mid-flight:
 3. Note the `reclaimable` threshold in the WORKBOARD row (default: 7 days
    with no update). After that threshold, another orchestrator may pick it up
    by updating the WORKBOARD row with the new agent ID.
+
+---
+
+## Cross-repo procedures
+
+This section governs orchestrator behaviour when work crosses the boundary
+of `henrik-me/agent-harness` into other repositories (e.g. consumer repos
+such as `henrik-me/sub-invaders`). It is the operational complement to
+Hard Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md`.
+
+### Handoff pattern: issue-only, never direct PR
+
+**Rule:** The harness orchestrator MUST NOT commit, push, open branches,
+or create pull requests in any repo other than `henrik-me/agent-harness`.
+The orchestrator files a GitHub issue and lets the consumer-repo agent
+own the PR, validation, and merge. There is no escape hatch — even
+urgent cross-repo work routes through an issue. (The human user can
+still act directly outside the orchestrator at any time.)
+
+**Status questions (e.g. "is SI updated to v0.6.0?"):**
+
+1. Read-only inspection first: `gh pr list --repo OWNER/NAME`,
+   `gh issue list --repo OWNER/NAME`, `gh api repos/OWNER/NAME/...`.
+2. If a tracking issue already exists for the work in question
+   (any state: open or closed within the relevant window), DO NOT
+   file a duplicate; report the existing URL.
+3. If no tracking issue exists, idempotently create exactly ONE issue
+   per workstream using the procedure below.
+
+**Issue-creation procedure (idempotent, non-mutating to consumer labels):**
+
+1. **Pre-create existence check (idempotency guard).** Before creating,
+   search for an existing tracking issue in the target repo to avoid
+   duplicates. Use the `[harness:csNN]` title prefix as the stable
+   identifier:
+
+   ```
+   gh issue list \
+     --repo OWNER/NAME \
+     --label harness-orchestrator \
+     --state all \
+     --search "[harness:csNN] <title terms> in:title"
+   ```
+
+   If exactly one issue matches (open or closed within the relevant
+   window), do NOT create a duplicate; reuse the existing URL and
+   report it (idempotency: re-asking the same status question must
+   return the same issue). If multiple matches exist, that is a
+   coordination drift — surface it as an escalation rather than
+   creating a third.
+
+2. **Label preflight (D55-3).** Ensure the routing label exists in the
+   target repo. Invoke:
+
+   ```
+   gh label create harness-orchestrator \
+     --repo OWNER/NAME \
+     --color 0E8A16 \
+     --description "Filed by harness orchestrator"
+   ```
+
+   Do NOT pass `--force`. If `gh label create` exits non-zero AND its
+   stderr contains an "already exists" indication, treat as success
+   (the label is already there with whatever color/description the
+   consumer chose — do not overwrite). Any other non-zero exit
+   (e.g. HTTP 403, network failure) is a real failure to escalate.
+
+3. **Title convention:** prefix with `[harness:csNN]` where `csNN` is
+   the originating CS that motivates the cross-repo handoff. Example:
+   `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`. The
+   `[harness:csNN]` prefix is the stable identifier used by step 1's
+   pre-create search; it prevents collision with future cross-repo
+   handoff issues. (CS55 establishes this convention; CS56's `harness
+   cross-repo open-issue` CLI will enforce it programmatically.)
+
+4. **Required body fields** (markdown):
+   - **CS reference:** the originating harness CS (e.g. `CS55`) and a
+     link to its file under `project/clickstops/done/` or `active/`.
+   - **Target repo + kind of work:** which consumer repo, and a short
+     classification (e.g. pin-bump, doctrine adoption, schema sync).
+   - **Context:** why this issue was filed (link to harness merge
+     commit SHA and/or release tag, e.g. `v0.6.x`).
+   - **Requested action / ask:** the concrete change requested in the
+     consumer repo, written as a checklist where possible.
+   - **Acceptance criteria:** how the consumer agent will know the
+     work is complete.
+   - **Verification steps:** which harness checks / lint commands to
+     run on the consumer side (e.g. `node bin/harness.mjs lint`).
+   - **Relevant LRNs / docs:** links to applicable `LEARNINGS.md`
+     entries and the harness `OPERATIONS.md` / `INSTRUCTIONS.md`
+     sections that govern the handoff.
+   - **Harness PR / tag links:** the merged harness PR and tag (if
+     any) that supply the artefact the consumer will adopt.
+   - **Coordination:** confirmation that the harness orchestrator
+     will not push directly; consumer-repo agent owns the PR.
+
+5. **Required label:** `harness-orchestrator` (always present as the
+   uniform routing default per D55-3). Supplemental labels (e.g.
+   `harness-sync`, `release-blocker`) are permitted as additions and
+   never replace or remove the default.
+
+6. **Record the URL** in the active CS file's Notes section. The
+   close-out PR carries it forward into the done CS file.
+
+**Exit criteria for a cross-repo handoff:** exactly one open tracking
+issue exists in the target repo with the `harness-orchestrator` label
+and `[harness:csNN]` title prefix; the close-out PR diff records its
+URL; the orchestrator has neither committed nor opened a PR in the
+target repo. (A consumer-repo agent may close the issue once the
+consumer-side PR merges; that closure is the consumer's signal, not
+the orchestrator's prerequisite for harness close-out.)
 
 ---
 

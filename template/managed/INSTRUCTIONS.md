@@ -28,18 +28,28 @@ Enforced by `scripts/check-planning-locality.mjs` (in `harness lint`).
 Rationale: session storage is non-durable; any agent restart, model swap,
 or handoff must succeed from the repo alone.
 
-### Agent does not file issues (CS35 C35-13)
+### Agent does not file issues in the harness repo (CS35 C35-13)
 
-GitHub issues are an INBOUND channel — external contributors and the user
-open them; the agent READS them as input to file CSs. The agent NEVER opens
-issues, even for follow-ups. If a follow-up is needed, file a planned CS
-under `project/clickstops/planned/`. Stand-alone issues from the agent
-fragment the canonical arc and create coordination drift.
+GitHub issues in `henrik-me/agent-harness` are an INBOUND channel — external
+contributors and the user open them; the agent READS them as input to file
+CSs. The agent NEVER opens issues in the harness repo itself, even for
+follow-ups. If a follow-up is needed, file a planned CS under
+`project/clickstops/planned/`. Stand-alone issues from the agent fragment
+the canonical arc and create coordination drift.
 
 This rule is doctrine — not mechanically enforceable because the agent runs
 under the maintainer's `gh` credentials and is indistinguishable from the
 user at the GitHub-API level. Orchestrator self-check + visible code review
 is the only feasible enforcement.
+
+**Scope clarification (CS55 / LRN-137):** C35-13 applies to the harness repo
+only. Cross-repo handoff issues filed into OTHER repositories (e.g.
+`henrik-me/sub-invaders`) are governed by Hard Rule § 6 in
+`.github/copilot-instructions.md` and the `## Cross-repo procedures`
+section in `OPERATIONS.md`. In those repos, the orchestrator MUST file an
+issue (rather than commit/push/PR directly) and is expected to create
+exactly one tracking issue labeled `harness-orchestrator` per cross-repo
+workstream.
 
 ---
 

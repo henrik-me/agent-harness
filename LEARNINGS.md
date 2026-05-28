@@ -2352,6 +2352,32 @@ The orchestrator side: agent memories already capture the rule, but the parser-s
 
 **Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.8` (Review log schema lives there, NOT § 2.7 which is Finding disposition) and add the regression fixture as a new case in `tests/cs51-review-gates-logic.test.mjs` (or a new co-located `tests/check-review-log-evidence.test.mjs`). The gate script lives at `scripts/checks/check-review-log-evidence.mjs` (not `scripts/check-review-log-evidence.mjs` — early CS53 draft used a stale path). Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
 
+### LRN-137
+
+```yaml
+id: LRN-137
+date: 2026-05-28
+category: process
+source_cs: CS55
+status: open
+tags: [cross-repo, handoff, doctrine, orchestrator-scope, harness-orchestrator-label, si-orchestration]
+claim_area: cross-repo-orchestration
+```
+
+**Problem:** The harness orchestrator's operating scope was previously underdetermined for cross-repo work. SI PR #79 (the v0.5.1 → v0.6.0 pin-bump into `henrik-me/sub-invaders`, opened 2026-05-27T08:01:43Z and admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` on 2026-05-27T17:01:48Z) was opened DIRECTLY by the harness orchestrator. It hit three `read-only-gates` failures because SI's PR template was pre-v0.6.0 strict schema and did not provide the canonical `## Model audit` / `## Review log` evidence. The PR was eventually unblocked, but the root cause was who-opened-the-PR: the harness orchestrator bypassed SI-side conventions and validation knowledge. LRN-134 captured the PR-body checklist gap at the PR-body level; LRN-137 captures the higher-level WHO-OPENS-THE-PR boundary.
+
+**Finding:** **The harness orchestrator operates directly only in `henrik-me/agent-harness`. For any other repo, it MUST NOT commit, push, open branches, or create pull requests — even via delegated harness-side sub-agents, helper scripts, or background tasks (no proxy bypass). It files exactly one GitHub issue per cross-repo workstream, labeled `harness-orchestrator`, and lets the consumer-repo agent own the PR, validation, and merge.** Three reinforcing parts:
+
+1. **Rule scope (D55-1):** The rule applies to any repo other than `henrik-me/agent-harness`. Rationale: future-proof without per-repo allowlists as more consumer repos adopt the harness.
+2. **No escape hatch (D55-2):** Even urgent cross-repo work routes through an issue. This is an orchestrator constraint; the human user can always self-merge, run `gh`, or act directly outside the orchestrator.
+3. **Uniform routing label + non-mutating preflight (D55-3):** Every handoff issue carries the `harness-orchestrator` label as the routing default. The orchestrator MUST ensure the label exists in the target repo BEFORE `gh issue create --label harness-orchestrator` (otherwise `gh issue create` fails with "label not found"). The preflight is non-mutating: `gh label create harness-orchestrator --repo OWNER/NAME --color 0E8A16 --description "Filed by harness orchestrator"` WITHOUT `--force`; if the call exits non-zero AND stderr indicates "already exists", treat as success (preserve whatever color/description the consumer chose). Any other non-zero exit is a real failure.
+
+Status questions ("is SI updated to v0.6.0?") use the same boundary: read-only `gh` inspection first; if no tracking issue exists, create exactly one issue (idempotently) and report its URL. C35-13 ("agent does not file issues") is hereby scoped to the harness repo only — cross-repo handoff issues into OTHER repos are required by this rule, not forbidden by C35-13.
+
+**Evidence:** SI PR #79 chase (above); three `read-only-gates` failures (job 78033638259) initially blocking merge. CS55 codifies the doctrine via Hard Rule § 6 in `template/managed/.github/copilot-instructions.md`, scopes C35-13 in `template/managed/INSTRUCTIONS.md` and `template/composed/OPERATIONS.md`, and adds the `## Cross-repo procedures` H2 in `template/composed/OPERATIONS.md` with the canonical issue-only-never-direct-PR H3. CS56 (planned) automates the issue-creation flow via a `harness cross-repo open-issue` CLI guardrail (separate CS to keep CS55 doc-only).
+
+**Disposition:** Open (will transition to `applied` at CS55 close-out per D55-5). Cross-reference: LRN-134 (PR-body checklist gap — the surface-level symptom of the same cross-repo boundary issue); CS54 (`## Cross-repo procedures` H2 sibling H3 for pin-bump PR body checklist — see D55-4 ordering contract: whichever CS lands first creates the H2; the other adds a sibling H3); CS56 (`harness cross-repo` CLI guardrail, depends on CS55 merged).
+
 ### LRN-127
 
 ```yaml
