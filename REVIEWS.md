@@ -389,6 +389,90 @@ when `reviews.enforce_gates=true`.
 
 ---
 
+## Config schema: `reviews` vs `review_gates`
+
+`harness.config.json` defines two top-level blocks that govern review
+behaviour. They serve different runtimes and are NOT interchangeable —
+confusion between them surfaced on SI PR #79 (LRN-136 chase).
+
+| Block | When it runs | Who reads it | Purpose |
+|---|---|---|---|
+| `review_gates.*` | Install time (`harness init`, `harness sync`) and CI workflow time | `pr-evidence-lint.yml` workflow + install machinery | Configures the **PR-evidence CI gate set** (B1, A2..A6, A16) wired into every content PR. |
+| `reviews.*` | Orchestrator runtime (`harness review <pr>`) and PR-side CI status checks | The `harness review` CLI + the PR-side `review-gates.yml` status checks | Configures the **rubber-duck reviewer model defaults**, fallback policy, Copilot trigger, gate enforcement toggles, and HIGH-RISK clickstop list. |
+
+**Rule of thumb:** if you're wiring CI workflow gates or the gate set itself,
+edit `review_gates.*`. If you're choosing reviewer models, Copilot wiring,
+or PR-side status checks, edit `reviews.*`.
+
+### `review_gates.*` (install-time / CI workflow)
+
+> Per CS38a/CS37/CS36: configuration for the PR-evidence CI workflow that
+> wires the harness's gate set into every consumer PR. When `enabled` is true,
+> consumers should also land `template/managed/.github/workflows/pr-evidence-lint.yml`
+> via `harness sync` (typically opt-in via `harness init --enable-review-gates`).
+
+Fields (verbatim descriptions from `schemas/harness.config.schema.json`):
+
+- `enabled` (boolean, default `true`): Master switch for the PR-evidence
+  gate set. When false, the workflow runs but exits 0 unconditionally (a
+  no-op shell). When true, the gate set listed below is enforced.
+- `_opt_out_reason` (string): Required when `review_gates.enabled` is false
+  in v0.5.0+; records the explicit reason this consumer is opting out of the
+  default PR-evidence gate set.
+- `copilot_required` (boolean, default `false`): When true, the CS37 A5+A16
+  Copilot review gate is included in the gate set; when false, A5+A16 are
+  skipped. Forced false when running on fork PRs (per ADR4-6 — forks cannot
+  self-engage Copilot under their own token).
+- `gate_set` (array of `B1`/`A2`/`A3`/`A4`/`A5`/`A6`/`A16`, default `[]`):
+  Explicit list of PR-evidence gate short-names enforced by `harness
+  pr-evidence`. Vocabulary defined in [§ PR-evidence gates](#pr-evidence-gates-b1-a2a6-a16-reference).
+  Empty array = all gates skipped (gate set disabled). Default when `harness
+  init --enable-review-gates` was invoked with the CS37 PASS spike outcome:
+  `["B1","A3","A4","A5","A16","A6"]`.
+
+### `reviews.*` (orchestrator-side `harness review` + PR-side gates)
+
+> Configuration for the orchestrator-side `harness review <pr>` command
+> (CS52) and CS51 REVIEWS.md PR-side status checks: rubber-duck reviewer
+> model defaults, fallback policy inputs, Copilot trigger mode, timeout,
+> gate enforcement toggles, and project-specific HIGH-RISK clickstops.
+
+Fields (verbatim descriptions from `schemas/harness.config.schema.json`):
+
+- `rubber_duck_model` (string, default `gpt-5.5`): Primary rubber-duck
+  reviewer model used by `harness review` when `--model` is omitted.
+  Defaults to GPT-5.5 per [§ 2.1](#21-review-model).
+- `fallback_model` (string, default `sonnet-4.6`): Fallback rubber-duck
+  reviewer model allowed only when [§ 2.2](#22-fallback-policy) permits
+  fallback and the independence guard passes.
+- `enforce_gates` (boolean, default `true`): When true, `harness
+  init`/`sync` installs `review-gates.yml` and injects
+  `review-log-evidence`, `copilot-review-attached`, `independence-invariant`,
+  and `review-threads-resolved` into
+  `infra/main-protection-ruleset.json` `required_checks`.
+- `require_copilot_review` (boolean, default `true`): When true, the
+  `copilot-review-attached` gate requires a submitted review by the
+  configured Copilot reviewer; `harness review` also triggers and waits for
+  Copilot review evidence unless `--rubber-duck-only` is supplied. Set false
+  for repos where Copilot PR reviews are unavailable.
+- `copilot_reviewer_slug` (string, default `copilot-pull-request-reviewer[bot]`):
+  GitHub login/slug for the Copilot PR reviewer bot. Both the bare slug and
+  `[bot]`-suffixed login are accepted by the checker.
+- `copilot_trigger` (`mention` | `reviewer`, default `mention`): How
+  `harness review` requests Copilot review. `mention` posts an `@copilot
+  review` PR comment via `gh api`; `reviewer` uses the reviewer attachment
+  path where supported.
+- `review_timeout_minutes` (number, default `30`): Maximum minutes `harness
+  review` waits for required review evidence before returning a
+  tooling/transport failure.
+- `high_risk_clickstops` (array of CS-ids, default
+  `["CS03","CS11","CS15a","CS18b","CS19"]`): Clickstop IDs (for example
+  CS03 or CS15a) for which the `independence-invariant` gate forbids
+  implementer/reviewer model overlap and `harness review` forbids fallback
+  reviewer models unless an explicit user waiver is recorded.
+
+---
+
 ## Phase 3 — Close-Out PR Review
 
 The close-out PR archives the clickstop folder and updates `WORKBOARD.md`.
