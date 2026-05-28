@@ -13,6 +13,7 @@
 Ship a v0.6.1 patch release that:
 
 1. Fixes 2 real cosmetic defects in v0.6.0 composed templates surfaced by Copilot on SI PR #79 (stray triple-backtick at `template/composed/OPERATIONS.md:680`; prose vs label case mismatch at L656).
+   - **CS54 implementation correction:** T1 (stray-fence removal) was DROPPED in-flight as a misdiagnosis. The ``` flagged by Copilot at the line then numbered 680 (now ~L809) is the legitimate close of the `\`\`\`text` canonical-preamble fence opened earlier in the file; removing it orphaned `<!-- harness:local-start id=operations.project-deploy -->` markers and broke composed-blocks lint. The false-positive surfaced from SI PR #79 survived 17 rubber-duck plan-review rounds undetected, which is the source incident for **LRN-139** (plan-side fact-claim verification gap). T2 (case normalisation) was kept and remains valid.
 2. Codifies the cross-repo pin-bump checklist into a NEW subsection `OPERATIONS.md ### Cross-repo pin-bump PR body checklist` (added under `## Cross-repo procedures`; if that H2 is absent, create it) and mirrors it into the managed `template/managed/.github/copilot-instructions.md` — every cross-repo PR opened by the harness orchestrator must include canonical `## Model audit` + `## Review log` sections at PR-open time (LRN-134).
 3. Documents the "narrow re-attest" pattern in `OPERATIONS.md ### Narrow re-attest after trivial commits` with cross-references in `REVIEWS.md § Plan review` (doctrine) and `REVIEWS.md § PR-evidence gates (A4 stale-diff currency)` (the gate it mitigates) (LRN-135).
 4. Locks the Review log `Model` column bare-id rule into `REVIEWS.md § 2.8` (PR body requirements — where the Review log schema lives) and adds a regression test (LRN-136).
@@ -37,6 +38,7 @@ Resolved by:
 The 2 real Copilot findings in v0.6.0 composed templates:
 
 **Defect 1: stray fence at `template/composed/OPERATIONS.md:680`.** Line 680 has a closing ``` with no matching opener (the report shape at L665-L679 uses 4-space indented code, not fenced). Markdown renderers may interpret L681+ as code. Cosmetic only; doctrine content unaffected.
+> **CORRECTION (CS54 in-flight):** This assertion is FALSE. The ``` at the line then numbered 680 is the legitimate close of the `\`\`\`text` canonical-preamble fence opened earlier; the report shape that follows is INSIDE that fence, not after a stray close. T1 was dropped and **LRN-139** filed against the plan-side fact-claim verification gap that allowed the false positive to survive 17 plan-review rounds.
 
 **Defect 2: prose vs label case mismatch at OPERATIONS.md:656.** Prose says `Implementer model used` (lowercase) but the template at L669 uses `IMPLEMENTER MODEL USED:` (all-caps). Minor copy-paste hazard.
 

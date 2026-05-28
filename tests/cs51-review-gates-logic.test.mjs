@@ -149,6 +149,25 @@ describe('CS51 review gate scripts', () => {
     // Sanity: a bare reviewer model still passes when the rest of the body is well-formed.
     const bareOk = writeBody('bare-ok.md', body({ reviewModel: 'gpt-5.5' }));
     assert.equal(run(SCRIPTS.reviewLog, ['--pr-body', bareOk]).status, 0);
+
+    // Additional decoration shape: explicit "(reviewer)" annotation — must also fail with decoration message.
+    const decoratedReviewerTag = writeBody(
+      'decorated-reviewer-tag.md',
+      body({ reviewModel: 'gpt-5.5 (reviewer)', reviewer: 'gpt-5.5' }),
+    );
+    const r3 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedReviewerTag]);
+    assert.equal(r3.status, 1, r3.stdout + r3.stderr);
+    assert.match(r3.stdout, /decorated reviewer model/i);
+
+    // Uniform enforcement: decoration on a non-passing row (Needs-Fix) must also fail —
+    // the bare-id rule applies to the model column for every Review log row, not only passing ones.
+    const decoratedNeedsFix = writeBody(
+      'decorated-needs-fix.md',
+      body({ reviewModel: 'gpt-5.5 (R1)', reviewer: 'gpt-5.5', reviewVerdict: 'Needs-Fix' }),
+    );
+    const r4 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedNeedsFix]);
+    assert.equal(r4.status, 1, r4.stdout + r4.stderr);
+    assert.match(r4.stdout, /decorated reviewer model/i);
   });
 
   it('copilot-review-attached passes only when Copilot reviewer submitted an accepted state', () => {

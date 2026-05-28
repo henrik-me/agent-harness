@@ -420,7 +420,7 @@ or PR-side status checks, edit `reviews.*`.
 > consumers should also land `template/managed/.github/workflows/pr-evidence-lint.yml`
 > via `harness sync` (typically opt-in via `harness init --enable-review-gates`).
 
-Fields (verbatim descriptions from `schemas/harness.config.schema.json`):
+Fields (descriptions adapted from `schemas/harness.config.schema.json`; schema remains source-of-truth, see file for full constraints and defaults):
 
 - `enabled` (boolean, default `true`): Master switch for the PR-evidence
   gate set. When false, the workflow runs but exits 0 unconditionally (a
@@ -446,7 +446,7 @@ Fields (verbatim descriptions from `schemas/harness.config.schema.json`):
 > model defaults, fallback policy inputs, Copilot trigger mode, timeout,
 > gate enforcement toggles, and project-specific HIGH-RISK clickstops.
 
-Fields (verbatim descriptions from `schemas/harness.config.schema.json`):
+Fields (descriptions adapted from `schemas/harness.config.schema.json`; schema remains source-of-truth):
 
 - `rubber_duck_model` (string, default `gpt-5.5`): Primary rubber-duck
   reviewer model used by `harness review` when `--model` is omitted.

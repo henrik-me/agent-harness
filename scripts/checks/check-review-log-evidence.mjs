@@ -219,7 +219,6 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
       continue;
     }
     const verdict = normalizeVerdict(row.cells[verdictIdx]);
-    if (!PASSING_VERDICTS.has(verdict)) continue;
     const model = row.cells[modelIdx] ?? '';
     const decoratedMatch = model.match(/\s*\(.*\)\s*$/);
     if (decoratedMatch) {
@@ -227,6 +226,7 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
       emit(`${label}: ## Review log row ${rowNumber} has decorated reviewer model "${model}"; use bare "${bare}" and put round/role annotations (e.g. "(R2)", "(narrow re-attest)", "(PvI)") in the actor column instead. See REVIEWS.md §2.8 Review log column rules.`);
       continue;
     }
+    if (!PASSING_VERDICTS.has(verdict)) continue;
     const approved = reviewerModelApproved(model, audit.fields);
     if (!approved.ok) {
       emit(`${label}: ## Review log row ${rowNumber} has unapproved reviewer model: ${approved.reason}; see REVIEWS.md §2.8.`);
