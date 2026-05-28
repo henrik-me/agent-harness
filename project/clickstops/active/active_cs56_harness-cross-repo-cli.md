@@ -1,9 +1,9 @@
 # CS56 — `harness cross-repo` CLI guardrail
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah (Copilot CLI orchestrator, claude-opus-4.7-1m-internal)
+**Branch:** cs56/content
+**Started:** 2026-05-28
 **Closed:** —
 **Filed by:** Copilot CLI planner sub-agent (2026-05-27)
 **Depends on:** CS55 — cross-repo handoff doctrine must exist before this CLI enforces it; CS56 may land only after CS55 merges.
@@ -53,6 +53,19 @@ CS55 codifies the cross-repo handoff rule: the harness orchestrator is harness-r
 - `LEARNINGS.md` — only if implementation surfaces new learnings; file LRN-138+ if needed, not as a forced deliverable.
 
 ## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| T1 Claim CS56 (workboard) | done | omni-ah | Rename planned→active; verify CS55 merged first. |
+| T2 Implement `lib/cross-repo.mjs` | planned | omni-ah | `openIssue` + `CrossRepoError` per D56-2/D56-3/D56-4/D56-5. |
+| T3 Register `cmdCrossRepo` in `bin/harness.mjs` | planned | omni-ah | Insert in dispatch map per D56-7 (after composed-audit, before pack). |
+| T4 Update top-level help (TOP_HELP + SUBCOMMAND_HELP) | planned | omni-ah | Document `cross-repo open-issue`, no `open-pr`. |
+| T5 Write `tests/cross-repo.test.mjs` | planned | omni-ah | 20 test cases per D56-10; fake-`gh` via `HARNESS_CROSS_REPO_GH_BIN` seam. |
+| T6 Update README CLI quick reference | planned | omni-ah | New `## CLI quick reference (cross-repo)` H2 per D56-8. |
+| T7 Validate implementation | planned | omni-ah | `harness lint`, `npm test`, `validate-schemas`, no-`gh pr create` audit. |
+| T8 Plan-vs-implementation review | planned | omni-ah | gpt-5.5 reviewer (independent from impl model); record in `## Plan-vs-implementation review`. |
+| Close-out: update workboard/context restart-state docs | planned | omni-ah | Rename active→done; WORKBOARD clean; CONTEXT.md refresh. |
+| Close-out: file learnings/follow-up (LRN-138+ if any) | planned | omni-ah | File implementation learnings, link from done CS file. |
 
 ### T1 — Claiming CS56
 
@@ -228,6 +241,10 @@ Acceptance checks for CS56 implementation:
 - No `OPERATIONS.md` changes are included in the CS56 diff.
 
 ## Notes / Learnings
+
+## Plan-vs-implementation review
+
+_(Populated post-implementation; see OPERATIONS.md § "Plan-vs-implementation review (close-out gate)")_
 
 - CS56 is Phase B of the cross-repo handoff plan and must remain separate from CS55 per Q1/Q7.
 - User-confirmed rule scope is any repo other than `henrik-me/agent-harness`; this CLI enforces that by rejecting the harness repo and by exposing only issue creation for non-harness repos.
