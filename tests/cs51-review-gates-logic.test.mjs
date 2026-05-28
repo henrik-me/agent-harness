@@ -118,6 +118,39 @@ describe('CS51 review gate scripts', () => {
     assert.match(bad.stdout, /Fallback rationale/);
   });
 
+  it('review-log-evidence rejects decorated reviewer model identifiers (LRN-136)', () => {
+    // Decorated model + populated fallback rationale is the path that silently passed pre-CS54:
+    // `gpt-5.5 (R2)` normalised to `gpt-5.5-r2`, failed the primary check, and the
+    // fallback-rationale path approved it. The CS54 decoration check must fire FIRST.
+    const decoratedWithFallback = writeBody(
+      'decorated-with-fallback.md',
+      body({
+        reviewModel: 'gpt-5.5 (R2)',
+        reviewer: 'gpt-5.5',
+        fallback: 'GPT-5.5 unavailable after two attempts.',
+      }),
+    );
+    const r1 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedWithFallback]);
+    assert.equal(r1.status, 1, r1.stdout + r1.stderr);
+    assert.match(r1.stdout, /decorated reviewer model/i);
+    assert.match(r1.stdout, /use bare "gpt-5\.5"/);
+    assert.match(r1.stdout, /actor column/i);
+
+    // Decorated model WITHOUT fallback rationale must also fail with the decoration message
+    // (not the unrelated fallback-missing message).
+    const decoratedBare = writeBody(
+      'decorated-bare.md',
+      body({ reviewModel: 'gpt-5.5 (PvI)', reviewer: 'gpt-5.5' }),
+    );
+    const r2 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedBare]);
+    assert.equal(r2.status, 1, r2.stdout + r2.stderr);
+    assert.match(r2.stdout, /decorated reviewer model/i);
+
+    // Sanity: a bare reviewer model still passes when the rest of the body is well-formed.
+    const bareOk = writeBody('bare-ok.md', body({ reviewModel: 'gpt-5.5' }));
+    assert.equal(run(SCRIPTS.reviewLog, ['--pr-body', bareOk]).status, 0);
+  });
+
   it('copilot-review-attached passes only when Copilot reviewer submitted an accepted state', () => {
     const pass = writeBody('copilot-pass.md', body({ copilotState: 'APPROVED' }));
     assert.equal(run(SCRIPTS.copilot, ['--pr-body', pass]).status, 0);

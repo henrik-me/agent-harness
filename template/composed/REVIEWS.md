@@ -256,6 +256,15 @@ Every content PR body must record the following fields before merge:
 | 2026-05-14T10:32:00Z | a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 | yoga-ah | gpt-5.5 | Go | https://github.com/henrik-me/agent-harness/pull/150#issuecomment-123456 |
 ```
 
+**Review log column rules:**
+
+- `timestamp` — RFC 3339 UTC (`...Z`).
+- `analyzed_head` — full 40-character commit SHA the reviewer analysed. The A4 gate compares this to the current PR HEAD.
+- `actor` — round/role annotation (e.g. `yoga-ah`, `rubber-duck`, `rubber-duck (narrow R2)`, `omni-ah (PvI R3)`). This is the column where round numbers and dispatch labels live.
+- `model` — **MUST be the bare reviewer-model identifier** (e.g. `gpt-5.5`, `claude-sonnet-4.6`, `claude-opus-4.7`). Decorations like `gpt-5.5 (R2)`, `gpt-5.5 (reviewer)`, `gpt-5.5 (PvI)`, `gpt-5.5 (narrow re-attest)` are not permitted — they break independence-invariant normalisation and historically slipped past the PR-side `review-log-evidence` gate via the fallback-rationale path (LRN-136). Put round / role annotations in the `actor` column instead. Mechanically enforced since CS54 by `scripts/checks/check-review-log-evidence.mjs` (decoration-detection check fires BEFORE `reviewerModelApproved()`).
+- `verdict` — one of `Go`, `Conditional Go`, `Needs-Fix` (historical spelling `Go-with-amendments` is accepted but not preferred).
+- `evidence_link` — URL to the rubber-duck report comment, sub-agent transcript, or other artefact backing the verdict.
+
 ## Model audit
 
 | Field | Required | Description |
