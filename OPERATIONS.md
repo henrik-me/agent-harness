@@ -424,7 +424,8 @@ still act directly outside the orchestrator at any time.)
    `[harness:csNN]` prefix is the stable identifier used by step 1's
    pre-create search; it prevents collision with future cross-repo
    handoff issues. (CS55 establishes this convention; CS56's `harness
-   cross-repo open-issue` CLI will enforce it programmatically.)
+   cross-repo open-issue` CLI enforces it programmatically — invoke it
+   in preference to hand-rolled `gh issue create` calls.)
 
 4. **Required body fields** (markdown):
    - **CS reference:** the originating harness CS (e.g. `CS55`) and a
