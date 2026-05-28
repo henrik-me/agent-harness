@@ -97,9 +97,10 @@ function readRecord() {
     .map((line) => JSON.parse(line));
 }
 
-function runCli(args, extraEnv = {}) {
+function runCli(args, extraEnv = {}, runCwd = scratch) {
   return spawnSync(process.execPath, [HARNESS_BIN, 'cross-repo', ...args], {
     encoding: 'utf8',
+    cwd: runCwd,
     env: { ...process.env, ...extraEnv },
   });
 }
@@ -183,7 +184,48 @@ describe('cross-repo open-issue — CLI argument validation', () => {
     for (const args of cases) {
       const r = runCli(args);
       assert.strictEqual(r.status, 2, `expected exit 2; got ${r.status}\nstderr: ${r.stderr}`);
-      assert.match(r.stderr, /label.*non-empty|non-empty.*label/i);
+      assert.match(r.stderr, /label.*non-empty|non-empty.*label|invalid value/i);
+    }
+  });
+
+  it('21. (security) rejects --body-file outside the working tree (path traversal)', () => {
+    // Create a sibling "secret" dir alongside scratch with a body file that
+    // resolves OUTSIDE the cwd. The CLI must refuse rather than upload its
+    // contents to a cross-repo issue.
+    const sibling = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cross-repo-secret-'));
+    const secret = path.join(sibling, 'SECRET.md');
+    fs.writeFileSync(secret, 'top-secret\n');
+    try {
+      const r = runCli(
+        ['open-issue', '--repo', 'foo/bar', '--title', 't', '--body-file', secret],
+        {},
+        scratch
+      );
+      assert.strictEqual(r.status, 2, `expected exit 2; got ${r.status}\nstderr=${r.stderr}`);
+      assert.match(r.stderr, /must live inside the working tree/);
+    } finally {
+      fs.rmSync(sibling, { recursive: true, force: true });
+    }
+  });
+
+  it('22. (D56-6 fidelity) --flag=value forms reject blank and dash-prefixed values', () => {
+    // Equal-form values must be guarded with the same rigor as space-separated values.
+    const cases = [
+      // blank values
+      ['open-issue', '--repo=', '--title', 't', '--body-file', bodyFile],
+      ['open-issue', '--repo', 'foo/bar', '--title=', '--body-file', bodyFile],
+      ['open-issue', '--repo', 'foo/bar', '--title', 't', '--body-file='],
+      ['open-issue', '--repo', 'foo/bar', '--title', 't', '--body-file', bodyFile, '--label='],
+      // dash-prefixed values (would silently consume the next flag in space-form)
+      ['open-issue', '--repo=-x', '--title', 't', '--body-file', bodyFile],
+      ['open-issue', '--repo', 'foo/bar', '--title=-x', '--body-file', bodyFile],
+      ['open-issue', '--repo', 'foo/bar', '--title', 't', '--body-file=-x'],
+      ['open-issue', '--repo', 'foo/bar', '--title', 't', '--body-file', bodyFile, '--label=-x'],
+    ];
+    for (const args of cases) {
+      const r = runCli(args);
+      assert.strictEqual(r.status, 2, `expected exit 2 for ${JSON.stringify(args)}; got ${r.status}\nstderr=${r.stderr}`);
+      assert.match(r.stderr, /invalid value|required|non-empty/i);
     }
   });
 });

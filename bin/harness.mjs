@@ -19,7 +19,7 @@
  */
 
 import { parseArgs } from 'node:util';
-import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -3278,40 +3278,50 @@ async function cmdCrossRepo(args, global) {
   let bodyFile = null;
   const labels = [];
 
-  function requireValue(i, flagName) {
-    if (i + 1 >= actionArgs.length || actionArgs[i + 1].startsWith('-')) {
-      process.stderr.write(`cross-repo open-issue: missing value for ${flagName}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+  // Shared extractor honors D56-6 for BOTH `--flag value` and `--flag=value`:
+  // the value must exist, must not be empty, and must not start with '-'
+  // (which would indicate the next flag was consumed as a value).
+  function extractValue(flag, eqValue, i) {
+    let value;
+    if (eqValue !== null) {
+      value = eqValue;
+    } else if (i + 1 >= actionArgs.length) {
+      process.stderr.write(`cross-repo open-issue: missing value for ${flag}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    } else {
+      value = actionArgs[i + 1];
+    }
+    if (value === '' || value.startsWith('-')) {
+      process.stderr.write(`cross-repo open-issue: invalid value for ${flag}: ${JSON.stringify(value)}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
       process.exit(2);
     }
-    return actionArgs[i + 1];
+    return value;
   }
 
   for (let i = 0; i < actionArgs.length; i++) {
     const a = actionArgs[i];
-    if (a === '--repo') {
-      repo = requireValue(i, '--repo');
-      i++;
+    let flag = null;
+    let eqValue = null;
+    if (a === '--repo' || a === '--title' || a === '--body-file' || a === '--label') {
+      flag = a;
     } else if (a.startsWith('--repo=')) {
-      repo = a.slice('--repo='.length);
-    } else if (a === '--title') {
-      title = requireValue(i, '--title');
-      i++;
+      flag = '--repo'; eqValue = a.slice('--repo='.length);
     } else if (a.startsWith('--title=')) {
-      title = a.slice('--title='.length);
-    } else if (a === '--body-file') {
-      bodyFile = requireValue(i, '--body-file');
-      i++;
+      flag = '--title'; eqValue = a.slice('--title='.length);
     } else if (a.startsWith('--body-file=')) {
-      bodyFile = a.slice('--body-file='.length);
-    } else if (a === '--label') {
-      labels.push(requireValue(i, '--label'));
-      i++;
+      flag = '--body-file'; eqValue = a.slice('--body-file='.length);
     } else if (a.startsWith('--label=')) {
-      labels.push(a.slice('--label='.length));
+      flag = '--label'; eqValue = a.slice('--label='.length);
     } else {
       process.stderr.write(`cross-repo open-issue: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
       process.exit(2);
     }
+    const value = extractValue(flag, eqValue, i);
+    if (flag === '--repo') repo = value;
+    else if (flag === '--title') title = value;
+    else if (flag === '--body-file') bodyFile = value;
+    else if (flag === '--label') labels.push(value);
+    if (eqValue === null) i++;
   }
 
   if (repo === null) {
@@ -3342,6 +3352,32 @@ async function cmdCrossRepo(args, global) {
 
   // Resolve --body-file relative to the consumer cwd.
   const resolvedBodyFile = path.isAbsolute(bodyFile) ? bodyFile : path.resolve(cwd, bodyFile);
+
+  // SECURITY: Constrain --body-file to the working tree to prevent the agent
+  // from exfiltrating arbitrary local files (e.g. ~/.ssh/id_rsa, /etc/passwd)
+  // via a relative `../../secret` path or a symlink that escapes cwd. Both
+  // sides resolved through realpath so symlink-based escapes are also rejected.
+  // Files that do not yet exist fail the realpath check; they will subsequently
+  // fail validateBodyFile() in the library with a clearer body-file-missing
+  // message, which is fine — both outcomes refuse the operation.
+  try {
+    const realCwd = realpathSync(cwd);
+    const realBody = realpathSync(resolvedBodyFile);
+    const rel = path.relative(realCwd, realBody);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      process.stderr.write(
+        `cross-repo open-issue: --body-file must live inside the working tree (cwd=${realCwd}); refused: ${resolvedBodyFile}\n`
+      );
+      process.exit(2);
+    }
+  } catch (err) {
+    // If realpath fails because the body file doesn't exist, fall through
+    // to validateBodyFile() in the library, which raises body-file-missing.
+    if (err.code !== 'ENOENT') {
+      process.stderr.write(`cross-repo open-issue: failed to resolve --body-file path: ${err.message}\n`);
+      process.exit(1);
+    }
+  }
 
   let result;
   try {
