@@ -382,7 +382,25 @@ still act directly outside the orchestrator at any time.)
 
 **Issue-creation procedure (idempotent, non-mutating to consumer labels):**
 
-1. **Label preflight (D55-3).** Ensure the routing label exists in the
+1. **Pre-create existence check (idempotency guard).** Before creating,
+   search for an existing tracking issue in the target repo to avoid
+   duplicates. Use the `[harness:csNN]` title prefix as the stable
+   identifier:
+
+   ```
+   gh issue list \
+     --repo OWNER/NAME \
+     --label harness-orchestrator \
+     --search "[harness:csNN] <title terms> in:title"
+   ```
+
+   If exactly one open issue matches, do NOT create a duplicate; reuse
+   the existing URL and report it (idempotency: re-asking the same
+   status question must return the same issue). If multiple matches
+   exist, that is a coordination drift — surface it as an escalation
+   rather than creating a third.
+
+2. **Label preflight (D55-3).** Ensure the routing label exists in the
    target repo. Invoke:
 
    ```
@@ -398,25 +416,40 @@ still act directly outside the orchestrator at any time.)
    consumer chose — do not overwrite). Any other non-zero exit
    (e.g. HTTP 403, network failure) is a real failure to escalate.
 
-2. **Title convention:** prefix with `[harness:csNN]` where `csNN` is
+3. **Title convention:** prefix with `[harness:csNN]` where `csNN` is
    the originating CS that motivates the cross-repo handoff. Example:
-   `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`.
+   `[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine`. The
+   `[harness:csNN]` prefix is the stable identifier used by step 1's
+   pre-create search (per CS56 D56-4 amendment); it prevents collision
+   with future cross-repo handoff issues.
 
-3. **Required body fields** (markdown):
-   - **Context:** why this issue was filed (link to harness CS file
-     and commit/tag).
-   - **Ask:** the concrete change requested in the consumer repo.
+4. **Required body fields** (markdown):
+   - **CS reference:** the originating harness CS (e.g. `CS55`) and a
+     link to its file under `project/clickstops/done/` or `active/`.
+   - **Target repo + kind of work:** which consumer repo, and a short
+     classification (e.g. pin-bump, doctrine adoption, schema sync).
+   - **Context:** why this issue was filed (link to harness merge
+     commit SHA and/or release tag, e.g. `v0.6.x`).
+   - **Requested action / ask:** the concrete change requested in the
+     consumer repo, written as a checklist where possible.
    - **Acceptance criteria:** how the consumer agent will know the
      work is complete.
-   - **Coordination:** confirmation that the harness orchestrator will
-     not push directly; consumer agent owns the PR.
+   - **Verification steps:** which harness checks / lint commands to
+     run on the consumer side (e.g. `node bin/harness.mjs lint`).
+   - **Relevant LRNs / docs:** links to applicable `LEARNINGS.md`
+     entries and the harness `OPERATIONS.md` / `INSTRUCTIONS.md`
+     sections that govern the handoff.
+   - **Harness PR / tag links:** the merged harness PR and tag (if
+     any) that supply the artefact the consumer will adopt.
+   - **Coordination:** confirmation that the harness orchestrator
+     will not push directly; consumer-repo agent owns the PR.
 
-4. **Required label:** `harness-orchestrator` (always present as the
+5. **Required label:** `harness-orchestrator` (always present as the
    uniform routing default per D55-3). Supplemental labels (e.g.
    `harness-sync`, `release-blocker`) are permitted as additions and
    never replace or remove the default.
 
-5. **Record the URL** in the active CS file's Notes section. The
+6. **Record the URL** in the active CS file's Notes section. The
    close-out PR carries it forward into the done CS file.
 
 **Exit criteria for a cross-repo handoff:** exactly one open tracking

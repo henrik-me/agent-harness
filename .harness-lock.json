@@ -1,15 +1,15 @@
 {
   "harness_ref": "cs55/content",
-  "resolved_sha": "096108fd239c22918555f31a251d84b4c7aed151",
+  "resolved_sha": "576067126397080349f8e118bf661ff34ca043ca",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-28T00:31:42.835Z",
+  "synced_at": "2026-05-28T00:36:25.780Z",
   "files": [
     {
       "target": "INSTRUCTIONS.md",
       "source_template": "template/managed/INSTRUCTIONS.md",
       "class": "managed",
       "rendered_hash": "69c9c3a5f4592e3d6b2c4ca9b8ad7bc66dafc7cffceb8cb8eeea400204a200e0",
-      "action": "updated"
+      "action": "skipped"
     },
     {
       "target": "TRACKING.md",
@@ -44,7 +44,7 @@
       "source_template": "template/managed/.github/copilot-instructions.md",
       "class": "managed",
       "rendered_hash": "f20e2e0e2f47b13511ac14c51bb5a140d44b3804fca75296f37f5a39bca3e96c",
-      "action": "updated"
+      "action": "skipped"
     },
     {
       "target": ".github/workflows/harness-drift.yml",
@@ -91,21 +91,21 @@
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "f44a4ee54e9a6652b8c2b202e828fba5ff08842e0d010b2df057f86c6bd3c75c",
+      "rendered_hash": "6b0a826eeb4845cbfbbaa659d44abae9a361181258e3a3faf755dd0078bc27d8",
       "action": "updated",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1811,
-            "end": 1813
+            "start": 1844,
+            "end": 1846
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "26ab01506879d470a1de67930d8f18f5388ef6f7bf41f7e27344273af73560c9"
+      "template_prose_hash": "204c75713c57cca602caa1cbf82e3d18654b46e5a8a4f005361ce81ab2cd5a2d"
     },
     {
       "target": "REVIEWS.md",
@@ -151,7 +151,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "5b2a04d32960a7cc38284d36a976d638587b9e601f05f51b6ad3283c881be7d6",
+      "rendered_hash": "7d1451a07ac7c3e5cc95cfdacd583d465c6b1221ad5fe480e3129a8abe0d296a",
       "action": "preserved"
     },
     {
@@ -165,7 +165,7 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "69b08b0bf423711ba1003c659ec7871cb6a90bc4a650c967f043968e988d6bcb",
+      "rendered_hash": "62de0d9aa36088d14cd7eb78c5b9d4d6db5b13ac7dc2b7378429a4d60a1cf53c",
       "action": "preserved"
     },
     {
