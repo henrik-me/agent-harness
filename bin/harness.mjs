@@ -29,6 +29,7 @@ import { spawnSync } from 'node:child_process';
 import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
 import { runReview, ReviewError } from '../lib/review.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
+import { openIssue as crossRepoOpenIssue, CrossRepoError } from '../lib/cross-repo.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +117,8 @@ Subcommands:
                     R1/Rn enumeration vs git diff, finding-row schema, verdict
   plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
                     Decisions+Deliverables (used to fill plan review rows)
+  cross-repo        Issue-only handoff helpers for non-harness repos
+                    (CS56 — supports only 'open-issue'; no 'open-pr' action)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -511,6 +514,55 @@ Options:
   --cwd <path>    Consumer repo path (default: cwd)
   --config <path> Path to harness.config.json
   --help          Print this help
+`.trimStart(),
+
+  'cross-repo': `
+Usage: harness cross-repo <action> [options]
+
+Issue-only handoff helpers for non-harness repositories (CS56).
+
+The harness orchestrator never opens PRs in repos other than
+henrik-me/agent-harness (Hard Rule § 6); cross-repo work routes through
+GitHub issues. This subcommand is the supported CLI for that handoff.
+
+Actions:
+  open-issue    File a tracking issue in a non-harness repo (idempotent)
+
+No 'open-pr' (or other non-issue write) action exists by design.
+
+Usage (open-issue):
+  harness cross-repo open-issue --repo OWNER/NAME --title STRING \\
+      --body-file PATH [--label LABEL ...]
+
+Behavior:
+  - Refuses --repo henrik-me/agent-harness (case-insensitive). Use plain
+    'gh issue create' for harness-internal issues.
+  - Always applies the 'harness-orchestrator' label as the routing default;
+    additional --label flags append (cannot remove the default).
+  - Before 'gh issue create', preflights each label via 'gh label create'
+    WITHOUT --force; "already exists" is treated as success so the consumer's
+    label color/description is preserved (non-mutating per D56-3 R9).
+  - Idempotent: 'gh issue list' for an exact-title open issue first. If found,
+    prints the existing URL to stdout and 'existing open issue matched;
+    no new issue created' to stderr; does not create a new issue. Closed
+    issues never short-circuit (always creates new).
+  - Recommended title prefix: '[harness:cs<NN>] <subject>' so two different
+    CSes cannot collide on the same handoff issue (doctrine; not enforced
+    by this CLI). See OPERATIONS.md § Cross-repo procedures.
+
+Options:
+  --repo OWNER/NAME     Target repo (required; must NOT be the harness repo)
+  --title STRING        Issue title (required; non-empty after trim)
+  --body-file PATH      Path to a regular file containing the issue body (required)
+  --label LABEL         Extra label; repeatable. (Default 'harness-orchestrator'
+                        is always applied first; --label appends.)
+  --help                Print this help
+
+Exit codes:
+  0  success (new issue created OR existing-match short-circuit)
+  1  operation failure (gh missing, gh failed, parse failure, body-file missing,
+     label preflight could not provision a label)
+  2  usage error (bad/missing flags, unknown action, self-loop repo)
 `.trimStart(),
 };
 
@@ -3197,6 +3249,124 @@ async function cmdPrEvidence(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: cross-repo (CS56)
+// ---------------------------------------------------------------------------
+
+async function cmdCrossRepo(args, global) {
+  const { cwd } = global;
+
+  // Help can appear anywhere; intercept early.
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(SUBCOMMAND_HELP['cross-repo']);
+    process.exit(0);
+  }
+
+  const action = args[0];
+  if (!action || action.startsWith('-')) {
+    process.stderr.write(`cross-repo: action is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (action !== 'open-issue') {
+    process.stderr.write(`cross-repo: unknown action '${action}' (only 'open-issue' is supported)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+
+  const actionArgs = args.slice(1);
+
+  let repo = null;
+  let title = null;
+  let bodyFile = null;
+  const labels = [];
+
+  function requireValue(i, flagName) {
+    if (i + 1 >= actionArgs.length || actionArgs[i + 1].startsWith('-')) {
+      process.stderr.write(`cross-repo open-issue: missing value for ${flagName}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+    return actionArgs[i + 1];
+  }
+
+  for (let i = 0; i < actionArgs.length; i++) {
+    const a = actionArgs[i];
+    if (a === '--repo') {
+      repo = requireValue(i, '--repo');
+      i++;
+    } else if (a.startsWith('--repo=')) {
+      repo = a.slice('--repo='.length);
+    } else if (a === '--title') {
+      title = requireValue(i, '--title');
+      i++;
+    } else if (a.startsWith('--title=')) {
+      title = a.slice('--title='.length);
+    } else if (a === '--body-file') {
+      bodyFile = requireValue(i, '--body-file');
+      i++;
+    } else if (a.startsWith('--body-file=')) {
+      bodyFile = a.slice('--body-file='.length);
+    } else if (a === '--label') {
+      labels.push(requireValue(i, '--label'));
+      i++;
+    } else if (a.startsWith('--label=')) {
+      labels.push(a.slice('--label='.length));
+    } else {
+      process.stderr.write(`cross-repo open-issue: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+  }
+
+  if (repo === null) {
+    process.stderr.write(`cross-repo open-issue: --repo is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (title === null) {
+    process.stderr.write(`cross-repo open-issue: --title is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (bodyFile === null) {
+    process.stderr.write(`cross-repo open-issue: --body-file is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+
+  // Validate title/labels here (in addition to lib-side) so blank/whitespace
+  // values get a usage error (exit 2) instead of an operation error (exit 1).
+  if (title.trim() === '') {
+    process.stderr.write(`cross-repo open-issue: --title must be non-empty (after trimming)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  for (const label of labels) {
+    if (label.trim() === '') {
+      process.stderr.write(`cross-repo open-issue: --label values must be non-empty (after trimming)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+  }
+
+  // Resolve --body-file relative to the consumer cwd.
+  const resolvedBodyFile = path.isAbsolute(bodyFile) ? bodyFile : path.resolve(cwd, bodyFile);
+
+  let result;
+  try {
+    result = crossRepoOpenIssue({ repo, title, bodyFile: resolvedBodyFile, labels });
+  } catch (err) {
+    if (err instanceof CrossRepoError) {
+      // bad-input is a usage error (exit 2); everything else is operation failure (exit 1).
+      if (err.kind === 'bad-input') {
+        process.stderr.write(`cross-repo open-issue: ${err.message}\n`);
+        process.exit(2);
+      }
+      process.stderr.write(`cross-repo open-issue: ${err.message}\n`);
+      process.exit(1);
+    }
+    throw err;
+  }
+
+  process.stdout.write(`${result.url}\n`);
+  if (!result.created) {
+    process.stderr.write('existing open issue matched; no new issue created\n');
+  }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: whoami
 // ---------------------------------------------------------------------------
 
@@ -3304,6 +3474,7 @@ async function main() {
     harvest: cmdHarvest,
     'check-migration': cmdCheckMigration,
     'composed-audit': cmdComposedAudit,
+    'cross-repo': cmdCrossRepo,
     pack: cmdPack,
     'pr-evidence': cmdPrEvidence,
     'review-output': cmdReviewOutput,

@@ -104,6 +104,25 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design: file-class model (ma
 
 See [CONTEXT.md](CONTEXT.md) for current project state, the active clickstop, and known blockers.
 
+## CLI quick reference (cross-repo)
+
+When harness orchestration needs work in a non-harness repository (e.g. `henrik-me/sub-invaders`), Hard Rule § 6 (see `template/managed/.github/copilot-instructions.md`) requires filing a GitHub issue rather than opening a PR. The `harness cross-repo open-issue` command is the supported way to do this.
+
+```bash
+node bin/harness.mjs cross-repo open-issue \
+  --repo henrik-me/sub-invaders \
+  --title "[harness:cs55] Adopt v0.6.x cross-repo handoff doctrine" \
+  --body-file issue-body.md \
+  --label harness-sync
+```
+
+Notes:
+
+- The `harness-orchestrator` label is always added automatically; additional `--label` flags append.
+- Titles MUST be prefixed with `[harness:cs<NN>]` so two different clickstops cannot collide on the same handoff issue (idempotency safety per D56-4).
+- There is intentionally NO `harness cross-repo open-pr` command — the harness orchestrator never opens PRs in non-harness repos.
+- The command refuses `--repo henrik-me/agent-harness` (use plain `gh` for harness-internal issues).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
