@@ -132,8 +132,7 @@ describe('CS51 review gate scripts', () => {
     );
     const r1 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedWithFallback]);
     assert.equal(r1.status, 1, r1.stdout + r1.stderr);
-    assert.match(r1.stdout, /decorated reviewer model/i);
-    assert.match(r1.stdout, /use bare "gpt-5\.5"/);
+    assert.match(r1.stdout, /non-bare reviewer model/i);
     assert.match(r1.stdout, /actor column/i);
 
     // Decorated model WITHOUT fallback rationale must also fail with the decoration message
@@ -144,7 +143,7 @@ describe('CS51 review gate scripts', () => {
     );
     const r2 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedBare]);
     assert.equal(r2.status, 1, r2.stdout + r2.stderr);
-    assert.match(r2.stdout, /decorated reviewer model/i);
+    assert.match(r2.stdout, /non-bare reviewer model/i);
 
     // Sanity: a bare reviewer model still passes when the rest of the body is well-formed.
     const bareOk = writeBody('bare-ok.md', body({ reviewModel: 'gpt-5.5' }));
@@ -157,7 +156,7 @@ describe('CS51 review gate scripts', () => {
     );
     const r3 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedReviewerTag]);
     assert.equal(r3.status, 1, r3.stdout + r3.stderr);
-    assert.match(r3.stdout, /decorated reviewer model/i);
+    assert.match(r3.stdout, /non-bare reviewer model/i);
 
     // Uniform enforcement: decoration on a non-passing row (Needs-Fix) must also fail —
     // the bare-id rule applies to the model column for every Review log row, not only passing ones.
@@ -167,7 +166,7 @@ describe('CS51 review gate scripts', () => {
     );
     const r4 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedNeedsFix]);
     assert.equal(r4.status, 1, r4.stdout + r4.stderr);
-    assert.match(r4.stdout, /decorated reviewer model/i);
+    assert.match(r4.stdout, /non-bare reviewer model/i);
 
     // Non-parenthesized decorations must also be rejected (Copilot R3 finding):
     // bare-id rule requires /^[A-Za-z0-9._-]+$/ — any whitespace or other char fails.
@@ -178,9 +177,21 @@ describe('CS51 review gate scripts', () => {
       );
       const res = run(SCRIPTS.reviewLog, ['--pr-body', file]);
       assert.equal(res.status, 1, `decoration ${JSON.stringify(decoration)} should fail: ${res.stdout}${res.stderr}`);
-      assert.match(res.stdout, /decorated reviewer model/i, `decoration ${JSON.stringify(decoration)} message`);
-      assert.match(res.stdout, /use bare "gpt-5\.5"/, `decoration ${JSON.stringify(decoration)} bare-id suggestion`);
+      assert.match(res.stdout, /non-bare reviewer model/i, `decoration ${JSON.stringify(decoration)} message`);
     }
+
+    // Non-canonical display-form input (Copilot R5 finding): "Claude Opus 4.7" is not bare,
+    // but a heuristic bare-id extraction would incorrectly suggest "Claude". The gate must
+    // reject it AND must NOT emit a misleading bare-id suggestion — instead cite canonical examples.
+    const displayForm = writeBody(
+      'display-form.md',
+      body({ reviewModel: 'Claude Opus 4.7', reviewer: 'gpt-5.5' }),
+    );
+    const r5 = run(SCRIPTS.reviewLog, ['--pr-body', displayForm]);
+    assert.equal(r5.status, 1, r5.stdout + r5.stderr);
+    assert.match(r5.stdout, /non-bare reviewer model/i);
+    assert.doesNotMatch(r5.stdout, /use bare "Claude"/, 'must not auto-suggest the wrong "Claude" prefix');
+    assert.match(r5.stdout, /claude-opus-4\.7|claude-sonnet-4\.6|gpt-5\.5/, 'must cite canonical examples');
   });
 
   it('copilot-review-attached passes only when Copilot reviewer submitted an accepted state', () => {

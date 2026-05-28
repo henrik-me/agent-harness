@@ -224,10 +224,10 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
     // Reject ANY non-bare reviewer-model identifier, not just parenthesized decorations.
     // Bare canonical IDs match /^[A-Za-z0-9._-]+$/ (e.g. `gpt-5.5`, `claude-sonnet-4.6`).
     // Decorations like `gpt-5.5 (R2)`, `gpt-5.5 R2`, `gpt-5.5 - R2`, `gpt-5.5 (PvI)` all fail.
+    // Don't auto-suggest a "bare" form: heuristic extraction is brittle for non-canonical
+    // inputs like `Claude Opus 4.7` (would suggest `Claude`); cite canonical examples instead.
     if (trimmedModel && !/^[A-Za-z0-9._-]+$/.test(trimmedModel)) {
-      const bareMatch = trimmedModel.match(/^[A-Za-z0-9._-]+/);
-      const bare = bareMatch ? bareMatch[0] : trimmedModel;
-      emit(`${label}: ## Review log row ${rowNumber} has decorated reviewer model "${model}"; use bare "${bare}" and put round/role annotations (e.g. "(R2)", "(narrow re-attest)", "(PvI)") in the actor column instead. See REVIEWS.md §2.8 Review log column rules.`);
+      emit(`${label}: ## Review log row ${rowNumber} has non-bare reviewer model "${model}"; use the canonical lowercase id matching /^[A-Za-z0-9._-]+$/ (e.g. \`gpt-5.5\`, \`claude-opus-4.7\`, \`claude-sonnet-4.6\`) and put round/role annotations (e.g. "(R2)", "(narrow re-attest)", "(PvI)") in the actor column instead. See REVIEWS.md §2.8 Review log column rules.`);
       continue;
     }
     if (!PASSING_VERDICTS.has(verdict)) continue;
