@@ -2376,7 +2376,7 @@ Status questions ("is SI updated to v0.6.0?") use the same boundary: read-only `
 
 **Evidence:** SI PR #79 chase (above); three `read-only-gates` failures (job 78033638259) initially blocking merge. CS55 codifies the doctrine via Hard Rule § 6 in `template/managed/.github/copilot-instructions.md`, scopes C35-13 in `template/managed/INSTRUCTIONS.md` and `template/composed/OPERATIONS.md`, and adds the `## Cross-repo procedures` H2 in `template/composed/OPERATIONS.md` with the canonical issue-only-never-direct-PR H3. CS56 (planned) automates the issue-creation flow via a `harness cross-repo open-issue` CLI guardrail (separate CS to keep CS55 doc-only).
 
-**Disposition:** Open (will transition to `applied` at CS55 close-out per D55-5). Cross-reference: LRN-134 (PR-body checklist gap — the surface-level symptom of the same cross-repo boundary issue); CS54 (`## Cross-repo procedures` H2 sibling H3 for pin-bump PR body checklist — see D55-4 ordering contract: whichever CS lands first creates the H2; the other adds a sibling H3); CS56 (`harness cross-repo` CLI guardrail, depends on CS55 merged).
+**Disposition:** Applied at CS55 close-out (frontmatter `status: applied`; D55-5 completed). The doctrine is embedded in shipped docs (PR #213 merged at `a34b197`) and demonstrated on its own rollout via SI tracking issue https://github.com/henrik-me/sub-invaders/issues/80. Cross-reference: LRN-134 (PR-body checklist gap — the surface-level symptom of the same cross-repo boundary issue); CS54 (`## Cross-repo procedures` H2 sibling H3 for pin-bump PR body checklist — see D55-4 ordering contract: whichever CS lands first creates the H2; the other adds a sibling H3); CS56 (`harness cross-repo` CLI guardrail, depends on CS55 merged).
 
 ### LRN-127
 
