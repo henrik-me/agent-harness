@@ -197,9 +197,10 @@ record.
     summary respects the source entry's Problem/Finding scope (no
     generalisation beyond what the source asserts); (e) cross-doc claims
     (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
-    Pattern verified on PR #218: 4 Copilot rounds caught 8 substantive
-    fact-claim errors that the rubber-duck pre-review missed because the
-    review prompt did not require cross-surface verification.
+    Pattern verified on PR #218: 3 substantive Copilot rounds caught 7
+    fact-claim issues (R4 returned 0 findings) that the rubber-duck
+    pre-review missed because the review prompt did not require
+    cross-surface verification.
 - **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim`,
   `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs.
 - **Commit trailers:** every commit must include

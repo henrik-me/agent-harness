@@ -212,11 +212,12 @@ coherent."* The canonical reviewer preamble's `**scope:**` field already
 references this expectation (see
 [OPERATIONS.md § Reviewer dispatch — canonical preamble](OPERATIONS.md#reviewer-dispatch--canonical-preamble)).
 
-**Empirical motivation.** PR #218 (CS55+CS56 doc backfill) required 4 Copilot
-review rounds to surface 8 unique fact-claim errors — every one of which the
-rubber-duck pre-review missed because the dispatch prompt asked the reviewer
-to verify the diff was coherent, not to cross-check claims against shipped
-code/help text/doctrine. Examples of what was missed: nonexistent CLI flag
+**Empirical motivation.** PR #218 (CS55+CS56 doc backfill) required 3
+substantive Copilot review rounds to surface 7 unique fact-claim issues
+(R4 returned 0 findings) — every one of which the rubber-duck pre-review
+missed because the dispatch prompt asked the reviewer to verify the diff
+was coherent, not to cross-check claims against shipped code/help
+text/doctrine. Examples of what was missed: nonexistent CLI flag
 (`--idempotent`), nonexistent file path (`template/composed/INSTRUCTIONS.md`),
 "enforces" overclaim contradicting CLI help text that says "doctrine; not
 enforced", and LRN-138 summary that generalised the entry beyond its
