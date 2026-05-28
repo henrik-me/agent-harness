@@ -504,7 +504,10 @@ agent has a single source of truth.
    - `Implementer models` (model IDs that materially produced the
      change)
    - `Reviewer model` (rubber-duck reviewer model)
-   - `Implementer agent` (the orchestrator's identity, e.g. `omni-ah`)
+   - `Implementer agent` (the **consumer-side** agent that authored the
+     PR — NOT the harness orchestrator. The orchestrator only files the
+     handoff issue and does not commit to the consumer repo per the
+     doctrine above; the Model audit must record the actual PR author)
    - `Reviewer agent` (the reviewer's identity, e.g. `rubber-duck`)
    - Optional `Fallback rationale` when the reviewer model overlaps
      the implementer list (per REVIEWS.md § 2.2).
