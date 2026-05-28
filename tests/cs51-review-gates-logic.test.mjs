@@ -168,6 +168,19 @@ describe('CS51 review gate scripts', () => {
     const r4 = run(SCRIPTS.reviewLog, ['--pr-body', decoratedNeedsFix]);
     assert.equal(r4.status, 1, r4.stdout + r4.stderr);
     assert.match(r4.stdout, /decorated reviewer model/i);
+
+    // Non-parenthesized decorations must also be rejected (Copilot R3 finding):
+    // bare-id rule requires /^[A-Za-z0-9._-]+$/ — any whitespace or other char fails.
+    for (const decoration of ['gpt-5.5 R2', 'gpt-5.5 - R2', 'gpt-5.5/R2']) {
+      const file = writeBody(
+        `decorated-${decoration.replace(/[^a-z0-9]/gi, '_')}.md`,
+        body({ reviewModel: decoration, reviewer: 'gpt-5.5' }),
+      );
+      const res = run(SCRIPTS.reviewLog, ['--pr-body', file]);
+      assert.equal(res.status, 1, `decoration ${JSON.stringify(decoration)} should fail: ${res.stdout}${res.stderr}`);
+      assert.match(res.stdout, /decorated reviewer model/i, `decoration ${JSON.stringify(decoration)} message`);
+      assert.match(res.stdout, /use bare "gpt-5\.5"/, `decoration ${JSON.stringify(decoration)} bare-id suggestion`);
+    }
   });
 
   it('copilot-review-attached passes only when Copilot reviewer submitted an accepted state', () => {

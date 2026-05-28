@@ -220,9 +220,13 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
     }
     const verdict = normalizeVerdict(row.cells[verdictIdx]);
     const model = row.cells[modelIdx] ?? '';
-    const decoratedMatch = model.match(/\s*\(.*\)\s*$/);
-    if (decoratedMatch) {
-      const bare = model.replace(/\s*\(.*\)\s*$/, '').trim();
+    const trimmedModel = model.trim();
+    // Reject ANY non-bare reviewer-model identifier, not just parenthesized decorations.
+    // Bare canonical IDs match /^[A-Za-z0-9._-]+$/ (e.g. `gpt-5.5`, `claude-sonnet-4.6`).
+    // Decorations like `gpt-5.5 (R2)`, `gpt-5.5 R2`, `gpt-5.5 - R2`, `gpt-5.5 (PvI)` all fail.
+    if (trimmedModel && !/^[A-Za-z0-9._-]+$/.test(trimmedModel)) {
+      const bareMatch = trimmedModel.match(/^[A-Za-z0-9._-]+/);
+      const bare = bareMatch ? bareMatch[0] : trimmedModel;
       emit(`${label}: ## Review log row ${rowNumber} has decorated reviewer model "${model}"; use bare "${bare}" and put round/role annotations (e.g. "(R2)", "(narrow re-attest)", "(PvI)") in the actor column instead. See REVIEWS.md §2.8 Review log column rules.`);
       continue;
     }
