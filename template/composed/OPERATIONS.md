@@ -509,8 +509,11 @@ agent has a single source of truth.
      handoff issue and does not commit to the consumer repo per the
      doctrine above; the Model audit must record the actual PR author)
    - `Reviewer agent` (the reviewer's identity, e.g. `rubber-duck`)
-   - Optional `Fallback rationale` when the reviewer model overlaps
-     the implementer list (per REVIEWS.md § 2.2).
+   - Optional `Fallback rationale` when the reviewer model is an
+     approved fallback (e.g. `sonnet-4.6` because GPT-5.5 was
+     unavailable per § 2.2), not for implementer/reviewer overlap
+     (overlap is enforced separately by the `independence-invariant`
+     gate and is normally merge-blocking).
 5. `## Review log` — 6-column table: `timestamp | analyzed_head |
    actor | model | verdict | evidence_link`. At least one `Go` (or
    `Conditional Go`) row at the current PR HEAD before merge. The
