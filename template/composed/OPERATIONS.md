@@ -455,7 +455,7 @@ still act directly outside the orchestrator at any time.)
 **Exit criteria for a cross-repo handoff:** exactly one open tracking
 issue exists in the target repo with the `harness-orchestrator` label
 and `[harness:csNN]` title prefix; the close-out PR diff records its
-URL; the orchestrator has neither commited nor opened a PR in the
+URL; the orchestrator has neither committed nor opened a PR in the
 target repo. (A consumer-repo agent may close the issue once the
 consumer-side PR merges; that closure is the consumer's signal, not
 the orchestrator's prerequisite for harness close-out.)
