@@ -2276,7 +2276,7 @@ id: LRN-134
 date: 2026-05-27
 category: process
 source_cs: CS53
-status: open
+status: applied
 tags: [cross-repo, pin-bump, pr-body, review-evidence, model-audit, review-log, si-orchestration]
 claim_area: cross-repo-orchestration
 ```
@@ -2294,9 +2294,7 @@ The fix has two layers:
 
 **Evidence:** SI PR #79 (v0.5.1 -> v0.6.0 pin bump, opened 2026-05-27T08:01:43Z) failed `read-only-gates` at first run (job 78033638259) with the two A3/A4 errors. Body initially had Summary/Changes/Testing only. Pre-CS53 precedent SI PR #62 (v0.5.0 -> v0.5.1 bump) had included both sections by historical accident (operator memory), not by doctrine. CS53 close-out shipped without the doctrine codified, so SI PR #79 inherited the gap. Fix applied during CS53 close-out: PR body amended via `gh pr edit 79 --body-file <utf8nobom-lf-tmp>` to add the canonical sections; 6 Copilot inline findings (4 false-positives on dual `reviews.*` / `review_gates.*` schema blocks, 2 real cosmetic doc cleanups) dispositioned and resolved; PR admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` (2026-05-27T17:01:48Z).
 
-**Disposition:** Open. Two-part follow-up CS (CS54a — orchestrator side; CS54b — consumer-template side, scheduled separately because it requires re-classifying `.github/pull_request_template.md` as a managed/composed file in consumer harness.config.json):
-- CS54a (planned): codify cross-repo pin-bump checklist in `OPERATIONS.md` and the managed `template/managed/.github/copilot-instructions.md` mirror. Optionally add a `harness cross-repo` CLI sub-command emitting the canonical body skeleton.
-- CS54b (planned): refresh `template/managed/.github/pull_request_template.md` to v0.6.0 strict schema and document the upgrade path for existing consumers (manual one-time copy, since this is a managed/scaffolded file class).
+**Disposition:** Applied in CS54. Codified in `OPERATIONS.md § Cross-repo procedures` as new `### Cross-repo pin-bump PR body checklist (CS54)` H3, with a short pointer in `template/managed/.github/copilot-instructions.md` Rule 6 (and root mirror `.github/copilot-instructions.md`). The doctrine states: consumer-repo PRs (typically pin bumps) MUST include `## Summary` / `## Changes` / `## Testing` / `## Model audit` (with `Implementer agent` and `Reviewer agent` rows, mandatory since v0.6.0 strict-flip) / `## Review log` (6-column, bare reviewer-model id per LRN-136 → REVIEWS.md § 2.8) / plan link at PR-open time. Pre-open self-check requires draft body grep before `gh pr create`. Remaining follow-up (out of CS54 scope): refresh `template/managed/.github/pull_request_template.md` to the v0.6.0 strict schema and document the upgrade path for existing consumers — file as a separate planned CS when prioritised. Cross-references: LRN-135 (narrow re-attest after body push); LRN-136 (Review log Model bare-id rule).
 
 Cross-reference: LRN-125 (Copilot review chase — analogous "PR body must include canonical artefacts" pattern); LRN-127 (independence invariant — same family of review-evidence integrity issues).
 
@@ -2307,7 +2305,7 @@ id: LRN-135
 date: 2026-05-27
 category: process
 source_cs: CS53
-status: open
+status: applied
 tags: [review-evidence, narrow-re-attest, stale-diff, A4-gate, rubber-duck-loop]
 claim_area: review-loops
 ```
@@ -2324,7 +2322,7 @@ The pattern is the cheap mitigation for A4 (stale-diff) — much cheaper than re
 
 **Evidence:** CS53 PR #208: R1 full GPT-5.5 review at `b5948a6` (verdict GO-with-amendments, 1 NB recommendation); commit `14aa3d3` added the recommended doc clarification (1 line); R2 narrow re-attest at `14aa3d3` (verdict GO, 0 findings, summary "delta is the recommended doc line; innocuous"); commit `b07e78d` fixed Copilot's R1 "rows" finding (1 line); R3 narrow re-attest at `b07e78d` (verdict GO, 0 findings). All 3 reviews recorded in PR body Review log table. Same pattern used on SI PR #79 R2 narrow re-attest at `c6155b9...` after body amendment (verdict GO, 0 findings, summary "delta is PR-body sections + known-limitations note; diff is unchanged").
 
-**Disposition:** Open. Follow-up CS candidate (CS54a or sibling): add `OPERATIONS.md § Narrow re-attest` doctrine and a short worked example. Mention in `REVIEWS.md § Plan review` as the recommended mitigation when delta is doc-only/trivial (also reference the PR-side A4 stale-diff gate in `REVIEWS.md § PR-evidence gates`). Cross-reference: LRN-125 (Copilot review chase analogue — "PR body push triggers another review cycle"); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
+**Disposition:** Applied in CS54. Codified in `OPERATIONS.md § Cross-repo procedures` as new `### Narrow re-attest after trivial commits (CS54)` H3 with three preconditions, dispatch shape, and a "not a substitute for full re-review" caveat. Cross-refs to REVIEWS.md § Plan review (recommended mitigation when CS plan delta is doc-only), REVIEWS.md § PR-evidence gates (A4 stale-diff currency), and LRN-125 (Copilot review chase analogue) included in the H3 body. Pattern is now the documented mitigation for both PR-side A4 invalidation after Copilot inline cleanup commits AND PR-body push events (per LRN-134 + LRN-136 doctrine).
 
 ### LRN-136
 
@@ -2333,7 +2331,7 @@ id: LRN-136
 date: 2026-05-27
 category: tooling
 source_cs: CS53
-status: open
+status: applied
 tags: [review-log, schema, format, model-column, regression-risk]
 claim_area: review-evidence
 ```
@@ -2350,7 +2348,40 @@ The orchestrator side: agent memories already capture the rule, but the parser-s
 
 **Evidence:** Memory `review evidence` already records this fact ("Review log Model column format requires bare reviewer-model identifier"). CS53 PR #208 R1 Review log row used `gpt-5.5` correctly (drafted with memory present). However, the agent-side memory mechanism only protects orchestrators with this specific memory loaded; the harness toolchain provides no parser-side or schema-side protection. Pattern matches LRN-128 (orchestrator self-review at close-out gate) — both are "agent-side memory protects, tool-side does not" gaps where memory rotation is the failure mode.
 
-**Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.8` (Review log schema lives there, NOT § 2.7 which is Finding disposition) and add the regression fixture as a new case in `tests/cs51-review-gates-logic.test.mjs` (or a new co-located `tests/check-review-log-evidence.test.mjs`). The gate script lives at `scripts/checks/check-review-log-evidence.mjs` (not `scripts/check-review-log-evidence.mjs` — early CS53 draft used a stale path). Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
+**Disposition:** Applied in CS54. Three deliverables shipped:
+1. `scripts/checks/check-review-log-evidence.mjs`: bare-id rule `/^[A-Za-z0-9._-]+$/` enforced on the `model` column BEFORE `reviewerModelApproved()`. Fires for every Review log row (not just passing ones — Needs-Fix rows too). Rejects all non-bare forms: parenthesized (`gpt-5.5 (R2)`), space-bearing (`gpt-5.5 R2`), dash-bearing (`gpt-5.5 - R2`), slash-bearing (`gpt-5.5/R2`), and display-form (`Claude Opus 4.7`). Emits canonical examples (`gpt-5.5`, `claude-opus-4.7`, `claude-sonnet-4.6`) and pointer to `REVIEWS.md § 2.8`. Does NOT auto-suggest a "bare" form — heuristic extraction is brittle for non-canonical inputs (would incorrectly suggest `Claude` for `Claude Opus 4.7`). Closes the silent-pass path where decorated cells normalised away from the primary reviewer and the fallback-rationale path approved them. Did NOT touch `check-independence-invariant.mjs` (preserves existing normalisation behaviour).
+2. `REVIEWS.md § 2.8`: added "Review log column rules" paragraph with explicit `model` column rule, decoration anti-pattern list, and pointer to the new gate. Lockstep mirror to `template/composed/REVIEWS.md`.
+3. `tests/cs51-review-gates-logic.test.mjs`: regression test "review-log-evidence rejects decorated reviewer model identifiers (LRN-136)" with sub-cases covering decorated model + populated fallback rationale (the historically-silent path), decorated model with no fallback, bare reviewer model positive control, `(reviewer)` annotation, uniform enforcement on a non-passing (`Needs-Fix`) row, the three non-parenthesized decoration forms (`gpt-5.5 R2`, `gpt-5.5 - R2`, `gpt-5.5/R2`), and a display-form anti-suggestion case (`Claude Opus 4.7` must be rejected AND must NOT auto-suggest the wrong `Claude` prefix — instead must cite canonical examples). Full suite passes 1021/0/1; targeted cs51 + cs48 + operations-reviewer-preamble suites pass 13/13.
+
+Cross-references: LRN-128 (same memory-vs-tooling gap family — both now hardened tool-side); `REVIEWS.md § 2.8` (PR body requirements).
+
+### LRN-139
+
+```yaml
+id: LRN-139
+date: 2026-05-28
+category: process
+source_cs: CS54
+status: open
+tags: [plan-review, rubber-duck, fact-claim, false-positive, line-numbers, doctrine-gap]
+claim_area: review-loops
+```
+
+**Problem:** CS54's T1 task was a plan-asserted "stray triple-backtick fence at `template/composed/OPERATIONS.md:680` with no matching opener" — derived from a Copilot inline finding on SI PR #79. The plan went through 17 rubber-duck rounds (R1-R17 at hash `5c40242b24c7`) before claiming, and none of them caught that the diagnosis was incorrect: the triple-backtick at L809 (line numbers had drifted from L680 since the plan was drafted) is the legitimate close of the canonical preamble triple-backtick `text` fence opened at L684, not a stray. During CS54 implementation, applying the "fix" (removing the triple-backtick close) broke the `composed-blocks:OPERATIONS.md` lint by unfencing the rest of the file and orphaning the `operations.project-deploy` local-block markers at L1867-1869. The defect did not exist; the entire T1 was a false positive that survived 17 plan-review rounds.
+
+This is the same gap class as REVIEWS.md § 2.6a "F1-F5 fact-claim verification" (shipped in PR #218 for PR-side reviews) but for PLAN reviews. PR-side rubber-duck reviewers are now required to verify factual claims about shipped code (F1-F5), but PLAN-side rubber-duck reviewers were never told to verify factual claims about the codebase that the plan describes. So a plan can assert "line 680 has a stray fence" with no opener-matching-close check, and 17 rubber-ducks reading the plan will rubber-stamp it.
+
+**Finding:** **Extend REVIEWS.md § 2.6a (F1-F5 fact-claim verification) to PLAN reviews.** A plan-review rubber-duck reading "the file at line N has property P" or "the code at function F does X" MUST open the named file at the named lines and verify the claim before approving the round. Specifically:
+
+1. Every plan-review round on a planned/active CS file (`harness plan-review-hash` evidence) should treat unverified citations to specific files/lines/symbols as a P0 blind spot — the reviewer either verifies the claim (and notes the verification in the review report) or returns Needs-Fix with "fact claim unverified" as the blocker.
+2. The plan-review checklist in REVIEWS.md § Plan review should add a "fact-claim verification" item parallel to § 2.6a F1-F5 for PR reviews.
+3. When a plan inherits a finding from another repo (e.g. Copilot's inline finding on SI PR #79 carrying line numbers from that repo's snapshot), the plan author MUST verify that the finding still applies in the current harness repo state — file paths and line numbers drift between snapshots and across syncs.
+
+The rule is symmetric with PR-side F1-F5: any reviewer asked to bless an implementation plan must apply the same fact-claim verification rigor that PR-side reviewers apply to a shipped diff. Otherwise plan reviews become rubber-stamp surfaces where line-number drift and stale citations propagate unchecked into implementation.
+
+**Evidence:** CS54 active plan (`active_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) Plan review table R1-R17 at hash `5c40242b24c7`, all GO. CS54 implementation discovered T1 was a false positive during commit a770134 (revert + Notes update). Lint regression caught via `node bin/harness.mjs lint` after the wrong fix landed locally. T2 (the other half of the same plan paragraph) was a real defect (prose vs label case mismatch) and shipped correctly — so the plan had mixed signal, not pure noise.
+
+**Disposition:** Open. Follow-up CS candidate (CS55+ or post-v0.6.1): extend `REVIEWS.md § 2.6a Rubber-duck scope — fact-claim verification` to explicitly cover plan reviews (currently scoped to "any review of a PR" / "shipped code"). Add a `### Plan-side fact-claim verification` H3 to the same § that states the rule, gives a worked example (this LRN), and updates the plan-review checklist. Optionally: add a `harness plan-review-checklist` CLI subcommand that, given a planned CS file path, emits a machine-readable list of factual claims (file:line citations) for the reviewer to verify. Cross-reference: REVIEWS.md § 2.6a (PR-side F1-F5); CS54 (this LRN's source); PR #218 (where F1-F5 was first codified).
 
 ### LRN-138
 

@@ -17,7 +17,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 const CALLOUT = '**Self-review carries zero review weight.**';
 const BANNED_FIELD = 'Self-review summary';
-const IMPLEMENTER_FIELD = 'Implementer model used';
+const IMPLEMENTER_FIELD = 'IMPLEMENTER MODEL USED';
 const REVIEW_CLI = '`harness review <pr>` CLI';
 const DISPATCH_SURFACES = [
   'template/composed/OPERATIONS.md',
