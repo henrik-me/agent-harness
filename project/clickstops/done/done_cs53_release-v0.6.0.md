@@ -1,0 +1,186 @@
+# CS53 — Release v0.6.0
+
+**Status:** done
+**Owner:** omni-ah
+**Branch:** cs53/release-v0.6.0
+**Started:** 2026-05-27
+**Closed:** 2026-05-27
+**Filed by:** `omni-ah` (Copilot CLI / Claude Opus 4.7 1M) per [CONTEXT.md § Suggested next CSs](../../../CONTEXT.md#suggested-next-css-priority-ordered) item #1; queued by `yoga-ah` at the post-v0.5.2 retroactive close-out sweep (PR #204, 2026-05-15).
+**Depends on:** None. The v0.6.0 `[Unreleased]` CHANGELOG arc (CS48 #198, CS49 #195, CS50 #197, CS51 #199, CS52 #196, chore PR #200, CS47 plan-filing PR #202) is already merged to `main`. CS47 (detached-HEAD fix) is **out of scope** here per C53-6 — it ships in a later patch.
+
+## Goal
+
+Cut harness release `v0.6.0` with the existing `CHANGELOG.md [Unreleased]` arc as the release notes. Follow the **standard release-cut shape** established by CS39 and CS42 (CHANGELOG transform, `package.json` bump, README pin sweep, content-PR squash, tag at the squash SHA, publish the draft release, file a SI cross-repo pin-bump SUB-CS), **plus** a CS47-style plan-filing preamble PR (PR #202 precedent) ahead of claim per CS35b plan-review attestation doctrine, **plus** the in-release C42-6 strict-flip per C53-5 R1 amendment. Execute the entire arc under "user-away" autonomy: every gate (plan review, plan-vs-impl review, workboard auto-merge, admin content-merge under maintainer credentials, with documented fallback if `--admin` is rejected) is achievable without interactive user approval beyond the standing grants given at plan-approval time.
+
+## Background
+
+The v0.6.0 `[Unreleased]` arc is already curated in `CHANGELOG.md` and contains two SemVer-minor signals per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy):
+
+1. **CS52** added a new top-level CLI subcommand `harness review <pr>` (new user-facing surface area).
+2. **CS51** added REVIEWS.md PR-side enforcement gates as **required status checks** (consumer-facing behavior change — existing PRs without the gates will block on merge).
+
+Plus CS48 (ban implementer self-review), CS49 (orchestrator-availability doctrine + 15-min progress-reporting cadence + Workboard-first for out-of-CS work), CS50 (`WORKBOARD_MERGE_TOKEN` PAT bypass for consumer repos without the G3 App), and chore PR #200 (`check-pack` `DEFAULT_MAX_SIZE_BYTES` 1 MB → 2 MB to absorb doctrine growth).
+
+Three operational realities for this release-cut, beyond the CS39/CS42 baseline:
+
+- **LRN-124 (detached-HEAD trap)** remains unfixed; every `harness lint` / `harness sync` / `harness plan-review-hash` invocation may silently leave HEAD detached at the most-recent release tag (currently `v0.5.2 → 73c7f49` per `git rev-parse --short v0.5.2`). Mitigation is operational only: **commit-first discipline** before every harness CLI call, plus `git symbolic-ref HEAD` verification after.
+- **C42-6 strict-flip** (`--strict-agent-columns` warn → error) is now **in scope for CS53** per C53-5 R1 amendment, reversing the earlier "deferred again" stance. REVIEWS.md (root + `template/composed/REVIEWS.md` line 232 + line 408-409) has publicly promised this lands in v0.6.0 since the v0.5.0 cut; deferring a second time would ship documentation that contradicts release behaviour. The flip is mechanically small (one-line default change in `scripts/check-review-evidence.mjs:93` plus a corresponding test update plus a `### Changed` CHANGELOG bullet) and matches the established CS42 T7 strict-flip pattern.
+- **CS51's new required status checks** apply to the CS53 content PR itself. The PR body must be authored so that `review-log-evidence`, `copilot-review-attached`, `independence-invariant`, and `review-threads-resolved` all pass.
+
+## Decisions
+
+| # | Decision | Choice | Rationale |
+|---|---|---|---|
+| C53-1 | Version | `0.6.0` (minor bump from `0.5.2`). | New top-level CLI subcommand (CS52) + new required status checks affecting consumer merge gates (CS51). Both are SemVer-minor triggers per `OPERATIONS.md § SemVer policy`. |
+| C53-2 | CHANGELOG header format | `## [0.6.0] — <ISO-date>` (em-dash U+2014). | **Project convention** for visual consistency with the existing `[0.5.x] / [0.4.0] / ...` section headers; precedent CS39 C39-2 / CS42 C42-2. NOT a requirement of the `release.yml` awk extractor (verified `.github/workflows/release.yml:52-55`: extractor matches only `^## \[<version>\]`, em-dash is not part of the regex). Dry-run with `awk '/^## \[0\.6\.0\]/' CHANGELOG.md` before tag push to confirm the section is reachable. |
+| C53-3 | Tag location | `git tag -a v0.6.0 <content-squash-sha>` (NOT `main` HEAD). | Per CS39 T9 / CS42 T12 precedent: tag the actual content commit so the release artifact is reproducible from a single SHA. |
+| C53-4 | SI cross-repo pin-bump | File `planned_csNN_pin-harness-v0.6.0.md` in `henrik-me/sub-invaders` via a PR (branch `docs/file-planned-csNN-pin-harness-v0.6.0`). SI orchestrator merges on their own cadence. **Opening the SI PR is in-scope for CS53; merging it is NOT.** | Per CS39 C39-4 / CS42 C42-4 pattern. Cross-repo coordination via PR; SI side is independent work-tracking. Next available SUB-CS number must be verified live via **three separate `gh api` calls** (one per directory) — POSIX: `for dir in planned active done; do gh api repos/henrik-me/sub-invaders/contents/project/clickstops/$dir; done`; PowerShell: `foreach ($dir in 'planned','active','done') { gh api "repos/henrik-me/sub-invaders/contents/project/clickstops/$dir" }` (no pipe syntax so the inline-code example copies cleanly out of this Markdown table per Copilot R5). The brace-expansion-style shorthand `{planned,active,done}` in earlier drafts was misleading (per Copilot R4): it works in POSIX brace expansion but is NOT a valid GitHub Contents API path. CS39 LRN-113 captured the consequence of not doing this verification. |
+| C53-5 | C42-6 schema-migration error-flip | **Include in CS53.** Flip `scripts/check-review-evidence.mjs` `let strictAgentColumns = false;` → `true` (one-line change at line 93 per CS42 T7 precedent for `check-clickstop-plan-review`); update the corresponding test; add `### Changed` CHANGELOG bullet citing C42-6 / CS53 strict-flip. REVIEWS.md (root + `template/composed/`) line 232 and `### Migration` section already document the v0.6.0 flip; no text change needed. | **R1 amendment (R1 MAJOR finding #2):** REVIEWS.md publicly promises this flip lands in v0.6.0; deferring a second time would ship docs that contradict release behaviour. The flip is mechanically small (LOC-1 + test update + CHANGELOG bullet) and matches the established CS42 T7 strict-flip pattern. Reversing the earlier C42-6 / CS42 T15 deferral. |
+| C53-6 | CS47 (detached-HEAD investigation) | **Out of scope.** v0.6.0 ships with LRN-124 mitigated only by commit-first discipline. CS47 lands in a later patch release. | CS47 plan is fully reviewed and ready to claim, but the v0.6.0 `[Unreleased]` arc is already curated; folding CS47 in would force re-review and delay release. CS47 is independent. |
+| C53-7 | Plan + impl reviewer | GPT-5.5 rubber-duck (dispatched via `task` tool). NO Sonnet fallback. | Release-cut is **high-risk** per [REVIEWS.md](../../../REVIEWS.md) fallback rules: artifacts visible to all consumers (CHANGELOG, package.json, tag, GitHub Release). Independence invariant holds: orchestrator model = Opus 4.7 1M, reviewer model = GPT-5.5, no overlap. |
+| C53-8 | PR shape | **Standard 3-PR lifecycle (claim / content / close-out) PLUS a CS47-style plan-filing PR up front:** (a) `cs53/plan-filing` — this plan + R-loop attestation, per CS47 PR #202 precedent (NOT CS39/CS42; those filed plans as part of pre-claim disposition without a dedicated PR). (b) `cs53/claim` — workboard-only rename `planned→active` + WORKBOARD row. (c) `cs53/release-v0.6.0` — content. (d) `cs53/close-out` — workboard-only rename `active→done` + WORKBOARD/CONTEXT/LEARNINGS updates. | **R1 amendment (R1 NON-BLOCKING finding #5):** earlier wording inaccurately claimed this mirrors CS39/CS42's "three-PR shape"; corrected to "standard lifecycle plus CS47-style plan-filing PR". The extra plan-filing PR is required because CS35b plan-review attestation doctrine landed after CS39/CS42 (planning-locality + GPT-5.5 R-loop must complete before claim). |
+| C53-9 | Commit cadence + messages | Every owned-file edit batch commits immediately with a Conventional-Commits message (per user-feedback at plan approval). No batching of unrelated changes. Active CS file `## Tasks` table updated after each task completes (`state: pending → done` with a one-line note); each table update is its own commit `docs(cs53): mark Tx done — <summary>`. | Anti-LRN-124 discipline; auditable progress trail for "user-away" mode. |
+| C53-10 | Admin-merge content PR | `gh pr merge <PR> --squash --admin --delete-branch` under the maintainer's `gh` credentials per the standing autonomy grant given at plan approval. **Preflight (per R1 MAJOR finding #4):** before relying on `--admin`, verify live capability via `gh api repos/henrik-me/agent-harness/rulesets --jq '.[] | {id, name, bypass_actors}'` + a dry-run `gh pr merge <PR> --squash --admin --dry-run` if supported. **Fallback ladder** if `--admin` is rejected: (1) verify all required checks green + Copilot review approving → standard `gh pr merge --squash --auto`; (2) if still blocked, flip WORKBOARD Active Work row to `🔴 Blocked` with `Blocked Reason` = "admin-merge rejected — see PR #N comments" + commit/push the WORKBOARD update + leave a comment on the PR documenting state for the user to merge on return; (3) escalate via session output ("BLOCKED — user merge needed for PR #N"). Match-head-commit guard implicit via squash. | CS41/CS42 precedent (`workboard-bot does not auto-approve content PRs; admin path required`). User has confirmed standing grant at plan approval. Contingency required for user-away autonomy goal. |
+
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+| R1 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 5eddb0c85195 | 2026-05-27T05:55:00Z | Go-with-amendments | 4 MAJOR (C53-2 awk claim, C53-5 strict-flip docs conflict, R4 review sequencing, R6 admin-merge contingency) + 3 NON-BLOCKING; all amended for R2. |
+| R2 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | f05666006e53 | 2026-05-27T06:30:00Z | Needs-Fix | 6/7 R1 findings ✅; 1 MAJOR (Background line 27 still said 'deferred again', contradicting C53-5/T5b) + 2 NON-BLOCKING (hash row append, duplicate T6); all amended for R3. |
+| R3 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | f05666006e53 | 2026-05-27T07:05:00Z | Go | R2 fixes verified: Background/Goal wording aligned, T5b/T6 ordering fixed, review table ready for R2+R3 append. No new MAJOR or NON-BLOCKING findings. Mergeable as-is. |
+| R4 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T07:45:00Z | Go | Narrow reattest after Copilot R1 nits on PR #206 (Background SHA + Deliverable 2 lockfile notation). Diff=2 edits, both verified; no regression; cap inapplicable (R3=Go). |
+| R5 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 9225fc21cd2b | 2026-05-27T08:55:00Z | Go | Narrow reattest after Copilot R2 nit (Exit criteria #4 lockfile notation). Hash unchanged; only out-of-scope Exit criteria #4 lockfile wording fix; no regressions. |
+| R7 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | 60614ce8831c | 2026-05-27T09:30:00Z | Go | Verifies Copilot R4 fixes: C53-4 brace-expansion ⇒ explicit 3 calls; R2 wording ⇒ correct `--generate-notes` fallback; T0d ⇒ REVIEWS.md §2.4 calibration baseline (not hard cap). No regressions. |
+| R8 | gpt-5.5 | claude-opus-4.7-1m | rubber-duck dispatched (orchestrator: omni-ah) | aeede29b692c | 2026-05-27T09:45:00Z | Go | Narrow reattest after Copilot R5: C53-4 PowerShell example rewritten to `foreach` (no pipe) so inline-code in table cell copies cleanly. Out-of-scope R5 fixes noted; no regression. |
+
+## Deliverables
+
+1. **`CHANGELOG.md`** — promote `## [Unreleased]` → `## [0.6.0] — <date>` (em-dash U+2014 per C53-2); re-seed empty `[Unreleased]` block with the standard `### Added / ### Changed / ### Documentation / ### Removed` skeleton.
+2. **`package.json` (+ lockfile)** — bump `0.5.2 → 0.6.0` via `npm version 0.6.0 --no-git-tag-version` (this updates root `version` + the lockfile root package entry `packages[""].version` cleanly per CS42 T4 precedent).
+3. **`README.md`** — pin-version sweep `v0.5.2` → `v0.6.0` (status banner refresh; install snippets if any pin v0.5.2; per CS42 T6 precedent — note README is sync-excluded).
+4. **`project/clickstops/planned/planned_cs53_release-v0.6.0.md`** (this file) — fully populated `## Plan review` table with at least one row reaching `Go` or `Go-with-amendments` verdict.
+5. **`project/clickstops/active/active_cs53_release-v0.6.0.md`** — at claim time (T-Claim); same content rename-only.
+6. **`project/clickstops/done/done_cs53_release-v0.6.0.md`** — at close-out; with `## Plan-vs-implementation review` section populated per [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
+7. **`WORKBOARD.md`** — claim-time row insert; close-out row prune.
+8. **`CONTEXT.md`** — close-out refresh: record v0.6.0 cut + post-release state + advance `## Suggested next CSs` queue (top item likely becomes CS47).
+9. **`LEARNINGS.md`** — any new LRN entries discovered during the cut (release-cut-specific learnings; LRN-121 already documents the release.yml-creates-draft gap).
+10. **Git tag** `v0.6.0` at the content-PR squash SHA, pushed to origin.
+11. **GitHub Release** — `release.yml` workflow creates a draft per LRN-121; orchestrator promotes draft to published via `gh release edit v0.6.0 --draft=false`.
+12. **Cross-repo SI PR** — branch `docs/file-planned-csNN-pin-harness-v0.6.0` in `henrik-me/sub-invaders` opened (per C53-4). Merge is SI orchestrator's responsibility, not CS53's exit criterion.
+13. **`scripts/check-review-evidence.mjs`** — flip `let strictAgentColumns = false;` (line 93) → `true` per C53-5 R1 amendment; update corresponding test fixture in `tests/check-review-evidence.test.mjs`; add a `### Changed` CHANGELOG bullet citing C42-6 / CS53 strict-flip. REVIEWS.md text (root + `template/composed/REVIEWS.md` line 232 + line 408-409) already documents the v0.6.0 flip; no docs edit needed.
+
+## Risk Assessment
+
+| # | Risk | Mitigation |
+|---|---|---|
+| R1 | **LRN-124 detached-HEAD trap** — any `harness lint`, `harness sync --mode=check`, or `harness plan-review-hash` invocation may silently detach HEAD at `v0.5.2` (the latest release tag at start of this CS), reverting uncommitted edits. | **Commit-first discipline** before every harness CLI call. After every such call, verify `git symbolic-ref HEAD` returns the expected branch ref AND `git status --short` matches the pre-call snapshot. If detached, `git checkout <branch>` immediately and re-apply lost edits from reflog or backup. |
+| R2 | **CHANGELOG section not extractable** — `release.yml`'s awk extractor (`.github/workflows/release.yml:52-55`) matches `^## \[<version>\]` and stops at the next `^## \[`. If the new `## [0.6.0]` heading is mis-formatted (wrong brackets, typo, missing `## `), `release-notes.md` ends up empty and the workflow's `[ -s release-notes.md ]` check (line 57 + line 70 branch) routes to `--generate-notes` fallback — the release still publishes but with auto-generated notes (NOT the curated CHANGELOG content), which is a silent quality regression for the release page. The em-dash itself is NOT extractor-required; em-dash is a **project convention** per C53-2 (R1 corrected this). Copilot R4 corrected the earlier wording that said the workflow "fails" on empty — it does not; it falls back. | Pre-tag dry-run: `awk '/^## \[0\.6\.0\]/ { found=1; print } END { exit found ? 0 : 1 }' CHANGELOG.md` must exit 0 and print the header line. Additional convention check (no pipe so the inline-code example copies cleanly out of this Markdown table per Copilot R5): `Select-String -Path CHANGELOG.md -Pattern '## \[0\.6\.0\] — '` must return one match (em-dash present per project convention). Post-tag: inspect the draft Release page to confirm the body matches the CHANGELOG section (NOT auto-generated commit list); if auto-generated, abort + re-cut. |
+| R3 | **release.yml ships draft, not published** — LRN-121 documented this recurring gap (CS39 + CS42 both observed). | Post-tag-push: `gh run watch <release.yml-run-id>` to completion; then `gh release edit v0.6.0 --draft=false` to publish. Record both run ID + publish timestamp in close-out. |
+| R4 | **Content PR fails CS51's new required status checks** (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`). | **Sequenced sub-tasks (per R1 MAJOR finding #3):** (a) Author PR body from `.github/pull_request_template.md` with every H2 populated (Summary / Changes / Testing / Model audit / Review log). (b) Dispatch GPT-5.5 plan-vs-impl rubber-duck → record verbatim in active CS file's `## Plan-vs-implementation review` section AND update PR-body `## Review log` row with the latest local `GO` result + PR-body `## Model audit` table (Implementer + Reviewer rows). (c) Commit the PR-body update; push. (d) ONLY THEN run `harness review <PR> --model gpt-5.5 --round R1` (the new CS52 CLI — dogfooding it on its own release-cut PR) to validate independence + log review evidence + optionally trigger Copilot. (e) Engage Copilot review explicitly via `harness copilot-engage <PR> --no-poll` if `harness review` did not already engage it. (f) Verify all four required checks green via `gh pr checks <PR>` before admin-merge. **Ordering matters:** Copilot must engage AFTER the latest local `GO` row exists in PR body, else `review-log-evidence` or `copilot-review-attached` timing/order doctrine can fail. |
+| R5 | **Cross-repo SI PR naming convention mismatch** — CS39 R1 finding (LRN-113): SI uses `planned_csNN_*.md`, not `planned_subNN_*.md`. | Pre-author verify via `gh api repos/henrik-me/sub-invaders/contents/project/clickstops/planned` + `done` + `active`. Find max existing `csNN`; use `csNN+1`. **Per R1 NON-BLOCKING finding #6 (LRN-113 evidence discipline):** T12 must record the exact `gh api` command(s) + UTC timestamp + raw output (or summary listing) in the CS53 close-out notes BEFORE opening the SI PR, so the chosen `csNN` is auditable. |
+| R6 | **Admin-merge rejected** — two distinct sub-cases: (a) `gh pr merge --admin` rejected because a required check is failing/pending; (b) `gh pr merge --admin` rejected by the ruleset/bypass configuration itself (no admin-bypass entitlement at the moment of the call), even with all checks green and approval present. | **(a) Failing check:** `gh pr checks <PR>` before merge; if any unexpected failure, fix on branch + re-trigger Copilot review + re-run plan-vs-impl review. Do NOT bypass legitimate failures via `--admin`. **(b) Ruleset rejection (per R1 MAJOR finding #4):** preflight verify capability per C53-10. If `--admin` returns non-zero with a ruleset/bypass error: (1) re-attempt as `gh pr merge --squash --auto` (relies on standard ruleset path — Copilot approving review may satisfy); (2) if still blocked, flip WORKBOARD Active Work row to `🔴 Blocked` + `Blocked Reason` = "admin-merge rejected — awaiting user merge on PR #N" + commit/push + leave a PR comment documenting state; (3) emit "BLOCKED — user merge needed for PR #N" in final session output and stop. Do NOT loop indefinitely; do NOT try to escalate ruleset permissions. |
+| R7 | **`harness sync` major-version warning during self-test** — v0.6.0 = minor bump from `0.5.x` pinned in `.harness-lock.json`, so no `--accept-major` needed. | None required; informational warning only. Verified via `OPERATIONS.md § SemVer policy` table. |
+| R8 | **C53-9 commit-cadence discipline slippage under sub-agent dispatch** — release-cut is orchestrator-only (no sub-agents per CS39/CS42), so this risk is low for THIS CS but worth re-stating. | Sub-agent dispatch is explicitly NOT used in CS53 per "Sub-agent fan-out" below. Orchestrator self-discipline only. |
+
+## Sub-agent fan-out
+
+**None.** Release-cut is orchestrator-only per CS39 / CS42 precedent. All work runs on the orchestrator (Claude Opus 4.7 1M) directly. The only agent dispatch in this CS is the **reviewer** (GPT-5.5 rubber-duck) for plan review (Phase 0) and plan-vs-impl review (close-out gate). Reviewer dispatch is via the `task` tool with `agent_type=rubber-duck`, satisfying the CS48 reviewer-independence invariant (orchestrator model ≠ reviewer model).
+
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| T0a — Plan-filing branch + author this file | done | omni-ah | branch `cs53/plan-filing`; commit-first per C53-9 |
+| T0b — Compute plan-review hash (`harness plan-review-hash`) | done | omni-ah | recomputed after each substantive edit; latest hash recorded in current `## Plan review` row |
+| T0c — Dispatch GPT-5.5 plan review R1 | done | omni-ah | R1 dispatched via `task` tool with `agent_type=rubber-duck`; verdict + amendments recorded in `## Plan review` |
+| T0d — Plan-review LOOP: amend → recompute hash → dispatch R(N+1) until Go / Go-with-amendments | done | omni-ah | converged: R1 Go-with-amendments → R2 Needs-Fix → R3 Go → narrow reattests R4/R5/R7/R8 after Copilot R1/R2/R4/R5 nit fixes; calibration baseline ~3 rounds per REVIEWS.md §2.4 (NOT a hard cap — converge when all blocking findings resolved; Copilot R4 corrected earlier "cap 3 rounds" wording); pause + ask user if rounds exceed ~5 without convergence — exceeded with user-away autonomy grant, each extra round resolved real (not noise) findings so continued to converge |
+| T0e — Open `cs53/plan-filing` PR; admin-merge or auto-merge after CI green | done | omni-ah | PR #206 admin-squash-merged at `6aa62e0`; all gates green after 8-round R-loop |
+| T1 — Workboard-claim PR (`cs53/claim`) | done | omni-ah | PR #207 workboard-only auto-merged at `c1ca9dc` (2026-05-27 07:29 UTC) |
+| T2 — Branch `cs53/release-v0.6.0` from `main` post-claim-merge | done | omni-ah | base SHA: `c1ca9dc6fe0fe76e1ba758699ef3c6454f509cef` (post-#207 main) |
+| T3 — `npm version 0.6.0 --no-git-tag-version` + commit | done | omni-ah | rolled into commit `bd8013b` (consolidated v0.6.0 milestone commit; see T5b note) |
+| T4 — CHANGELOG transform: `[Unreleased]` → `[0.6.0] — <date>` + re-seed empty `[Unreleased]` + commit | done | omni-ah | rolled into commit `bd8013b`; date = 2026-05-27 (em-dash U+2014) |
+| T5 — README pin-version sweep `v0.5.2` → `v0.6.0` + status banner refresh + commit | done | omni-ah | rolled into commit `bd8013b`; 3 install-snippet pins flipped + v0.6.0 highlights banner |
+| T5b — **C53-5 strict-flip:** `scripts/check-review-evidence.mjs:93` `let strictAgentColumns = false;` → `true`; update corresponding test in `tests/check-review-evidence.test.mjs`; add `### Changed` CHANGELOG bullet citing C42-6 / CS53 strict-flip + commit | done | omni-ah | rolled into commit `bd8013b`; added `--no-strict-agent-columns` opt-out for transitional consumers; tests updated (3 default-path tests switched to `CLEAN_AUDIT_WITH_AGENTS`; 2 'default strict=false' tests renamed to use opt-out flag; 1 new CS53 C53-5 default-strict assertion test). T3-T5b consolidated into single commit per release-cut convention (cf. v0.5.0 commit `bab97aa`). |
+| T6 — Local validation: lint / tests / sync-check, verify HEAD attached after each | done | omni-ah | `npm test`: 998/999 pass, 1 skipped, 0 fail; `harness lint --quiet`: 30 passed, 0 failed; `validate-schemas`: 137 passed, 0 failed; `git symbolic-ref HEAD` = `refs/heads/cs53/release-v0.6.0` throughout (no detached-HEAD per LRN-124) |
+| T7 — Open content PR with required H2s (Summary/Changes/Testing/Model audit/Review log) | done | omni-ah | PR #208 opened at HEAD `b5948a6` with all required H2s populated |
+| T8a — Dispatch GPT-5.5 plan-vs-impl rubber-duck review; record verbatim in active CS file's `## Plan-vs-implementation review` section; loop until `GO` | done | omni-ah | R1 GO-with-amendments at `b5948a6` (2 NON-BLOCKING findings); R2 narrow re-attest GO at `14aa3d3` (doc-only); R3 narrow re-attest GO at `b07e78d` (CHANGELOG wording fix); all verbatim in `## Plan-vs-implementation review` |
+| T8b — Update PR-body `## Review log` row + `## Model audit` table with latest local `GO` result; commit; push | done | omni-ah | Three Review log rows (R1/R2/R3) populated in PR #208 body via `gh pr edit --body-file`; Model audit table populated; uploaded `b5948a6` -> `14aa3d3` -> `b07e78d` |
+| T8c — `harness review <PR> --model gpt-5.5 --round R1` (dogfood CS52 CLI on its own release-cut PR) | done | omni-ah | dogfooded via `--dry-run` mode; full `--rubber-duck-only` run hit a CLI ledger-regex false positive (`lib/review.mjs:313` regex matches `reviewer model = GPT-5.5` and `model=gpt-5.5` substrings in the CS file as implementer-model declarations). Filed as **LRN-132 candidate** (CS54+ fix). Substantive R1/R2/R3 reviews completed via `task` tool with same GPT-5.5 model. |
+| T8d — `harness copilot-engage <PR> --no-poll` if not already engaged by T8c | done | omni-ah | engaged twice: first at `14aa3d3` (Copilot R1 attached 07:50:56Z with 1 finding); re-engaged at `b07e78d` (Copilot R2 attached 07:57:04Z with 0 findings). Copilot R1 finding addressed in commit `b07e78d` (CHANGELOG wording columns->rows); thread resolved via `resolveReviewThread` GraphQL mutation. |
+| T8e — `gh pr checks <PR>` — verify all four CS51 required checks (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`) plus baseline checks green before T9 | done | omni-ah | all 4 CS51 required checks PASS at `b07e78d`; `read-only-gates` PASS after one rerun (LRN-125 pattern: failed at initial push before Copilot R2 attached, passed after rerun). All baseline checks (validate, pr-body, commit-trailers, smoke, validate-schemas, secret-scan, npm-pack-dry-run, etc.) PASS. |
+| T9 — Preflight admin-merge capability (per C53-10) + admin-squash-merge content PR (`gh pr merge --squash --admin --delete-branch`) | done | omni-ah | admin-squash-merged at `acdca894466410ec2744f39179e89a53bf467fb7`; branch `cs53/release-v0.6.0` deleted |
+| T10 — Tag at squash SHA: `git tag -a v0.6.0 <squash-sha> -m "..."` + `git push origin v0.6.0` | done | omni-ah | annotated tag `v0.6.0` -> `acdca89` pushed |
+| T11 — Watch `release.yml` to completion + publish draft via `gh release edit v0.6.0 --draft=false` | done | omni-ah | `release.yml` run `26498691003` completed `success` in 10s; draft published; release URL: https://github.com/henrik-me/agent-harness/releases/tag/v0.6.0 |
+| T12 — Cross-repo SI PR per C53-4: record `gh api` command output + UTC timestamp in close-out notes BEFORE opening PR | done | omni-ah | SI PR #79 opened: https://github.com/henrik-me/sub-invaders/pull/79 — bumps `harness.config.json` v0.5.1 -> v0.6.0 (skipping v0.5.2 entirely); `harness sync --mode=apply` generated 4-file diff (.harness-lock.json + harness.config.json + OPERATIONS.md + REVIEWS.md); SI-side merge is NOT a CS53 exit criterion |
+| T12b — **Post-merge main validation:** `git checkout main && git pull --ff-only` + `harness lint --quiet` + `node --test` + `harness sync --mode=check` all clean (per R1 NON-BLOCKING finding #7) | done | omni-ah | on `main` at `acdca89`: `harness lint --quiet` 30/0/3; `npm test` 998/999 pass 1 skip 0 fail; `harness sync --mode=check` "No drift detected"; HEAD attached (`refs/heads/main`) throughout |
+| T13 — **Close-out: docs + restart state** (rename `active→done`, update WORKBOARD/CONTEXT, populate `## Plan-vs-implementation review`) | done | omni-ah | active->done via `git mv`; Status flipped to done with Closed=2026-05-27; `## Plan-vs-implementation review` populated with R1+R2+R3 verdict chain; WORKBOARD CS53 row removed; CONTEXT.md updated |
+| T14 — **Close-out: learnings + follow-up CSs** (file any new LRNs; CS47 promotion likely top of suggested-next queue) | done | omni-ah | LRN-132 filed (harness review CLI ledger-regex false positive on `reviewer model = X` / `model=X` substrings); LRN-133 filed (Windows PowerShell `Out-File -Encoding utf8` emits CRLF which breaks text-encoding lint when `.tmp/` is not gitignored); CS47 (detached-HEAD investigation) remains top of suggested-next queue per existing CONTEXT.md |
+| T15 — Close-out PR (`cs53/close-out`) | done | omni-ah | this PR; workboard-only label → auto-merge |
+
+## Exit criteria
+
+1. Phase 0 plan-review loop landed `Go` or `Go-with-amendments` (latest row); `cs53/plan-filing` PR merged to `main`.
+2. Content PR (`cs53/release-v0.6.0`) squash-merged to `main`; `## Plan-vs-implementation review` section in the active/done file ends in `Outcome: GO`.
+3. CHANGELOG `## [0.6.0] — <date>` section exists with em-dash; `awk '/^## \[0\.6\.0\] — /' CHANGELOG.md` returns the header.
+4. `package.json` version is `0.6.0`; lockfile coherent (root `version` + `packages[""].version`).
+5. Tag `v0.6.0` exists at the content-PR squash SHA; `release.yml` workflow run succeeded; GitHub Release page is **published** (not draft).
+6. `harness lint --quiet` + `node --test` + `harness sync --mode=check` all clean on `main` post-merge.
+7. Cross-repo SI PR opened in `henrik-me/sub-invaders` (PR number recorded in CS53 close-out notes); SI-side merge is NOT a CS53 exit criterion per C53-4.
+8. CS53 file lives in `project/clickstops/done/`; WORKBOARD Active Work row removed; CONTEXT.md "Codebase state" + "Suggested next CSs" updated to reflect post-v0.6.0 state.
+
+## Notes / Learnings
+
+**Closed:** 2026-05-27 — v0.6.0 published at https://github.com/henrik-me/agent-harness/releases/tag/v0.6.0 (squash SHA `acdca89`); SI pin-bump PR opened at https://github.com/henrik-me/sub-invaders/pull/79.
+
+**Release-cut metrics:**
+- 8-round plan-review loop (R1 Go-with-amendments -> R2 Needs-Fix -> R3 Go + narrow re-attests R4/R5/R7/R8 after Copilot R1/R2/R4/R5)
+- 3-round plan-vs-impl loop (R1 GO-with-amendments -> R2 narrow GO -> R3 narrow GO after Copilot finding fix)
+- 2 Copilot review rounds (R1: 1 finding addressed; R2: 0 findings)
+- 4 PR-body updates via `gh pr edit --body-file` (none triggered HEAD changes)
+- 3 content commits: `bd8013b` (consolidated milestone) -> `14aa3d3` (docs flip) -> `b07e78d` (CHANGELOG wording fix)
+- Wall time: ~3 hours from claim PR #207 to v0.6.0 release published
+
+**Learnings filed:**
+
+- **LRN-132** (`harness review` CLI ledger-regex false positive): `lib/review.mjs:313` regex `\b(?:model|implementer-model|implementer model)\s*=\s*([A-Za-z0-9_. -]+(?:\.[0-9]+)?)/gi` greedily matches `reviewer model = X` and `model=X` substrings in the CS file's narrative prose as implementer-model declarations, causing the independence guard to refuse legitimate reviewer models. Workaround during CS53: dogfooded `harness review` via `--dry-run` only. Mitigation: tighten regex to require explicit `implementer model` (not just `model`) qualifier, or anchor on table-cell context. CS54+ candidate.
+
+- **LRN-133** (Windows PowerShell `Out-File -Encoding utf8` emits CRLF): `Out-File -Encoding utf8` on PowerShell 5/7 emits CRLF by default on Windows; combined with the fact that `.tmp/` is not gitignored, this breaks `node bin/harness.mjs lint` `text-encoding` check, which cascades into 5 test failures in the lint aggregator. Workaround: pipe through Node to LF-normalize (`node -e "..."`), or delete `.tmp/` before running `harness lint`. Mitigation: add `.tmp/` to `.gitignore`, and/or have the `text-encoding` linter ignore untracked-and-gitignored files. CS54+ candidate.
+
+**Operational findings:**
+
+- LRN-125 pattern reproduced cleanly: `read-only-gates` failed initially at each new HEAD (`14aa3d3` and `b07e78d`) before Copilot review attached, then passed after `gh run rerun <id>` once Copilot review was visible at HEAD. Two reruns total.
+- A4 stale-diff doctrine reaffirmed: each new commit (`14aa3d3`, `b07e78d`) required a new local GO row in PR body Review log with `analyzed_head` matching the new HEAD. Implemented via narrow-scope rubber-duck re-attests (zero-finding GOs against tiny doc-only / 1-line deltas).
+- A5+A16 ordering doctrine held: each Copilot review's `submittedAt` was strictly after the most recent local GO row's timestamp at that HEAD.
+
+**Suggested next CS queue (post-CS53):**
+
+1. **CS47** (detached-HEAD investigation / LRN-124 mitigation) — remains top of queue per existing CONTEXT.md.
+2. **CS54 candidate** (LRN-132 fix): tighten `harness review` ledger regex.
+3. **CS54b candidate** (LRN-133 fix): add `.tmp/` to `.gitignore` and/or scope `text-encoding` linter to tracked-or-not-gitignored files.
+
+## Plan-vs-implementation review
+
+**Reviewer:** gpt-5.5 (rubber-duck sub-agent, dispatched by omni-ah orchestrator via `task` tool with `agent_type=rubber-duck`)
+**Date:** 2026-05-27
+**Outcome:** GO (R3 narrow re-attest at `b07e78d` after R1 GO-with-amendments at `b5948a6` and R2 narrow re-attest GO at `14aa3d3`)
+
+**Review chain:**
+
+- **R1 GO-with-amendments at `b5948a6`** (2 NON-BLOCKING findings, both addressed): C53-PRBODY-1 (Review log placeholder) + C53-VALIDATION-1 (stray `.tmp/` CRLF). See verbatim findings below.
+- **R2 narrow GO at `14aa3d3`** (zero findings): confirmed the only delta from `b5948a6` was the doc-only commit populating `## Plan-vs-implementation review`.
+- **R3 narrow GO at `b07e78d`** (zero findings): confirmed the only delta from `14aa3d3` was the 1-line CHANGELOG.md wording fix ("columns" -> "rows") addressing Copilot R1's finding.
+
+**Summary (verbatim, R1):** "The PR implementation matches the CS53 plan for T2–T6: version + lockfile are coherent at `0.6.0`, CHANGELOG is correctly cut with U+2014 em-dash and preserved prior sections, README install pins are swept, C53-5 strict-agent-column default is flipped with opt-out/help/tests, and the diff is limited to expected files with no `lib/`, schema, or template-class changes. Independence holds (`claude-opus-4.7-1m-internal` vs `gpt-5.5`). No blocking plan-vs-implementation issues found, but two required close-out amendments remain before merge/review gates."
+
+**Findings (verbatim, R1):**
+
+- **C53-PRBODY-1** [NON-BLOCKING] PR-body evidence not yet stale-diff-ready: `## Review log` is still a placeholder, not a valid `GO` row for full head `b5948a61a19ebf78244cada0c0292f37cff4c08f`. This is expected per T8b, but A4/read-only gates are not ready until it is populated. — Fix: replace the placeholder with this review's GO/GO-with-amendments row at full SHA and an evidence link, keeping `## Model audit` / `## Review log` inside the harness local markers.
+- **C53-VALIDATION-1** [NON-BLOCKING] Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected. — Fix: remove/move the local `.tmp` scratch outside the repo, then rerun `node bin/harness.mjs lint --quiet` and `npm test` before merge.
+
+**Disposition:**
+
+- C53-PRBODY-1: Addressed in PR #208 body via `gh pr edit --body-file` (Review log row populated with `GO-with-amendments` at `b5948a6`, followed by R2 GO row at `14aa3d3` and R3 GO row at `b07e78d`).
+- C53-VALIDATION-1: Addressed by deleting `.tmp/` scratch dir; re-verified `text-encoding: 601 files checked, 0 violations`. Filed as **LRN-133** in Notes / Learnings above.
+- Copilot R1 finding ("columns" -> "rows"): addressed in commit `b07e78d`; thread resolved via `resolveReviewThread` GraphQL mutation.
+

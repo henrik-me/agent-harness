@@ -28,18 +28,28 @@ Enforced by `scripts/check-planning-locality.mjs` (in `harness lint`).
 Rationale: session storage is non-durable; any agent restart, model swap,
 or handoff must succeed from the repo alone.
 
-### Agent does not file issues (CS35 C35-13)
+### Agent does not file issues in the harness repo (CS35 C35-13)
 
-GitHub issues are an INBOUND channel — external contributors and the user
-open them; the agent READS them as input to file CSs. The agent NEVER opens
-issues, even for follow-ups. If a follow-up is needed, file a planned CS
-under `project/clickstops/planned/`. Stand-alone issues from the agent
-fragment the canonical arc and create coordination drift.
+GitHub issues in `henrik-me/agent-harness` are an INBOUND channel — external
+contributors and the user open them; the agent READS them as input to file
+CSs. The agent NEVER opens issues in the harness repo itself, even for
+follow-ups. If a follow-up is needed, file a planned CS under
+`project/clickstops/planned/`. Stand-alone issues from the agent fragment
+the canonical arc and create coordination drift.
 
 This rule is doctrine — not mechanically enforceable because the agent runs
 under the maintainer's `gh` credentials and is indistinguishable from the
 user at the GitHub-API level. Orchestrator self-check + visible code review
 is the only feasible enforcement.
+
+**Scope clarification (CS55 / LRN-137):** C35-13 applies to the harness repo
+only. Cross-repo handoff issues filed into OTHER repositories (e.g.
+`henrik-me/sub-invaders`) are governed by Hard Rule § 6 in
+`.github/copilot-instructions.md` and the `## Cross-repo procedures`
+section in `OPERATIONS.md`. In those repos, the orchestrator MUST file an
+issue (rather than commit/push/PR directly) and is expected to create
+exactly one tracking issue labeled `harness-orchestrator` per cross-repo
+workstream.
 
 ---
 
@@ -172,6 +182,27 @@ record.
   template change. Use GPT-5.5 rubber-duck. Record the model used and timestamp in
   the PR body. Fallback rules and independence invariant are in
   [REVIEWS.md](REVIEWS.md).
+  - **Rubber-duck scope — fact-claim verification (REVIEWS.md § 2.6a).** A "Go"
+    verdict is only valid when the reviewer has verified that every factual
+    claim in the diff matches the cited shipped surface. For docs and prose
+    PRs this is the dominant failure mode: a reviewer who only reads the diff
+    will miss CLI flags that don't exist, file paths that don't exist, doctrine
+    that's been paraphrased into a different requirement-level, and LRN/CS
+    references whose summarised scope overstates the source. Reviewer prompts
+    MUST explicitly require: (a) every `--flag` mentioned exists in
+    `bin/harness.mjs` help text, library code, or pass-through
+    `scripts/*.mjs` (e.g. `harness review-output` forwards to
+    `scripts/check-review-output.mjs`); (b) every file path
+    mentioned exists in the tree; (c) every doctrine claim (`required`,
+    `enforces`, `mandatory`, `recommended`, `optional`) matches the cited
+    source's wording verbatim or via a documented synonym; (d) every LRN/CS scope
+    summary respects the source entry's Problem/Finding scope (no
+    generalisation beyond what the source asserts); (e) cross-doc claims
+    (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
+    Pattern verified on PR #218: 3 substantive Copilot rounds caught 7
+    fact-claim issues (R4 returned 0 findings) that the rubber-duck
+    pre-review missed because the review prompt did not require
+    cross-surface verification.
 - **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim`,
   `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs.
 - **Commit trailers:** every commit must include

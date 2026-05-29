@@ -1,10 +1,10 @@
 # CS50 — Workboard-only PR admin-bypass fallback via WORKBOARD_MERGE_TOKEN
 
-**Status:** planned
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** `cs50/workboard-admin-bypass`
 **Started:** 2026-05-14
-**Closed:** N/A
+**Closed:** 2026-05-14
 **Filed by:** Issue [#138](https://github.com/henrik-me/agent-harness/issues/138), fix (a) workflow-side admin merge via per-repo PAT.
 **Depends on:** None.
 
@@ -69,3 +69,15 @@ The existing workflow in this repo lives at `.github/workflows/workboard-auto-ap
 | Add changelog entry | done | yoga-ah | `[Unreleased] / Added` |
 | Self-checks: YAML parse, targeted test, lint, sync-check, PR-body lint | pending | yoga-ah | run after sync |
 | Open PR and engage Copilot | pending | yoga-ah | title closes #138 |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS50 lifecycle compressed (no `active/` rename). |
+| Close-out: file learnings/follow-up planned CS | done | yoga-ah | LRN for close-out compression filed in PR #204 |
+
+## Plan-vs-implementation review
+
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS50 was implemented and merged via [PR #197](https://github.com/henrik-me/agent-harness/pull/197) (squash `3726e75`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (opened 2026-05-15 to close out the implementer work merged 2026-05-14). The `## Tasks` table above is the at-merge snapshot — only the explicit `Close-out: …` rows added in PR #204 reflect post-merge state.

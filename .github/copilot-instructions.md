@@ -62,6 +62,24 @@ paste is the discipline that prevents process steps from being forgotten
 (LRN-068). Sub-agents should reject (or surface as a learning candidate) any
 dispatch whose prompt does NOT include the canonical preamble.
 
+### 6 — Cross-repo handoff: file issues, never commit
+
+The harness orchestrator operates directly **only in `henrik-me/agent-harness`**.
+For **any other repository** (including consumer repos such as
+`henrik-me/sub-invaders`), the orchestrator MUST NOT commit, push, open
+branches, or create pull requests — even via delegated harness-side
+sub-agents, helper scripts, or background tasks (no proxy bypass). The
+consumer-repo agent owns the PR, validation, and merge path.
+
+**Check-only mode for status questions** (e.g. "is SI updated to v0.6.0?"):
+use read-only `gh pr list`, `gh issue list`, or `gh api` to inspect state.
+If no tracking issue exists for the work in question, idempotently create
+exactly one issue labeled `harness-orchestrator` and report its URL.
+
+**No escape hatch.** Even urgent cross-repo work routes through an issue
+(see `OPERATIONS.md § Cross-repo procedures`). This is an orchestrator
+constraint; the human user can always act directly outside the orchestrator.
+
 ---
 
 ## Per-CS loop (summary)

@@ -1,10 +1,10 @@
 # CS51 — Enforce REVIEWS.md as required status checks
 
-**Status:** planned
-**Owner:** copilot
+**Status:** done
+**Owner:** yoga-ah
 **Branch:** `cs51/review-gates`
 **Started:** 2026-05-14
-**Closed:** —
+**Closed:** 2026-05-14
 **Depends on:** Issue [#140](https://github.com/henrik-me/agent-harness/issues/140); no in-repo CS dependency.
 
 ## Goal
@@ -62,10 +62,20 @@ Issue #140 records a discipline-only failure mode observed downstream: content P
 | Add reviews config/schema defaults and ruleset injection in init/sync | done | copilot | Existing `review_gates` retained. |
 | Update OPERATIONS/REVIEWS docs and regenerate root composed files | done | copilot | `harness sync --mode=apply` ran after template edits. |
 | Add CS51 tests for logic, workflow, and sync/init behavior | done | copilot | Targeted test suite passes locally. |
-| Close-out: docs + restart state | pending | copilot | Update WORKBOARD/CONTEXT if this CS is closed by an orchestrator. |
-| Close-out: learnings + follow-ups | pending | copilot | File learnings/follow-up CSs if review or CI surfaces residual gaps. |
+| Close-out: docs + restart state | done | yoga-ah | Retroactive 2026-05-14 via PR #204; CS51 lifecycle compressed (no `active/` rename). Rows present from implementer PR #199; status flipped to `done` + Owner re-assigned in PR #204. |
+| Close-out: learnings + follow-ups | done | yoga-ah | LRN-131 filed in PR #204 codifying lifecycle-compression doctrine. Rows present from implementer PR #199; status flipped to `done` + Owner re-assigned in PR #204. |
 
 ## Notes
 
 - Scope was implemented in an isolated sibling worktree (`C:\src\agent-harness-cs51`) because another parallel CS had the primary worktree checked out on `cs49/operations-doctrine`.
 - The workflow clones the harness CLI into `.harness-ci/agent-harness` rather than assuming consumer repos contain `scripts/checks/`.
+
+## Plan-vs-implementation review
+
+**Reviewer:** none (deferred — close-out compressed during SI-feedback velocity batch)
+**Date:** 2026-05-14
+**Outcome:** Deferred — see "## Close-out compression note" below.
+
+## Close-out compression note
+
+CS51 was implemented and merged via [PR #199](https://github.com/henrik-me/agent-harness/pull/199) (squash `86e4ab7`) on 2026-05-14 as part of the SI-feedback velocity batch. Same lifecycle compression as CS48 (see `done_cs48_*.md` § Close-out compression note for the full rationale, including the Tasks-table-stale convention). Retroactively renamed `planned/ → done/` in PR #204 (opened 2026-05-15 to close out the implementer work merged 2026-05-14). The `## Tasks` table above is the at-merge snapshot; the explicit `Close-out: …` rows were originally added in the implementer PR #199 and were updated in PR #204 (status `pending` → `done`, Owner `copilot` → `yoga-ah`) to reflect post-merge close-out state.

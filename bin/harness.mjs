@@ -19,7 +19,7 @@
  */
 
 import { parseArgs } from 'node:util';
-import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +29,7 @@ import { spawnSync } from 'node:child_process';
 import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
 import { runReview, ReviewError } from '../lib/review.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
+import { openIssue as crossRepoOpenIssue, CrossRepoError } from '../lib/cross-repo.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +117,8 @@ Subcommands:
                     R1/Rn enumeration vs git diff, finding-row schema, verdict
   plan-review-hash  Print the 12-char SHA-256 prefix of a clickstop plan's
                     Decisions+Deliverables (used to fill plan review rows)
+  cross-repo        Issue-only handoff helpers for non-harness repos
+                    (CS56 — supports only 'open-issue'; no 'open-pr' action)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -511,6 +514,55 @@ Options:
   --cwd <path>    Consumer repo path (default: cwd)
   --config <path> Path to harness.config.json
   --help          Print this help
+`.trimStart(),
+
+  'cross-repo': `
+Usage: harness cross-repo <action> [options]
+
+Issue-only handoff helpers for non-harness repositories (CS56).
+
+The harness orchestrator never opens PRs in repos other than
+henrik-me/agent-harness (Hard Rule § 6); cross-repo work routes through
+GitHub issues. This subcommand is the supported CLI for that handoff.
+
+Actions:
+  open-issue    File a tracking issue in a non-harness repo (idempotent)
+
+No 'open-pr' (or other non-issue write) action exists by design.
+
+Usage (open-issue):
+  harness cross-repo open-issue --repo OWNER/NAME --title STRING \\
+      --body-file PATH [--label LABEL ...]
+
+Behavior:
+  - Refuses --repo henrik-me/agent-harness (case-insensitive). Use plain
+    'gh issue create' for harness-internal issues.
+  - Always applies the 'harness-orchestrator' label as the routing default;
+    additional --label flags append (cannot remove the default).
+  - Before 'gh issue create', preflights each label via 'gh label create'
+    WITHOUT --force; "already exists" is treated as success so the consumer's
+    label color/description is preserved (non-mutating per D56-3 R9).
+  - Idempotent: 'gh issue list' for an exact-title open issue first. If found,
+    prints the existing URL to stdout and 'existing open issue matched;
+    no new issue created' to stderr; does not create a new issue. Closed
+    issues never short-circuit (always creates new).
+  - Recommended title prefix: '[harness:cs<NN>] <subject>' so two different
+    CSes cannot collide on the same handoff issue (doctrine; not enforced
+    by this CLI). See OPERATIONS.md § Cross-repo procedures.
+
+Options:
+  --repo OWNER/NAME     Target repo (required; must NOT be the harness repo)
+  --title STRING        Issue title (required; non-empty after trim)
+  --body-file PATH      Path to a regular file containing the issue body (required)
+  --label LABEL         Extra label; repeatable. (Default 'harness-orchestrator'
+                        is always applied first; --label appends.)
+  --help                Print this help
+
+Exit codes:
+  0  success (new issue created OR existing-match short-circuit)
+  1  operation failure (gh missing, gh failed, parse failure, body-file missing,
+     label preflight could not provision a label)
+  2  usage error (bad/missing flags, unknown action, self-loop repo)
 `.trimStart(),
 };
 
@@ -3197,6 +3249,160 @@ async function cmdPrEvidence(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: cross-repo (CS56)
+// ---------------------------------------------------------------------------
+
+async function cmdCrossRepo(args, global) {
+  const { cwd } = global;
+
+  // Help can appear anywhere; intercept early.
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(SUBCOMMAND_HELP['cross-repo']);
+    process.exit(0);
+  }
+
+  const action = args[0];
+  if (!action || action.startsWith('-')) {
+    process.stderr.write(`cross-repo: action is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (action !== 'open-issue') {
+    process.stderr.write(`cross-repo: unknown action '${action}' (only 'open-issue' is supported)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+
+  const actionArgs = args.slice(1);
+
+  let repo = null;
+  let title = null;
+  let bodyFile = null;
+  const labels = [];
+
+  // Shared extractor honors D56-6 for BOTH `--flag value` and `--flag=value`:
+  // the value must exist, must not be empty, and must not start with '-'
+  // (which would indicate the next flag was consumed as a value).
+  function extractValue(flag, eqValue, i) {
+    let value;
+    if (eqValue !== null) {
+      value = eqValue;
+    } else if (i + 1 >= actionArgs.length) {
+      process.stderr.write(`cross-repo open-issue: missing value for ${flag}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    } else {
+      value = actionArgs[i + 1];
+    }
+    if (value === '' || value.startsWith('-')) {
+      process.stderr.write(`cross-repo open-issue: invalid value for ${flag}: ${JSON.stringify(value)}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+    return value;
+  }
+
+  for (let i = 0; i < actionArgs.length; i++) {
+    const a = actionArgs[i];
+    let flag = null;
+    let eqValue = null;
+    if (a === '--repo' || a === '--title' || a === '--body-file' || a === '--label') {
+      flag = a;
+    } else if (a.startsWith('--repo=')) {
+      flag = '--repo'; eqValue = a.slice('--repo='.length);
+    } else if (a.startsWith('--title=')) {
+      flag = '--title'; eqValue = a.slice('--title='.length);
+    } else if (a.startsWith('--body-file=')) {
+      flag = '--body-file'; eqValue = a.slice('--body-file='.length);
+    } else if (a.startsWith('--label=')) {
+      flag = '--label'; eqValue = a.slice('--label='.length);
+    } else {
+      process.stderr.write(`cross-repo open-issue: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+    const value = extractValue(flag, eqValue, i);
+    if (flag === '--repo') repo = value;
+    else if (flag === '--title') title = value;
+    else if (flag === '--body-file') bodyFile = value;
+    else if (flag === '--label') labels.push(value);
+    if (eqValue === null) i++;
+  }
+
+  if (repo === null) {
+    process.stderr.write(`cross-repo open-issue: --repo is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (title === null) {
+    process.stderr.write(`cross-repo open-issue: --title is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  if (bodyFile === null) {
+    process.stderr.write(`cross-repo open-issue: --body-file is required\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+
+  // Validate title/labels here (in addition to lib-side) so blank/whitespace
+  // values get a usage error (exit 2) instead of an operation error (exit 1).
+  if (title.trim() === '') {
+    process.stderr.write(`cross-repo open-issue: --title must be non-empty (after trimming)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+    process.exit(2);
+  }
+  for (const label of labels) {
+    if (label.trim() === '') {
+      process.stderr.write(`cross-repo open-issue: --label values must be non-empty (after trimming)\n\n${SUBCOMMAND_HELP['cross-repo']}`);
+      process.exit(2);
+    }
+  }
+
+  // Resolve --body-file relative to the consumer cwd.
+  const resolvedBodyFile = path.isAbsolute(bodyFile) ? bodyFile : path.resolve(cwd, bodyFile);
+
+  // SECURITY: Constrain --body-file to the working tree to prevent the agent
+  // from exfiltrating arbitrary local files (e.g. ~/.ssh/id_rsa, /etc/passwd)
+  // via a relative `../../secret` path or a symlink that escapes cwd. Both
+  // sides resolved through realpath so symlink-based escapes are also rejected.
+  // Files that do not yet exist fail the realpath check; they will subsequently
+  // fail validateBodyFile() in the library with a clearer body-file-missing
+  // message, which is fine — both outcomes refuse the operation.
+  try {
+    const realCwd = realpathSync(cwd);
+    const realBody = realpathSync(resolvedBodyFile);
+    const rel = path.relative(realCwd, realBody);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      process.stderr.write(
+        `cross-repo open-issue: --body-file must live inside the working tree (cwd=${realCwd}); refused: ${resolvedBodyFile}\n`
+      );
+      process.exit(2);
+    }
+  } catch (err) {
+    // If realpath fails because the body file doesn't exist, fall through
+    // to validateBodyFile() in the library, which raises body-file-missing.
+    if (err.code !== 'ENOENT') {
+      process.stderr.write(`cross-repo open-issue: failed to resolve --body-file path: ${err.message}\n`);
+      process.exit(1);
+    }
+  }
+
+  let result;
+  try {
+    result = crossRepoOpenIssue({ repo, title, bodyFile: resolvedBodyFile, labels });
+  } catch (err) {
+    if (err instanceof CrossRepoError) {
+      // bad-input is a usage error (exit 2); everything else is operation failure (exit 1).
+      if (err.kind === 'bad-input') {
+        process.stderr.write(`cross-repo open-issue: ${err.message}\n`);
+        process.exit(2);
+      }
+      process.stderr.write(`cross-repo open-issue: ${err.message}\n`);
+      process.exit(1);
+    }
+    throw err;
+  }
+
+  process.stdout.write(`${result.url}\n`);
+  if (!result.created) {
+    process.stderr.write('existing open issue matched; no new issue created\n');
+  }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: whoami
 // ---------------------------------------------------------------------------
 
@@ -3304,6 +3510,7 @@ async function main() {
     harvest: cmdHarvest,
     'check-migration': cmdCheckMigration,
     'composed-audit': cmdComposedAudit,
+    'cross-repo': cmdCrossRepo,
     pack: cmdPack,
     'pr-evidence': cmdPrEvidence,
     'review-output': cmdReviewOutput,

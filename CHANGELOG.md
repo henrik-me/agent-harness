@@ -11,14 +11,39 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS56 / [PR #216](https://github.com/henrik-me/agent-harness/pull/216):** Add `harness cross-repo open-issue` CLI subcommand — the canonical, supported way for the harness orchestrator to file a tracking issue in a non-harness repo per Hard Rule § 6. Surface: `--repo OWNER/NAME --title T --body-file PATH [--label L ...]`. Always prepends the `harness-orchestrator` label as routing default; additional `--label` flags append. Unconditionally idempotent **over open issues** — performs an exact-title open-issue search and short-circuits to the existing URL if found (no `--idempotent` flag; the behavior is the contract). Closed issues are NOT consulted; the OPERATIONS.md "all-state pre-create check" remains an operator responsibility. Refuses `--repo henrik-me/agent-harness` (self-loop). CLI-layer realpath-based cwd-containment on `--body-file` blocks path-traversal (e.g. `../../secret`, out-of-tree symlinks) — see LRN-138. The `[harness:csNN]` title prefix is **required by doctrine** (OPERATIONS.md § Cross-repo procedures + README) but **not enforced by the CLI** on `--title`. There is intentionally NO `cross-repo open-pr` action; the absence is the guardrail. 22 regression tests in `tests/cross-repo.test.mjs`; README quick reference added.
+
+### Changed
+
+- _(none yet)_
+
+### Documentation
+
+- **CS55 / [PR #213](https://github.com/henrik-me/agent-harness/pull/213):** Adopt v0.6.x cross-repo handoff doctrine. Add Hard Rule § 6 ("Cross-repo handoff: file issues, never commit") to `template/managed/.github/copilot-instructions.md` (mirrored in root `.github/copilot-instructions.md`). Add `## Cross-repo procedures` section to `template/composed/OPERATIONS.md` (mirrored in root `OPERATIONS.md`) covering the issue-only handoff pattern, idempotent pre-create existence check, `harness-orchestrator` label preflight (D55-3), `[harness:csNN]` title prefix convention, required body fields, and exit criteria. Add a C35-13 scope-clarification cross-reference to `template/managed/INSTRUCTIONS.md` (and root mirror `INSTRUCTIONS.md`) pointing readers at the Hard Rule and the cross-repo procedures section. File **LRN-137** (cross-repo handoff doctrine — the harness orchestrator never commits/pushes/PRs in non-harness repos; no escape hatch). SI tracking issue: [henrik-me/sub-invaders#80](https://github.com/henrik-me/sub-invaders/issues/80).
+- **CS56 / [PR #217](https://github.com/henrik-me/agent-harness/pull/217):** File **LRN-138** (cwd-containment is mandatory for agent CLI flags that accept file paths whose **contents are forwarded to a third party** — i.e. the exfiltration surface, e.g. `--body-file` piped into `gh issue create`; not every filesystem-path flag). Documents the realpath + `path.relative` containment approach (CS56 is the canonical reference for the pattern) and recommends the segment-safe predicate `rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)` as the preferred form for new code. Migrating CS56's shipped (simpler, equally secure, mildly over-restrictive) form is a low-priority follow-on.
+
+### Removed
+
+- _(none yet)_
+
+## [0.6.0] — 2026-05-27
+
+### Added
+
 - **CS51 / [#140](https://github.com/henrik-me/agent-harness/issues/140):** Add REVIEWS.md PR-side enforcement gates (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`), workflow template, config/ruleset sync hooks, and regression tests.
 - **CS52 / [#141](https://github.com/henrik-me/agent-harness/issues/141):** Add `harness review <pr>` as the canonical content-PR review orchestrator. The new CLI validates content PRs, enforces reviewer independence, composes the manual rubber-duck prompt, can trigger/poll Copilot review, and updates PR-body `## Review log` / `## Model audit` evidence; schema, docs, and regression tests cover the new `reviews` config block and exit-code contract.
 - **CS50 / [#138](https://github.com/henrik-me/agent-harness/issues/138):** Add an optional `WORKBOARD_MERGE_TOKEN` PAT admin-bypass fallback for validated workboard-only PRs so consumer repos without the G3 App can claim/close out without human admin merges.
 
 ### Changed
 
+- **CS53 / C53-5 (C42-6 promise fulfilled):** `scripts/check-review-evidence.mjs` `--strict-agent-columns` is now the **default** behavior; missing `Implementer agent` / `Reviewer agent` rows in the `## Model audit` table (which is a key-value `| Field | Value |` table per REVIEWS.md §2.8) are errors rather than warnings. Pass `--no-strict-agent-columns` (new flag) to opt out for transitional consumers. Closes the v0.5.0-era CS42 C42-6 commitment recorded in REVIEWS.md. (Flag name retains `-columns` for backwards compatibility with the CS41 flag introduced in v0.5.0; CS41 entry below preserves the original "columns" wording as historical record.)
 - **CS48 / [#142](https://github.com/henrik-me/agent-harness/issues/142):** Dispatch reporting now states that implementer self-review carries zero review weight, replaces implementer review evidence with `Implementer model used` provenance, extends the clickstop implementer-not-reviewer lint rule to model overlap, and adds LRN-127 + regression coverage anchored to the Sub Invaders PR #28 review-evidence incident.
 - **CS49 / [#139](https://github.com/henrik-me/agent-harness/issues/139):** Codify orchestrator availability, 15 wall-minute sub-agent progress/stall reporting, and Workboard-first status for out-of-CS work in OPERATIONS.md; add regression coverage and LRN-126.
+- **chore ([PR #200](https://github.com/henrik-me/agent-harness/pull/200)):** `scripts/check-pack.mjs` `DEFAULT_MAX_SIZE_BYTES` raised from 1MB (1048576) to 2MB (2097152). The accumulated CS49 + CS50 + CS51 + CS52 doctrine additions to OPERATIONS.md pushed the published `npm pack` size past the 1MB ceiling; bumping the default avoids gating release on doctrine growth. Tests still pin the violation path because they pass `--max-size-bytes 1` explicitly. Filed as LRN-128.
+
+### Documentation
+
+- **CS47 plan-filing ([PR #202](https://github.com/henrik-me/agent-harness/pull/202)):** File `project/clickstops/planned/planned_cs47_detached-head-investigation.md` per pre-claim disposition of LRN-124 (working-tree-loss doctrine). The plan investigates which `harness` CLI subcommand silently leaves HEAD detached at the most-recent release tag (5 confirmed live reproductions across CS46 + this PR; deterministic detach target = `v0.5.1` = `fe2c0b9`; offender is a SHARED helper called from at least `harness lint`, `harness plan-review-hash`, and `harness sync --mode=check`). Plan review: R1 Needs-Fix → R2 Go-with-amendments + R3 (Copilot R1 PRR-1..5 absorbed). No code changes; CS47 itself is the follow-up implementation work.
 
 ### Removed
 

@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-14 (CS49: LRN-126 added in `Applied` — downstream `sub-invaders` CS02 hotfix episode exposed the missing orchestrator-availability, progress-cadence, and workboard-first doctrine; CS48: LRN-127 added — implementer self-review is not rubber-duck review evidence)
+> **Last updated:** 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -2189,6 +2189,222 @@ claim_area: copilot-engagement
 
 **Disposition:** Applied. Discipline becomes part of OPERATIONS.md § "Copilot engagement procedure" — recommended insert: a single bullet under "When Copilot's R2+ review comment references lock provenance" linking to this LRN. Until OPERATIONS.md absorbs the doctrine, the rule above ("refresh lock + append review-log row + push together; use `git rev-parse HEAD` for full SHA") is the sufficient operational statement. Cross-reference: this LRN combines with LRN-124 (working-tree-loss doctrine) — both are CS46 close-out artifacts capturing iteration-discipline gotchas that surface only in self-host Copilot review chases.
 
+### LRN-131
+
+```yaml
+id: LRN-131
+date: 2026-05-14
+category: process
+source_cs: CS49
+status: applied
+tags: [cs-lifecycle, close-out-gate, plan-vs-impl-review, velocity-batch, procedural-debt, retroactive-cleanup]
+claim_area: orchestrator-loop
+```
+
+**Problem:** During the post-v0.5.2 SI-feedback velocity batch (5 parallel CSs: CS48 #198, CS49 #195, CS50 #197, CS51 #199, CS52 #196 — all merged 2026-05-14 over a few hours), the canonical CS lifecycle (`planned/ → active/ → done/` rename + GPT-5.5 plan-vs-implementation review at close-out + WORKBOARD/CONTEXT update + LRN harvest) was **compressed to "modify-planned-file-in-place + merge content PR + skip everything else"**. The 5 implementations shipped correctly and the Copilot reviewer attached on each content PR, but five `planned_csNN_*.md` files remained in `project/clickstops/planned/` with `**Status:** planned` and `**Closed:** —` fields after their implementations had merged. Discovered when the next orchestrator session was prompted to identify "what should the next session work on" — the 5 stale planned files in the directory looked unclaimed and would have caused a fresh orchestrator to attempt to re-claim already-shipped work.
+
+**Finding:** **The CS lifecycle is the single source of truth for "what's done" — when velocity pressure tempts an orchestrator to skip the `planned/ → active/ → done/` rename, the file system silently lies about repo state until the next orchestrator gets confused.** Two structural rules:
+- **Hygiene minimum:** even when skipping plan-vs-impl review (a defensible velocity tradeoff), the rename + Status/Closed/Owner field updates are NEVER skippable. They are the cheap part of the lifecycle and the part that determines whether the next orchestrator can read the directory listing accurately.
+- **Compressed close-out is a documentable choice, not a failure:** if velocity pressure justifies skipping the GPT-5.5 plan-vs-impl review (e.g., for an SI-feedback batch where Copilot review on the content PR is the sole independent-review evidence), record that explicitly via a `## Close-out compression note` section in the `done_csNN_*.md` file naming the merged PR, the squash SHA, and the rationale. Future retroactive review (if needed) then has an entry point.
+
+Concrete operational rule for any future velocity batch:
+1. After each content PR merges, IMMEDIATELY run `git mv project/clickstops/planned/planned_csNN_*.md project/clickstops/done/done_csNN_*.md`.
+2. In the same micro-PR (or chained into the next workboard PR), normalize Status / Closed / Owner / Plan-vs-impl-review fields. Acceptable minimum: `**Reviewer:** none (deferred — close-out compressed during <reason>)`, `**Date:** YYYY-MM-DD`, `**Outcome:** Deferred — see "## Close-out compression note" below`.
+3. If plan-vs-impl review is genuinely deferred (not just delayed), file a follow-up planned CS for "retroactive plan-vs-impl review sweep on CS<NN>-<MM>" so the procedural debt is tracked.
+4. NEVER let `planned_csNN_*.md` for merged work sit overnight — the directory IS the source of truth for "what's available to claim".
+
+**Evidence:** PR #204 (`chore/cs48-52-retroactive-closeout`, opened 2026-05-15 to close out work merged 2026-05-14): 5 `planned_csNN_*.md` files renamed to `done_csNN_*.md` retroactively, ~16 hours after their implementations merged. All 5 needed Status normalization (4 said "planned", 1 said "Closed: N/A"); 3 needed `## Plan-vs-implementation review` H2 added; 2 needed close-out tasks added to `## Tasks` table. None had a `## Close-out compression note` until this PR added the canonical text. Lint passed `30/0/3` after fixes (was failing `28/2/3` for the 5 close-out shape errors discovered by `check-clickstop.mjs`). The retroactive close-out PR itself is the artifact this LRN points future orchestrators at as the canonical "minimum-compliance close-out" template.
+
+**Disposition:** Applied. Doctrine candidate for `OPERATIONS.md` § Velocity-batch close-out compression: add a subsection enumerating the hygiene minimum (rename + Status/Closed/Owner) vs. the deferrable parts (plan-vs-impl review + LRN harvest), pointing at this LRN and at `done_cs48_*.md § Close-out compression note` as the canonical example. Cross-reference: LRN-126 (orchestrator-availability discipline) — the velocity pressure that creates this debt is itself a sub-agent-dispatch failure mode the orchestrator should mitigate by delegating close-out hygiene to a sub-agent rather than skipping it.
+
+### LRN-132
+
+```yaml
+id: LRN-132
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [harness-cli, review-gates, regex, independence-invariant, false-positive]
+claim_area: review-gates
+```
+
+**Problem:** `harness review <pr>` refuses to run on PRs whose CS file or PR body contains the narrative phrase `reviewer model = <id>` or the substring `model = <id>` outside the canonical `## Model audit` table. The CLI's `parseImplementerModels` helper at `lib/review.mjs:313` uses a context-blind regex `\b(?:model|implementer-model|implementer model)\s*=\s*([A-Za-z0-9_. -]+(?:\.[0-9]+)?)/gi` that matches any `model=X` substring and treats every match as an implementer-model declaration. The CS file's `## Plan-vs-implementation review` section legitimately mentions the reviewer model in prose, which the regex misclassifies as a co-implementer, falsely triggering the independence-invariant guard. Result: legitimate reviewer models are flagged as "implementer == reviewer" and `harness review` refuses to dispatch, even when the actual model audit shows clean independence.
+
+**Finding:** **Regex-based independence-invariant scanning must be context-aware, not substring-aware.** Three orthogonal mitigations, in order of preference:
+
+1. **Anchor on table-cell context.** Implementer-model declarations are exclusively recorded in the `## Model audit` table's `| Implementer models | <id> |` row. The parser should walk the markdown AST (or regex-locate the audit table) and read only that row's value, not free-form prose anywhere in the document.
+2. **Tighten the qualifier requirement.** If table-anchoring is too invasive, the regex should require the literal token `implementer` (or `implementer-model` / `implementer model`) — never bare `model = X`. The current alternation `(?:model|implementer-model|implementer model)` is overly permissive: the bare `model` alternative should be removed.
+3. **Add a skip list for narrative contexts.** Lines containing `reviewer model`, `rubber-duck model`, `# `, `> `, or appearing inside `## Plan-vs-implementation review` should be skipped during scanning. This is the cheapest fix but the most fragile.
+
+The bug is silent — it manifests only as a refusal-to-run, not as a false-pass, so the independence guard remains conservative. But it makes the CLI unusable for self-host dogfood whenever the CS file documents the reviewer in prose, which is universally true for any CS that has been through plan-vs-impl review.
+
+**Evidence:** CS53 (`done_cs53_release-v0.6.0.md`) T8c dogfood attempt: `harness review 208 --dry-run` succeeded (dry-run bypasses the guard), but `harness review 208` (without `--dry-run`) refused with an independence-violation error citing `gpt-5.5` as an implementer despite the `## Model audit` table clearly listing `claude-opus-4.7-1m-internal` as the only implementer model. Inspection of `lib/review.mjs:313` showed the regex matching `Reviewer model: gpt-5.5` in the CS file's plan-vs-impl section. Workaround applied for CS53: dogfooded via `--dry-run` only and proceeded to admin-squash-merge with the canonical `## Model audit` table evidence. PR #208 at `b07e78d`; CS file lines containing `Reviewer:` and `Reviewer model:` are the trigger surface.
+
+**Disposition:** Open. Follow-up CS candidate (CS54 or equivalent): tighten `parseImplementerModels` per option 2 (remove bare `model` alternative) at minimum, with regression test that asserts a CS file containing `Reviewer model: gpt-5.5` in narrative prose does NOT cause `harness review` to flag `gpt-5.5` as an implementer. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #2.
+
+### LRN-133
+
+```yaml
+id: LRN-133
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [windows, powershell, line-endings, lint, text-encoding, gitignore]
+claim_area: lint-and-encoding
+```
+
+**Problem:** On Windows, drafting a PR body via PowerShell's `Out-File -Encoding utf8` (or the equivalent `Set-Content` / `>` redirect) writes CRLF line endings by default, even when the source string in the variable being piped is LF-clean. Combined with the fact that the harness `.gitignore` did NOT exclude `.tmp/` at the time of CS53 (layer-1 fix subsequently APPLIED in PR #210; see Finding/Disposition below), a PR-body scratch file at `.tmp/pr-body-cs53-content.md` became visible to `scripts/check-text-encoding.mjs`, which walks all unignored files in the repo regardless of git-tracked status. The text-encoding check fails on CRLF; `node bin/harness.mjs lint` rolls that into its aggregate exit code; 5 lint-aggregator tests in `tests/` fail because they expect `harness lint` to exit 0 on a clean main checkout. End result: a single stray scratch file silently turns `npm test` red, and the failure mode looks like a regression in the lint suite when in fact it is environmental.
+
+**Finding:** **`.tmp/` should be in `.gitignore` AND `check-text-encoding.mjs` should respect gitignore semantics, AND PR-body authoring on Windows must explicitly LF-normalize.** Three layers of defense, each useful in isolation:
+
+1. **`.gitignore` `.tmp/` (1 line):** the cheapest fix. Eliminates the most common cause (developer-created scratch dirs for `gh pr edit --body-file` workflows). **APPLIED** in PR #210 (post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136); see Disposition below for full traceability.
+2. **`check-text-encoding.mjs` scope-narrowing:** the linter currently walks the filesystem with its own ignore list (not `git ls-files`-anchored). Switching to `git ls-files --cached --others --exclude-standard` would make the linter automatically respect `.gitignore` and would prevent future scratch-dir-class bugs. Larger surgical change with broader implications (would also affect generated files under `node_modules/`, etc. that are currently excluded via the script's own list).
+3. **PR-body authoring convention:** the workaround that worked in CS53 was to pipe the PR body content through Node: `node -e "fs.writeFileSync(path, content.replace(/\r\n/g,'\n'))"`. This should be documented in `OPERATIONS.md § Copilot engagement procedure` or in a Windows-orchestrator quickstart. The convention is fragile (orchestrators forget) but the convention is the only Windows-specific layer that matters.
+
+LRN-093 documented the parent fact ("Windows tooling defaults to CRLF") but stopped short of the cascading-test-failure surface area. This LRN extends LRN-093 with the specific `.tmp/`-not-gitignored amplifier and the specific test-failure cascade.
+
+**Evidence:** CS53 R1 plan-vs-impl review (verbatim finding C53-VALIDATION-1): "Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected." Reproduced inline by inspecting `.tmp/` after `gh pr edit --body-file .tmp/pr-body-cs53-content.md` (PowerShell `Out-File -Encoding utf8` chain), then running `node bin/harness.mjs lint --quiet` (failed `text-encoding`), then `Remove-Item -Recurse -Force .tmp` followed by re-running lint (passed `30/0/3`). Cascade verified: 5 lint-aggregator tests under `tests/lint-aggregator.test.mjs` (or equivalent) flip red->green with `.tmp/` removal. Mitigation applied in CS53 close-out by deleting `.tmp/` and re-running lint clean before commit.
+
+**Disposition:** Open (partially applied in PR #210 — the post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136). Layer 1 (add `.tmp/` to root `.gitignore`) APPLIED in PR #210. The orchestrator itself reproduced the bug by accidentally committing `.tmp/` session scratch files inside PR #210, which motivated the in-PR fix. Two follow-up scopes remain open: (option 2) scope-narrow `check-text-encoding.mjs` to respect gitignore semantics (e.g. switch to `git ls-files --cached --others --exclude-standard`) — broader behavioral implications for the lint suite; (option 3) document the Windows PowerShell `Out-File -Encoding utf8` LF-normalisation convention in `OPERATIONS.md § Copilot engagement procedure`. Both are good candidates for a separate small surgical CS. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+
+### LRN-134
+
+```yaml
+id: LRN-134
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [cross-repo, pin-bump, pr-body, review-evidence, model-audit, review-log, si-orchestration]
+claim_area: cross-repo-orchestration
+```
+
+**Problem:** Cross-repo pin-bump PRs opened by the harness orchestrator against consumer repos (e.g. `henrik-me/sub-invaders`) lacked the canonical `## Model audit` and `## Review log` H2 sections in the PR body, so the consumer-side `read-only-gates` workflow (`scripts/check-review-evidence.mjs`) failed with `A3 (independence) cannot be verified` and `A4 (stale-diff currency) cannot be verified`, blocking auto-merge. The harness CS53 plan treated SI-side merge as non-blocking (per C53-4) and shipped the bump PR with only Summary / Changes / Testing sections — assuming the SI PR template would populate the missing sections. It does not (SI's `.github/pull_request_template.md` was authored pre-v0.6.0 and uses the old `| Role | Model |` schema, not the v0.6.0 strict `| Field | Value |` schema). Net: even non-blocking pin-bump PRs need full review-evidence sections in the body, because v0.6.0's strict default rejects the pre-v0.6.0 template output.
+
+**Finding:** **Every cross-repo PR opened by the harness orchestrator — including pin-bump PRs — must include the canonical `## Review log` (6-column: timestamp | analyzed_head | actor | model | verdict | evidence_link) and `## Model audit` (`| Field | Value |` table with required rows Implementer models / Reviewer model / Implementer agent / Reviewer agent, plus the optional Notes row when warranted) sections in the PR body at opening time, NOT relying on the consumer's PR template.** Two reinforcing reasons:
+
+1. Consumer PR templates can lag the harness version (no auto-sync of `.github/pull_request_template.md` from harness composed/managed unless it's listed in `managed.files` in `harness.config.json` — which SI's is not).
+2. v0.6.0 strict-flip default (`--strict-agent-columns`) means a template-output without the new agent rows hard-fails A3.
+
+The fix has two layers:
+- **Orchestrator-side (immediate):** Add to OPERATIONS.md (new `## Cross-repo procedures` → `### Cross-repo pin-bump PR body checklist` section, to be created by CS54 T3): PR body MUST include both sections inline at PR-open time. The harness CLI could (CS54+) emit a canonical body template via `harness cross-repo pin-bump-body --consumer <repo>`.
+- **Consumer-side (longer):** Consumer `.github/pull_request_template.md` should be in `managed.files` (or at least scaffold-refreshable) so a `harness sync --mode=apply` propagates schema updates. Today the template is a one-time scaffold; v0.6.0's strict-flip surfaced the staleness gap.
+
+**Evidence:** SI PR #79 (v0.5.1 -> v0.6.0 pin bump, opened 2026-05-27T08:01:43Z) failed `read-only-gates` at first run (job 78033638259) with the two A3/A4 errors. Body initially had Summary/Changes/Testing only. Pre-CS53 precedent SI PR #62 (v0.5.0 -> v0.5.1 bump) had included both sections by historical accident (operator memory), not by doctrine. CS53 close-out shipped without the doctrine codified, so SI PR #79 inherited the gap. Fix applied during CS53 close-out: PR body amended via `gh pr edit 79 --body-file <utf8nobom-lf-tmp>` to add the canonical sections; 6 Copilot inline findings (4 false-positives on dual `reviews.*` / `review_gates.*` schema blocks, 2 real cosmetic doc cleanups) dispositioned and resolved; PR admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` (2026-05-27T17:01:48Z).
+
+**Disposition:** Open. Two-part follow-up CS (CS54a — orchestrator side; CS54b — consumer-template side, scheduled separately because it requires re-classifying `.github/pull_request_template.md` as a managed/composed file in consumer harness.config.json):
+- CS54a (planned): codify cross-repo pin-bump checklist in `OPERATIONS.md` and the managed `template/managed/.github/copilot-instructions.md` mirror. Optionally add a `harness cross-repo` CLI sub-command emitting the canonical body skeleton.
+- CS54b (planned): refresh `template/managed/.github/pull_request_template.md` to v0.6.0 strict schema and document the upgrade path for existing consumers (manual one-time copy, since this is a managed/scaffolded file class).
+
+Cross-reference: LRN-125 (Copilot review chase — analogous "PR body must include canonical artefacts" pattern); LRN-127 (independence invariant — same family of review-evidence integrity issues).
+
+### LRN-135
+
+```yaml
+id: LRN-135
+date: 2026-05-27
+category: process
+source_cs: CS53
+status: open
+tags: [review-evidence, narrow-re-attest, stale-diff, A4-gate, rubber-duck-loop]
+claim_area: review-loops
+```
+
+**Problem:** Every new commit on a content PR invalidates the latest `## Review log` Go row's `analyzed_head` field. The naïve fix is a full re-review at each new HEAD, but this is expensive (full GPT-5.5 round-trip, full diff re-read) and overkill for commits that are trivial doc-only or single-line cleanups added in response to Copilot inline feedback. CS53 used the technique 3x (PR #208 R1 GO-with-amendments at `b5948a6` → narrow R2 at `14aa3d3` → narrow R3 at `b07e78d`), but the pattern is not documented in `OPERATIONS.md` or `REVIEWS.md`, so future orchestrators (or LLM-rotated-out future-me) will either (a) skip the re-review and ship stale `analyzed_head` (blocking A4) or (b) burn a full re-review every time.
+
+**Finding:** **Document the "narrow re-attest" pattern.** A narrow re-attest is a short rubber-duck dispatch (sync, ≤1min) where the briefing prompt explicitly says "R1 already cleared the diff; only re-verify the trivial delta from `<prev-head>` to `<new-head>` is innocuous; return Go or Needs-Fix." The reviewer is told NOT to re-review the diff. The Review log gets a new row with the new `analyzed_head`, the same `actor` annotated `(narrow R2)` / `(narrow R3)`, and a one-paragraph summary. Three rules:
+
+1. Only valid when the delta is genuinely trivial (≤20 lines, doc-only or 1-2 line code cleanups responding to Copilot inline findings, no behavior change).
+2. R1 must have been a full-diff review at a prior HEAD, and that R1's Go must still be in the Review log table.
+3. The reviewer model and reviewer agent stay the same as R1; only the timestamp + `analyzed_head` change.
+
+The pattern is the cheap mitigation for A4 (stale-diff) — much cheaper than re-running a full review on every commit. It is NOT a substitute for full re-review when the delta is substantive (e.g., new test coverage, refactored module).
+
+**Evidence:** CS53 PR #208: R1 full GPT-5.5 review at `b5948a6` (verdict GO-with-amendments, 1 NB recommendation); commit `14aa3d3` added the recommended doc clarification (1 line); R2 narrow re-attest at `14aa3d3` (verdict GO, 0 findings, summary "delta is the recommended doc line; innocuous"); commit `b07e78d` fixed Copilot's R1 "rows" finding (1 line); R3 narrow re-attest at `b07e78d` (verdict GO, 0 findings). All 3 reviews recorded in PR body Review log table. Same pattern used on SI PR #79 R2 narrow re-attest at `c6155b9...` after body amendment (verdict GO, 0 findings, summary "delta is PR-body sections + known-limitations note; diff is unchanged").
+
+**Disposition:** Open. Follow-up CS candidate (CS54a or sibling): add `OPERATIONS.md § Narrow re-attest` doctrine and a short worked example. Mention in `REVIEWS.md § Plan review` as the recommended mitigation when delta is doc-only/trivial (also reference the PR-side A4 stale-diff gate in `REVIEWS.md § PR-evidence gates`). Cross-reference: LRN-125 (Copilot review chase analogue — "PR body push triggers another review cycle"); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
+
+### LRN-136
+
+```yaml
+id: LRN-136
+date: 2026-05-27
+category: tooling
+source_cs: CS53
+status: open
+tags: [review-log, schema, format, model-column, regression-risk]
+claim_area: review-evidence
+```
+
+**Problem:** The `Model` column in `## Review log` rows MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`, `claude-sonnet-4.6`) — NOT decorated with parenthetical annotations like `gpt-5.5 (reviewer)` or `gpt-5.5 (R2)`. The rule is enforced today only by orchestrator memory: the PR-side gate `scripts/checks/check-review-log-evidence.mjs` does NOT reject decorated identifiers. Its `reviewerModelApproved()` (lines 168-179) approves any reviewer model when `## Model audit` has a populated (non-placeholder) `Fallback rationale` — common on cross-model reviews — so a decorated cell like `gpt-5.5 (R2)` normalises to `gpt-5.5-r2`, fails the primary `gpt-5.5` check, and silently PASSES via the fallback path. The fact is present in agent memory but not documented in `LEARNINGS.md`, `REVIEWS.md`, or enforced by the PR-side gate — so it is rediscovered each time a new orchestrator drafts a Review log row (~quarterly cadence given LLM rotation).
+
+**Finding:** **Lock the bare-model-id rule by closing the live PR-side-gate gap, locking the rule into REVIEWS.md § 2.8 (PR body requirements, which contains the Review log schema), and adding a regression test alongside `tests/cs51-review-gates-logic.test.mjs` (which covers `scripts/checks/check-review-log-evidence.mjs`).** Three deliverables:
+
+1. `scripts/checks/check-review-log-evidence.mjs`: add an explicit decoration-detection check on the raw `model` cell BEFORE `reviewerModelApproved()` (which can otherwise let decorated cells pass via the fallback-rationale path). Emit a clear error: ``decorated model identifier "<value>"; use bare "<bare>" and put annotations in the actor column``.
+2. REVIEWS.md § 2.8 (under the Review log schema description) Model column description: add "MUST be the bare reviewer-model identifier (e.g. `gpt-5.5`); decorations like `gpt-5.5 (reviewer)`, `gpt-5.5 (R2)`, `gpt-5.5 (PvI)` are not permitted — use the `actor` column (e.g. `rubber-duck (PvI R2)`) for round/role annotations instead."
+3. Add a fixture test (extend `tests/cs51-review-gates-logic.test.mjs` or co-locate in a new `tests/check-review-log-evidence.test.mjs`): a Review log row with decorated `Model` column AND a populated `Fallback rationale` in `## Model audit` (the path that silently passes today) should be REJECTED with the explicit decorated-identifier error.
+
+The orchestrator side: agent memories already capture the rule, but the parser-side regression test and the doc would catch the issue at lint-time instead of CI-failure-time.
+
+**Evidence:** Memory `review evidence` already records this fact ("Review log Model column format requires bare reviewer-model identifier"). CS53 PR #208 R1 Review log row used `gpt-5.5` correctly (drafted with memory present). However, the agent-side memory mechanism only protects orchestrators with this specific memory loaded; the harness toolchain provides no parser-side or schema-side protection. Pattern matches LRN-128 (orchestrator self-review at close-out gate) — both are "agent-side memory protects, tool-side does not" gaps where memory rotation is the failure mode.
+
+**Disposition:** Open. Follow-up CS candidate (CS54a): document the rule in `REVIEWS.md § 2.8` (Review log schema lives there, NOT § 2.7 which is Finding disposition) and add the regression fixture as a new case in `tests/cs51-review-gates-logic.test.mjs` (or a new co-located `tests/check-review-log-evidence.test.mjs`). The gate script lives at `scripts/checks/check-review-log-evidence.mjs` (not `scripts/check-review-log-evidence.mjs` — early CS53 draft used a stale path). Both are small surgical changes. Cross-reference: LRN-128 (same memory-vs-tooling gap family); REVIEWS.md § 2.8 (PR body requirements, including Review log schema).
+
+### LRN-138
+
+```yaml
+id: LRN-138
+date: 2026-05-28
+category: architectural
+source_cs: CS56
+status: applied
+tags: [security, cli, path-traversal, exfiltration, agent-safety, body-file, cross-repo]
+claim_area: cli-security
+```
+
+**Problem:** Agent-driven CLI flags that accept file paths and forward them to downstream tools that upload file CONTENTS create an implicit exfiltration surface. `harness cross-repo open-issue --body-file PATH` was originally implemented as a thin pass-through to `gh issue create --body-file <PATH>`. Validation only checked that the file existed and was a regular file — relative paths like `../../secret` and out-of-tree symlinks both passed validation, after which `gh` would happily read the file and upload its contents to the target GitHub repository as a public issue body. A misbehaving (or jailbroken) agent could therefore exfiltrate any file the orchestrator can read by filing a one-line issue handoff.
+
+**Finding:** **CLI flags that accept file paths whose CONTENTS will be transmitted to a third party must default to cwd-containment.** Concretely:
+
+1. The CLI layer resolves both `global.cwd` and the user-supplied path with `realpathSync()` (so symlinks cannot escape via target resolution).
+2. Compute `const rel = path.relative(cwdReal, pathReal)`. Reject if **any** of the following holds (segment-safe check): `rel === '..'` OR `rel.startsWith('..' + path.sep)` OR `path.isAbsolute(rel)`. The shipped CS56 implementation uses the simpler `rel.startsWith('..') || path.isAbsolute(rel)` form, which is **secure for containment** (it cannot let an out-of-tree path through) but is **over-restrictive**: it also rejects legitimate in-tree filenames that literally begin with `..` (e.g. a file named `..foo` or a directory called `..config`, which `path.relative()` can return as `..foo` / `..config` for an in-tree target). New cross-repo CLI surfaces should use the segment-safe form to avoid those false rejections; both forms are equally secure, but the segment-safe form is preferable because it avoids false rejections of valid in-tree paths.
+3. Containment lives in the CLI layer; the library can remain generic so programmatic consumers (and tests) can pass absolute paths under `os.tmpdir()` or other roots they trust.
+4. ENOENT on realpath of the user path should fall through to the library's existing missing-file error for a clearer message; only containment failures use exit 2 with a path-traversal message.
+
+This rule generalizes beyond `--body-file`: any future `--attachment-file`, `--content-file`, `--payload-file`, etc. should apply the same containment by default. The threat is not "user passes wrong path" — it is "agent is convinced to pass an interesting path".
+
+**Evidence:** gpt-5.5 plan-vs-implementation review R1 on CS56 PR #216 at commit `ff2b226` flagged the path-traversal bypass as a blocking finding. Fix at commit `2baf5102d43a2ed0c0fc96c3fcdff284b7f9153b`: `bin/harness.mjs` `cmdCrossRepo` applies realpath-based cwd containment. Test 21 in `tests/cross-repo.test.mjs` exercises the rejection path via a sibling tmpdir body-file. R2 narrow re-attest at 2baf510 verdict Go.
+
+**Disposition:** Applied at CS56 close-out. The CS56 implementation is the canonical reference for the **realpath + `path.relative` containment approach** (CLI-layer policy, library remains generic, ENOENT fallthrough to library missing-file error); however, the **preferred predicate going forward is the segment-safe form** shown in the Finding above (`rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)`), NOT the simpler `rel.startsWith('..') || path.isAbsolute(rel)` form that CS56 currently uses. New cross-repo CLI surfaces (`add-comment`, `attach-file`, etc.) that take file path inputs MUST apply the same cwd-containment approach by default, using the segment-safe predicate; a deviation requires explicit decision in the CS plan with rationale. Migrating CS56's shipped code to the segment-safe predicate is a low-priority follow-on (both forms are equally secure for containment; the simpler form just over-restricts on legitimate `..`-prefixed filenames). Cross-reference: LRN-137 (cross-repo handoff doctrine — this LRN hardens the CLI that implements it); CS56 (the surface this rule was discovered on).
+
+### LRN-137
+
+```yaml
+id: LRN-137
+date: 2026-05-28
+category: process
+source_cs: CS55
+status: applied
+tags: [cross-repo, handoff, doctrine, orchestrator-scope, harness-orchestrator-label, si-orchestration]
+claim_area: cross-repo-orchestration
+```
+
+**Problem:** The harness orchestrator's operating scope was previously underdetermined for cross-repo work. SI PR #79 (the v0.5.1 → v0.6.0 pin-bump into `henrik-me/sub-invaders`, opened 2026-05-27T08:01:43Z and admin-squash-merged at `cbaa608b8196e03ebb09e168562501c105930622` on 2026-05-27T17:01:48Z) was opened DIRECTLY by the harness orchestrator. It hit three `read-only-gates` failures because SI's PR template was pre-v0.6.0 strict schema and did not provide the canonical `## Model audit` / `## Review log` evidence. The PR was eventually unblocked, but the root cause was who-opened-the-PR: the harness orchestrator bypassed SI-side conventions and validation knowledge. LRN-134 captured the PR-body checklist gap at the PR-body level; LRN-137 captures the higher-level WHO-OPENS-THE-PR boundary.
+
+**Finding:** **The harness orchestrator operates directly only in `henrik-me/agent-harness`. For any other repo, it MUST NOT commit, push, open branches, or create pull requests — even via delegated harness-side sub-agents, helper scripts, or background tasks (no proxy bypass). It files exactly one GitHub issue per cross-repo workstream, labeled `harness-orchestrator`, and lets the consumer-repo agent own the PR, validation, and merge.** Three reinforcing parts:
+
+1. **Rule scope (D55-1):** The rule applies to any repo other than `henrik-me/agent-harness`. Rationale: future-proof without per-repo allowlists as more consumer repos adopt the harness.
+2. **No escape hatch (D55-2):** Even urgent cross-repo work routes through an issue. This is an orchestrator constraint; the human user can always self-merge, run `gh`, or act directly outside the orchestrator.
+3. **Uniform routing label + non-mutating preflight (D55-3):** Every handoff issue carries the `harness-orchestrator` label as the routing default. The orchestrator MUST ensure the label exists in the target repo BEFORE `gh issue create --label harness-orchestrator` (otherwise `gh issue create` fails with "label not found"). The preflight is non-mutating: `gh label create harness-orchestrator --repo OWNER/NAME --color 0E8A16 --description "Filed by harness orchestrator"` WITHOUT `--force`; if the call exits non-zero AND stderr indicates "already exists", treat as success (preserve whatever color/description the consumer chose). Any other non-zero exit is a real failure.
+
+Status questions ("is SI updated to v0.6.0?") use the same boundary: read-only `gh` inspection first; if no tracking issue exists, create exactly one issue (idempotently) and report its URL. C35-13 ("agent does not file issues") is hereby scoped to the harness repo only — cross-repo handoff issues into OTHER repos are required by this rule, not forbidden by C35-13.
+
+**Evidence:** SI PR #79 chase (above); three `read-only-gates` failures (job 78033638259) initially blocking merge. CS55 codifies the doctrine via Hard Rule § 6 in `template/managed/.github/copilot-instructions.md`, scopes C35-13 in `template/managed/INSTRUCTIONS.md` and `template/composed/OPERATIONS.md`, and adds the `## Cross-repo procedures` H2 in `template/composed/OPERATIONS.md` with the canonical issue-only-never-direct-PR H3. CS56 (planned) automates the issue-creation flow via a `harness cross-repo open-issue` CLI guardrail (separate CS to keep CS55 doc-only).
+
+**Disposition:** Applied at CS55 close-out (frontmatter `status: applied`; D55-5 completed). The doctrine is embedded in shipped docs (PR #213 merged at `a34b197`) and demonstrated on its own rollout via SI tracking issue https://github.com/henrik-me/sub-invaders/issues/80. Cross-reference: LRN-134 (PR-body checklist gap — the surface-level symptom of the same cross-repo boundary issue); CS54 (`## Cross-repo procedures` H2 sibling H3 for pin-bump PR body checklist — see D55-4 ordering contract: whichever CS lands first creates the H2; the other adds a sibling H3); CS56 (`harness cross-repo` CLI guardrail, depends on CS55 merged).
+
 ### LRN-127
 
 ```yaml
@@ -2249,6 +2465,94 @@ claim_area: source-control-discipline
 **Evidence:** CS46 implementation + close-out session 2026-05-14 (henrik-me/agent-harness PR #192). Incident #1: 5 source-file edits to `template/seeded/WORKBOARD.md`, `scripts/check-workboard.mjs`, `scripts/check-clickstop.mjs`, `template/composed/OPERATIONS.md`, `template/managed/TRACKING.md` were complete; immediately ran `node bin/harness.mjs sync --mode=apply` to regenerate root mirrors; `git status` afterward showed only `tests/cs46-empty-state-and-review-discoverability.test.mjs` untracked (the 5 modified files had reverted). Recovered via re-apply-from-context, then committed in `f839413`. Incident #2: ran `node bin/harness.mjs copilot-engage 192` from a shell that subsequently held detached HEAD at tag `v0.5.1`; recovered via `git checkout cs46/issue-146-discoverability`. Incident #3 (during this very close-out): made 7 edits across `done_cs46_*.md`, `WORKBOARD.md`, `LEARNINGS.md`; then ran `node bin/harness.mjs lint --quiet` and `node bin/harness.mjs sync --mode=check` to validate; one of those commands left HEAD detached at `v0.5.1` again; only the LEARNINGS edit (made AFTER the harness commands) survived in working tree, applied to the wrong commit. Recovered, re-applied all 7 edits, and committed BEFORE running any further harness command. Symptom signature in all three incidents: `git status --short` shows ONLY new (untracked) files, no `M` (modified) entries, despite recent edits.
 
 **Disposition:** Applied. CS46 close-out PR (this PR) commits the source files BEFORE running any harness command, demonstrating the discipline. Doctrine candidate for OPERATIONS.md § "Sub-agent dispatch and reporting" (extend the "self-checks" subsection with a "before invoking any harness/gh command after a multi-file edit batch, commit first" bullet). The narrow lesson generalises beyond `harness sync` to any tool that may shell out to `git checkout` (including `harness copilot-engage` per incident #2, and `harness lint`+`sync --mode=check` per incident #3) — the safer doctrine is "commit after every multi-file edit batch", not "commit before specific named commands". Follow-up CS candidate: investigate which harness CLI command is leaving detached HEAD at `v0.5.1` (likely `harness sync --mode=check` walks the lock's recorded `resolved_sha` and shells out to git in a way that doesn't restore branch state on exit). Cross-reference: LRN-125 (Copilot-reviewer review-log discipline) — both LRNs surfaced from the same CS46 session.
+
+**Disposition update (2026-05-14, post-v0.5.2 PR #202):** Filed as planned [CS47 — Detached-HEAD investigation](../project/clickstops/planned/planned_cs47_detached-head-investigation.md) (PR `#202` admin-merged at squash `f8fefeb`). PR #202's own preparation captured **two additional live reproductions** (incidents #4 and #5):
+- Incident #4: `node bin/harness.mjs lint --quiet` (during PR #202 plan-review hash recomputation) silently detached HEAD at `fe2c0b9` (= `v0.5.1` tag).
+- Incident #5: `node bin/harness.mjs plan-review-hash <file>` (the explicit subcommand for computing the plan-review section hash) silently detached HEAD at `fe2c0b97cae661f9882979662f4d793330510c45` (same tag).
+- Incident #6 (this very LRN-edit session, post-checkpoint compaction): `git status -sb` returned `## HEAD (no branch)` again, also detached at `fe2c0b9` after running harness CLI commands.
+
+**Multi-subcommand confirmation:** the bug is NOT specific to `harness sync --mode=check`. At least three subcommands — `harness lint`, `harness plan-review-hash`, and `harness sync --mode=check` — exhibit the same deterministic detach signature (always at the most-recent release tag = `v0.5.1` = `fe2c0b9`). This strongly implies a **shared helper** (likely a lock-resolution / sync-precondition path that both `lint` and `plan-review-hash` reach via dependency injection) rather than a per-subcommand bug. CS47's Phase 1 instrumentation should focus on that shared helper. Status: remains `applied` (operational discipline = "commit after every multi-file edit batch" still in force); investigation tracked in CS47.
+
+### LRN-128
+
+```yaml
+id: LRN-128
+date: 2026-05-14
+category: process
+source_cs: CS49
+status: applied
+tags: [npm-pack, package-size, doctrine-growth, threshold-management, release-cadence]
+claim_area: release-process
+```
+
+**Problem:** `scripts/check-pack.mjs` ships with a `DEFAULT_MAX_SIZE_BYTES` ceiling that gates the published `npm pack` tarball size. The original ceiling (1MB / 1048576) was sized to v0.3.x doctrine. Cumulative additions to `OPERATIONS.md` across CS49 (orchestrator availability subsections), CS50 (workboard admin-bypass PAT subsection), CS51 (review-gates required status checks subsection), and CS52 (`harness review` CLI subsection — including the manual rubber-duck prompt template body) pushed the on-disk `OPERATIONS.md` past 100KB and the published tarball past 1MB. The next release-cut PR would have failed `check-pack` despite each individual CS being well-formed and reviewed. Discovered during the post-CS48-CS52 cadence audit: `node scripts/check-pack.mjs` failed locally; raising the ceiling unblocked the next release.
+
+**Finding:** **Default thresholds in size/budget linters degrade as accumulated doctrine grows; treat them as a release-cadence health check rather than fixed invariants.** The 1MB → 2MB bump in PR #200 is not "the linter was wrong" — it's "the linter was right at v0.3.x but the population has grown legitimately". Two operational rules:
+- Run `node scripts/check-pack.mjs` (or `harness lint`, which includes it) on the release branch BEFORE opening the release PR; surprise size violations at PR review time burn cycles.
+- When raising the threshold, prefer doubling (1MB → 2MB) over tight-fitting (1MB → 1.1MB) so the next 4-6 minor releases of accumulated doctrine don't re-trip the same gate.
+- The size-violation test path (`tests/check-pack.test.mjs`) passes `--max-size-bytes 1` explicitly, so raising the default does not weaken regression coverage of the violation detection.
+
+**Evidence:** PR #200 (https://github.com/henrik-me/agent-harness/pull/200) raised `DEFAULT_MAX_SIZE_BYTES` from `1048576` to `2097152`. Commit `dcb7e5f`. Trigger: post-CS52 merge, the cumulative `OPERATIONS.md` from CS49+50+51+52 doctrine pushed published tarball over 1MB. The growth was driven by legitimate doctrine expansion (orchestrator availability, admin-bypass, review-gates, review-CLI) — not pollution. CS47 plan-filing PR (#202) shipped immediately after at the new 2MB ceiling without size pressure.
+
+**Disposition:** Applied (PR #200, 2026-05-14). The 2MB ceiling provides headroom for 4-6 minor releases of doctrine growth at current cadence. Future raises should follow the same doubling pattern (2MB → 4MB) when the gate next trips. Doctrine candidate for `OPERATIONS.md` § Release process: add a "pre-release size check" bullet to the release-PR checklist. Cross-reference: tracking-PR pattern from this session also produced LRN-129 and LRN-130.
+
+### LRN-129
+
+```yaml
+id: LRN-129
+date: 2026-05-14
+category: operational
+source_cs: CS46
+status: applied
+tags: [github-actions, read-only-gates, pr-body-edit, gh-pr-edit, manual-rerun, copilot-engagement, consumer-template]
+claim_area: ci-workflows
+```
+
+**Problem:** `.github/workflows/pr-evidence-lint.yml` (job `read-only-gates`) and `.github/workflows/review-gates.yml` enforce PR-body postdate / review-evidence gates. When an orchestrator edits the PR body via `gh pr edit <num> --body <text>` or `gh pr edit <num> --body-file <path>` to add a new `## Review log` row (e.g., recording a Copilot review timestamp after a `harness copilot-engage` round), the underlying `pull_request` event type is `edited`. **If the workflow's `pull_request:` trigger does NOT include `edited` in its `types:` list, the gate does NOT auto-re-fire on body edits** and the previous (pre-edit) failed run remains visible in the PR's "Checks" tab as a permanent red ❌, blocking merge even after the body edit fixed the underlying issue.
+
+**Status in this repo (verified 2026-05-14, PR #203):** the harness repo's own `pr-evidence-lint.yml` (line 16) and `review-gates.yml` (line 9) BOTH already include `[opened, synchronize, reopened, edited]` (`review-gates.yml` also adds `labeled, unlabeled`). So **the harness repo itself does NOT exhibit this bug** — body edits DO auto-rerun the gates here. The discipline below applies primarily to **consumer repos** whose workflow templates may have been bootstrapped before the `[edited]` trigger was added everywhere.
+
+**Finding:** **After any `gh pr edit --body[-file]` invocation that affects gate-relevant content (`## Review log`, `## Model audit`, `## Plan-vs-implementation review`), check that the relevant gate workflows have re-fired:** `gh run list --branch <branch> --limit 5 --json conclusion,name,headSha,createdAt`. If the most-recent run for a gate workflow predates the body edit, that workflow's `pull_request:` trigger is missing `edited` — manually `gh run rerun <run-id>` for now, AND file a follow-up to add `types: [opened, synchronize, reopened, edited]` to the workflow's trigger (CS23 / LRN-100 fix pattern).
+
+Concrete operational sequence after a Copilot review round:
+1. `node bin/harness.mjs copilot-engage <pr> --no-poll` (request the review)
+2. Wait ~4 minutes (Copilot review pipeline turnaround)
+3. `gh pr view <pr> --json reviews --jq '.reviews[-1]'` (confirm Copilot review exists)
+4. Edit PR body to append a new `## Review log` row with `actor=copilot-pull-request-reviewer[bot]`, `analyzed_head=$(git rev-parse HEAD)`, `verdict=Go` (or whatever Copilot returned), `timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')`
+5. `gh pr edit <pr> --body-file <path>` to push the new body
+6. `gh pr checks <pr>` — if a gate workflow shows a stale red ❌, locate its workflow file and verify `types: [edited]` is present; if missing, `gh run rerun <id>` as a one-shot, then file a follow-up to fix the trigger.
+7. Re-poll `gh pr checks <pr>` until green
+
+**Evidence:** Verified live during PR #203 (this docs PR, 2026-05-14): `pr-evidence-lint` (`read-only-gates` job) and `review-gates` (`copilot-review-attached` etc.) both auto-re-fired on `gh pr edit --body-file` push (new run IDs `25899309340` and `25899309341` appeared within seconds). The CS23 fix (LRN-100, PR #187) added `types: [edited]` to `harness-self-check.yml`'s `pull_request:` trigger and the same pattern was subsequently applied to `pr-evidence-lint.yml` and `review-gates.yml`. Consumer repos pinned to harness `<v0.5.0` may lack the `[edited]` trigger in their templates and would still need the manual-rerun step.
+
+**Disposition:** Applied as orchestrator discipline. Status of harness-repo bug: **resolved** by `[edited]` triggers already shipped in the affected workflows. Consumer-repo doctrine: when bumping a consumer past v0.5.0, verify their `pr-evidence-lint.yml` and `review-gates.yml` (or equivalents) include `edited` in `pull_request: types:` — if not, file a workflow-trigger consistency CS in the consumer repo using CS23 as the template. Cross-reference: LRN-100, CS23 PR #187.
+
+### LRN-130
+
+```yaml
+id: LRN-130
+date: 2026-05-14
+category: operational
+source_cs: CS46
+status: applied
+tags: [pr-body, review-log, timestamps, postdate-gate, copilot-engagement, utc, iso-8601]
+claim_area: pr-evidence-discipline
+```
+
+**Problem:** The `## Review log` table in PR bodies has 6 columns including a `timestamp` (ISO 8601 UTC) per row. The Copilot-postdate gate (`scripts/check-review-evidence.mjs` A5+A16) asserts that the latest Copilot reviewer timestamp POSTDATES the latest local Go-row timestamp — i.e., the human/sub-agent local Go verdict must be wall-clock-earlier than the Copilot review that follows it. **If the orchestrator hand-types a "near-future" timestamp for the local Go row** (e.g., rounding up to the nearest minute, or guessing "Copilot will review in ~5 min so I'll set it to now+5min for safety"), Copilot's actual review timestamp may be EARLIER than the fabricated future timestamp. Result: A5 fails with `latest copilot reviewer timestamp T1 must postdate latest local Go-row timestamp T2 (local row is in the future)`. Encountered during PR #202 close-out: an initial Go-row was given a timestamp 3 minutes in the future to "be safe"; Copilot's actual review came back at T+1min; gate failed; had to re-edit body with the real-current-UTC timestamp obtained via `[System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")`.
+
+**Finding:** **Always use the real current UTC for `## Review log` row timestamps. Never round, never hedge into the future, never copy from a previous row's timestamp + a guess.** The postdate gate is precisely the mechanism that catches "I edited the body but didn't actually run the Go-verdict process". Any future-looking timestamp defeats that signal. Concrete operational rule:
+- PowerShell: `[System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")`
+- bash: `date -u +'%Y-%m-%dT%H:%M:%SZ'`
+- Python: `import datetime; datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')`
+- Node: `new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')`
+- Run the timestamp-getter in the SAME shell session as the `gh pr edit --body-file` invocation; do not stash a timestamp from minutes earlier in a session note.
+
+The corollary: if the orchestrator's `harness review <pr>` CLI (CS52) ever auto-composes Review log rows on the orchestrator's behalf, it MUST source the timestamp from the local clock at the moment the row is appended (not from a CLI flag, not from a config), and MUST emit UTC explicitly.
+
+**Evidence:** PR #202 close-out (2026-05-14): one round of A5 failure caused by a hand-typed "+3 min" timestamp on the local Go row; Copilot review actually returned within 60 seconds and the gate flagged the fabricated future timestamp. Resolved by re-editing body with `[System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")`. Same gate logic in `scripts/check-review-evidence.mjs` would catch this for any consumer repo.
+
+**Disposition:** Applied as orchestrator discipline. Doctrine candidate for `OPERATIONS.md` § Copilot engagement procedure: add a "Timestamp discipline for `## Review log` rows" subsection enumerating the per-shell incantations. Cross-reference: LRN-129 (manual-rerun gate gotcha — the OTHER thing that reliably trips the body-edit cycle) and LRN-125 (lock-provenance review-log discipline — the broader doctrine that the review log is signal, not just audit).
 
 ### LRN-122
 
