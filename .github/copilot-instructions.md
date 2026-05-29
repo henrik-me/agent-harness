@@ -80,6 +80,16 @@ exactly one issue labeled `harness-orchestrator` and report its URL.
 (see `OPERATIONS.md § Cross-repo procedures`). This is an orchestrator
 constraint; the human user can always act directly outside the orchestrator.
 
+**Cross-repo PR body checklist:** when the consumer-repo agent opens a PR
+in response to a harness-filed issue (typically a pin bump), the PR body
+MUST include `## Summary`, `## Changes`, `## Testing`, `## Model audit`
+(with `Implementer agent` and `Reviewer agent` rows since v0.6.0), and
+`## Review log` (6-column, bare reviewer-model identifier — no `(R2)`
+decorations; see REVIEWS.md § 2.8) at PR-open time. The consumer's
+`.github/pull_request_template.md` cannot be assumed to populate them.
+See `OPERATIONS.md § Cross-repo pin-bump PR body checklist (CS54)` for
+the full doctrine and pre-open self-check.
+
 ---
 
 ## Per-CS loop (summary)
@@ -135,7 +145,7 @@ dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
 differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
 pre-empt that step or present implementer self-review as review evidence.
 
-Required final report field: `Implementer model used` (the model-id(s)
+Required final report field: `IMPLEMENTER MODEL USED` (the model-id(s)
 materially used for the sub-agent's work), so the orchestrator can update the
 CS sub-agent ledger and the PR-body `## Model audit` table.
 
