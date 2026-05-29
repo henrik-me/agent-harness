@@ -172,9 +172,8 @@ record.
 
   | Role | Model |
   |---|---|
-  | Orchestrator | Claude Opus 4.7 1M |
-  | Mechanical sub-tasks | Claude Haiku 4.5 |
-  | Non-trivial sub-tasks | Claude Sonnet 4.6 |
+  | Orchestrator | Claude Opus 4.8 (fallback Claude Opus 4.7) |
+  | Coding, unit-test & implementation sub-tasks (code/docs/config) | Claude Opus 4.8 (fallback Claude Opus 4.7) |
   | Local review (primary) | GPT-5.5 |
   | Local review (fallback, non-high-risk) | Claude Sonnet 4.6 (independence invariant) |
 

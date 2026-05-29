@@ -588,7 +588,7 @@ push triggers another review cycle).
 
 ## Sub-agent dispatch
 
-The orchestrator (Opus 4.7 1M) dispatches sub-agents for parallelisable
+The orchestrator (Claude Opus 4.8) dispatches sub-agents for parallelisable
 sub-tasks per the parallelisation table in the active CS plan. Sub-agents
 must be **briefed with structured context** and must **report back with a
 structured report**. Both requirements are non-negotiable — without them the
@@ -598,9 +598,8 @@ orchestrator loses observability and the work loses traceability.
 
 | Role | Model |
 |---|---|
-| Orchestrator | Claude Opus 4.7 1M |
-| Non-trivial sub-tasks | Claude Sonnet 4.6 |
-| Mechanical sub-tasks | Claude Haiku 4.5 |
+| Orchestrator | Claude Opus 4.8 (fallback Claude Opus 4.7) |
+| Coding, unit-test & implementation sub-tasks (code/docs/config) | Claude Opus 4.8 (fallback Claude Opus 4.7) |
 | Local review (primary) | GPT-5.5 |
 | Local review (fallback, non-high-risk) | Claude Sonnet 4.6 (independence invariant — see REVIEWS.md) |
 
