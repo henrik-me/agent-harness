@@ -2355,6 +2355,46 @@ The orchestrator side: agent memories already capture the rule, but the parser-s
 
 Cross-references: LRN-128 (same memory-vs-tooling gap family — both now hardened tool-side); `REVIEWS.md § 2.8` (PR body requirements).
 
+### LRN-141
+
+```yaml
+id: LRN-141
+date: 2026-05-29
+category: tooling
+source_cs: CS57
+status: open
+tags: [git-worktree, npm-install, linters, node-modules, sub-agent-dispatch]
+claim_area: orchestrator-loop
+```
+
+**Problem:** When orchestrating CS57 (filing the planned plan via PR #223), a dedicated `git worktree` (`C:\src\ah-cs57`) was created so a background sub-agent could iterate on the plan file in isolation from the main working tree. The worktree's linters and the plan-review-hash helper immediately failed with `ERR_MODULE_NOT_FOUND` because `node_modules` is gitignored and is **not** shared between worktrees — a freshly-added worktree has no installed dependencies even though the parent checkout does. `scripts/check-clickstop-plan-review.mjs` (and the hash helper) import `lib/doc-schema.mjs`, which needs `js-yaml`, so every validation gate errored until `npm install` was run inside the new worktree.
+
+**Finding:** **Any newly-created `git worktree` must run `npm install` before any dependency-backed harness linter, `harness lint` as a suite, `harness plan-review-hash`, or `lib/plan-review-hash.mjs` import will work.** `node_modules` lives per-checkout and is gitignored, so `git worktree add` produces a dependency-less tree. This is mandatory setup whenever the orchestrator dispatches a sub-agent into a separate worktree (a common pattern for parallel CS work). Sub-agent briefings that own files in a fresh worktree should include "run `npm install` in the worktree first" in their required-setup section, or the orchestrator should run it before dispatch.
+
+**Evidence:** CS57 PR #223 iteration, 2026-05-29. Background sub-agent in worktree `C:\src\ah-cs57` hit `ERR_MODULE_NOT_FOUND` for `js-yaml` (via `lib/doc-schema.mjs`) on the first `node scripts/check-clickstop-plan-review.mjs` run; resolved by `npm install` in the worktree. Subsequent re-dispatches into the same worktree did not recur because `node_modules` persisted.
+
+**Disposition:** Open. Follow-up candidate: add a "fresh-worktree setup" note to `OPERATIONS.md § Sub-agent dispatch` (and the canonical briefing preamble) stating that a sub-agent owning files in a newly-created worktree must `npm install` before running any linter; optionally have the orchestrator run `npm install` as part of `git worktree add` setup. Cross-reference: LRN-124 (worktree/detached-HEAD hazards in the orchestrator loop).
+
+### LRN-140
+
+```yaml
+id: LRN-140
+date: 2026-05-29
+category: tooling
+source_cs: CS57
+status: open
+tags: [copilot-engage, head-sha, worktree, false-poll, cli, A5-A16]
+claim_area: orchestrator-loop
+```
+
+**Problem:** `harness copilot-engage <pr>` requests a PR-wide Copilot review and then **polls for that review at the local working-tree HEAD** (`git rev-parse HEAD` in the cwd), NOT the PR's actual GitHub head ref. (The review *request* itself — `gh pr edit --add-reviewer` — is PR-wide and ignores the SHA; it is the *poll* that uses the local HEAD.) During CS57 PR #223 iteration the command was run from a working tree checked out to a different commit than the PR branch head, so it polled Copilot at the wrong SHA — silently waiting for (or matching) a review at a commit the PR was not actually at. The mistake is easy to make when juggling multiple worktrees/branches for parallel CS work, and the symptom is confusing: either an indefinite "waiting for Copilot review at HEAD <wrong-sha>" or an apparent success against a stale SHA.
+
+**Finding:** **`copilot-engage` resolves the poll HEAD from the cwd, not from GitHub.** `bin/harness.mjs` (`cmdCopilotEngage`) computes `const headSha = detectGitHead(global.cwd)` via `git rev-parse HEAD` and passes it as `opts.headSha`; in `lib/copilot-engage.mjs` the line `const headSha = opts.headSha || pr.headRefOid` means the CLI-supplied local HEAD **overrides** the GraphQL-fetched `pr.headRefOid` when polling for the review. (The default `requestCopilotReview` in `lib/github-graphql.mjs` shells out to `gh pr edit --add-reviewer` and does not use `headSha` at all.) Operational rule: **always run `harness copilot-engage <pr>` from a checkout that is on the PR's branch at the PR's head** (verify with `git rev-parse HEAD` == the PR `headRefOid`). When iterating in a worktree, run it from that worktree, not the main tree. This interacts with the A5+A16 timing gate: polling at the wrong SHA produces no valid review match at the real PR head, so `read-only-gates` stays red until re-engaged from the correct checkout.
+
+**Evidence:** CS57 PR #223 iteration, 2026-05-29: `copilot-engage 223` run from the main tree polled `59c0a14` (local HEAD) while the PR head was `a442c5b`; re-running from worktree `C:\src\ah-cs57` (checked out to the PR branch) polled the correct head and the review landed. Source verified: `bin/harness.mjs:2805` (`detectGitHead(global.cwd)`) + `:2819` (`opts.headSha`), and `lib/copilot-engage.mjs:140` (`opts.headSha || pr.headRefOid`).
+
+**Disposition:** Open. Follow-up candidate (CS): have `copilot-engage` default the poll HEAD to the PR's GitHub `headRefOid` (already fetched in `PR_NODE_QUERY`) and treat the local-HEAD value as an opt-in `--head` override; emit a warning when the detected local HEAD differs from the PR head. Until then, document the "run from the PR-head checkout" rule in `OPERATIONS.md § copilot-engage` and tighten the help text at `bin/harness.mjs:464` ("current HEAD" → "the cwd's git HEAD, which must match the PR head"). Cross-reference: CS41 (copilot-engage CLI origin), CS44 (engage docs drift), LRN-124 (worktree/HEAD hazards).
+
 ### LRN-139
 
 ```yaml
