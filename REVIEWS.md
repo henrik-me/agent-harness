@@ -285,7 +285,7 @@ Example block (paste into the active CS file):
 
 | Field | Value |
 |---|---|
-| Implementer models | claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5 |
+| Implementer models | claude-opus-4.8, claude-opus-4.7 |
 | Reviewer model | gpt-5.5 |
 | Implementer agent | yoga-ah |
 | Reviewer agent | copilot |
