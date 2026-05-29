@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** `yoga-ah` (2026-05-28) carrying forward the substantive work from closed PR #201 (`cs48/post-merge-review-fixes`), which the maintainer superseded as a stale (2026-05-15) follow-up to CS48 PR #198 with the explicit instruction: "the substantive work … will be carried forward verbatim into the new CS branch — nothing is being discarded."
-**Depends on:** None. Independent of the CS54 close-out. Touches only `scripts/check-clickstop-implementer-not-reviewer.mjs` + its tests/fixtures; no template, CLI-surface, or schema changes.
+**Depends on:** None. Independent of the CS54 close-out. Touches only `scripts/check-clickstop-implementer-not-reviewer.mjs` + its tests/fixtures, plus a `LEARNINGS.md` entry (per Deliverable 4 / Task 4); no template, CLI-surface, or schema changes.
 
 ## Goal
 
@@ -97,5 +97,5 @@ Two facts established while filing this CS:
 
 ## Notes / Learnings
 
-- **Source of carried-forward work:** closed PR #201 `cs48/post-merge-review-fixes` head `248263e` (substantive commit `b19ea10` by metzGi). Diff against `546b5fc`: `scripts/check-clickstop-implementer-not-reviewer.mjs` +85/-20, tests +109/-4, plus `gpt-overlap-allowed`/`gpt-overlap-high-risk` fixtures and `model-overlap*` format updates. The single deviation this CS makes from #201 is C57-4 (date-gate instead of `CS ≥ 48`) and C57-6 (fail-closed config), both motivated by findings recorded above.
+- **Source of carried-forward work:** closed PR #201 `cs48/post-merge-review-fixes` head `248263e` (substantive commit `b19ea10` by metzGi). Diff against `546b5fc`: `scripts/check-clickstop-implementer-not-reviewer.mjs` +85/-20, tests +109/-4, plus `gpt-overlap-allowed`/`gpt-overlap-high-risk` fixtures and `model-overlap*` format updates. The two deviations this CS makes from #201 are C57-4 (date-gate instead of `CS ≥ 48`) and C57-6 (fail-closed config), both motivated by findings recorded above.
 - **Slot note:** the maintainer's #201 close comment said "re-file as a new CS (CS55+)"; CS55 and CS56 were taken by unrelated cross-repo work before this filing, so the next free slot is CS57.
