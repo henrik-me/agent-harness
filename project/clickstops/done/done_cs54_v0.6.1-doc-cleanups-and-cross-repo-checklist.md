@@ -1,10 +1,12 @@
 # CS54 — v0.6.1 doc cleanups + cross-repo pin-bump checklist
 
-**Status:** active
-**Owner:** omni-ah
-**Branch:** cs54/v0.6.1-doc-cleanups
+**Status:** done
+**Owner:** omni-ah (content PR #222); **release cut + close-out taken over by yoga-ah 2026-06-03** with maintainer authorization
+**Branch:** cs54/v0.6.1-doc-cleanups (content, merged PR #222); cs54/v0.7.0-release-cut (release + close-out)
 **Started:** 2026-05-28
-**Closed:** —
+**Closed:** 2026-06-03
+
+> **RELEASE SCOPE RECLASSIFICATION (yoga-ah, 2026-06-03 close-out):** CS54 was filed as a **v0.6.1 patch** (D54-1) on the basis that it added no CLI command. By the time the release was cut, the `[Unreleased]` CHANGELOG block had also accumulated **CS55** (PR #213, cross-repo handoff doctrine — docs) and **CS56** (PR #216, the new `harness cross-repo open-issue` CLI subcommand). Per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md) the table row **"New CLI subcommand added → Minor"** is triggered by CS56, so the actual release is **v0.7.0 (minor)**, NOT v0.6.1. The CS slug/title retain the original `v0.6.1` wording for traceability; the shipped tag is `v0.7.0`. D54-1's patch rationale held for CS54-in-isolation but was superseded by the expanded release bundle.
 **Filed by:** Post-CS53 close-out doc-sweep (2026-05-27 by `omni-ah` during SI PR #79 unblock). Triggered by 6 Copilot review findings on `henrik-me/sub-invaders` PR #79 (the v0.6.0 pin-bump): 2 real-but-minor cosmetic doc cleanups in v0.6.0 composed templates (deferred here per `## Known limitations / follow-ups` in SI PR #79 body) + 4 false-positives about the dual `reviews.*` / `review_gates.*` schema blocks (noted as a doc-clarity follow-up because the dual nomenclature is genuinely confusing even though both blocks are valid). Surfaces LRN-134 (cross-repo pin-bump PR body checklist), LRN-135 (narrow re-attest pattern documentation), and LRN-136 (Review log Model column bare-id rule).
 **Depends on:** None. Docs/templates + tooling/tests PR (includes a behavior change in `scripts/checks/check-review-log-evidence.mjs` per D54-3, plus version bump/tag/release steps); no schema migrations. May claim independently. Small enough to ship in a single sitting.
 
@@ -83,9 +85,9 @@ The dual nomenclature is genuinely confusing — even Copilot conflated them acr
 | T4 Document narrow re-attest pattern (LRN-135) | done | omni-ah | NEW H3 in OPERATIONS.md § Cross-repo procedures; cross-refs to REVIEWS.md § Plan review + § PR-evidence gates A4. LRN-135 status applied. |
 | T5 Lock Review log Model bare-id rule (LRN-136) | done | omni-ah | REVIEWS.md § 2.8 Review log column rules paragraph + bare-id check inserted BEFORE reviewerModelApproved() in scripts/checks/check-review-log-evidence.mjs + regression test added to tests/cs51-review-gates-logic.test.mjs ("rejects decorated reviewer model identifiers (LRN-136)" suite covers 9 fixture cases: bare-positive, parens decorations `(R2)`/`(PvI)`/`(reviewer)`/`(R1)`-on-Needs-Fix, non-parenthesized decorations `R2`/`- R2`/`/R2`, and display-form anti-suggestion `Claude Opus 4.7`). Targeted file `node --test` reports the single `it`-block containing all 9 fixture cases passing alongside the file's other 7 it-blocks (8/8 it-blocks); full suite 1021/0/1. Did NOT touch check-independence-invariant.mjs. LRN-136 status applied. |
 | T6 Disambiguate `reviews.*` vs `review_gates.*` blocks | done | omni-ah | NEW top-level § in REVIEWS.md adapted from schemas/harness.config.schema.json (review_gates block L107-138, reviews block L139-194); the schema remains source-of-truth. Lockstep mirror to template/composed/REVIEWS.md. |
-| T7 Cut v0.6.1 release | pending | omni-ah | Deferred to post-merge step after content PR lands: version bump 0.6.0 -> 0.6.1, CHANGELOG date stamp, README pin sweep, tag at squash SHA, GitHub release. |
-| T8 Plan-vs-implementation review | pending | omni-ah | gpt-5.5 close-out gate; record verdict in `## Plan-vs-implementation review`. |
-| Close-out: update workboard/context restart-state docs | pending | omni-ah | Update WORKBOARD + CONTEXT; rename active→done. |
+| T7 Cut v0.6.1 release | done | yoga-ah | **Cut as v0.7.0 (minor), NOT v0.6.1** — see RELEASE SCOPE RECLASSIFICATION note in header. CS56's new `harness cross-repo open-issue` subcommand triggers the SemVer "New CLI subcommand → Minor" rule. Bumped `package.json` + `package-lock.json` 0.6.0→0.7.0; promoted CHANGELOG `[Unreleased]`→`[0.7.0] — 2026-06-03` (covers CS54+CS55+CS56) + fixed compare links; README pin sweep v0.6.0→v0.7.0 (install examples + status banner). Tag `v0.7.0` + GitHub release published post-merge of the release-cut PR. |
+| T8 Plan-vs-implementation review | done | yoga-ah | gpt-5.5 rubber-duck close-out gate (independent of claude-opus-4.7 implementers). Verdict recorded in `## Plan-vs-implementation review`. |
+| Close-out: update workboard/context restart-state docs | done | yoga-ah | WORKBOARD CS54 row removed (Active Work → header-only); CONTEXT banner + suggested-next list updated; active→done rename. |
 | Close-out: file learnings/follow-up (LRN-139+ if any) | done | omni-ah | LRN-139 filed (plan-review fact-claim verification gap, status open as follow-up CS candidate). LRN-134/135/136 dispositioned APPLIED. |
 
 ### T1 — Fix stray fence at `template/composed/OPERATIONS.md:680`
@@ -255,4 +257,27 @@ Add a one-line drift-detection note: "If this list goes out of sync with `schema
 
 ## Plan-vs-implementation review
 
-_To be completed at close-out (see OPERATIONS.md § "Plan-vs-implementation review (close-out gate)" for the canonical skeleton)._
+**Reviewer:** GPT-5.5 rubber-duck (independent of the claude-opus-4.7 implementer models used in CS54; satisfies the REVIEWS.md independence invariant)
+**Date:** 2026-06-03T18:00:11Z
+**Outcome:** GO
+
+Close-out gate run by yoga-ah against the merged CS54 content (squash commit `546b5fc`, PR #222). The reviewer consumed the active CS file, the `git show 546b5fc` diff, current main state of all touched surfaces, and the test suite, and ran the targeted regression (`node --test tests/cs51-review-gates-logic.test.mjs` → 8/8 pass including the LRN-136 block).
+
+Per-deliverable outcome table:
+
+| Deliverable | Outcome | Rationale / evidence |
+|---|---|---|
+| T1 — dropped fence fix | dropped | By design: CS54 records T1 as a plan misdiagnosis and explicitly drops it (no stray fence existed). `active_cs54…md:16,80` |
+| T2 — case normalization `IMPLEMENTER MODEL USED` | match | All-caps in current OPERATIONS surfaces. `OPERATIONS.md:897,1039`, `template/managed/.github/copilot-instructions.md:148,157` |
+| T3 — cross-repo pin-bump checklist / LRN-134 | match | New checklist + pre-open self-check present; managed Copilot instructions point to it. `OPERATIONS.md:474-530`, `LEARNINGS.md:2279,2297` |
+| T4 — narrow re-attest / LRN-135 | match | Preconditions, dispatch shape, caveat, cross-refs present. `OPERATIONS.md:550-585`, `REVIEWS.md:345-354` |
+| T5 — bare-id rule + gate hardening + tests / LRN-136 | match | Rule documented; gate enforces before `reviewerModelApproved()`; regression coverage present. `REVIEWS.md:259-265`, `scripts/checks/check-review-log-evidence.mjs:224-234`, `tests/cs51-review-gates-logic.test.mjs:121-195` |
+| T6 — `reviews.*` vs `review_gates.*` disambiguation | match | Top-level disambiguation section. `REVIEWS.md:412-425` |
+| LEARNINGS dispositions | match | LRN-134/135/136 `applied`; LRN-139 filed `open`. `LEARNINGS.md:2279,2308,2334,2405,2424` |
+| CHANGELOG entries | match | CS54 entries present at squash; now folded into the `0.7.0` release bundle (expected release-cut state). `CHANGELOG.md:12-29` |
+
+Test-coverage assessment: **sufficient** — the T5 gate-hardening behavior change is covered by the historical silent-pass path (`gpt-5.5 (R2)` + populated fallback), decorated-without-fallback, bare positive control, role annotation, non-passing-row enforcement, three non-parenthesized decorations, and the display-form anti-suggestion case (`tests/cs51-review-gates-logic.test.mjs:121-195`).
+
+Version reclassification check: the reviewer independently agreed that promoting the release from the planned `v0.6.1` (patch) to `v0.7.0` (minor) is correct, because CS56's new `harness cross-repo open-issue` subcommand in the release bundle triggers the `OPERATIONS.md § SemVer policy` "New CLI subcommand added → Minor" rule (`OPERATIONS.md:1749-1766`, `CHANGELOG.md:16-17`).
+
+Overall: **GO** — no blocking issues for the merged CS54 scope (T1–T6 + learnings). T7 (release cut) and T8 (this gate) were the only remaining items; both are completed in the `cs54/v0.7.0-release-cut` close-out PR.
