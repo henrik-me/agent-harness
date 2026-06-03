@@ -9,6 +9,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-03
+
 ### Added
 
 - **CS54 / T5 (LRN-136):** Harden `scripts/checks/check-review-log-evidence.mjs` against decorated reviewer-model identifiers. The gate now enforces the bare-id rule `/^[A-Za-z0-9._-]+$/` on the `## Review log` `model` column, rejecting any non-bare form — parenthesized (`gpt-5.5 (R2)`, `gpt-5.5 (PvI)`, `gpt-5.5 (reviewer)`), non-parenthesized (`gpt-5.5 R2`, `gpt-5.5 - R2`, `gpt-5.5/R2`), and display-form (`Claude Opus 4.7`) — with an error citing canonical examples (`gpt-5.5`, `claude-opus-4.7`, `claude-sonnet-4.6`) and pointing at REVIEWS.md § 2.8. Does NOT auto-suggest a "bare" form (heuristic extraction is brittle for non-canonical inputs — e.g. would incorrectly suggest `Claude` for `Claude Opus 4.7`). Closes the silent-pass path where a decorated cell was normalised away from the primary reviewer and the fallback-rationale path approved it. Regression sub-cases in `tests/cs51-review-gates-logic.test.mjs` cover decorated + fallback (the historically-silent path), decorated without fallback, bare positive control, `(reviewer)` annotation, Needs-Fix row enforcement, the three non-parenthesized decoration forms, and a display-form anti-suggestion case. Does NOT touch `check-independence-invariant.mjs`.
@@ -30,7 +32,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Removed
 
-- _(none yet)_
+- _None._
 
 ## [0.6.0] — 2026-05-27
 
@@ -404,6 +406,7 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/henrik-me/agent-harness/compare/v0.6.0...v0.7.0
 [0.2.0]: https://github.com/henrik-me/agent-harness/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/henrik-me/agent-harness/releases/tag/v0.1.0
