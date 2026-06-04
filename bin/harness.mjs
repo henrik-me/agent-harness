@@ -22,7 +22,7 @@ import { parseArgs } from 'node:util';
 import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
@@ -3476,6 +3476,34 @@ async function cmdWhoami(args, global) {
 // Main dispatcher
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Command dispatch registry (CS47 / C47-1, PRR-1)
+// ---------------------------------------------------------------------------
+//
+// Exported so the CS47 detached-HEAD bisection test
+// (tests/cs47-detached-head-bisect.test.mjs) can enumerate every registered
+// subcommand at run time rather than maintaining a hard-coded list that goes
+// stale. New subcommands added here MUST be either exercised by that test or
+// added to its allow-list with a rationale — see C47-1 / C47-4.
+export const COMMAND_REGISTRY = {
+  init: cmdInit,
+  sync: cmdSync,
+  check: cmdCheck,
+  lint: cmdLint,
+  harvest: cmdHarvest,
+  'check-migration': cmdCheckMigration,
+  'composed-audit': cmdComposedAudit,
+  'cross-repo': cmdCrossRepo,
+  pack: cmdPack,
+  'pr-evidence': cmdPrEvidence,
+  'review-output': cmdReviewOutput,
+  review: cmdReview,
+  'copilot-engage': cmdCopilotEngage,
+  'plan-review-hash': cmdPlanReviewHash,
+  version: cmdVersion,
+  whoami: cmdWhoami,
+};
+
 async function main() {
   const global = parseGlobalArgs();
   const { subcommand, rest, help, debug } = global;
@@ -3502,26 +3530,7 @@ async function main() {
     effectiveRest = ['--only', lintAliasMatch[1], ...rest];
   }
 
-  const dispatch = {
-    init: cmdInit,
-    sync: cmdSync,
-    check: cmdCheck,
-    lint: cmdLint,
-    harvest: cmdHarvest,
-    'check-migration': cmdCheckMigration,
-    'composed-audit': cmdComposedAudit,
-    'cross-repo': cmdCrossRepo,
-    pack: cmdPack,
-    'pr-evidence': cmdPrEvidence,
-    'review-output': cmdReviewOutput,
-    review: cmdReview,
-    'copilot-engage': cmdCopilotEngage,
-    'plan-review-hash': cmdPlanReviewHash,
-    version: cmdVersion,
-    whoami: cmdWhoami,
-  };
-
-  const handler = dispatch[effectiveSubcommand];
+  const handler = COMMAND_REGISTRY[effectiveSubcommand];
   if (!handler) {
     process.stderr.write(`Unknown subcommand: "${subcommand}"\n\n${TOP_HELP}`);
     process.exit(2);
@@ -3544,4 +3553,13 @@ async function main() {
   }
 }
 
-main();
+// Only run the CLI when this module is invoked directly (e.g. `node bin/harness.mjs ...`
+// or via the bin shim), NOT when imported by a test that needs COMMAND_REGISTRY
+// (CS47 / C47-1, PRR-3). Guard mirrors the standard ESM "main module" idiom.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (invokedDirectly) {
+  main();
+}

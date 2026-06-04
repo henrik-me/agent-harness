@@ -72,11 +72,11 @@ Candidate locations to investigate (`grep -rn "git checkout\|git -c\|spawnSync.*
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Bisection test per C47-1: enumerate harness subcommands from live dispatch registry; per-subcommand HEAD + dirty-sentinel + porcelain assertions in BOTH consumer-mode and self-host-mode (per C47-2) | pending | — | use `os.tmpdir()` per LRN-094; `KNOWN_NON_GIT_TOUCHING` allow-list with rationale per skip |
-| Identify offender(s); apply fix per C47-3 (`git show` > `git worktree add --detach` > `try/finally` with stash) | pending | — | NEVER bare `git checkout <ref>` on the consumer's working repo |
-| Update LRN-124 Disposition with root cause + fix reference (or no-offender addendum per C47-4(e)) | pending | — | per Deliverable #3 |
-| CHANGELOG `[Unreleased]/Fixed` bullet citing CS47 + LRN-124 | pending | — | per Deliverable #4 |
-| Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | pending | — | regression suite must include the bisection test |
+| Bisection test per C47-1: enumerate harness subcommands from live dispatch registry; per-subcommand HEAD + dirty-sentinel + porcelain assertions in BOTH consumer-mode and self-host-mode (per C47-2) | done | yoga-ah | `tests/cs47-detached-head-bisect.test.mjs`; enumerates `COMMAND_REGISTRY`; allow-list with rationale per skip; 16/16 green |
+| Identify offender(s); apply fix per C47-3 (`git show` > `git worktree add --detach` > `try/finally` with stash) | done | yoga-ah | NO offender — static + dynamic audit show no HEAD-moving git verb anywhere in source/history; C47-4(e) environmental |
+| Update LRN-124 Disposition with root cause + fix reference (or no-offender addendum per C47-4(e)) | done | yoga-ah | no-offender addendum appended; status remains `applied` |
+| CHANGELOG `[Unreleased]/Fixed` bullet citing CS47 + LRN-124 | done | yoga-ah | per Deliverable #4 |
+| Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | done | yoga-ah | full suite 1050 pass; harness lint 30/30 |
 | Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; gate verifies C47-4(a)-(e) |
 | Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
 | Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
@@ -94,6 +94,35 @@ Candidate locations to investigate (`grep -rn "git checkout\|git -c\|spawnSync.*
 3. **The push-the-wrong-ref symptom is a secondary failure mode** worth a separate test assertion (reproduction #1 evidence): after running a harness subcommand that detaches HEAD, even a properly-formatted `git push -u origin <branch>` can push stale ref state because the local branch was never updated to follow the detached commit. The bisection test should snapshot the local branch ref's value before/after each subcommand and assert no silent change. (Track this as **C47-6** in close-out if confirmed by the bisection test.)
 4. **Tracked dirty files were not lost in this session** because edits were to a NEW (untracked) file. LRN-124's original symptom (lost tracked-file edits) was not re-triggered HERE, but the detach mechanism is identical — confirming the C47-2 dirty-sentinel assertion is necessary to also test the LRN-124 superset (lost edits) and not just the detach side effect.
 5. **Bug intermittency:** Reproduction #1 happened on the FIRST `lint` invocation in this session; reproduction #2 happened on the FIRST `plan-review-hash` invocation. Two intermediate `lint` calls (with no Notes-edit in between) did NOT detach. Hypothesis: the offending helper has internal caching/short-circuit logic that triggers the checkout only on cold-cache invocations. The bisection test should clear any cache directory (`.harness-cache/`, `~/.harness/`, etc.) before each subcommand assertion to maximize trigger probability.
+
+### Bisection outcome — C47-4(e): NO OFFENDER FOUND IN HARNESS SOURCE (environmental)
+
+Both the static audit and the dynamic bisection conclude that **no `harness` CLI
+subcommand performs a HEAD-moving git operation** — there is no in-source offender
+to fix. Per C47-4(e) and C47-5, the LRN-124 detach is therefore classified
+**environmental** (not caused by the harness CLI source). The bisection test ships
+as a permanent regression guard that will fail loudly the day a contributor adds a
+bare `git checkout <ref>` (or sibling verb) to any subcommand.
+
+**Static evidence (no HEAD-moving verb anywhere, ever):**
+- Current tree: `git grep -nE '\b(checkout|switch|restore|reset|clean|stash|worktree)\b' -- lib bin scripts` returns only the read-only `git describe --tags --exact-match` + `git rev-parse` in `lib/sync.mjs` and unrelated JS `switch` statements. Every git invocation in the codebase is read-only: `rev-parse`, `describe --tags --exact-match`, `remote get-url`, `ls-files`, `diff --name-only`, `status --porcelain`, `rev-list`.
+- At the `v0.5.1` tag (the detach target): `git grep` at `refs/tags/v0.5.1` finds NO HEAD-moving verb in source (only a code comment + a JS `switch`).
+- Across ALL history: `git log --all -G'\b(checkout|switch|restore|reset|clean|stash|worktree)\b' -- lib bin scripts` surfaces only two false-positive hits (a comment "switch on …" and a `switch (status) {` statement). **No `git checkout <tag>` has ever existed in the harness source.**
+- No git hooks (`.git/hooks/` holds only `*.sample`), no npm lifecycle scripts (`package.json` `scripts` is only `{"test": "node --test"}`), so no indirect checkout via hook/lifecycle.
+
+**Dynamic evidence (`tests/cs47-detached-head-bisect.test.mjs`, 16/16 green):**
+- The test enumerates every key of the live `COMMAND_REGISTRY` (exported from `bin/harness.mjs` per PRR-1 refinement (a)); a registry key that is neither exercised nor allow-listed fails the suite (C47-4(a)(b)).
+- The two LRN-124 live-repro subcommands — `lint` and `plan-review-hash` — plus `sync --mode=check`, `check`, `version`, `whoami` run in BOTH self-host and consumer modes; `harvest`/`check-migration`/`composed-audit` (stubs that `die()` before any git) run in consumer mode (C47-4(c)).
+- After every run, regardless of exit code, all five invariants hold (C47-4(d) + PRR-3/PRR-4): HEAD stays attached to the original branch; `rev-parse HEAD == rev-parse <branch>`; the dirty TRACKED sentinel content is preserved; its `git status --porcelain` entry is unchanged; and the per-run `GIT_TRACE` log contains NO HEAD/worktree-mutating git verb — argv-level proof that no subcommand checked out a ref.
+- Seven subcommands are allow-listed with rationale (network/interactive/heavy): `init`, `pack`, `copilot-engage`, `review`, `cross-repo`, `pr-evidence`, `review-output` — each verified by the static audit to perform no HEAD-moving git op (PRR-2 / C47-4(b)).
+
+**C47-6 (branch-ref-follow), resolved:** PRR-3's concern (HEAD moves while the branch ref lags, causing a later `git push` to push stale state) is now an explicit assertion — `rev-parse HEAD == rev-parse <branch>` — green for every exercised subcommand. No subcommand desynchronizes HEAD from its branch ref.
+
+**Conclusion:** the detach was environmental. The standing operational mitigation from
+LRN-124 ("commit after every multi-file edit batch, before any harness/gh command")
+remains in force; the new bisection suite is the regression guard, and OPERATIONS.md
+absorbs the "never `git checkout <ref>` on the consumer working repo" doctrine for
+future contributors (Deliverable 5).
 
 ## Plan refinements absorbed in PR review (Copilot R1)
 

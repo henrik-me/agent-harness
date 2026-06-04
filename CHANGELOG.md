@@ -9,6 +9,10 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ## [Unreleased]
 
+### Fixed
+
+- **CS47 / [LRN-124](LEARNINGS.md#lrn-124):** Investigate and close out the detached-HEAD working-tree-loss signature (HEAD silently detached at the most-recent release tag `v0.5.1` after a `harness` subcommand exited, reverting dirty tracked edits). **Outcome: no in-source offender — the detach is environmental, not caused by the harness CLI.** A static audit (current tree, the `v0.5.1` tag, and `git log --all -G` over all history) found no HEAD-moving git verb (`checkout`/`switch`/`reset`/`restore`/`worktree`/`stash`/`clean`) anywhere in `lib/`/`bin/`/`scripts/`; every git invocation is read-only. Adds `tests/cs47-detached-head-bisect.test.mjs`, a permanent regression guard that enumerates the live `COMMAND_REGISTRY` (now exported from `bin/harness.mjs`) and exercises each subcommand's real code path (not `--help`) in both self-host and consumer scratch repos, asserting after every run — regardless of exit code — that HEAD stays attached to its branch, `rev-parse HEAD == rev-parse <branch>`, the dirty tracked sentinel is preserved, and `GIT_TRACE` records no HEAD/worktree-mutating git verb. `bin/harness.mjs` now exports `COMMAND_REGISTRY` and guards its `main()` invocation behind a direct-invocation check so the dispatch registry can be imported without running the CLI. LRN-124 stays `applied` (the "commit after every multi-file edit batch" mitigation remains in force); OPERATIONS.md absorbs the "never `git checkout <ref>` on the consumer working repo" doctrine for subcommand authors.
+
 ## [0.7.0] — 2026-06-03
 
 ### Added

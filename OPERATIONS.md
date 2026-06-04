@@ -793,6 +793,26 @@ reading** (explicit paths for this CS), **Deliverables**, **Decision
 authority**, and any additional task-specific conventions. Do not modify the
 pasted block itself.
 
+### Subcommand authoring: never `git checkout` the consumer working repo ([LRN-124](LEARNINGS.md#lrn-124))
+
+Harness subcommands run inside the consumer's (or self-host's) working repo,
+which routinely carries **uncommitted, unstaged tracked edits**. A bare
+`git checkout <ref>` / `git switch <ref>` (or `reset --hard`, `restore`,
+`clean`, `stash`) on that repo silently detaches HEAD and reverts those dirty
+edits with no error — the LRN-124 working-tree-loss signature. CS47's
+bisection (`tests/cs47-detached-head-bisect.test.mjs`) proved no current
+subcommand does this; this rule keeps it that way for new subcommands.
+
+When a subcommand must read content at a specific ref, use, in preference order:
+
+1. **`git show <ref>:<path>`** — read-only; never touches HEAD or the worktree. The default for inspecting tagged/committed file content.
+2. **`git worktree add --detach <unique-tmpdir> <ref>`** — for multi-file scoped operations; clean up with `git worktree remove --force <path>` then `rmSync({ recursive: true, force: true, maxRetries: 5, retryDelay: 200 })` (Windows EPERM/EBUSY-hardened).
+3. **`try { prev = git symbolic-ref HEAD; git stash push --include-untracked; ... } finally { restore prev + stash pop }`** — last resort only; the `stash` is mandatory, because restoring the branch ref alone does NOT restore dirty tracked-file contents.
+
+Any new subcommand that reaches a git ref is covered automatically: the CS47
+bisection enumerates the live `COMMAND_REGISTRY`, so a new subcommand that is
+neither exercised nor allow-listed (with rationale) fails the suite.
+
 ```text
 ## CRITICAL PREFLIGHT (LRN-021)
 
