@@ -1,10 +1,10 @@
 # CS27 — Lint detector tightening (2 findings from CS16 sub-invaders bootstrap)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs27/lint-detector-tightening
 **Started:** 2026-06-04
-**Closed:** —
+**Closed:** 2026-06-04
 **Filed by:** Pre-claim disposition of [Findings #7 + #8](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** None. May claim independently of CS25 / CS26 / CS16 (CS25 and CS16 both closed 2026-05-11; CS26 still planned — none block this CS). Small enough to ship in a single sitting.
 
@@ -79,9 +79,9 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 | Update CS16 `sub-invaders-bootstrap-summary.md` Findings #7+#8 with resolution notes | done | yoga-ah | Deliverable #6 / Exit criteria 9 — in-repo `done_cs16` record updated; canonical sub-invaders copy routes via cross-repo issue (see Notes) |
 | Fresh-consumer smoke probe (no active-row warning + recommendation lines) | done | yoga-ah | Exit criteria 5+6; transcript in Notes |
 | Self-checks: `node --test` + `harness lint --quiet` + `harness sync --mode=check` | done | yoga-ah | Exit criteria 7 — 1069 pass/1 skip; lint 30/30; no drift |
-| Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md |
-| Close-out: docs + restart state (WORKBOARD row removed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
-| Close-out: learnings + follow-ups | pending | — | per OPERATIONS.md § Claim |
+| Plan-vs-implementation review (close-out gate) | done | yoga-ah | gpt-5.5 rubber-duck per OPERATIONS.md — see `## Plan-vs-implementation review` |
+| Close-out: docs + restart state (WORKBOARD row removed, active→done rename) | done | yoga-ah | per OPERATIONS.md § Claim three-PR shape |
+| Close-out: learnings + follow-ups | done | yoga-ah | per OPERATIONS.md § Claim — no new LRN; cross-repo follow-up tracked as sub-invaders #91 |
 
 ## Notes / Learnings
 
@@ -161,4 +161,31 @@ canonical-copy update is filed as sub-invaders issue
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** rubber-duck (gpt-5.5)
+**Date:** 2026-06-04
+**Outcome:** GO
+
+The independent GPT-5.5 plan-vs-implementation gate verified the merged
+implementation (main at `9101bf2c0ea8643f3a9b2b063718c83eac3996cc`) against the
+CS27 plan and found **every Deliverable (1–6) and Exit criterion (1–10) met**:
+
+- D1/D2 (Finding #7): `lib/sync.mjs` exports `workboardHasActiveRows` with the
+  C27-1 predicate (concrete CS-Task ID + State + Owner-or-Branch);
+  `tests/cs27-workboard-active-row-detector.test.mjs` (10 fixtures) pass.
+- D3/D4 (Finding #8): `bin/harness.mjs` `LINT_SKIP_RECOMMENDATIONS` renders only
+  when `!quiet`; `tests/cs27-lint-recommendations.test.mjs` (3) pass.
+- D5: CHANGELOG `[Unreleased] → Fixed` CS27 entry present.
+- D6 / EC9: accepted under the cross-repo constraint — the in-repo
+  `done_cs16_bootstrap-sub-invaders.md` carries the resolution note and the
+  canonical sub-invaders copy is tracked via issue #91.
+- EC5/EC6: the reviewer independently reproduced the fresh-consumer smoke probe
+  (no active-row warning on `sync --mode=check`; both recommendation lines on
+  `lint`).
+
+The reviewer's only NEEDS-FIX item was that this `## Plan-vs-implementation
+review` section was still unfilled when it ran validation against the
+in-progress close-out worktree (so `check-clickstop` rejected the not-yet-
+populated done file). That is the close-out metadata step itself, resolved by
+this commit; it is not a defect in the CS27 runtime changes. Post-fill
+validation (full `node --test`, `harness lint --quiet`, `sync --mode=check`)
+is re-run green as part of close-out.
