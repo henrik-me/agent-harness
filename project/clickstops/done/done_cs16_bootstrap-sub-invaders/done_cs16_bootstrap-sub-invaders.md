@@ -618,14 +618,15 @@ by a formal review.
   em-dash placeholder row) is fixed in `lib/sync.mjs`; Finding #8 (the
   consumer-applicable `pr-body` and `commit-trailers` lint checks skipped
   silently with no adoption hint) now surface a non-quiet recommendation in
-  `harness lint`. See CHANGELOG `[Unreleased] → Fixed` and
-  `project/clickstops/done/done_cs27_lint-detector-tightening.md`. The
-  canonical copy of `sub-invaders-bootstrap-summary.md` lives in the
+  `harness lint`. See CHANGELOG `[Unreleased] → Fixed` and the CS27 close-out
+  record (`done_cs27_lint-detector-tightening.md`, created at CS27 close-out).
+  The canonical copy of `sub-invaders-bootstrap-summary.md` lives in the
   `henrik-me/sub-invaders` consumer repo (it was never merged to
   agent-harness `main`); per the orchestrator cross-repo constraint
   (`OPERATIONS.md § Cross-repo procedures`) its Findings #7/#8 resolution
-  annotation must be filed as a sub-invaders-side issue rather than committed
-  here.
+  annotation is tracked as sub-invaders issue
+  [#91](https://github.com/henrik-me/sub-invaders/issues/91) rather than
+  committed here.
 - **Standards parity** (C16-13): Ruleset, App, security workflows all
   present in sub-invaders; verified by sub-agent A6 during CS01 in
   sub-invaders.

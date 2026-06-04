@@ -134,7 +134,8 @@ orchestrator cross-repo constraint (OPERATIONS.md § Cross-repo procedures),
 its Findings #7/#8 resolution annotation cannot be committed from here; the
 in-repo CS16 record (`done_cs16_bootstrap-sub-invaders.md` →
 Production-validation evidence) carries the resolution note instead, and the
-canonical-copy update is to be filed as a sub-invaders-side issue.
+canonical-copy update is filed as sub-invaders issue
+[#91](https://github.com/henrik-me/sub-invaders/issues/91).
 
 ## Model audit
 
