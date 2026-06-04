@@ -193,11 +193,13 @@ const SUBCOMMAND_PLAN = {
 
   // init scaffolds a fresh consumer repo and finalizes via `sync --mode=apply`
   // (bin/harness.mjs cmdInit) — the second arm into the apply path. Exercised in
-  // consumer mode (its only meaningful mode) with prompts/network suppressed.
+  // BOTH consumer mode (its primary mode) and self-host mode (C47-4(c)); the
+  // self-host run uses a dedicated clone (`freshSelfHost`) because init writes.
   init: {
     runs: [{
       args: ['init', '--skip-constraint-detection', '--skip-workboard-pat-prompt'],
-      modes: ['consumer'],
+      modes: ['consumer', 'selfhost'],
+      freshSelfHost: true,
     }],
   },
 
@@ -522,3 +524,42 @@ for (const { name, run, index } of runsForMode('selfhost')) {
     }
   });
 }
+
+// C47-4(c) depth: exercise sync's apply + check code paths against a REAL
+// initialized consumer (scaffolded by `init`), not merely the config-missing
+// early-error path that a bare scratch repo would hit. `init` finalizes via
+// `sync --mode=apply`, leaving a fully materialized harness consumer; we then
+// run an explicit apply + check over it. Invariants must hold after every step.
+test('CS47 consumer-mode: initialized-consumer sync apply+check preserves HEAD + dirty sentinel', () => {
+  const repo = makeConsumerRepo();
+  try {
+    runAndAssert({
+      repo,
+      planArgs: ['init', '--skip-constraint-detection', '--skip-workboard-pat-prompt'],
+      mode: 'consumer',
+      name: 'init-then-sync#init',
+      binPath: REPO_BIN,
+      useCwdFlag: true,
+    });
+    // Prove `init` actually materialized a harness consumer, so the subsequent
+    // sync runs exercise the deep apply/check path and not the config-missing
+    // early-error path (runAndAssert is exit-code-agnostic and would otherwise
+    // false-green if init silently stopped initializing).
+    assert.ok(
+      existsSync(path.join(repo, 'harness.config.json')),
+      'init must scaffold harness.config.json before the deep sync runs',
+    );
+    for (const sub of [['sync', '--mode=apply'], ['sync', '--mode=check']]) {
+      runAndAssert({
+        repo,
+        planArgs: sub,
+        mode: 'consumer',
+        name: `init-then-${sub.join(' ')}`,
+        binPath: REPO_BIN,
+        useCwdFlag: true,
+      });
+    }
+  } finally {
+    rmDir(repo);
+  }
+});
