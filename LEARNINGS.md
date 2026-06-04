@@ -66,7 +66,7 @@ date: 2026-06-04
 category: process
 source_cs: CS27
 status: open
-tags: [plan-vs-implementation, close-out, check-clickstop, false-negative, worktree-ordering]
+tags: [plan-vs-implementation, close-out, check-clickstop, false-positive, worktree-ordering]
 claim_area: orchestrator-loop
 ```
 
