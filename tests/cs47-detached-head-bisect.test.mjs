@@ -70,17 +70,57 @@ const MUTATING_VERBS = new Set([
   'checkout', 'switch', 'reset', 'restore', 'worktree', 'stash', 'clean',
 ]);
 
+// git GLOBAL options that consume a SEPARATE following value token (i.e. the
+// `--opt value` form, as opposed to `--opt=value`). Used to correctly skip past
+// option values when locating the subcommand token in a GIT_TRACE line.
+const VALUE_CONSUMING_GIT_OPTS = new Set([
+  '-C', '-c', '--git-dir', '--work-tree', '--namespace',
+  '--super-prefix', '--config-env', '--exec-path',
+]);
+
+/**
+ * Shell-like tokenizer for the argv tail of a GIT_TRACE line. Honours single
+ * and double quotes so a value containing spaces (e.g. `-C 'path with spaces'`)
+ * stays a single token rather than fragmenting and derailing option-skipping.
+ *
+ * @param {string} s
+ * @returns {string[]}
+ */
+function tokenizeArgv(s) {
+  const tokens = [];
+  let cur = '';
+  let inS = false; // inside single quotes
+  let inD = false; // inside double quotes
+  let started = false; // a token has begun (even if it is the empty string '')
+  for (const ch of s) {
+    if (inS) { if (ch === "'") inS = false; else cur += ch; continue; }
+    if (inD) { if (ch === '"') inD = false; else cur += ch; continue; }
+    if (ch === "'") { inS = true; started = true; continue; }
+    if (ch === '"') { inD = true; started = true; continue; }
+    if (ch === ' ' || ch === '\t') {
+      if (started) { tokens.push(cur); cur = ''; started = false; }
+      continue;
+    }
+    cur += ch;
+    started = true;
+  }
+  if (started) tokens.push(cur);
+  return tokens;
+}
+
 /**
  * Scan a GIT_TRACE log for any HEAD/worktree-mutating git invocation.
  *
  * GIT_TRACE lines that name a command look like:
- *   <ts> git.c:455   trace: built-in: git checkout main
- *   <ts> run-command.c:N  trace: run_command: git -C /p checkout tag
- *   <ts>            trace: exec: git 'reset' '--hard'
+ *   <ts> git.c:455         trace: built-in: git checkout main
+ *   <ts> run-command.c:N    trace: run_command: git -C /p checkout tag
+ *   <ts>                    trace: exec: git 'reset' '--hard'
  * The command always follows a `built-in:` / `exec:` / `run_command:` category
  * tag, so we anchor on that (avoids matching the `git.c:` filename prefix), then
- * skip any leading git OPTIONS (`-C <path>`, `-c k=v`, `--no-pager`, …) so an
- * option-prefixed mutating call (`git -C repo checkout`) is still caught.
+ * skip any leading git OPTIONS — including value-consuming globals in both
+ * `--opt value` and `--opt=value` forms (e.g. `git --git-dir /p reset`, or a
+ * quoted `git -C 'a b' checkout`) — so an option-prefixed mutating call is still
+ * caught.
  *
  * @param {string} traceText
  * @returns {string | null} the first offending line, or null if none.
@@ -89,11 +129,12 @@ function findMutatingGitVerb(traceText) {
   for (const raw of traceText.split(/\r?\n/)) {
     const m = raw.match(/\b(?:built-in|exec|run_command):\s+git\b(.*)$/);
     if (!m) continue;
-    const tokens = m[1].replace(/['"]/g, '').trim().split(/\s+/).filter(Boolean);
+    const tokens = tokenizeArgv(m[1].trim());
     for (let i = 0; i < tokens.length; i++) {
       const tok = tokens[i];
-      if (tok === '-C' || tok === '-c') { i++; continue; } // option WITH a value
-      if (tok.startsWith('-')) continue; // bare flag (--no-pager, --git-dir=…)
+      if (tok === '') continue;
+      if (VALUE_CONSUMING_GIT_OPTS.has(tok)) { i++; continue; } // `--opt value`
+      if (tok.startsWith('-')) continue; // `--opt=value`, bare flags, `-p`, …
       // first non-option token is the git subcommand.
       if (MUTATING_VERBS.has(tok)) return raw;
       break;
@@ -353,6 +394,13 @@ test('CS47: findMutatingGitVerb detects mutating verbs and ignores read-only git
     "12:00:00.123456 git.c:455               trace: exec: git 'reset' '--hard'",
     '12:00:00.123456 git.c:455               trace: built-in: git -c advice.detachedHead=false switch tag',
     '12:00:00.123456 git.c:455               trace: run_command: git worktree add /tmp/wt v0.5.1',
+    // value-consuming long options in `--opt value` form must be skipped.
+    '12:00:00.123456 git.c:455               trace: exec: git --git-dir /tmp/r/.git reset --hard',
+    '12:00:00.123456 git.c:455               trace: exec: git --work-tree /tmp/r checkout v0.5.1',
+    // quoted option value containing spaces must stay one token.
+    "12:00:00.123456 git.c:455               trace: exec: git -C 'path with spaces' checkout v0.5.1",
+    // -C as a value-consuming option with the verb following its value.
+    '12:00:00.123456 git.c:455               trace: run_command: git --exec-path /usr/libexec/git-core stash',
   ];
   for (const line of POSITIVE) {
     assert.ok(findMutatingGitVerb(line), `expected to flag mutating line: ${line}`);
@@ -363,9 +411,11 @@ test('CS47: findMutatingGitVerb detects mutating verbs and ignores read-only git
     '12:00:00.123456 run-command.c:655       trace: run_command: git -C /tmp/r rev-parse HEAD',
     '12:00:00.123456 git.c:455               trace: built-in: git describe --tags --exact-match',
     '12:00:00.123456 git.c:455               trace: built-in: git status --porcelain',
-    // a path that merely contains a verb-like word must not trip the detector.
+    // a path/value that merely contains a verb-like word must not trip the detector.
     '12:00:00.123456 git.c:455               trace: exec: git diff --name-only -- src/checkout.js',
     '12:00:00.123456 git.c:455               trace: built-in: git log -G stash -- lib',
+    "12:00:00.123456 git.c:455               trace: exec: git -C 'checkout' rev-parse HEAD",
+    '12:00:00.123456 git.c:455               trace: exec: git --git-dir reset/.git rev-parse HEAD',
     '',
   ];
   for (const line of NEGATIVE) {
