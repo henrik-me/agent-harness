@@ -54,9 +54,9 @@ left verbatim; deviation recorded in
 `## Decisions`/`## Deliverables` bodies.
 
 **Disposition:** Resolved in CS60 (see Applied below). CS60 added a note to
-`OPERATIONS.md § Plan review` (and/or RETROSPECTIVES) stating that post-hash
+`OPERATIONS.md § Plan review` stating that post-hash
 factual corrections go to implementation + a `## Notes` deviation record, never
-to the hashed section. Until then this LRN is the reference.
+to the hashed section.
 
 **Applied (CS60, 2026-06-04):** `OPERATIONS.md § Plan review` (and lockstep `template/composed/OPERATIONS.md`) now states that once a `## Decisions`/`## Deliverables` row is plan-review-hashed, later factual errors must be fixed in the implementation and recorded as a dated `## Notes` deviation — never by editing the hashed section, which would invalidate the attestation.
 
