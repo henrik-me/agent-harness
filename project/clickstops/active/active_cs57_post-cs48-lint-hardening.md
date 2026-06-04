@@ -87,11 +87,11 @@ Two facts established while filing this CS:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Implement C57-1..C57-6 in `scripts/check-clickstop-implementer-not-reviewer.mjs` (carry PR #201 forward; swap CS-number cutoff for date-gate; fail-closed config parse) | pending | — | single owned script; no template/CLI/schema changes |
-| Carry-forward + adapt tests and fixtures to date-gate semantics; add real-repo grandfather regression guard | pending | — | `os.tmpdir()` scratch per LRN-094; test minimum is the Deliverable-2 list, over-delivery welcome |
-| Choose + document `MODEL_AUDIT_ENFORCEMENT_DATE` against the live `done/` set | pending | — | strictly after latest closed CS; inline rationale comment |
-| File LEARNINGS entry (config-vs-code drift + cutoff-shape finding) | pending | — | per Deliverable 4 |
-| Self-checks: `node --test tests/check-clickstop-implementer-not-reviewer.test.mjs`, `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` (expect exit 0), text-encoding check on changed files | pending | — | regression guard must prove the 8 historical files stay grandfathered |
+| Implement C57-1..C57-6 in `scripts/check-clickstop-implementer-not-reviewer.mjs` (carry PR #201 forward; swap CS-number cutoff for date-gate; fail-closed config parse) | done | yoga-ah | single owned script; no template/CLI/schema changes |
+| Carry-forward + adapt tests and fixtures to date-gate semantics; add real-repo grandfather regression guard | done | yoga-ah | `os.tmpdir()` scratch per LRN-094; test minimum is the Deliverable-2 list, over-delivery welcome |
+| Choose + document `MODEL_AUDIT_ENFORCEMENT_DATE` against the live `done/` set | done | yoga-ah | strictly after latest closed CS; inline rationale comment |
+| File LEARNINGS entry (config-vs-code drift + cutoff-shape finding) | done | yoga-ah | per Deliverable 4 |
+| Self-checks: `node --test tests/check-clickstop-implementer-not-reviewer.test.mjs`, `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` (expect exit 0), text-encoding check on changed files | done | yoga-ah | regression guard must prove the 8 historical files stay grandfathered |
 | Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; verdict recorded in `## Plan-vs-implementation review` before active→done rename |
 | Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
 | Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
@@ -100,6 +100,15 @@ Two facts established while filing this CS:
 
 - **Source of carried-forward work:** closed PR #201 `cs48/post-merge-review-fixes` head `248263e` (substantive commit `b19ea10` by metzGi). Diff against `546b5fc`: `scripts/check-clickstop-implementer-not-reviewer.mjs` +85/-20, tests +109/-4, plus `gpt-overlap-allowed`/`gpt-overlap-high-risk` fixtures and `model-overlap*` format updates. The two deviations this CS makes from #201 are C57-4 (date-gate instead of `CS ≥ 48`) and C57-6 (fail-closed config), both motivated by findings recorded above.
 - **Slot note:** the maintainer's #201 close comment said "re-file as a new CS (CS55+)"; CS55 and CS56 were taken by unrelated cross-repo work before this filing, so the next free slot is CS57.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 
