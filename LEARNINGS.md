@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
+> **Last updated:** 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -12,7 +12,102 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
-(none — see Applied below)
+### LRN-143
+
+```yaml
+id: LRN-143
+date: 2026-06-04
+category: process
+source_cs: CS27
+status: open
+tags: [plan-review-hash, decisions-immutability, deviation-record, copilot-review, gpt-5.5]
+claim_area: orchestrator-loop
+```
+
+**Problem:** During CS27 a Copilot PR review discovered that an already
+plan-review-hashed `## Decisions` row (C27-3) specified factually wrong
+recommendation text: the `commit-trailers` lint recommendation cited a
+non-existent `OPERATIONS.md § Branch and commit conventions` section and
+suggested a `--signoff` trailer. Both are wrong — that section actually lives
+in `.github/copilot-instructions.md`, and `check-commit-trailers.mjs` requires
+a `Co-authored-by` trailer by default (`--signoff` emits `Signed-off-by`).
+The obvious fix — edit the Decisions row to the correct text — would silently
+invalidate the recorded plan-review hash, because plan-review hashes cover the
+`## Decisions` and `## Deliverables` section bodies (per
+`lib/plan-review-hash.mjs`).
+
+**Finding:** Plan-review-hashed sections are effectively immutable after the
+plan-review is recorded. When a reviewer later finds a factual error baked into
+a hashed `## Decisions`/`## Deliverables` row, the correct resolution is to
+(a) fix the **implementation** to the accurate text, (b) leave the hashed row
+**verbatim** so the recorded hash still validates, and (c) record the
+divergence explicitly in the CS file's `## Notes` section as a dated deviation.
+Do **not** edit the hashed section to "make it match" — that breaks the audit
+chain the hash exists to protect.
+
+**Evidence:** CS27 content PR #239. Copilot inline comment on the
+`commit-trailers` recommendation text; implementation corrected in commit
+`5c2b3e1` (`bin/harness.mjs` `LINT_SKIP_RECOMMENDATIONS`); C27-3 Decisions row
+left verbatim; deviation recorded in
+`project/clickstops/done/done_cs27_lint-detector-tightening.md` § Notes
+(~line 128). Generalises the existing rule that plan-review hashes cover only
+`## Decisions`/`## Deliverables` bodies.
+
+**Disposition:** Open. Candidate hardening: add a one-line note to
+`OPERATIONS.md § Plan review` (and/or RETROSPECTIVES) stating that post-hash
+factual corrections go to implementation + a `## Notes` deviation record, never
+to the hashed section. Until then this LRN is the reference.
+
+### LRN-144
+
+```yaml
+id: LRN-144
+date: 2026-06-04
+category: process
+source_cs: CS27
+status: open
+tags: [plan-vs-implementation, close-out, check-clickstop, false-positive, worktree-ordering]
+claim_area: orchestrator-loop
+```
+
+**Problem:** The CS27 plan-vs-implementation (PVI) close-out review reported a
+`NEEDS-FIX` even though every Deliverable and Exit criterion was met and the
+reviewer's substantive verdict was `GO`. The `NEEDS-FIX` did **not** come from
+the substantive review — it came from the reviewer running `node --test` (which
+invokes `check-clickstop.mjs`) against the in-progress close-out worktree, where
+the `active_*` → `done_*` rename had already happened but the
+`## Plan-vs-implementation review` section was not yet filled — because that
+section is *populated from the verdict the gate is supposed to produce*. The
+linter correctly rejected the unfilled section, and that mechanical failure was
+surfaced as `NEEDS-FIX`, masking the substantive GO.
+
+**Finding:** The PVI close-out gate must evaluate the **merged content HEAD**
+(or the content diff `git diff main..cs<NN>/content`), not the half-migrated
+close-out worktree. Per `OPERATIONS.md § Plan-vs-implementation review`, the
+orchestrator records the verdict in the **active** CS file's
+`## Plan-vs-implementation review` section **before** the `active → done`
+rename. The CS27 mistake was doing the rename first: that produced a `done_*`
+file with an unfilled PVI section — the exact state `check-clickstop` rejects.
+Correct ordering is verdict-first: capture the GO, write the PVI section into
+the still-`active` file, and only then perform the `active → done` rename and
+close-out validation. When a linter does run on a mid-migration worktree, read
+the gate's prose verdict, not the linter exit code.
+
+**Evidence:** CS27 PVI gate (gpt-5.5 rubber-duck, background) against merged
+HEAD `9101bf2` returned substantively GO; the false NEEDS-FIX came solely from
+running `node --test` on the dirty close-out worktree (renamed `done_*` file,
+unfilled PVI section). `OPERATIONS.md:107-108` and `OPERATIONS.md:131-135`
+confirm the gate precedes the rename and the verdict is recorded in the active
+file. Resolved in `done_cs27_lint-detector-tightening.md` (~line 162, Outcome
+GO) then re-validated clean (check-clickstop 0 errors). Inverse of the
+structural-marker *bypass* problem (placeholder PVI sections passing the linter)
+captured in the CS03b check-#4 hardening LRN.
+
+**Disposition:** Open. Candidate hardening: add a one-line ordering reminder to
+`OPERATIONS.md § Plan-vs-implementation review (close-out gate)` — gate runs
+against the merged content HEAD / content diff; record the verdict in the
+**active** CS file first; the `active → done` rename is the *last* close-out
+step, never performed before the PVI section is populated.
 
 ## Applied
 
