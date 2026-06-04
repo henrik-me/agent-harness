@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Pre-CS16 doc-state audit. Captures the parallel-orchestrator model discussed in [`CONTEXT.md`](../../../CONTEXT.md) § Parallelism and [`OPERATIONS.md`](../../../OPERATIONS.md).
-**Depends on:** CS22 (or after CS15b public flip — TBD)
+**Depends on:** CS22 — **done** ([`v0.2.0`](https://github.com/henrik-me/agent-harness/releases/tag/v0.2.0) tagged and published; the CS16 pin target; CS file under [`project/clickstops/done/`](../done/done_cs22_cut-harness-v0.2.0/)). Dependency satisfied; public flip (CS15a) is likewise done, so no remaining blocker. (Note: the `done_cs22` file header still reads `Status: active` — a stale close-out artefact; the published `v0.2.0` tag is the authoritative completion evidence.)
 
 ## Goal
 

@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Pre-claim disposition of [Findings #7 + #8](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
-**Depends on:** None. May claim independently of CS25 / CS26 / CS16. Small enough to ship in a single sitting.
+**Depends on:** None. May claim independently of CS25 / CS26 / CS16 (CS25 and CS16 both closed 2026-05-11; CS26 still planned — none block this CS). Small enough to ship in a single sitting.
 
 ## Goal
 

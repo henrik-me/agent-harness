@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
-**Depends on:** [CS25](planned_cs25_hotfix-runtime-deps-and-v0.2.1-patch.md) — CS25 must ship first so consumers running the new init flow have a working ajv. CS26 may be authored in parallel but should not merge until CS25 is on `main`.
+**Depends on:** [CS25](../done/done_cs25_hotfix-runtime-deps.md) (**closed 2026-05-11**; ajv/ajv-formats/js-yaml moved to runtime dependencies so the init flow has a working ajv — dependency satisfied; CS25 is on `main`). No remaining blocker. (Note: no `v0.2.1` tag was cut — the patch-release step was reframed; `v0.2.0` remains the latest `v0.2.x` tag.)
 
 ## Goal
 
