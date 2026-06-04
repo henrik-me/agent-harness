@@ -1652,8 +1652,8 @@ async function cmdCheck(args, global) {
 // artefacts not relevant to a typical consumer. The note never changes exit code.
 const LINT_SKIP_RECOMMENDATIONS = {
   'commit-trailers':
-    'add .github/pull_request_template.md and use --signoff or Co-authored-by ' +
-    'trailers per OPERATIONS.md § Branch and commit conventions',
+    'add a Co-authored-by trailer to your commit messages per ' +
+    '.github/copilot-instructions.md § Branch and commit conventions',
   'pr-body':
     'add .github/pull_request_template.md so PR bodies follow the required ' +
     'section structure per OPERATIONS.md',

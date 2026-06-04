@@ -122,8 +122,21 @@ No drift detected.            # <- Finding #7: NO "WORKBOARD.md has active CS ro
 
 $ harness --cwd <tmp> lint
   – pr-body: not configured (recommendation: add .github/pull_request_template.md so PR bodies follow the required section structure per OPERATIONS.md)
-  – commit-trailers: not configured (recommendation: add .github/pull_request_template.md and use --signoff or Co-authored-by trailers per OPERATIONS.md § Branch and commit conventions)
+  – commit-trailers: not configured (recommendation: add a Co-authored-by trailer to your commit messages per .github/copilot-instructions.md § Branch and commit conventions)
 ```
+
+> **Deviation from Decision C27-3 (recorded per Copilot PR #239 review):** the
+> `commit-trailers` recommendation text in C27-3 originally read
+> `add .github/pull_request_template.md and use --signoff or Co-authored-by
+> trailers per OPERATIONS.md § Branch and commit conventions`. Copilot review
+> correctly flagged that (a) `OPERATIONS.md` has no "Branch and commit
+> conventions" section — it lives in `.github/copilot-instructions.md`, and
+> (b) `--signoff` emits a `Signed-off-by` trailer, but `check-commit-trailers`
+> requires `Co-authored-by` by default. The emitted text was corrected to
+> `add a Co-authored-by trailer to your commit messages per
+> .github/copilot-instructions.md § Branch and commit conventions`. The C27-3
+> Decisions row is left verbatim to preserve the plan-review hash; this Notes
+> entry is the deviation record.
 
 ### Deliverable #6 / Exit criteria 9 — cross-repo note
 
