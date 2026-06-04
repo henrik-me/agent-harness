@@ -70,14 +70,16 @@ tags: [plan-vs-implementation, close-out, check-clickstop, false-negative, workt
 claim_area: orchestrator-loop
 ```
 
-**Problem:** The CS27 plan-vs-implementation (PVI) close-out gate returned
-`NEEDS-FIX` even though every Deliverable and Exit criterion was met. The
-NEEDS-FIX was spurious: the reviewer ran `node --test` (which invokes
-`check-clickstop.mjs`) against the in-progress close-out worktree, where the
-`active_*` → `done_*` rename had already happened but the
+**Problem:** The CS27 plan-vs-implementation (PVI) close-out review reported a
+`NEEDS-FIX` even though every Deliverable and Exit criterion was met and the
+reviewer's substantive verdict was `GO`. The `NEEDS-FIX` did **not** come from
+the substantive review — it came from the reviewer running `node --test` (which
+invokes `check-clickstop.mjs`) against the in-progress close-out worktree, where
+the `active_*` → `done_*` rename had already happened but the
 `## Plan-vs-implementation review` section was not yet filled — because that
 section is *populated from the verdict the gate is supposed to produce*. The
-linter correctly rejected the unfilled section, masking the substantive GO.
+linter correctly rejected the unfilled section, and that mechanical failure was
+surfaced as `NEEDS-FIX`, masking the substantive GO.
 
 **Finding:** The PVI close-out gate must evaluate the **merged content HEAD**
 (or the content diff `git diff main..cs<NN>/content`), not the half-migrated
