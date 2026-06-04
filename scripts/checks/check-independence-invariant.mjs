@@ -121,8 +121,14 @@ function validateReviewsConfig(reviews, source) {
 }
 
 function loadReviewsConfig(configPath) {
-  const candidate = configPath ?? path.resolve(process.cwd(), 'harness.config.json');
-  if (!existsSync(candidate)) return schemaDefaultReviewsConfig();
+  const explicit = configPath != null;
+  const candidate = explicit ? configPath : path.resolve(process.cwd(), 'harness.config.json');
+  if (!existsSync(candidate)) {
+    if (explicit) {
+      throw new ConfigError(`${candidate}: config file not found (path supplied via --config)`);
+    }
+    return schemaDefaultReviewsConfig();
+  }
   let cfg;
   try {
     cfg = JSON.parse(readFileSync(candidate, 'utf8'));

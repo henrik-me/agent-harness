@@ -2945,15 +2945,15 @@ export function parseCopilotEngageArgs(args, cwd, { dieFn = die } = {}) {
     } else if (a.startsWith('--repo=')) {
       repo = a.slice('--repo='.length);
     } else if (a === '--poll-timeout') {
-      timeoutSeconds = parseFiniteNumber(requireValue(i, '--poll-timeout'), '--poll-timeout');
+      timeoutSeconds = parseFiniteNumber(requireValue(i, '--poll-timeout'), '--poll-timeout', fail);
       i++;
     } else if (a.startsWith('--poll-timeout=')) {
-      timeoutSeconds = parseFiniteNumber(a.slice('--poll-timeout='.length), '--poll-timeout');
+      timeoutSeconds = parseFiniteNumber(a.slice('--poll-timeout='.length), '--poll-timeout', fail);
     } else if (a === '--poll-interval') {
-      intervalSeconds = parseFiniteNumber(requireValue(i, '--poll-interval'), '--poll-interval');
+      intervalSeconds = parseFiniteNumber(requireValue(i, '--poll-interval'), '--poll-interval', fail);
       i++;
     } else if (a.startsWith('--poll-interval=')) {
-      intervalSeconds = parseFiniteNumber(a.slice('--poll-interval='.length), '--poll-interval');
+      intervalSeconds = parseFiniteNumber(a.slice('--poll-interval='.length), '--poll-interval', fail);
     } else if (a === '--no-poll') {
       noPoll = true;
     } else if (a === '--head') {
@@ -2967,10 +2967,10 @@ export function parseCopilotEngageArgs(args, cwd, { dieFn = die } = {}) {
     } else if (a.startsWith('--cache-dir=')) {
       cacheDir = path.resolve(cwd, a.slice('--cache-dir='.length));
     } else if (a === '--cache-ttl') {
-      cacheTtlDays = parseFiniteNumber(requireValue(i, '--cache-ttl'), '--cache-ttl');
+      cacheTtlDays = parseFiniteNumber(requireValue(i, '--cache-ttl'), '--cache-ttl', fail);
       i++;
     } else if (a.startsWith('--cache-ttl=')) {
-      cacheTtlDays = parseFiniteNumber(a.slice('--cache-ttl='.length), '--cache-ttl');
+      cacheTtlDays = parseFiniteNumber(a.slice('--cache-ttl='.length), '--cache-ttl', fail);
     } else if (a === '--quiet') {
       quiet = true;
     } else if (a === '--json') {
@@ -3041,10 +3041,10 @@ function parseSha(raw, flagName, fail = die) {
   return raw;
 }
 
-function parseFiniteNumber(raw, flagName) {
+function parseFiniteNumber(raw, flagName, fail = die) {
   const value = Number(raw);
   if (!Number.isFinite(value)) {
-    die(`copilot-engage: ${flagName} must be a number; got '${raw}'`, 2);
+    fail(`copilot-engage: ${flagName} must be a number; got '${raw}'`, 2);
   }
   return value;
 }

@@ -99,4 +99,12 @@ describe('CS60 config drift guard for independence invariant', () => {
     assert.equal(malformedResult.status, 1, malformedResult.stdout + malformedResult.stderr);
     assert.match(malformedResult.stderr, /reviews\.high_risk_clickstops must be an array/);
   });
+
+  it('fails closed when an explicit --config path does not exist', () => {
+    const body = writeBody('body.md');
+    const missingPath = path.join(scratch, 'does-not-exist.json');
+    const result = run(['--pr-body', body, '--config', missingPath]);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /config file not found/);
+  });
 });
