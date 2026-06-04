@@ -1,6 +1,6 @@
 # CS47 — Investigate harness CLI detached-HEAD bug (LRN-124 root cause)
 
-**Status:** active
+**Status:** done
 **Owner:** `yoga-ah`
 **Branch:** `cs47/content`
 **Started:** 2026-06-04
@@ -77,9 +77,9 @@ Candidate locations to investigate (`grep -rn "git checkout\|git -c\|spawnSync.*
 | Update LRN-124 Disposition with root cause + fix reference (or no-offender addendum per C47-4(e)) | done | yoga-ah | no-offender addendum appended; status remains `applied` |
 | CHANGELOG `[Unreleased]/Fixed` bullet citing CS47 + LRN-124 | done | yoga-ah | per Deliverable #4 |
 | Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | done | yoga-ah | full suite 1058 pass / 1 skip; harness lint 30/30 |
-| Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; gate verifies C47-4(a)-(e) |
-| Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
-| Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
+| Plan-vs-implementation review (close-out gate) | done | yoga-ah | GPT-5.5 rubber-duck @ 2026-06-04T07:53:57Z against 46c7b3e — Outcome GO; verbatim in `## Plan-vs-implementation review` |
+| Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | done | yoga-ah | WORKBOARD CS47 row removed + header bumped; active→done rename in this close-out PR; CONTEXT.md restart state unchanged |
+| Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | done | yoga-ah | LRN-124 stays `applied` (no-offender addendum); no residual follow-up CS — bisection guard is the standing regression mitigation |
 
 ## Notes / Learnings
 
@@ -145,4 +145,29 @@ Copilot R1 surfaced five additional refinements after R2 Go-with-amendments. Eac
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+
+**Date:** 2026-06-04T07:53:57Z
+
+**Outcome:** GO
+
+| Criterion / deliverable | Satisfied? | Evidence |
+|---|---:|---|
+| Current HEAD is expected merge | Yes | Confirmed `git rev-parse HEAD` = `46c7b3e0ce0f455d75c00be6f06db9e8c752400e`. |
+| C47-4(a): live dispatch enumeration | Yes | Test imports `COMMAND_REGISTRY` from `bin/harness.mjs` (`tests/cs47-detached-head-bisect.test.mjs:59`) and fails on missing/stale entries (`:442-471`). |
+| C47-4(b): all subcommands tested or allow-listed | Yes | `SUBCOMMAND_PLAN` covers exercised commands and skip-listed network/interactive/heavy commands with rationale (`:166-231`); registry coverage test enforces this (`:443-471`). |
+| C47-4(c): both consumer and self-host modes | Yes | Consumer loop runs all consumer-mode entries (`:485-503`); self-host loop runs all self-host entries (`:505-526`). Prior gap fixed: `init` now has `modes: ['consumer','selfhost']` and `freshSelfHost: true` (`:194-203`). |
+| C47-4(c) depth: initialized consumer `sync --mode=apply` | Yes | Prior gap fixed by standalone initialized-consumer test: runs `init`, asserts `harness.config.json` exists, then runs explicit `sync --mode=apply` and `sync --mode=check` (`:528-560`). |
+| C47-4(d): HEAD + dirty sentinel + porcelain invariants | Yes | Invariants assert same symbolic HEAD, branch ref follows HEAD, dirty tracked sentinel content, unchanged porcelain status, and no mutating git verb (`:325-362`). |
+| C47-4(e): offender or explicit no-offender conclusion | Yes | CS notes explicitly conclude no in-source offender / environmental (`active_cs47...md:98-125`), with static and dynamic evidence (`:107-117`). |
+| PRR-1 dispatcher mechanism | Yes | Live import + registry coverage test as above. |
+| PRR-2 self-host realism | Yes | Self-host fixture clones the real repo, checks out deterministic branch at source HEAD, overlays current CLI, and reuses real history/tags (`tests/...:263-309`). |
+| PRR-3 branch-ref-follow | Yes | `rev-parse HEAD == rev-parse <branch>` asserted (`tests/...:334-338`); CS notes mark C47-6 resolved (`active_cs47...md:119`). |
+| PRR-4 tracked dirty sentinel | Yes | Consumer and self-host fixtures commit `sentinel.txt`, then dirty it unstaged (`tests/...:247-258`, `:302-308`); assertions preserve content/status (`:340-352`). |
+| PRR-5 all refinements implemented | Yes | All PRR-1..4 mechanisms are present in the test and recorded in CS notes (`active_cs47...md:127-135`). |
+| GIT_TRACE detector + self-test | Yes | Detector scans argv-level mutating verbs (`tests/...:68-144`); positive/negative self-test prevents false-green parser drift (`:401-439`). |
+| LRN-124 / OPERATIONS addendum | Yes | LRN-124 has CS47 no-offender/environmental update (`LEARNINGS.md:2567-2571`); OPERATIONS adds subcommand doctrine against checkout/detach/destructive verbs (`OPERATIONS.md:796-819`). |
+| CHANGELOG deliverable | Yes | `[Unreleased]/Fixed` cites CS47/LRN-124, no-offender outcome, regression guard, and doctrine (`CHANGELOG.md:10-14`). |
+| Target test execution | Yes | Ran `node --test tests/cs47-detached-head-bisect.test.mjs`: 24/24 pass. |
+
+**Coverage assessment:** The merged guard now satisfies the plan's acceptance bar: it is live-registry driven, executes real subcommand paths rather than `--help`, covers both self-host and consumer modes for exercised subcommands, explicitly documents allow-listed exceptions, asserts the full LRN-124 invariant set after every run, and includes argv-level `GIT_TRACE` detection with self-tests. The two prior PVI gaps are closed: `init` is covered in both modes, and `sync --mode=apply` is exercised on an initialized consumer repo. No blocking issues found.
