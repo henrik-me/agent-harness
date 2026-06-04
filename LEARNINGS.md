@@ -2355,6 +2355,26 @@ The orchestrator side: agent memories already capture the rule, but the parser-s
 
 Cross-references: LRN-128 (same memory-vs-tooling gap family — both now hardened tool-side); `REVIEWS.md § 2.8` (PR body requirements).
 
+### LRN-142
+
+```yaml
+id: LRN-142
+date: 2026-06-03
+category: tooling
+source_cs: CS57
+status: open
+tags: [config-vs-code-drift, high-risk-clickstops, enforcement-linter, date-gate, schema-source-of-truth, fail-closed]
+claim_area: lint-and-encoding
+```
+
+**Problem:** While implementing CS57 (hardening `scripts/check-clickstop-implementer-not-reviewer.mjs`), two latent defects surfaced. (1) **Config-vs-code drift:** `harness.config.json` carried a populated `reviews.high_risk_clickstops` array and `schemas/harness.config.schema.json` defined it, yet the model-independence linter ignored the config entirely and used a hard-coded copy of the high-risk list. A schema-defined, populated, operator-editable config key was silently dead — editing it changed nothing the linter did (an LRN-039 "schema-is-source-of-truth" follow-on). (2) **Cutoff-shape trap:** the superseded PR #201 keyed its missing-`## Model audit` warn→error flip off a raw CS-number cutoff (`CS ≥ 48 → ERROR`). A baseline run showed the 8 historical `done/` clickstops CS48–CS56 have **no `## Model audit` section at all**, so that cutoff would have turned all 8 into hard errors and broken `main` on merge.
+
+**Finding:** **An enforcement linter must read its policy inputs from the same config/schema the rest of the system treats as source-of-truth, and must grandfather pre-existing artefacts by a *date* gate, not an identifier-number cutoff.** (1) Reading `reviews.high_risk_clickstops` from `harness.config.json` (default only when the key is *absent*; explicit `[]` honored as empty; **fail-closed** with a non-zero exit on parse error / present-but-non-array / non-string element per LRN-033) closes the drift and makes the config actually authoritative — but note the linter is deliberately stricter than the runtime consumers (`lib/review.mjs`, `bin/harness.mjs`, `check-independence-invariant.mjs`), which silently default or incidentally crash on wrong-type input rather than fail closed. (2) The linter already had the right grandfathering idiom — a `parseClosedDate` + `ENFORCEMENT_DATE_MS` date gate (`IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE`, itself mirroring `CLOSEOUT_TASK_ENFORCEMENT_DATE`). CS57 reused it with a new `MODEL_AUDIT_ENFORCEMENT_DATE` set strictly *after* the latest closed CS (2026-06-04, latest close 2026-06-03), so existing files are warn-only and only new `active/`+post-cutoff `done/` files enforce. **Always baseline-run a linter against the live repo before flipping warn→error, and grandfather by close-date using the established date-gate, never by a raw number threshold.**
+
+**Evidence:** CS57 implementation, 2026-06-03. Baseline `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` → `0 errors, 53 warnings` (CS48–CS56 `done/` files all warn for absent `## Model audit`). Config drift: `harness.config.json` `reviews.high_risk_clickstops = ["CS03","CS11","CS15a","CS18b","CS19"]` defined at `schemas/harness.config.schema.json:184` but unread by the linter (hard-coded `DEFAULT_HIGH_RISK_CLICKSTOPS`). After CS57: `loadHighRiskClickstops()` reads the config (fail-closed on malformed), `MODEL_AUDIT_ENFORCEMENT_DATE = '2026-06-04'`, regression-guard test asserts the linter still exits 0 against the live `project/clickstops/`.
+
+**Disposition:** Open. The config-vs-code drift for this one linter is fixed in CS57; follow-up candidate: audit other harness linters/scripts for hard-coded copies of values that already live in `harness.config.json`/`schemas/` (same LRN-039 family), and consider a shared `lib/` config accessor so the "default only when absent, honor `[]`, fail-closed on malformed" policy is implemented once rather than re-derived per consumer. Cross-references: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parser doctrine).
+
 ### LRN-141
 
 ```yaml

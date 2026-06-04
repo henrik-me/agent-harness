@@ -4,8 +4,19 @@
  *
  * Scans planned/, active/, and done/ clickstop files for a `## Model audit` key-value
  * table. `Implementer agent` and `Reviewer agent` must be present and must
- * not match case-insensitively; `Implementer models` and `Reviewer model` must
- * not overlap case-insensitively. Missing agent/model rows warn by default;
+ * not match case-insensitively. `Implementer models` and `Reviewer model` must
+ * satisfy the PR-side model-independence policy: model IDs are normalized to a
+ * family+version form (so `"Claude Sonnet 4.6"` and `claude-sonnet-4-6` compare
+ * equal); a reviewer/implementer overlap is an ERROR unless the reviewer model
+ * is the primary reviewer (`gpt-5.5`) AND the clickstop is NOT high-risk. The
+ * high-risk set is read from `harness.config.json` → `reviews.high_risk_clickstops`
+ * (CS57 C57-3); a malformed config fails closed (CS57 C57-6).
+ *
+ * A missing or structurally-malformed `## Model audit` is an ERROR for files
+ * that pass a date gate keyed on `MODEL_AUDIT_ENFORCEMENT_DATE` (CS57 C57-4):
+ * `active/` files always enforce; `done/` files closed on/after the enforcement
+ * date enforce while earlier ones are grandfathered (warn-only); `planned/`
+ * files are warn-only regardless of date. Missing agent rows warn by default;
  * pass --strict-agent-columns to turn missing agent warnings into errors.
  */
 
@@ -14,6 +25,25 @@ import path from 'node:path';
 import { headingAnchor } from '../lib/doc-schema.mjs';
 
 const LINTED_SUBDIRS = ['planned', 'active', 'done'];
+
+/**
+ * Documented default high-risk clickstop set, used ONLY when the high-risk set
+ * is *absent* — i.e. `harness.config.json` is absent, or parses as valid JSON
+ * but the `reviews.high_risk_clickstops` key is missing/undefined (CS57 C57-3).
+ * An explicit empty array (`[]`) is honored as an empty set, NOT replaced by
+ * this default; a malformed config fails closed (CS57 C57-6).
+ */
+const DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
+
+/**
+ * CS57 C57-4 — enforcement cutoff for the missing/malformed `## Model audit`
+ * rule. Set strictly AFTER the latest existing closed CS (2026-06-03) so the
+ * historical CS48–CS56 `done/` files that predate Model-audit enforcement stay
+ * grandfathered (warn-only). `done/` files closed on/after this date and all
+ * `active/` files must carry a well-formed `## Model audit`; `planned/` files
+ * are warn-only regardless of date.
+ */
+const MODEL_AUDIT_ENFORCEMENT_DATE = '2026-06-04';
 
 /**
  * CS43 — recurse into nested CS subdirectories under
@@ -35,7 +65,7 @@ const NESTED_CS_DIR_RE = /^(planned|active|done)_cs\d+[a-z]*_.*$/;
 const HELP = `\
 Usage: check-clickstop-implementer-not-reviewer.mjs [--cwd <dir>] [--strict-agent-columns] [--quiet] [--help]
 
-Validate that ` + '`## Model audit`' + ` records distinct Implementer/Reviewer agent values and non-overlapping Implementer/Reviewer model values.
+Validate that ` + '`## Model audit`' + ` records distinct Implementer/Reviewer agent values and model-independent Implementer/Reviewer values.
 
 Options:
   --cwd <dir>                 Consumer repo root (default: process.cwd())
@@ -45,7 +75,7 @@ Options:
 
 Exit codes:
   0  pass (or warnings only with default --strict-agent-columns=false)
-  1  agent-identity or model-independence overlap detected (or strict mode + missing agent columns)
+  1  agent-identity violation, model-independence violation, missing/malformed Model audit (date-gated), malformed harness.config.json, or strict mode + missing agent columns
   2  bad usage
 `;
 
@@ -194,23 +224,90 @@ function missingAgentFinding(label, line, missingFields) {
   }
 }
 
-function missingModelFinding(label, line, missingFields) {
-  logError(
-    `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
+function missingModelMessage(label, line, missingFields) {
+  return `${label}:${line}: ## Model audit missing required model row(s) (absent or empty): ${missingFields.join(', ')}. ` +
     `Fix: add "| Implementer models | <comma-separated model ids> |" and ` +
-    `"| Reviewer model | <single model id> |" rows whose values do not overlap.`
-  );
+    `"| Reviewer model | <single model id> |" rows whose values do not overlap.`;
+}
+
+function missingModelFinding(label, line, missingFields) {
+  logError(missingModelMessage(label, line, missingFields));
+}
+
+function missingModelWarning(label, line, missingFields) {
+  logWarning(missingModelMessage(label, line, missingFields));
 }
 
 function normalizeModelId(value) {
-  return value
+  const compact = String(value ?? '')
     .trim()
     .toLowerCase()
     .replace(/`/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
+
+  // Fold known families to `family-major.minor` so doc-style and config-style
+  // spellings (and trailing capability qualifiers like `-high`/`-1m`/`-xhigh`)
+  // collapse to the same canonical id (CS57 C57-1). Unknown shapes pass through.
+  const claude = compact.match(/^(?:claude-)?(opus|sonnet|haiku)-(\d+)-(\d+)/);
+  if (claude) return `claude-${claude[1]}-${claude[2]}.${claude[3]}`;
+
+  const gpt = compact.match(/^gpt-(\d+)-(\d+)/);
+  if (gpt) return `gpt-${gpt[1]}.${gpt[2]}`;
+
+  return compact;
 }
+
+/**
+ * Load the high-risk clickstop set from `harness.config.json`
+ * (`reviews.high_risk_clickstops`), per CS57 C57-3/C57-6:
+ *   - config file absent, OR present-and-valid JSON with the key absent →
+ *     return `DEFAULT_HIGH_RISK_CLICKSTOPS` (the documented default);
+ *   - key present as an array of strings (including `[]`) → return it verbatim
+ *     (an explicit empty array is honored as an empty high-risk set);
+ *   - JSON parse error, a present-but-non-array value, OR an array containing a
+ *     non-string element → emit an ERROR naming the file+key and return `null`
+ *     (fail-closed sentinel — stricter than the runtime consumers on purpose).
+ *
+ * @returns {string[] | null}  CS-id list, or `null` on fail-closed config.
+ */
+function loadHighRiskClickstops() {
+  const configPath = path.join(cwd, 'harness.config.json');
+  if (!fs.existsSync(configPath)) return DEFAULT_HIGH_RISK_CLICKSTOPS;
+  let cfg;
+  try {
+    cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  } catch (err) {
+    logError(
+      `harness.config.json: cannot parse JSON (${err.message}). Refusing to fall back to the ` +
+      `default high-risk set — failing closed (CS57 C57-6).`
+    );
+    return null;
+  }
+  const raw = cfg?.reviews?.high_risk_clickstops;
+  if (raw === undefined) return DEFAULT_HIGH_RISK_CLICKSTOPS;
+  if (!Array.isArray(raw)) {
+    logError(
+      `harness.config.json: reviews.high_risk_clickstops must be an array of strings, got ${typeof raw}. ` +
+      `Failing closed (CS57 C57-6) rather than substituting the default high-risk set.`
+    );
+    return null;
+  }
+  if (!raw.every((id) => typeof id === 'string')) {
+    logError(
+      `harness.config.json: reviews.high_risk_clickstops must contain only strings; found a non-string element. ` +
+      `Failing closed (CS57 C57-6) rather than coercing or substituting the default high-risk set.`
+    );
+    return null;
+  }
+  return raw;
+}
+
+const PRIMARY_REVIEWER_MODEL = normalizeModelId('gpt-5.5');
+const HIGH_RISK_LIST = loadHighRiskClickstops();
+const HIGH_RISK_CLICKSTOPS =
+  HIGH_RISK_LIST === null ? null : new Set(HIGH_RISK_LIST.map((id) => id.toUpperCase()));
 
 /**
  * Parse the `**Closed:** YYYY-MM-DD` line from a clickstop body.
@@ -255,6 +352,51 @@ const ENFORCEMENT_DATE_MS = Date.parse(
   `${IMPLEMENTER_NOT_REVIEWER_RECURSION_ENFORCEMENT_DATE}T00:00:00Z`,
 );
 
+const MODEL_AUDIT_ENFORCEMENT_DATE_MS = Date.parse(
+  `${MODEL_AUDIT_ENFORCEMENT_DATE}T00:00:00Z`,
+);
+
+function clickstopIdFromBasename(basename) {
+  const m = basename.match(/^(?:planned|active|done)_(cs\d+[a-z]*)_/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
+ * CS57 C57-4 — decide whether a missing/structurally-malformed `## Model audit`
+ * is an ERROR (enforced) or a WARN (grandfathered) for this file. Mirrors
+ * `shouldLintByDateGate`'s `**Closed:**` handling for `done/` files but keyed on
+ * `MODEL_AUDIT_ENFORCEMENT_DATE`:
+ *   - `planned/` → warn-only regardless of date (no implementation surface yet);
+ *   - `active/`  → always enforce;
+ *   - `done/` with a parseable `**Closed:**` on/after the enforcement date → enforce,
+ *     strictly before → grandfather (warn-only);
+ *   - `done/` missing the `**Closed:**` line → enforce (check-clickstop.mjs
+ *     separately requires the field, so this is not a silent bypass);
+ *   - `done/` with an unparseable `**Closed:**` → warn-only (these are already
+ *     warn+skipped upstream by `shouldLintByDateGate`, so this is defensive).
+ *
+ * @param {string} lifecycleSubdir  active/done/planned.
+ * @param {string} content          File content (for the `**Closed:**` date).
+ * @returns {boolean}  true → ERROR on missing audit; false → WARN only.
+ */
+function shouldRequireModelAudit(lifecycleSubdir, content) {
+  if (lifecycleSubdir === 'planned') return false;
+  if (lifecycleSubdir === 'active') return true;
+  if (lifecycleSubdir !== 'done') return false;
+  const closed = parseClosedDate(content);
+  if (closed.kind === 'missing') return true;
+  if (closed.kind === 'unparseable') return false;
+  return closed.date.getTime() >= MODEL_AUDIT_ENFORCEMENT_DATE_MS;
+}
+
+function missingAuditModelFinding(label, line, missingFields, requireAudit) {
+  if (requireAudit) {
+    missingModelFinding(label, line, missingFields);
+  } else {
+    missingModelWarning(label, line, missingFields);
+  }
+}
+
 /**
  * Date-gate predicate per CS43 C43-2/C43-3/C43-4. Returns `true` if the
  * file should be linted, `false` if it is grandfathered out.
@@ -289,9 +431,9 @@ function shouldLintByDateGate(label, basename, content) {
   return true;
 }
 
-function checkFile(filePath, subdir) {
+function checkFile(filePath, labelPrefix, lifecycleSubdir = labelPrefix.split('/')[0]) {
   const basename = path.basename(filePath);
-  const label = `${subdir}/${basename}`;
+  const label = `${labelPrefix}/${basename}`;
   let content;
   try {
     content = fs.readFileSync(filePath, 'utf8')
@@ -304,15 +446,19 @@ function checkFile(filePath, subdir) {
   }
   if (!shouldLintByDateGate(label, basename, content)) return;
 
+  const requireAudit = shouldRequireModelAudit(lifecycleSubdir, content);
+
   const section = extractSectionWithLineNumber(content, headingAnchor('Model audit'));
   if (!section) {
     missingAgentFinding(label, 1, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, 1, ['Implementer models', 'Reviewer model'], requireAudit);
     return;
   }
 
   const { headerCells, dataRows, rowLineOffsets } = parseMarkdownTable(section.body);
   if (!headerCells || headerCells.length === 0) {
     missingAgentFinding(label, section.headingLine, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, section.headingLine, ['Implementer models', 'Reviewer model'], requireAudit);
     return;
   }
 
@@ -321,6 +467,7 @@ function checkFile(filePath, subdir) {
   const valueIdx = colMap.get('value');
   if (fieldIdx === undefined || valueIdx === undefined) {
     missingAgentFinding(label, section.headingLine, ['Implementer agent', 'Reviewer agent']);
+    missingAuditModelFinding(label, section.headingLine, ['Implementer models', 'Reviewer model'], requireAudit);
     return;
   }
 
@@ -392,12 +539,23 @@ function checkFile(filePath, subdir) {
 
   const overlap = implementerModels.filter((m) => m === reviewerModel);
   if (overlap.length > 0) {
-    logError(
-      `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
-      `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
-      `(normalized family/version compare). Fix: dispatch a reviewer whose model differs from every implementer model ` +
-      `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
-    );
+    const csId = clickstopIdFromBasename(basename);
+    // Fail-closed config (null high-risk set) forces high-risk treatment so a
+    // GPT-5.5 overlap is never silently allowed when the config is malformed.
+    const highRisk = HIGH_RISK_CLICKSTOPS === null
+      ? true
+      : (csId ? HIGH_RISK_CLICKSTOPS.has(csId) : false);
+    if (reviewerModel !== PRIMARY_REVIEWER_MODEL || highRisk) {
+      const fix = reviewerModel === PRIMARY_REVIEWER_MODEL
+        ? 'obtain an independent GPT-5.5 review or explicit user waiver for this high-risk CS'
+        : 'dispatch an independent reviewer or use GPT-5.5 per the PR-side independence gate';
+      logError(
+        `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
+        `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +
+        `(normalized family/version compare). Fix: ${fix} ` +
+        `and update the Reviewer model row at ${label}:${reviewerModelLine}.`
+      );
+    }
   }
 }
 
@@ -455,7 +613,7 @@ function walkClickstopSubdir(dirPath, subdir) {
         if (!nested.isFile()) continue;
         if (!CS_FILE_RE.test(nested.name)) continue;
         filesChecked++;
-        checkFile(path.join(nestedPath, nested.name), nestedLabel);
+        checkFile(path.join(nestedPath, nested.name), nestedLabel, subdir);
       }
     }
     // Any other directory shape (e.g. unrecognised prefix or two-level nesting)
