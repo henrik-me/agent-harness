@@ -273,6 +273,13 @@ function makeSelfHostRepo() {
   if (r.status !== 0) {
     throw new Error(`self-host clone failed: ${r.stderr || r.stdout}`);
   }
+  // GitHub Actions checks out PR refs in detached-HEAD state, so a --local clone
+  // of that workspace has no resolvable default branch (empty checkout, unborn
+  // HEAD). Force the clone onto a deterministic named branch at the source HEAD
+  // SHA so the working tree is fully populated and `symbolic-ref HEAD` is stable
+  // regardless of whether the source repo is detached (CI) or on a branch (local).
+  const srcHead = gitOut(REPO_ROOT, ['rev-parse', 'HEAD']);
+  git(clone, ['checkout', '-B', 'investigation', srcHead]);
   // Overlay the current bin/harness.mjs (uncommitted CS47 edits) so the clone
   // runs the exact code under review.
   writeFileSync(path.join(clone, 'bin', 'harness.mjs'), readFileSync(REPO_BIN));
