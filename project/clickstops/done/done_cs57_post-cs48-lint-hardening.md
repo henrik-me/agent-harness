@@ -1,10 +1,10 @@
 # CS57 — post-CS48 lint hardening: model-ID normalization + configurable high-risk + missing-audit enforcement
 
-**Status:** active
+**Status:** done
 **Owner:** `yoga-ah`
 **Branch:** `cs57/content`
 **Started:** 2026-06-03
-**Closed:** —
+**Closed:** 2026-06-04
 **Filed by:** `yoga-ah` (2026-05-28) carrying forward the substantive work from closed PR #201 (`cs48/post-merge-review-fixes`), which the maintainer superseded as a stale (2026-05-15) follow-up to CS48 PR #198 with the explicit instruction: "the substantive work … will be carried forward verbatim into the new CS branch — nothing is being discarded."
 **Depends on:** None. Independent of the CS54 close-out. Touches only `scripts/check-clickstop-implementer-not-reviewer.mjs` + its tests/fixtures, plus a `LEARNINGS.md` entry (per Deliverable 4 / Task 4); no template, CLI-surface, or schema changes.
 
@@ -92,9 +92,9 @@ Two facts established while filing this CS:
 | Choose + document `MODEL_AUDIT_ENFORCEMENT_DATE` against the live `done/` set | done | yoga-ah | strictly after latest closed CS; inline rationale comment |
 | File LEARNINGS entry (config-vs-code drift + cutoff-shape finding) | done | yoga-ah | per Deliverable 4 |
 | Self-checks: `node --test tests/check-clickstop-implementer-not-reviewer.test.mjs`, `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` (expect exit 0), text-encoding check on changed files | done | yoga-ah | regression guard must prove the 8 historical files stay grandfathered |
-| Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; verdict recorded in `## Plan-vs-implementation review` before active→done rename |
-| Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
-| Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
+| Plan-vs-implementation review (close-out gate) | done | yoga-ah | gpt-5.5 rubber-duck GO (2026-06-04); verdict recorded in `## Plan-vs-implementation review` |
+| Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | done | yoga-ah | per OPERATIONS.md § Claim three-PR shape |
+| Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | done | yoga-ah | LRN-142 left `open` (config-vs-code drift remains an active watch pattern); no residual follow-up CS needed |
 
 ## Notes / Learnings
 
@@ -112,4 +112,21 @@ Two facts established while filing this CS:
 
 ## Plan-vs-implementation review
 
-> _Pending — close-out gate. To be completed by a GPT-5.5 rubber-duck review before the active→done rename, per OPERATIONS.md § "Plan-vs-implementation review (close-out gate)". Will record **Reviewer:**, **Date:**, **Outcome:** fields._
+**Reviewer:** gpt-5.5 (rubber-duck)
+**Date:** 2026-06-04T04:17:26Z
+**Outcome:** GO
+
+Per-deliverable outcome: all four deliverables `match`.
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| D1 — harden `scripts/check-clickstop-implementer-not-reviewer.mjs` per C57-1..C57-6 | match | normalization, GPT-5.5 exception, config-backed high-risk loading, fail-closed malformed config, date-gated missing-audit enforcement, nested lifecycle threading, updated help/header docs. |
+| D2 — expand/adapt tests with minimum coverage list | match | 26 cases covering the full CS57 matrix incl. fail-closed config, explicit `[]`, date gates, planned warn-only, malformed active audit, nested recursion, live-repo regression guard. |
+| D3 — fixtures under `tests/fixtures/cs41/**` | match | new `gpt-overlap-allowed`, `gpt-overlap-high-risk`; retargeted `model-overlap*`. |
+| D4 — `LEARNINGS.md` entry | match | LRN-142 captures config-vs-code drift + date-gate/cutoff learning. |
+
+Decision check: C57-1..C57-6 each implemented (normalizeModelId family folding; PRIMARY_REVIEWER_MODEL non-high-risk overlap exception; loadHighRiskClickstops absent-only default + `[]` honored; MODEL_AUDIT_ENFORCEMENT_DATE + shouldRequireModelAudit error/warn split; checkFile 3-arg lifecycle threading; fail-closed sentinel on parse error / non-array / non-string element). C57-7 satisfied — diff touches only CS57-owned surfaces (no schema, REVIEWS.md, OPERATIONS.md, bin/, lib/, or historical backfill).
+
+Test-coverage assessment: **sufficient** — every Deliverable-2 minimum scenario is present; no untested scenarios identified. Reviewer self-ran `node --test tests/check-clickstop-implementer-not-reviewer.test.mjs` (26/26 pass) and `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` (exit 0; 0 errors, 53 warnings).
+
+Overall outcome: **GO** — no close-out-blocking gaps.
