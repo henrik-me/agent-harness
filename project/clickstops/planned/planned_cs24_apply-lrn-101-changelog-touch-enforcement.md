@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Pre-CS16 disposition of [LRN-101](../../../LEARNINGS.md#lrn-101) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. The LRN's recommended fix is two-pronged: (a) **pilot** CHANGELOG-on-every-CS-close-out in CS16 + CS21 (handled at those CSs' close-outs by adding a CHANGELOG-touch row to their `## Tasks` tables), and (b) **enforce** mechanically by extending `scripts/check-clickstop.mjs`. This CS handles part (b). Until CS24 lands, the convention is honour-system only.
-**Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. Recommended order: CS16 close-out → CS21 close-out → CS24 claim. May claim earlier if the pilot LRNs from CS16/CS21 invalidate the design here, in which case re-author this plan first.
+**Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. **CS16 closed 2026-05-11** (one pilot satisfied); **CS21 remains planned**. The "at least one pilot close-out" gate is therefore met by CS16, but the recommended order is still CS16 close-out → CS21 close-out → CS24 claim. May claim earlier if the pilot LRNs from CS16/CS21 invalidate the design here, in which case re-author this plan first.
 
 ## Goal
 

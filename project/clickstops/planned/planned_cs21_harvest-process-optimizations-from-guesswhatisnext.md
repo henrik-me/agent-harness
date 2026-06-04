@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** Authored 2026-05-10 per user direction. The harness was forked out of `henrik-me/guesswhatisnext` (gwn) at CS01 (rev. 2 master plan, line 3). Since then both repos have evolved independently; gwn has accumulated process optimizations (per user 2026-05-10: *"a few new process optimizations have made it to the structure there"*) that the harness needs to capture before serving as gwn's governance layer at CS19 (master-plan migration CS) and ideally before SI-CS03 (which exercises the version-pin upgrade path on sub-invaders).
-**Depends on:** CS16 (must close first — orchestrator capacity); ideally completes BEFORE SI-CS03 in sub-invaders so SI-CS03's `harness sync --mode=apply` exercise validates a non-trivial template/root delta in a real consumer.
+**Depends on:** CS16 (**closed 2026-05-11** — see [`done_cs16`](../done/done_cs16_bootstrap-sub-invaders/done_cs16_bootstrap-sub-invaders.md); dependency satisfied); ideally completes BEFORE SI-CS03 in sub-invaders so SI-CS03's `harness sync --mode=apply` exercise validates a non-trivial template/root delta in a real consumer.
 
 ## Goal
 
