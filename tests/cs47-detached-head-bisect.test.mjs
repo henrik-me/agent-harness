@@ -66,8 +66,41 @@ const SENTINEL_CLEAN = 'v1\n';
 const SENTINEL_DIRTY = 'v2-dirty\n';
 
 // git verbs that move HEAD or destroy the working tree — the LRN-124 vector.
-const MUTATING_VERB_RE =
-  /\bgit\s+['"]?(checkout|switch|reset|restore|worktree|stash|clean)\b/;
+const MUTATING_VERBS = new Set([
+  'checkout', 'switch', 'reset', 'restore', 'worktree', 'stash', 'clean',
+]);
+
+/**
+ * Scan a GIT_TRACE log for any HEAD/worktree-mutating git invocation.
+ *
+ * GIT_TRACE lines that name a command look like:
+ *   <ts> git.c:455   trace: built-in: git checkout main
+ *   <ts> run-command.c:N  trace: run_command: git -C /p checkout tag
+ *   <ts>            trace: exec: git 'reset' '--hard'
+ * The command always follows a `built-in:` / `exec:` / `run_command:` category
+ * tag, so we anchor on that (avoids matching the `git.c:` filename prefix), then
+ * skip any leading git OPTIONS (`-C <path>`, `-c k=v`, `--no-pager`, …) so an
+ * option-prefixed mutating call (`git -C repo checkout`) is still caught.
+ *
+ * @param {string} traceText
+ * @returns {string | null} the first offending line, or null if none.
+ */
+function findMutatingGitVerb(traceText) {
+  for (const raw of traceText.split(/\r?\n/)) {
+    const m = raw.match(/\b(?:built-in|exec|run_command):\s+git\b(.*)$/);
+    if (!m) continue;
+    const tokens = m[1].replace(/['"]/g, '').trim().split(/\s+/).filter(Boolean);
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      if (tok === '-C' || tok === '-c') { i++; continue; } // option WITH a value
+      if (tok.startsWith('-')) continue; // bare flag (--no-pager, --git-dir=…)
+      // first non-option token is the git subcommand.
+      if (MUTATING_VERBS.has(tok)) return raw;
+      break;
+    }
+  }
+  return null;
+}
 
 // A minimal clickstop plan file so `plan-review-hash <file>` reaches its real
 // (pure) code path instead of dying on a missing-file argument.
@@ -77,33 +110,58 @@ const PLAN_FIXTURE =
 
 /**
  * Per-subcommand execution plan. EVERY key of COMMAND_REGISTRY must appear here
- * (enforced by the registry-coverage test below), either with `modes` (it is
+ * (enforced by the registry-coverage test below), either with `runs` (it is
  * exercised) or `skip` (allow-listed with a rationale per C47-4(b)).
  *
- * `args` is the full argv after the node binary (i.e. it starts with the
- * subcommand name). `{PLAN}` is replaced with the path to a scratch plan file.
+ * Each entry in `runs` is one invocation: `{ args, modes, freshSelfHost? }`.
+ *   - `args` is the full argv after the node binary (starts with the subcommand
+ *     name). `{PLAN}` is replaced with the path to a scratch plan file.
+ *   - `modes` ⊆ ['selfhost','consumer'] (C47-2). Consumer runs always get a
+ *     fresh scratch repo; self-host runs reuse one shared read-only clone…
+ *   - …unless `freshSelfHost: true`, which gives a WRITER invocation
+ *     (e.g. `sync --mode=apply`) its own dedicated clone so its writes cannot
+ *     corrupt a later read-only subcommand's assertions.
  */
 const SUBCOMMAND_PLAN = {
-  // --- exercised in BOTH modes (safe, fast, non-interactive, read-only) ---
-  version: { args: ['version'], modes: ['selfhost', 'consumer'] },
-  whoami: { args: ['whoami'], modes: ['selfhost', 'consumer'] },
+  // --- read-only, exercised in BOTH modes (fast, non-interactive) ---
+  version: { runs: [{ args: ['version'], modes: ['selfhost', 'consumer'] }] },
+  whoami: { runs: [{ args: ['whoami'], modes: ['selfhost', 'consumer'] }] },
   // lint + plan-review-hash are the TWO subcommands LRN-124 live-reproduced on.
-  lint: { args: ['lint', '--quiet'], modes: ['selfhost', 'consumer'] },
-  'plan-review-hash': { args: ['plan-review-hash', '{PLAN}'], modes: ['selfhost', 'consumer'] },
-  sync: { args: ['sync', '--mode=check'], modes: ['selfhost', 'consumer'] },
-  check: { args: ['check'], modes: ['selfhost', 'consumer'] },
+  lint: { runs: [{ args: ['lint', '--quiet'], modes: ['selfhost', 'consumer'] }] },
+  'plan-review-hash': {
+    runs: [{ args: ['plan-review-hash', '{PLAN}'], modes: ['selfhost', 'consumer'] }],
+  },
+  // sync covers BOTH read-only check AND the apply path — apply is the LRN-124
+  // incident-#1 trigger, so it is exercised (self-host, dedicated clone).
+  sync: {
+    runs: [
+      { args: ['sync', '--mode=check'], modes: ['selfhost', 'consumer'] },
+      { args: ['sync', '--mode=apply'], modes: ['selfhost'], freshSelfHost: true },
+    ],
+  },
+  check: { runs: [{ args: ['check'], modes: ['selfhost', 'consumer'] }] },
 
-  // --- exercised in consumer mode only (stubs that die before any git op) ---
-  harvest: { args: ['harvest'], modes: ['consumer'] },
-  'check-migration': { args: ['check-migration', '--from-existing-harness'], modes: ['consumer'] },
-  'composed-audit': { args: ['composed-audit', '--from-existing-harness'], modes: ['consumer'] },
+  // --- stubs that die() before any git op; exercised in BOTH modes ---
+  harvest: { runs: [{ args: ['harvest'], modes: ['selfhost', 'consumer'] }] },
+  'check-migration': {
+    runs: [{ args: ['check-migration', '--from-existing-harness'], modes: ['selfhost', 'consumer'] }],
+  },
+  'composed-audit': {
+    runs: [{ args: ['composed-audit', '--from-existing-harness'], modes: ['selfhost', 'consumer'] }],
+  },
+
+  // init scaffolds a fresh consumer repo and finalizes via `sync --mode=apply`
+  // (bin/harness.mjs cmdInit) — the second arm into the apply path. Exercised in
+  // consumer mode (its only meaningful mode) with prompts/network suppressed.
+  init: {
+    runs: [{
+      args: ['init', '--skip-constraint-detection', '--skip-workboard-pat-prompt'],
+      modes: ['consumer'],
+    }],
+  },
 
   // --- allow-listed (network / interactive / heavy); each verified by the
   //     CS47 static audit to perform no HEAD-moving git op. ---
-  init: {
-    skip: 'Scaffolds many files and may prompt for a Workboard PAT on stdin (CI hang risk); ' +
-      'its git surface is repo scaffolding, never a ref checkout (CS47 static audit).',
-  },
   pack: {
     skip: 'Spawns `npm pack --dry-run` against REPO_ROOT (not cwd); slow/IO-heavy and performs ' +
       'no git HEAD-moving operation (bin/harness.mjs cmdPack).',
@@ -239,13 +297,10 @@ function assertInvariants(repo, origHeadRef, traceFile, label) {
 
   // (e) no HEAD/worktree-mutating git verb was invoked (argv-level evidence).
   if (existsSync(traceFile)) {
-    const trace = readFileSync(traceFile, 'utf8');
-    const offending = trace
-      .split(/\r?\n/)
-      .find((line) => MUTATING_VERB_RE.test(line));
+    const offending = findMutatingGitVerb(readFileSync(traceFile, 'utf8'));
     assert.equal(
       offending,
-      undefined,
+      null,
       `${label}: subcommand invoked a HEAD/worktree-mutating git verb:\n  ${offending}`,
     );
   }
@@ -287,6 +342,38 @@ after(() => {
   if (selfHost) rmDir(selfHost.dir);
 });
 
+// Self-test the GIT_TRACE detector itself, so a silently-broken regex cannot
+// produce a false-green across the whole suite (review concern: detector must
+// actually catch real mutating-verb trace lines, including option-prefixed and
+// quoted forms, while ignoring read-only git and the `git.c:` filename prefix).
+test('CS47: findMutatingGitVerb detects mutating verbs and ignores read-only git', () => {
+  const POSITIVE = [
+    '12:00:00.123456 git.c:455               trace: built-in: git checkout main',
+    "12:00:00.123456 run-command.c:655       trace: run_command: git -C /tmp/r checkout v0.5.1",
+    "12:00:00.123456 git.c:455               trace: exec: git 'reset' '--hard'",
+    '12:00:00.123456 git.c:455               trace: built-in: git -c advice.detachedHead=false switch tag',
+    '12:00:00.123456 git.c:455               trace: run_command: git worktree add /tmp/wt v0.5.1',
+  ];
+  for (const line of POSITIVE) {
+    assert.ok(findMutatingGitVerb(line), `expected to flag mutating line: ${line}`);
+  }
+
+  const NEGATIVE = [
+    '12:00:00.123456 git.c:455               trace: built-in: git rev-parse HEAD',
+    '12:00:00.123456 run-command.c:655       trace: run_command: git -C /tmp/r rev-parse HEAD',
+    '12:00:00.123456 git.c:455               trace: built-in: git describe --tags --exact-match',
+    '12:00:00.123456 git.c:455               trace: built-in: git status --porcelain',
+    // a path that merely contains a verb-like word must not trip the detector.
+    '12:00:00.123456 git.c:455               trace: exec: git diff --name-only -- src/checkout.js',
+    '12:00:00.123456 git.c:455               trace: built-in: git log -G stash -- lib',
+    '',
+  ];
+  for (const line of NEGATIVE) {
+    assert.equal(findMutatingGitVerb(line), null, `false positive on read-only line: ${line}`);
+  }
+});
+
+
 // C47-1 / C47-4(a)(b): every registered subcommand must be covered.
 test('CS47: every COMMAND_REGISTRY subcommand is exercised or allow-listed', () => {
   for (const name of Object.keys(COMMAND_REGISTRY)) {
@@ -294,13 +381,20 @@ test('CS47: every COMMAND_REGISTRY subcommand is exercised or allow-listed', () 
     assert.ok(
       plan,
       `Subcommand "${name}" is in COMMAND_REGISTRY but has no entry in SUBCOMMAND_PLAN. ` +
-        `Add it to the bisection (modes) or allow-list it (skip + rationale) per CS47 C47-4(b).`,
+        `Add it to the bisection (runs) or allow-list it (skip + rationale) per CS47 C47-4(b).`,
     );
     if (plan.skip) {
       assert.equal(typeof plan.skip, 'string');
       assert.ok(plan.skip.length > 20, `Allow-list rationale for "${name}" is too thin.`);
     } else {
-      assert.ok(Array.isArray(plan.modes) && plan.modes.length > 0, `"${name}" needs modes or skip.`);
+      assert.ok(Array.isArray(plan.runs) && plan.runs.length > 0, `"${name}" needs runs or skip.`);
+      for (const run of plan.runs) {
+        assert.ok(Array.isArray(run.args) && run.args.length > 0, `"${name}" run needs args.`);
+        assert.ok(
+          Array.isArray(run.modes) && run.modes.every((m) => m === 'selfhost' || m === 'consumer'),
+          `"${name}" run modes must be a non-empty subset of {selfhost, consumer}.`,
+        );
+      }
     }
   }
   // Guard the reverse direction too: no stale SUBCOMMAND_PLAN entry.
@@ -312,17 +406,28 @@ test('CS47: every COMMAND_REGISTRY subcommand is exercised or allow-listed', () 
   }
 });
 
-// Consumer-mode bisection: fresh minimal scratch repo per subcommand.
-for (const [name, plan] of Object.entries(SUBCOMMAND_PLAN)) {
-  if (plan.skip || !plan.modes.includes('consumer')) continue;
-  test(`CS47 consumer-mode: ${name} preserves HEAD + dirty sentinel`, () => {
+/** Iterate (name, run) pairs that target a given mode. */
+function* runsForMode(mode) {
+  for (const [name, plan] of Object.entries(SUBCOMMAND_PLAN)) {
+    if (plan.skip) continue;
+    for (let i = 0; i < plan.runs.length; i++) {
+      const run = plan.runs[i];
+      if (run.modes.includes(mode)) yield { name, run, index: i };
+    }
+  }
+}
+
+// Consumer-mode bisection: fresh minimal scratch repo per run.
+for (const { name, run, index } of runsForMode('consumer')) {
+  const label = run.args.slice(1).join(' ') || '(default)';
+  test(`CS47 consumer-mode: ${name} ${label} preserves HEAD + dirty sentinel`, () => {
     const repo = makeConsumerRepo();
     try {
       runAndAssert({
         repo,
-        planArgs: plan.args,
+        planArgs: run.args,
         mode: 'consumer',
-        name,
+        name: `${name}#${index}`,
         binPath: REPO_BIN,
         useCwdFlag: true,
       });
@@ -332,18 +437,25 @@ for (const [name, plan] of Object.entries(SUBCOMMAND_PLAN)) {
   });
 }
 
-// Self-host-mode bisection: shared clone (REPO_ROOT === cwd). All self-host
-// subcommands are read-only, so the clone is reused across them.
-for (const [name, plan] of Object.entries(SUBCOMMAND_PLAN)) {
-  if (plan.skip || !plan.modes.includes('selfhost')) continue;
-  test(`CS47 self-host-mode: ${name} preserves HEAD + dirty sentinel`, () => {
-    runAndAssert({
-      repo: selfHost.clone,
-      planArgs: plan.args,
-      mode: 'selfhost',
-      name,
-      binPath: path.join(selfHost.clone, 'bin', 'harness.mjs'),
-      useCwdFlag: false,
-    });
+// Self-host-mode bisection (REPO_ROOT === cwd, the LRN-124 environment).
+// Read-only runs reuse one shared clone; `freshSelfHost` writer runs get a
+// dedicated clone so their writes cannot leak into a later assertion.
+for (const { name, run, index } of runsForMode('selfhost')) {
+  const label = run.args.slice(1).join(' ') || '(default)';
+  test(`CS47 self-host-mode: ${name} ${label} preserves HEAD + dirty sentinel`, () => {
+    let owned = null;
+    const repo = run.freshSelfHost ? (owned = makeSelfHostRepo()).clone : selfHost.clone;
+    try {
+      runAndAssert({
+        repo,
+        planArgs: run.args,
+        mode: 'selfhost',
+        name: `${name}#${index}`,
+        binPath: path.join(repo, 'bin', 'harness.mjs'),
+        useCwdFlag: false,
+      });
+    } finally {
+      if (owned) rmDir(owned.dir);
+    }
   });
 }

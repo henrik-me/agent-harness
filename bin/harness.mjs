@@ -22,7 +22,7 @@ import { parseArgs } from 'node:util';
 import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
@@ -3554,11 +3554,20 @@ async function main() {
 }
 
 // Only run the CLI when this module is invoked directly (e.g. `node bin/harness.mjs ...`
-// or via the bin shim), NOT when imported by a test that needs COMMAND_REGISTRY
-// (CS47 / C47-1, PRR-3). Guard mirrors the standard ESM "main module" idiom.
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+// or via the bin shim / a global symlink), NOT when imported by a test that needs
+// COMMAND_REGISTRY (CS47 / C47-1, PRR-1). Compare canonicalised real paths so that
+// invocation through an npm/global bin symlink (where process.argv[1] is the symlink
+// path while import.meta.url resolves to the real module) is still detected as direct.
+let invokedDirectly = false;
+try {
+  if (process.argv[1] !== undefined) {
+    invokedDirectly =
+      realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  }
+} catch {
+  // argv[1] missing or unresolvable (e.g. `node --eval`): treat as not-direct.
+  invokedDirectly = false;
+}
 
 if (invokedDirectly) {
   main();
