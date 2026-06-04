@@ -1,9 +1,9 @@
 # CS47 — Investigate harness CLI detached-HEAD bug (LRN-124 root cause)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** `yoga-ah`
+**Branch:** `cs47/content`
+**Started:** 2026-06-04
 **Closed:** —
 **Filed by:** Pre-claim disposition of [LRN-124](../../../LEARNINGS.md#lrn-124) (filed 2026-05-14 by `yoga-ah` during CS46 close-out — three working-tree-loss incidents in a single session, all symptomatic of the same root cause).
 **Depends on:** None. May claim independently. Investigation-bounded scope; small enough to ship in a single sitting if root cause is local.
@@ -78,6 +78,8 @@ Candidate locations to investigate (`grep -rn "git checkout\|git -c\|spawnSync.*
 | CHANGELOG `[Unreleased]/Fixed` bullet citing CS47 + LRN-124 | pending | — | per Deliverable #4 |
 | Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | pending | — | regression suite must include the bisection test |
 | Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; gate verifies C47-4(a)-(e) |
+| Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
+| Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
 
 ## Notes / Learnings
 
@@ -102,6 +104,15 @@ Copilot R1 surfaced five additional refinements after R2 Go-with-amendments. Eac
 - **PRR-3 (branch-ref snapshot must exercise the actual push pathway):** Snapshotting `.git/refs/heads/<branch>` value before/after the subcommand is necessary but insufficient — the LRN-124 reproduction showed the branch ref stays at its old value while HEAD moves elsewhere; only an actual `git push -n` or staged `git update-ref` simulation will surface the push-the-wrong-ref failure. The C47-6 (planned addendum) test should: snapshot ref → run subcommand → snapshot ref again AND assert `git rev-parse HEAD == git rev-parse <branch>` (i.e. the branch ref FOLLOWED the subcommand-induced HEAD changes, OR the subcommand left HEAD attached to the branch).
 - **PRR-4 (sentinel.txt must be a TRACKED file with dirty edits, not an untracked file):** C47-2's instruction to "add a `sentinel.txt` tracked file with known content + a deliberate dirty edit before each subcommand run" must be implemented as: `(1) write sentinel.txt with content "v1"; (2) git add sentinel.txt && git commit -m "add sentinel"; (3) modify sentinel.txt to "v2-dirty"; (4) DO NOT git add the modification`. Step (4) leaves the tracked file with dirty unstaged content — the LRN-124 failure mode that needs to be detected. An untracked sentinel will not exercise the bug.
 - **PRR-5 (acceptance: PRR-1..4 must be implemented):** All four refinements above are acceptance preconditions for CS47 close-out; the close-out gate (per C47-4) checks that the bisection test exercises each correctly OR explicitly documents why a refinement was infeasible.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 

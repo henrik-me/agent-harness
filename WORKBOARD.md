@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-04 (CS57 CLOSED by yoga-ah — post-CS48 lint hardening merged; no active CS.)
+> **Last updated:** 2026-06-04 (CS47 CLAIMED by yoga-ah — investigate harness CLI detached-HEAD bug, LRN-124 root cause; branch `cs47/content`.)
 
 ## Orchestrators
 
@@ -24,5 +24,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS47 | detached-HEAD investigation (LRN-124) | 🟢 Active | yoga-ah | cs47/content | 2026-06-04 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
