@@ -1643,6 +1643,22 @@ async function cmdCheck(args, global) {
 // CS30 / D5: per-linter docstrings for `harness lint --explain <name>`.
 // Stays in sync with the actual linters by colocating each entry with the
 // linter's name. New linters should add an entry here when they ship.
+// CS27 Finding #8 / Decisions C27-2 + C27-3: a few `harness lint` checks target
+// consumer-applicable files that a fresh consumer typically lacks, so they
+// silently skip with "target not found" and the consumer never learns the check
+// exists. For the two that a typical consumer SHOULD adopt, surface an
+// informational recommendation in the (non-quiet) lint summary instead of a bare
+// skip. Other "target not found" skips stay silent — they target harness-internal
+// artefacts not relevant to a typical consumer. The note never changes exit code.
+const LINT_SKIP_RECOMMENDATIONS = {
+  'commit-trailers':
+    'add .github/pull_request_template.md and use --signoff or Co-authored-by ' +
+    'trailers per OPERATIONS.md § Branch and commit conventions',
+  'pr-body':
+    'add .github/pull_request_template.md so PR bodies follow the required ' +
+    'section structure per OPERATIONS.md',
+};
+
 const LINTER_EXPLANATIONS = {
   architecture: `
 **Linter:** check-architecture (scripts/check-architecture.mjs)
@@ -2369,7 +2385,13 @@ async function cmdLint(args, _global) {
     if (skip.has(baseName)) continue;
 
     if (!linter.args || !linter.target || !existsSync(linter.target)) {
-      results.push({ name: linter.name, status: 'skipped', reason: 'target not found' });
+      const recommendation = LINT_SKIP_RECOMMENDATIONS[baseName];
+      results.push({
+        name: linter.name,
+        status: 'skipped',
+        reason: 'target not found',
+        ...(recommendation ? { recommendation } : {}),
+      });
       continue;
     }
 
@@ -2399,7 +2421,17 @@ async function cmdLint(args, _global) {
   process.stdout.write('\n=== harness lint summary ===\n');
   for (const r of results) {
     const icon = r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '–';
-    process.stdout.write(`  ${icon} ${r.name}: ${r.status}${r.reason ? ` (${r.reason})` : ''}\n`);
+    // CS27 Finding #8: in non-quiet mode, replace the bare "skipped (target not
+    // found)" detail with an adoption recommendation for the two consumer-
+    // applicable checks. Under --quiet the note is suppressed (the row falls
+    // back to the plain skipped form), keeping --quiet output machine-stable.
+    let detail;
+    if (r.recommendation && !quiet) {
+      detail = `not configured (recommendation: ${r.recommendation})`;
+    } else {
+      detail = `${r.status}${r.reason ? ` (${r.reason})` : ''}`;
+    }
+    process.stdout.write(`  ${icon} ${r.name}: ${detail}\n`);
   }
   const passCount = results.filter((r) => r.status === 'pass').length;
   const failCount = results.filter((r) => r.status === 'fail').length;

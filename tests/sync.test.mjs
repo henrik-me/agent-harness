@@ -345,7 +345,7 @@ describe('sync() — WORKBOARD.md warning', () => {
   });
 
   it('emits warning when WORKBOARD.md has active rows', async () => {
-    const workboard = `# WORKBOARD\n\n## Active Work\n| CS-Task ID | Title | State |\n|---|---|---|\n| CS-01 | My Task | In Progress |\n\n## Done\n`;
+    const workboard = `# WORKBOARD\n\n## Active Work\n| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |\n|---|---|---|---|---|---|---|\n| CS-01 | My Task | In Progress | yoga-ah | cs01/work | 2026-06-04 | — |\n\n## Done\n`;
     writeText(path.join(consumerDir, 'WORKBOARD.md'), workboard);
 
     const result = await sync({
@@ -357,7 +357,7 @@ describe('sync() — WORKBOARD.md warning', () => {
   });
 
   it('does NOT warn when WORKBOARD.md has no active rows', async () => {
-    const workboard = `# WORKBOARD\n\n## Active Work\n| CS-Task ID | Title | State |\n|---|---|---|\n\n## Done\n`;
+    const workboard = `# WORKBOARD\n\n## Active Work\n| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |\n|---|---|---|---|---|---|---|\n\n## Done\n`;
     writeText(path.join(consumerDir, 'WORKBOARD.md'), workboard);
 
     const result = await sync({
