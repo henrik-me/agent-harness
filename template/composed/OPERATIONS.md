@@ -797,14 +797,13 @@ pasted block itself.
 
 Harness subcommands run inside the consumer's (or self-host's) working repo,
 which routinely carries **uncommitted, unstaged tracked edits**. Several git
-verbs are destructive on such a repo: `reset --hard`, `restore`, `clean`,
-`stash`, and `checkout -f` silently discard dirty tracked edits, while a bare
-`git checkout <ref>` / `git switch <ref>` silently detaches HEAD (and can also
-drop edits when the target ref's version of a dirty file differs) — the LRN-124
-working-tree-loss signature, which combined a detached HEAD with reverted
-edits and no error. CS47's bisection
-(`tests/cs47-detached-head-bisect.test.mjs`) proved no current subcommand does
-this; this rule keeps it that way for new subcommands.
+verbs are destructive on such a repo: `reset --hard`, `restore`, `checkout -f`,
+and `stash` can discard or stash away dirty tracked edits, and `clean` removes
+untracked files; meanwhile `git checkout <commit-or-tag>` and
+`git switch --detach <ref>` detach HEAD. The LRN-124 working-tree-loss
+signature combined a detached HEAD with reverted tracked edits and no error.
+CS47's bisection (`tests/cs47-detached-head-bisect.test.mjs`) proved no current
+subcommand does any of this; this rule keeps it that way for new subcommands.
 
 When a subcommand must read content at a specific ref, use, in preference order:
 
