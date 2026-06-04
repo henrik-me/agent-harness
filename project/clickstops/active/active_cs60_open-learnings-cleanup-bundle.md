@@ -1,13 +1,13 @@
 # CS60 — Open-learnings cleanup bundle (doctrine + linter correctness + Windows/worktree env hardening)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs60/content
+**Started:** 2026-06-04
 **Closed:** —
 **Filed by:** Open-learnings audit (2026-06-04 by `yoga-ah`). Bundles the seven `open` learnings that do **not** already have a dedicated planned CS: **LRN-143, LRN-144** (review/close-out doctrine), **LRN-132, LRN-142** (harness linter correctness), **LRN-133, LRN-140, LRN-141** (Windows/worktree orchestrator-environment hazards).
 **Depends on:** None hard. May claim independently.
-**Out of scope (already planned elsewhere):** **LRN-139** → [`planned_cs58_plan-side-fact-claim-verification.md`](planned_cs58_plan-side-fact-claim-verification.md); **LRN-101** → [`planned_cs24_apply-lrn-101-changelog-touch-enforcement.md`](planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). Deferred **LRN-014** (gwn-migration, revisit by 2026-06-15) is dispositioned with its own trigger and is not addressed here.
+**Out of scope (already planned elsewhere):** **LRN-139** → [`planned_cs58_plan-side-fact-claim-verification.md`](../planned/planned_cs58_plan-side-fact-claim-verification.md); **LRN-101** → [`planned_cs24_apply-lrn-101-changelog-touch-enforcement.md`](../planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). Deferred **LRN-014** (gwn-migration, revisit by 2026-06-15) is dispositioned with its own trigger and is not addressed here.
 
 ## Goal
 
@@ -100,7 +100,13 @@ Four background sub-agent workstreams with **disjoint file ownership** (fully pa
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| WS-DOCS: `OPERATIONS.md` + copilot-instructions doctrine (LRN-143 hashed-section deviation, LRN-144 PVI ordering, LRN-141 fresh-worktree npm install, LRN-140 doc, LRN-133 LF convention) | planned | — | Owns all markdown doctrine; composed/managed mirrors in lockstep. |
+| WS-REVIEW-LINTER: context-aware `parseImplementerModels` in `lib/review.mjs` + `tests/cs60-parse-implementer-models.test.mjs` (LRN-132) | planned | — | Code-only; must not touch bin/harness.mjs. |
+| WS-ENGAGE: `copilot-engage` default poll HEAD = `pr.headRefOid`, `--head` opt-in, mismatch warning, help text in `lib/copilot-engage.mjs` + `bin/harness.mjs` + `tests/cs60-copilot-engage-head.test.mjs` (LRN-140) | planned | — | Owns bin/harness.mjs exclusively. |
+| WS-CONFIG-AUDIT: `scripts/checks/*.mjs` config-drift audit + clear-drift fixes (target `check-independence-invariant.mjs`) + `tests/cs60-config-drift.test.mjs` (LRN-142); verify `check-text-encoding.mjs` gitignore behavior (LRN-133) | planned | — | Must not edit lib/review.mjs, bin/harness.mjs, check-text-encoding.mjs. |
+| Orchestrator integration: `CHANGELOG.md` `[Unreleased]` entry | planned | — | Single-writer; after all WS complete. |
+| Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, and composed/managed process templates + rendered roots as needed | planned | — | Mandatory close-out row. |
+| Close-out: learnings + follow-ups — transition LRN-143, 144, 132, 142, 133, 140, 141 `open` → `applied` in `LEARNINGS.md`; file follow-ups for any deferred scope | planned | — | Mandatory close-out row. |
 
 ## Notes / Learnings
 
