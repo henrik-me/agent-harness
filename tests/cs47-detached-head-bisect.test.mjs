@@ -339,9 +339,15 @@ function assertInvariants(repo, origHeadRef, traceFile, label) {
   const content = readFileSync(path.join(repo, SENTINEL), 'utf8');
   assert.equal(content, SENTINEL_DIRTY, `${label}: dirty sentinel edit was reverted (LRN-124)`);
 
-  // (d) the sentinel's porcelain status entry is unchanged (still modified).
-  const status = gitOut(repo, ['status', '--porcelain', '--', SENTINEL]);
-  assert.equal(status, `M ${SENTINEL}`, `${label}: sentinel porcelain status changed ("${status}")`);
+  // (d) the sentinel's porcelain status entry is unchanged (still worktree-
+  // modified AND unstaged). Capture RAW stdout — `git status --porcelain` uses
+  // the leading XY columns to encode index-vs-worktree state, so the leading
+  // space (X=unmodified-index) is meaningful and must NOT be trimmed away.
+  const status = (git(repo, ['status', '--porcelain', '--', SENTINEL]).stdout ?? '').replace(
+    /\n+$/,
+    '',
+  );
+  assert.equal(status, ` M ${SENTINEL}`, `${label}: sentinel porcelain status changed ("${status}")`);
 
   // (e) no HEAD/worktree-mutating git verb was invoked (argv-level evidence).
   if (existsSync(traceFile)) {

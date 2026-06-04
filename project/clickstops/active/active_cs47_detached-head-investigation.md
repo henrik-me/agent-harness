@@ -72,11 +72,11 @@ Candidate locations to investigate (`grep -rn "git checkout\|git -c\|spawnSync.*
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Bisection test per C47-1: enumerate harness subcommands from live dispatch registry; per-subcommand HEAD + dirty-sentinel + porcelain assertions in BOTH consumer-mode and self-host-mode (per C47-2) | done | yoga-ah | `tests/cs47-detached-head-bisect.test.mjs`; enumerates `COMMAND_REGISTRY`; allow-list with rationale per skip; 16/16 green |
+| Bisection test per C47-1: enumerate harness subcommands from live dispatch registry; per-subcommand HEAD + dirty-sentinel + porcelain assertions in BOTH consumer-mode and self-host-mode (per C47-2) | done | yoga-ah | `tests/cs47-detached-head-bisect.test.mjs`; enumerates `COMMAND_REGISTRY`; allow-list with rationale per skip; 22/22 green |
 | Identify offender(s); apply fix per C47-3 (`git show` > `git worktree add --detach` > `try/finally` with stash) | done | yoga-ah | NO offender — static + dynamic audit show no HEAD-moving git verb anywhere in source/history; C47-4(e) environmental |
 | Update LRN-124 Disposition with root cause + fix reference (or no-offender addendum per C47-4(e)) | done | yoga-ah | no-offender addendum appended; status remains `applied` |
 | CHANGELOG `[Unreleased]/Fixed` bullet citing CS47 + LRN-124 | done | yoga-ah | per Deliverable #4 |
-| Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | done | yoga-ah | full suite 1050 pass; harness lint 30/30 |
+| Self-checks: `node --test tests/cs47-*` + `harness lint` + `harness sync --mode=check` | done | yoga-ah | full suite 1056 pass / 1 skip; harness lint 30/30 |
 | Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md; gate verifies C47-4(a)-(e) |
 | Close-out: docs + restart state (WORKBOARD row removed, CONTEXT.md if state changed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
 | Close-out: learnings + follow-ups (file/disposition LEARNINGS; planned follow-up CSs for any residuals) | pending | — | per OPERATIONS.md § Claim |
