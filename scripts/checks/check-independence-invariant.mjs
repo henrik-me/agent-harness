@@ -8,8 +8,9 @@ import { pathToFileURL } from 'node:url';
 
 import { extractH2, isPlaceholder, normalizeModel, parseTable } from './check-review-log-evidence.mjs';
 
-const DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
-const PRIMARY_REVIEWER_MODEL = 'gpt-5.5';
+const SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
+const SCHEMA_DEFAULT_RUBBER_DUCK_MODEL = 'gpt-5.5';
+const CLICKSTOP_ID_PATTERN = /^CS\d{2,}[A-Za-z]?$/;
 
 const HELP = `Usage: check-independence-invariant.mjs (--pr-body <file> | --repo <owner/repo> --pr <num>) [options]
 
@@ -31,6 +32,7 @@ Exit codes:
 `;
 
 class UsageError extends Error {}
+class ConfigError extends Error {}
 
 function requireValue(args, index, flag) {
   const value = args[index + 1];
@@ -70,15 +72,70 @@ function parseKeyValueAudit(content) {
   return { fields, errors };
 }
 
+function schemaDefaultReviewsConfig() {
+  return {
+    rubber_duck_model: SCHEMA_DEFAULT_RUBBER_DUCK_MODEL,
+    high_risk_clickstops: SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS,
+  };
+}
+
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key);
+}
+
+function validateReviewsConfig(reviews, source) {
+  if (!reviews || typeof reviews !== 'object' || Array.isArray(reviews)) {
+    throw new ConfigError(`${source}: reviews must be an object`);
+  }
+  if (!hasOwn(reviews, 'rubber_duck_model')) {
+    throw new ConfigError(`${source}: missing reviews.rubber_duck_model`);
+  }
+  if (typeof reviews.rubber_duck_model !== 'string' || reviews.rubber_duck_model.trim() === '') {
+    throw new ConfigError(`${source}: reviews.rubber_duck_model must be a non-empty string`);
+  }
+  if (hasOwn(reviews, 'enforce_gates') && typeof reviews.enforce_gates !== 'boolean') {
+    throw new ConfigError(`${source}: reviews.enforce_gates must be a boolean when present`);
+  }
+  if (!hasOwn(reviews, 'high_risk_clickstops')) {
+    throw new ConfigError(`${source}: missing reviews.high_risk_clickstops`);
+  }
+  if (!Array.isArray(reviews.high_risk_clickstops)) {
+    throw new ConfigError(`${source}: reviews.high_risk_clickstops must be an array`);
+  }
+  const seen = new Set();
+  for (const [index, id] of reviews.high_risk_clickstops.entries()) {
+    if (typeof id !== 'string' || !CLICKSTOP_ID_PATTERN.test(id)) {
+      throw new ConfigError(`${source}: reviews.high_risk_clickstops[${index}] must match ${CLICKSTOP_ID_PATTERN.source}`);
+    }
+    const normalized = id.toUpperCase();
+    if (seen.has(normalized)) {
+      throw new ConfigError(`${source}: reviews.high_risk_clickstops contains duplicate ${id}`);
+    }
+    seen.add(normalized);
+  }
+  return {
+    enforce_gates: reviews.enforce_gates,
+    rubber_duck_model: reviews.rubber_duck_model.trim(),
+    high_risk_clickstops: reviews.high_risk_clickstops,
+  };
+}
+
 function loadReviewsConfig(configPath) {
   const candidate = configPath ?? path.resolve(process.cwd(), 'harness.config.json');
-  if (!existsSync(candidate)) return {};
+  if (!existsSync(candidate)) return schemaDefaultReviewsConfig();
+  let cfg;
   try {
-    const cfg = JSON.parse(readFileSync(candidate, 'utf8'));
-    return cfg.reviews && typeof cfg.reviews === 'object' ? cfg.reviews : {};
+    cfg = JSON.parse(readFileSync(candidate, 'utf8'));
   } catch (error) {
-    throw new UsageError(`cannot parse --config ${candidate}: ${error.message}`);
+    throw new ConfigError(`${candidate}: invalid JSON: ${error.message}`);
   }
+  if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
+    throw new ConfigError(`${candidate}: top-level config must be an object`);
+  }
+  if (!hasOwn(cfg, 'reviews')) {
+    throw new ConfigError(`${candidate}: missing reviews config`);
+  }
+  return validateReviewsConfig(cfg.reviews, candidate);
 }
 
 function normalizeCsId(value) {
@@ -138,21 +195,24 @@ export function runIndependenceInvariant({
   if (!reviewer.normalized) emit(`${label}: Reviewer model must be populated.`);
 
   const effectiveCsId = normalizeCsId(csId) ?? inferCsId(body);
-  const highRiskSet = new Set((config.high_risk_clickstops ?? DEFAULT_HIGH_RISK_CLICKSTOPS).map((id) => String(id).toUpperCase()));
+  // harness.config.json reviews.* is authoritative; schema defaults apply only when no config file exists.
+  const highRiskSet = new Set((config.high_risk_clickstops ?? SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS).map((id) => String(id).toUpperCase()));
   const highRisk = effectiveCsId ? highRiskSet.has(effectiveCsId.toUpperCase()) : false;
+  const primaryReviewerModel = config.rubber_duck_model ?? SCHEMA_DEFAULT_RUBBER_DUCK_MODEL;
+  const primaryReviewerNormalized = normalizeModel(primaryReviewerModel);
   const overlaps = implementerModels.filter((model) => model.normalized === reviewer.normalized);
 
   if (overlaps.length > 0) {
     const overlapText = overlaps.map((model) => model.raw).join(', ');
-    if (reviewer.normalized !== PRIMARY_REVIEWER_MODEL) {
+    if (reviewer.normalized !== primaryReviewerNormalized) {
       emit(
         `${label}: independence invariant violation — Reviewer model "${reviewer.raw}" appears in Implementer models (${overlapText}); ` +
-        'dispatch an independent reviewer or use GPT-5.5 per REVIEWS.md §2.8.'
+        `dispatch an independent reviewer or use ${primaryReviewerModel} per REVIEWS.md §2.8.`
       );
     } else if (highRisk) {
       emit(
-        `${label}: high-risk ${effectiveCsId} forbids implementer/reviewer model overlap even for ${PRIMARY_REVIEWER_MODEL}; ` +
-        'obtain an independent GPT-5.5 review or explicit user waiver.'
+        `${label}: high-risk ${effectiveCsId} forbids implementer/reviewer model overlap even for ${primaryReviewerModel}; ` +
+        `obtain an independent ${primaryReviewerModel} review or explicit user waiver.`
       );
     }
   }
@@ -211,7 +271,7 @@ async function main() {
     }
   } catch (error) {
     process.stderr.write(`check-independence-invariant: ${error.message}\n`);
-    process.exit(2);
+    process.exit(error instanceof ConfigError ? 1 : 2);
   }
 
   const result = runIndependenceInvariant({ body, label, config, csId: args.csId, quiet: args.quiet });

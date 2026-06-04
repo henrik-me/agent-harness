@@ -100,17 +100,60 @@ Four background sub-agent workstreams with **disjoint file ownership** (fully pa
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| WS-DOCS: `OPERATIONS.md` + copilot-instructions doctrine (LRN-143 hashed-section deviation, LRN-144 PVI ordering, LRN-141 fresh-worktree npm install, LRN-140 doc, LRN-133 LF convention) | planned | — | Owns all markdown doctrine; composed/managed mirrors in lockstep. |
-| WS-REVIEW-LINTER: context-aware `parseImplementerModels` in `lib/review.mjs` + `tests/cs60-parse-implementer-models.test.mjs` (LRN-132) | planned | — | Code-only; must not touch bin/harness.mjs. |
-| WS-ENGAGE: `copilot-engage` default poll HEAD = `pr.headRefOid`, `--head` opt-in, mismatch warning, help text in `lib/copilot-engage.mjs` + `bin/harness.mjs` + `tests/cs60-copilot-engage-head.test.mjs` (LRN-140) | planned | — | Owns bin/harness.mjs exclusively. |
-| WS-CONFIG-AUDIT: `scripts/checks/*.mjs` config-drift audit + clear-drift fixes (target `check-independence-invariant.mjs`) + `tests/cs60-config-drift.test.mjs` (LRN-142); verify `check-text-encoding.mjs` gitignore behavior (LRN-133) | planned | — | Must not edit lib/review.mjs, bin/harness.mjs, check-text-encoding.mjs. |
-| Orchestrator integration: `CHANGELOG.md` `[Unreleased]` entry | planned | — | Single-writer; after all WS complete. |
+| WS-DOCS: `OPERATIONS.md` + copilot-instructions doctrine (LRN-143 hashed-section deviation, LRN-144 PVI ordering, LRN-141 fresh-worktree npm install, LRN-140 doc, LRN-133 LF convention) | done | ws-docs | Owns all markdown doctrine; composed/managed mirrors in lockstep. |
+| WS-REVIEW-LINTER: context-aware `parseImplementerModels` in `lib/review.mjs` + `tests/cs60-parse-implementer-models.test.mjs` (LRN-132) | done | ws-review-linter | Code-only; must not touch bin/harness.mjs. |
+| WS-ENGAGE: `copilot-engage` default poll HEAD = `pr.headRefOid`, `--head` opt-in, mismatch warning, help text in `lib/copilot-engage.mjs` + `bin/harness.mjs` + `tests/cs60-copilot-engage-head.test.mjs` (LRN-140) | done | ws-engage | Owns bin/harness.mjs exclusively. |
+| WS-CONFIG-AUDIT: `scripts/checks/*.mjs` config-drift audit + clear-drift fixes (target `check-independence-invariant.mjs`) + `tests/cs60-config-drift.test.mjs` (LRN-142); verify `check-text-encoding.mjs` gitignore behavior (LRN-133) | done | ws-config-audit | Must not edit lib/review.mjs, bin/harness.mjs, check-text-encoding.mjs. |
+| Orchestrator integration: `CHANGELOG.md` `[Unreleased]` entry + 7 LEARNINGS transitions | done | yoga-ah | Single-writer; after all WS complete. |
 | Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, and composed/managed process templates + rendered roots as needed | planned | — | Mandatory close-out row. |
 | Close-out: learnings + follow-ups — transition LRN-143, 144, 132, 142, 133, 140, 141 `open` → `applied` in `LEARNINGS.md`; file follow-ups for any deferred scope | planned | — | Mandatory close-out row. |
 
 ## Notes / Learnings
 
-(filled during execution)
+### LRN-142 config-drift audit (2026-06-04)
+
+Audit of `scripts/checks/*.mjs` for values that duplicate
+schema/`harness.config.json`-defined constants:
+
+- **`check-independence-invariant.mjs` (FIXED):** hard-coded
+  `DEFAULT_HIGH_RISK_CLICKSTOPS` and `PRIMARY_REVIEWER_MODEL` literals and read
+  config via a silent `??` fallback. Re-wired so a valid `harness.config.json`
+  is the source of truth for both values, with **fail-closed** validation
+  (malformed/invalid config → clear stderr error + non-zero exit) per the CS57
+  pattern. Hard-coded literals retained only as documented defaults when config
+  is absent; precedence is now explicit and validated. No verdict change for
+  valid configs.
+- **`check-review-log-evidence.mjs` (LEFT AS-IS):** still references a
+  hard-coded `gpt-5.5` reviewer id. Out of CS60's bounded scope (the target was
+  the independence-invariant drift); recorded here as a candidate follow-up so
+  the next config-accessor pass can de-drift it deliberately rather than
+  in-band.
+
+### LRN-133 verification (2026-06-04)
+
+Confirmed (read-only, no code change) that the encoding-linter gitignore fix is
+**already shipped**: `scripts/check-text-encoding.mjs` enables
+`respectGitignore` by default and `.tmp/` is listed in `.gitignore`, so
+transient ignored scratch paths are skipped. LRN-133's residual work is
+doc-only (Windows LF-normalization convention added to `OPERATIONS.md`) plus
+this close-out verification.
+
+### Implementation model ledger
+
+Four parallel implementation workstreams ran on **claude-sonnet-4.6**
+(WS-DOCS, WS-REVIEW-LINTER, WS-ENGAGE, WS-CONFIG-AUDIT); orchestrator
+integration (CHANGELOG, `LEARNINGS.md` transitions, this CS file, Model audit)
+ran on **claude-opus-4.8** (agent `yoga-ah`). Review-of-record: **gpt-5.5**
+rubber-duck — independent of every implementer model.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-sonnet-4.6, claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 

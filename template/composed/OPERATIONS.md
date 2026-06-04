@@ -105,7 +105,8 @@ the canonical `project/clickstops/{planned,active,done}/**` arc:
 ### Plan-vs-implementation review (close-out gate)
 
 This gate is **mandatory** before opening the close-out PR and before
-the `active → done` rename.
+the `active → done` rename. Run it against the merged content HEAD (or the
+content diff), not a half-migrated close-out worktree.
 
 **Reviewer:** GPT-5.5 (rubber-duck). Fallback: Claude Sonnet 4.6, subject
 to the independence invariant in [REVIEWS.md](REVIEWS.md) (non-high-risk
@@ -132,7 +133,8 @@ only; user waiver always allowed).
 
 The orchestrator records the review verbatim in the active CS file's
 `## Plan-vs-implementation review` section **before** the `active → done`
-rename. The section must contain:
+rename. Renaming first leaves a `done/` file with an unfilled PVI section
+that `check-clickstop` correctly rejects. The section must contain:
 
 ```
 **Reviewer:** <model name + rubber-duck | fallback reason>
@@ -200,7 +202,11 @@ eight cells; compute the hash via `harness plan-review-hash <file>`):
 Subsequent amendment rounds append `R2`, `R3`, ... rows below `R1`. The
 latest row's `Reviewed sections hash` MUST equal the SHA-256-prefix-12 of
 the file's current `## Decisions` + `## Deliverables` bodies (per C35b-3 —
-the linter computes this on every run via `lib/plan-review-hash.mjs`).
+the linter computes this on every run via `lib/plan-review-hash.mjs`). Once
+a `## Decisions` or `## Deliverables` row is covered by a recorded plan-review
+hash, factual errors found later must be corrected in the implementation and
+recorded as a dated `## Notes` deviation; never edit the hashed section just
+to make the plan match, because that invalidates the attestation.
 
 **Blocking behaviour:**
 
@@ -745,6 +751,10 @@ List explicitly:
 
 #### 7. Self-checks before reporting
 
+- In a freshly-created git worktree or checkout, run `npm install` in that
+  checkout before dependency-backed harness linters (`harness lint`,
+  `harness plan-review-hash`, schema/doc checks, etc.); `node_modules` is
+  gitignored and per-checkout, not shared from the parent worktree.
 - Run `node --test` and report the test count and delta.
 - Run any existing linters that cover the deliverables area.
 - Verify JSON schema conformance for any `.json` files created.
@@ -858,6 +868,10 @@ need" produces silent gaps that surface as integration failures later.
 
 - ESM `.mjs` only, Node 20+ stdlib. No CommonJS `require()`, no `.cjs`
   files, no npm dependencies unless explicitly authorized in this dispatch.
+
+- Fresh git worktrees/checkouts need their own `npm install` before running
+  dependency-backed harness linters; `node_modules` is gitignored and
+  per-checkout, not shared from the parent worktree.
 
 - LF line endings, no BOM. After every file write on Windows, normalize:
   strip BOM if present (first 3 bytes must NOT be 0xEF 0xBB 0xBF), replace
@@ -1227,7 +1241,7 @@ for the full transcript.
 ### Recommended invocation (CS41+):
 
 ```
-harness copilot-engage <pr-number> [--repo owner/name] [--no-poll] [--poll-timeout 300] [--submitted-after <iso>]
+harness copilot-engage <pr-number> [--repo owner/name] [--head <sha>] [--no-poll] [--poll-timeout 300] [--submitted-after <iso>]
 ```
 
 The CLI:
@@ -1245,12 +1259,15 @@ The CLI:
    request the review (per ADR-0004 § ADR4-2 — `requestReviews` GraphQL rejects
    Bot IDs).
 4. Polls the PR's reviews via GraphQL every 30s up to `--poll-timeout` (default 300s);
-   exits 0 when at least one Bot review by `copilot-pull-request-reviewer` with state
-   ∈ {APPROVED, COMMENTED, CHANGES_REQUESTED} is observed at the current PR head AND
-   submitted at or after the engage-request timestamp (or the explicit
-   `--submitted-after <iso>` floor if provided). The submitted-after floor enforces
-   the A5 ordering doctrine: a stale Copilot review on the same HEAD that predates
-   the latest local Go MUST NOT satisfy the gate.
+   by default the poll HEAD is the PR's GitHub `headRefOid`, not the cwd's local
+   git HEAD. `--head <sha>` is an opt-in override, and the CLI warns when the
+   detected local HEAD differs from the PR head. The command exits 0 when at least
+   one Bot review by `copilot-pull-request-reviewer` with state ∈ {APPROVED,
+   COMMENTED, CHANGES_REQUESTED} is observed at the selected PR head AND submitted
+   at or after the engage-request timestamp (or the explicit `--submitted-after <iso>`
+   floor if provided). The submitted-after floor enforces the A5 ordering doctrine:
+   a stale Copilot review on the same HEAD that predates the latest local Go MUST NOT
+   satisfy the gate.
 5. Exits 0 immediately after the request when `--no-poll` is set (CI use case
    where verification happens in a separate job).
 6. Exits 2 on fork PRs (`isCrossRepository == true`) with the maintainer-rerun
@@ -1259,6 +1276,11 @@ The CLI:
 The poll predicate is identical to the A5+A16 gate
 (`scripts/check-copilot-review.mjs`) so "engage CLI says satisfied" =
 "PR-evidence gate says satisfied".
+
+Windows authoring reminder: the harness repo stays LF-clean and BOM-free.
+Normalize any PR-body or review-log scratch text before writing tracked files;
+`scripts/check-text-encoding.mjs` already respects `.gitignore`, so transient
+ignored scratch paths such as `.tmp/` are skipped.
 
 ### Manual fallback (only if `harness copilot-engage` is unavailable):
 
