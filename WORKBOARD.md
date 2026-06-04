@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-03 (CS57 CLAIMED by yoga-ah — post-CS48 lint hardening on `scripts/check-clickstop-implementer-not-reviewer.mjs`; branch `cs57/content`.)
+> **Last updated:** 2026-06-04 (CS57 CLOSED by yoga-ah — post-CS48 lint hardening merged; no active CS.)
 
 ## Orchestrators
 
@@ -11,7 +11,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
 | omni-ah  | OMNI         | C:\src\agent-harness | 🟡 Idle | 2026-05-28 |
-| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-03 |
+| yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-04 |
 
 ## Active Work
 
@@ -24,6 +24,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS57 | post-CS48 lint hardening | 🟢 Active | yoga-ah | cs57/content | 2026-06-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
