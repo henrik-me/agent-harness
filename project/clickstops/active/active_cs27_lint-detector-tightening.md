@@ -1,9 +1,9 @@
 # CS27 — Lint detector tightening (2 findings from CS16 sub-invaders bootstrap)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs27/lint-detector-tightening
+**Started:** 2026-06-04
 **Closed:** —
 **Filed by:** Pre-claim disposition of [Findings #7 + #8](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** None. May claim independently of CS25 / CS26 / CS16 (CS25 and CS16 both closed 2026-05-11; CS26 still planned — none block this CS). Small enough to ship in a single sitting.
@@ -71,11 +71,30 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Finding #7: tighten WORKBOARD active-row detector in `lib/sync.mjs` per C27-1 (export for test) | pending | yoga-ah | predicate: CS-Task ID + State + (Owner OR Branch) all non-placeholder |
+| Finding #7 test: `tests/cs27-workboard-active-row-detector.test.mjs` (≥4 fixtures per Deliverable #2) | pending | yoga-ah | placeholder-only, real, mix, concrete-State-but-placeholder-ID |
+| Finding #8: emit recommendation notes for `commit-trailers` + `pr-body` in `bin/harness.mjs cmdLint` per C27-2/C27-3 | pending | yoga-ah | non-quiet only (R2); plain skipped row under `--quiet` |
+| Finding #8 test: assert recommendation lines present when prereqs absent, absent when present + under `--quiet` | pending | yoga-ah | per C27-4 / Exit criteria 4+6 |
+| CHANGELOG.md `[Unreleased]/Fixed` entry citing CS27 | pending | yoga-ah | Deliverable #5 |
+| Update CS16 `sub-invaders-bootstrap-summary.md` Findings #7+#8 with resolution notes | pending | yoga-ah | Deliverable #6 / Exit criteria 9 |
+| Fresh-consumer smoke probe (no active-row warning + recommendation lines) | pending | yoga-ah | Exit criteria 5+6; transcript in Notes |
+| Self-checks: `node --test` + `harness lint --quiet` + `harness sync --mode=check` | pending | yoga-ah | Exit criteria 7 |
+| Plan-vs-implementation review (close-out gate) | pending | — | gpt-5.5 rubber-duck per OPERATIONS.md |
+| Close-out: docs + restart state (WORKBOARD row removed, active→done rename) | pending | — | per OPERATIONS.md § Claim three-PR shape |
+| Close-out: learnings + follow-ups | pending | — | per OPERATIONS.md § Claim |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 
