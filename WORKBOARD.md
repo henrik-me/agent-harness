@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-03 (CS54 CLOSED by yoga-ah — release cut as **v0.7.0** (minor; CS56's new CLI subcommand triggers the SemVer minor rule), bundling CS54+CS55+CS56. Takeover of omni-ah's stalled close-out with maintainer authorization.)
+> **Last updated:** 2026-06-03 (CS57 CLAIMED by yoga-ah — post-CS48 lint hardening on `scripts/check-clickstop-implementer-not-reviewer.mjs`; branch `cs57/content`.)
 
 ## Orchestrators
 
@@ -24,5 +24,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS57 | post-CS48 lint hardening | 🟢 Active | yoga-ah | cs57/content | 2026-06-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
