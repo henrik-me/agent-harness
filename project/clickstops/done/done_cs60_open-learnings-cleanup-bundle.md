@@ -1,10 +1,10 @@
 # CS60 — Open-learnings cleanup bundle (doctrine + linter correctness + Windows/worktree env hardening)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs60/content
 **Started:** 2026-06-04
-**Closed:** —
+**Closed:** 2026-06-05
 **Filed by:** Open-learnings audit (2026-06-04 by `yoga-ah`). Bundles the seven `open` learnings that do **not** already have a dedicated planned CS: **LRN-143, LRN-144** (review/close-out doctrine), **LRN-132, LRN-142** (harness linter correctness), **LRN-133, LRN-140, LRN-141** (Windows/worktree orchestrator-environment hazards).
 **Depends on:** None hard. May claim independently.
 **Out of scope (already planned elsewhere):** **LRN-139** → [`planned_cs58_plan-side-fact-claim-verification.md`](../planned/planned_cs58_plan-side-fact-claim-verification.md); **LRN-101** → [`planned_cs24_apply-lrn-101-changelog-touch-enforcement.md`](../planned/planned_cs24_apply-lrn-101-changelog-touch-enforcement.md). Deferred **LRN-014** (gwn-migration, revisit by 2026-06-15) is dispositioned with its own trigger and is not addressed here.
@@ -157,4 +157,10 @@ rubber-duck — independent of every implementer model.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Gate:** Plan-vs-implementation review (close-out gate) — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
+
+**Reviewer:** GPT-5.5 (rubber-duck, PVI gate; reviewed against merged content HEAD `c339fe5` from PR #244 squash-merge)
+**Date:** 2026-06-05
+**Outcome:** GO — CS60 matches the plan; all seven LRNs (132/133/140/141/142/143/144) transitioned `open → applied` with CS60 dispositions; `harness lint` 30 pass / 0 fail / 3 skip; `node --test` 1083 pass / 0 fail / 1 skip; no scope creep beyond the four declared workstreams; no unmet exit criterion.
+
+**Note (Copilot-driven refinement on PR #244):** a GitHub Copilot review flagged that the LRN-142 `validateReviewsConfig` over-required `reviews.rubber_duck_model` / `reviews.high_risk_clickstops`, which `schemas/harness.config.schema.json` supplies defaults for and does not mark `required`. The fix was refined to apply schema defaults for absent fields while still failing closed on malformed-present values (hard rule #4 — schema is source of truth; consistent with Decision C60-5's "fail-closed validation" per the CS57 pattern of "default when absent, fail-closed on malformed"). Confirmed by the PVI reviewer as consistent with the LRN-142 disposition. Findings: none.
