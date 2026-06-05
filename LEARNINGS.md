@@ -19,7 +19,7 @@ id: LRN-143
 date: 2026-06-04
 category: process
 source_cs: CS27
-status: open
+status: applied
 tags: [plan-review-hash, decisions-immutability, deviation-record, copilot-review, gpt-5.5]
 claim_area: orchestrator-loop
 ```
@@ -53,10 +53,12 @@ left verbatim; deviation recorded in
 (~line 128). Generalises the existing rule that plan-review hashes cover only
 `## Decisions`/`## Deliverables` bodies.
 
-**Disposition:** Open. Candidate hardening: add a one-line note to
-`OPERATIONS.md § Plan review` (and/or RETROSPECTIVES) stating that post-hash
+**Disposition:** Resolved in CS60 (see Applied below). CS60 added a note to
+`OPERATIONS.md § Plan review` stating that post-hash
 factual corrections go to implementation + a `## Notes` deviation record, never
-to the hashed section. Until then this LRN is the reference.
+to the hashed section.
+
+**Applied (CS60, 2026-06-04):** `OPERATIONS.md § Plan review` (and lockstep `template/composed/OPERATIONS.md`) now states that once a `## Decisions`/`## Deliverables` row is plan-review-hashed, later factual errors must be fixed in the implementation and recorded as a dated `## Notes` deviation — never by editing the hashed section, which would invalidate the attestation.
 
 ### LRN-144
 
@@ -65,7 +67,7 @@ id: LRN-144
 date: 2026-06-04
 category: process
 source_cs: CS27
-status: open
+status: applied
 tags: [plan-vs-implementation, close-out, check-clickstop, false-positive, worktree-ordering]
 claim_area: orchestrator-loop
 ```
@@ -103,11 +105,13 @@ GO) then re-validated clean (check-clickstop 0 errors). Inverse of the
 structural-marker *bypass* problem (placeholder PVI sections passing the linter)
 captured in the CS03b check-#4 hardening LRN.
 
-**Disposition:** Open. Candidate hardening: add a one-line ordering reminder to
+**Disposition:** Resolved in CS60 (see Applied below). CS60 added an ordering reminder to
 `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` — gate runs
 against the merged content HEAD / content diff; record the verdict in the
 **active** CS file first; the `active → done` rename is the *last* close-out
 step, never performed before the PVI section is populated.
+
+**Applied (CS60, 2026-06-04):** `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` now records that the PVI verdict must be written to the active CS file before the `active → done` rename (renaming first leaves a `done/` file with an unfilled PVI section that `check-clickstop` rejects), and that the gate evaluates the merged content HEAD.
 
 ## Applied
 
@@ -2319,7 +2323,7 @@ id: LRN-132
 date: 2026-05-27
 category: tooling
 source_cs: CS53
-status: open
+status: applied
 tags: [harness-cli, review-gates, regex, independence-invariant, false-positive]
 claim_area: review-gates
 ```
@@ -2336,7 +2340,9 @@ The bug is silent — it manifests only as a refusal-to-run, not as a false-pass
 
 **Evidence:** CS53 (`done_cs53_release-v0.6.0.md`) T8c dogfood attempt: `harness review 208 --dry-run` succeeded (dry-run bypasses the guard), but `harness review 208` (without `--dry-run`) refused with an independence-violation error citing `gpt-5.5` as an implementer despite the `## Model audit` table clearly listing `claude-opus-4.7-1m-internal` as the only implementer model. Inspection of `lib/review.mjs:313` showed the regex matching `Reviewer model: gpt-5.5` in the CS file's plan-vs-impl section. Workaround applied for CS53: dogfooded via `--dry-run` only and proceeded to admin-squash-merge with the canonical `## Model audit` table evidence. PR #208 at `b07e78d`; CS file lines containing `Reviewer:` and `Reviewer model:` are the trigger surface.
 
-**Disposition:** Open. Follow-up CS candidate (CS54 or equivalent): tighten `parseImplementerModels` per option 2 (remove bare `model` alternative) at minimum, with regression test that asserts a CS file containing `Reviewer model: gpt-5.5` in narrative prose does NOT cause `harness review` to flag `gpt-5.5` as an implementer. Listed in `CONTEXT.md § Suggested next CSs` as small surgical CS #2.
+**Disposition:** Resolved in CS60 (see Applied below). CS60 tightened `parseImplementerModels` per option 2 (removed the bare `model` alternative), with a regression test (`tests/cs60-parse-implementer-models.test.mjs`) asserting a CS file containing `Reviewer model: gpt-5.5` in narrative prose does NOT cause `harness review` to flag `gpt-5.5` as an implementer.
+
+**Applied (CS60, 2026-06-04):** `parseImplementerModels` (`lib/review.mjs`) made context-aware — the context-blind bare `model=`/`model:` ledger scan is dropped, so a `Reviewer model:` mentioned in prose is no longer mis-classified as an implementer; explicit `Implementer models`/`Plan author model(s)`/`implementer-model =` declarations still parse. Regression test `tests/cs60-parse-implementer-models.test.mjs` added.
 
 ### LRN-133
 
@@ -2345,7 +2351,7 @@ id: LRN-133
 date: 2026-05-27
 category: tooling
 source_cs: CS53
-status: open
+status: applied
 tags: [windows, powershell, line-endings, lint, text-encoding, gitignore]
 claim_area: lint-and-encoding
 ```
@@ -2362,7 +2368,9 @@ LRN-093 documented the parent fact ("Windows tooling defaults to CRLF") but stop
 
 **Evidence:** CS53 R1 plan-vs-impl review (verbatim finding C53-VALIDATION-1): "Current working tree validation is red because untracked `.tmp/pr-body-cs53-content.md` has CRLF; `node bin/harness.mjs lint` fails `text-encoding`, causing full `npm test` to fail via lint aggregator tests. This file is not in the PR diff, so the implementation itself appears unaffected." Reproduced inline by inspecting `.tmp/` after `gh pr edit --body-file .tmp/pr-body-cs53-content.md` (PowerShell `Out-File -Encoding utf8` chain), then running `node bin/harness.mjs lint --quiet` (failed `text-encoding`), then `Remove-Item -Recurse -Force .tmp` followed by re-running lint (passed `30/0/3`). Cascade verified: 5 lint-aggregator tests under `tests/lint-aggregator.test.mjs` (or equivalent) flip red->green with `.tmp/` removal. Mitigation applied in CS53 close-out by deleting `.tmp/` and re-running lint clean before commit.
 
-**Disposition:** Open (partially applied in PR #210 — the post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136). Layer 1 (add `.tmp/` to root `.gitignore`) APPLIED in PR #210. The orchestrator itself reproduced the bug by accidentally committing `.tmp/` session scratch files inside PR #210, which motivated the in-PR fix. Two follow-up scopes remain open: (option 2) scope-narrow `check-text-encoding.mjs` to respect gitignore semantics (e.g. switch to `git ls-files --cached --others --exclude-standard`) — broader behavioral implications for the lint suite; (option 3) document the Windows PowerShell `Out-File -Encoding utf8` LF-normalisation convention in `OPERATIONS.md § Copilot engagement procedure`. Both are good candidates for a separate small surgical CS. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+**Disposition:** Resolved in CS60 (see Applied below; layer 1 applied earlier in PR #210 — the post-CS53 doc-sweep PR that files CS54 and lands LRN-134/135/136). Layer 1 (add `.tmp/` to root `.gitignore`) APPLIED in PR #210. The orchestrator itself reproduced the bug by accidentally committing `.tmp/` session scratch files inside PR #210, which motivated the in-PR fix. The two follow-up scopes are now closed by CS60: (option 2) `check-text-encoding.mjs` already respects gitignore semantics (`respectGitignore` defaults to true; re-verified in CS60) — no further change needed; (option 3) the Windows PowerShell `Out-File -Encoding utf8` LF-normalisation convention is now documented in `OPERATIONS.md § Copilot engagement procedure`. Cross-reference: LRN-093 (parent Windows CRLF fact); LRN-094 (test-scratch-dirs must use `os.tmpdir()` not REPO_ROOT — same family of "REPO_ROOT writes trigger linter races" issues).
+
+**Applied (CS60, 2026-06-04):** All three defense layers are now in place. Layer 1 (`.tmp/` in `.gitignore`) landed in PR #210; layer 2 (`check-text-encoding.mjs` respecting `.gitignore`) is already shipped — `respectGitignore` defaults to true and was re-verified in CS60; layer 3 (the Windows `Out-File`/LF-normalization convention) is now documented in `OPERATIONS.md § Copilot engagement procedure`. No further follow-up required.
 
 ### LRN-134
 
@@ -2457,7 +2465,7 @@ id: LRN-142
 date: 2026-06-03
 category: tooling
 source_cs: CS57
-status: open
+status: applied
 tags: [config-vs-code-drift, high-risk-clickstops, enforcement-linter, date-gate, schema-source-of-truth, fail-closed]
 claim_area: lint-and-encoding
 ```
@@ -2468,7 +2476,9 @@ claim_area: lint-and-encoding
 
 **Evidence:** CS57 implementation, 2026-06-03. Baseline `node scripts/check-clickstop-implementer-not-reviewer.mjs --cwd .` → `0 errors, 53 warnings` (CS48–CS56 `done/` files all warn for absent `## Model audit`). Config drift: `harness.config.json` `reviews.high_risk_clickstops = ["CS03","CS11","CS15a","CS18b","CS19"]` defined at `schemas/harness.config.schema.json:184` but unread by the linter (hard-coded `DEFAULT_HIGH_RISK_CLICKSTOPS`). After CS57: `loadHighRiskClickstops()` reads the config (fail-closed on malformed), `MODEL_AUDIT_ENFORCEMENT_DATE = '2026-06-04'`, regression-guard test asserts the linter still exits 0 against the live `project/clickstops/`.
 
-**Disposition:** Open. The config-vs-code drift for this one linter is fixed in CS57; follow-up candidate: audit other harness linters/scripts for hard-coded copies of values that already live in `harness.config.json`/`schemas/` (same LRN-039 family), and consider a shared `lib/` config accessor so the "default only when absent, honor `[]`, fail-closed on malformed" policy is implemented once rather than re-derived per consumer. Cross-references: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parser doctrine).
+**Disposition:** Resolved in CS60 (see Applied below). CS57 fixed the config-vs-code drift for `check-clickstop-implementer-not-reviewer.mjs`; CS60 completed the follow-up audit of the other harness linters and de-drifted `check-independence-invariant.mjs` (config is now source-of-truth with fail-closed validation). Genuinely-remaining future candidates: a shared `lib/` config accessor so the "default only when absent, honor `[]`, fail-closed on malformed" policy is implemented once rather than re-derived per consumer, and de-drifting `check-review-log-evidence.mjs`'s hard-coded `gpt-5.5`. Cross-references: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parser doctrine).
+
+**Applied (CS60, 2026-06-04):** Follow-up audit completed. `scripts/checks/check-independence-invariant.mjs` no longer hard-codes the high-risk-clickstops list or primary-reviewer model — both are now read from `harness.config.json` with fail-closed validation (CS57 pattern); verdicts for valid configs are unchanged. Regression test `tests/cs60-config-drift.test.mjs` added. Residual (recorded as a deliberate follow-up for a future shared-config-accessor pass): `check-review-log-evidence.mjs` still hard-codes `gpt-5.5`.
 
 ### LRN-141
 
@@ -2477,7 +2487,7 @@ id: LRN-141
 date: 2026-05-29
 category: tooling
 source_cs: CS57
-status: open
+status: applied
 tags: [git-worktree, npm-install, linters, node-modules, sub-agent-dispatch]
 claim_area: orchestrator-loop
 ```
@@ -2488,7 +2498,9 @@ claim_area: orchestrator-loop
 
 **Evidence:** CS57 PR #223 iteration, 2026-05-29. Background sub-agent in worktree `C:\src\ah-cs57` hit `ERR_MODULE_NOT_FOUND` for `js-yaml` (via `lib/doc-schema.mjs`) on the first `node scripts/check-clickstop-plan-review.mjs` run; resolved by `npm install` in the worktree. Subsequent re-dispatches into the same worktree did not recur because `node_modules` persisted.
 
-**Disposition:** Open. Follow-up candidate: add a "fresh-worktree setup" note to `OPERATIONS.md § Sub-agent dispatch` (and the canonical briefing preamble) stating that a sub-agent owning files in a newly-created worktree must `npm install` before running any linter; optionally have the orchestrator run `npm install` as part of `git worktree add` setup. Cross-reference: LRN-124 (worktree/detached-HEAD hazards in the orchestrator loop).
+**Disposition:** Resolved in CS60 (see Applied below). CS60 added the fresh-worktree setup note to `OPERATIONS.md § Sub-agent dispatch` (Self-checks) and the canonical briefing preamble Conventions block, stating that a sub-agent owning files in a newly-created worktree must `npm install` before running any dependency-backed linter, with the `.github/copilot-instructions.md` mirrors in lockstep. Cross-reference: LRN-124 (worktree/detached-HEAD hazards in the orchestrator loop).
+
+**Applied (CS60, 2026-06-04):** The fresh-worktree/checkout `npm install` requirement (`node_modules` is gitignored and per-checkout) is now documented in `OPERATIONS.md § Sub-agent dispatch` (Self-checks) and the canonical briefing preamble Conventions block, with the `.github/copilot-instructions.md` mirrors in lockstep.
 
 ### LRN-140
 
@@ -2497,7 +2509,7 @@ id: LRN-140
 date: 2026-05-29
 category: tooling
 source_cs: CS57
-status: open
+status: applied
 tags: [copilot-engage, head-sha, worktree, false-poll, cli, A5-A16]
 claim_area: orchestrator-loop
 ```
@@ -2508,7 +2520,9 @@ claim_area: orchestrator-loop
 
 **Evidence:** CS57 PR #223 iteration, 2026-05-29: `copilot-engage 223` run from the main tree polled `59c0a14` (local HEAD) while the PR head was `a442c5b`; re-running from worktree `C:\src\ah-cs57` (checked out to the PR branch) polled the correct head and the review landed. Source verified: `bin/harness.mjs:2805` (`detectGitHead(global.cwd)`) + `:2819` (`opts.headSha`), and `lib/copilot-engage.mjs:140` (`opts.headSha || pr.headRefOid`).
 
-**Disposition:** Open. Follow-up candidate (CS): have `copilot-engage` default the poll HEAD to the PR's GitHub `headRefOid` (already fetched in `PR_NODE_QUERY`) and treat the local-HEAD value as an opt-in `--head` override; emit a warning when the detected local HEAD differs from the PR head. Until then, document the "run from the PR-head checkout" rule in `OPERATIONS.md § copilot-engage` and tighten the help text at `bin/harness.mjs:464` ("current HEAD" → "the cwd's git HEAD, which must match the PR head"). Cross-reference: CS41 (copilot-engage CLI origin), CS44 (engage docs drift), LRN-124 (worktree/HEAD hazards).
+**Disposition:** Resolved in CS60 (see Applied below). CS60 made `copilot-engage` default the poll HEAD to the PR's GitHub `headRefOid` (already fetched in `PR_NODE_QUERY`), treated the local-HEAD value as an opt-in `--head` override, and emitted a best-effort warning when the detected local HEAD differs from the PR head; the help text and `OPERATIONS.md § copilot-engage` were updated accordingly. Cross-reference: CS41 (copilot-engage CLI origin), CS44 (engage docs drift), LRN-124 (worktree/HEAD hazards).
+
+**Applied (CS60, 2026-06-04):** `harness copilot-engage <pr>` now defaults its poll HEAD to the PR's GitHub `headRefOid`; `--head <sha>` is an opt-in override and the CLI emits a best-effort stderr warning when the detected local HEAD differs from the PR head being polled. Help text and `OPERATIONS.md` updated; regression test `tests/cs60-copilot-engage-head.test.mjs` added (`lib/copilot-engage.mjs`, `bin/harness.mjs`).
 
 ### LRN-139
 

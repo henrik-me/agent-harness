@@ -461,7 +461,7 @@ Exit codes:
 Usage: harness copilot-engage <pr> [options]
 
 Request Copilot review on a PR via 'gh pr edit --add-reviewer' and poll the
-GitHub GraphQL API until a review at the current HEAD lands (or timeout).
+GitHub GraphQL API until a review at the PR head lands (or timeout).
 
 Positional:
   <pr>  PR number (required, positive integer)
@@ -470,6 +470,7 @@ Options:
   --repo <owner/repo>    GitHub repo (default: auto-detect from current dir's git remote)
   --poll-timeout <s>     Max seconds to poll (default: 300 = 5 minutes)
   --poll-interval <s>    Polling interval in seconds (default: 30)
+  --head <sha>           Override poll HEAD (default: PR headRefOid from GitHub)
   --no-poll              Return immediately after the requestReviews mutation
   --submitted-after <ts> ISO-8601 floor for the review's submittedAt (default:
                          the timestamp captured immediately before the engage
@@ -481,8 +482,13 @@ Options:
   --json                 Print machine-readable JSON result
   --help                 Print this help text
 
+Notes:
+  By default, polling uses the PR's GitHub headRefOid, not the local checkout.
+  If the local git HEAD can be read and differs from the polled PR head, the CLI
+  warns on stderr; pass --head <sha> only when intentionally polling another SHA.
+
 Exit codes:
-  0  Copilot review found at current HEAD (or --no-poll: mutation accepted)
+  0  Copilot review found at the polled HEAD (or --no-poll: mutation accepted)
   2  bad usage (bad arguments, fork-source PR)
   3  poll timeout (mutation accepted but no review within --poll-timeout)
   4  auth or GraphQL error
@@ -2834,11 +2840,15 @@ async function cmdCopilotEngage(args, global) {
 
   const parsed = parseCopilotEngageArgs(args, global.cwd);
   const [owner, repo] = parsed.repo.split('/');
-  const headSha = detectGitHead(global.cwd);
+  const localHeadSha = detectGitHeadBestEffort(global.cwd);
+  let polledHeadSha = parsed.headSha;
 
   if (!parsed.json && !parsed.quiet) {
+    const headLabel = parsed.headSha
+      ? `HEAD ${shortDisplaySha(parsed.headSha)}`
+      : 'PR headRefOid';
     process.stdout.write(
-      `copilot-engage: requesting ${owner}/${repo}#${parsed.prNumber} at HEAD ${shortDisplaySha(headSha)}\n`,
+      `copilot-engage: requesting ${owner}/${repo}#${parsed.prNumber} at ${headLabel}\n`,
     );
   }
 
@@ -2848,19 +2858,23 @@ async function cmdCopilotEngage(args, global) {
       repo,
       prNumber: parsed.prNumber,
       opts: {
-        headSha,
+        ...(parsed.headSha ? { headSha: parsed.headSha } : {}),
         timeoutMs: parsed.timeoutMs,
         intervalMs: parsed.intervalMs,
         noPoll: parsed.noPoll,
         cacheDir: parsed.cacheDir,
         cacheTtlMs: parsed.cacheTtlMs,
         submittedAfter: parsed.submittedAfter,
+        onResolvedHead: ({ headSha, prHeadSha }) => {
+          polledHeadSha = headSha;
+          warnOnLocalHeadMismatch({ localHeadSha, polledHeadSha: headSha, prHeadSha });
+        },
         onPoll: parsed.quiet || parsed.json
           ? undefined
           : ({ attempts, polledMs }) => {
               process.stdout.write(
                 `copilot-engage: poll ${attempts} (${Math.floor(polledMs / 1000)}s elapsed): ` +
-                  `waiting for Copilot review at HEAD ${shortDisplaySha(headSha)}\n`,
+                  `waiting for Copilot review at HEAD ${shortDisplaySha(polledHeadSha)}\n`,
               );
             },
       },
@@ -2899,7 +2913,7 @@ async function cmdCopilotEngage(args, global) {
   }
 }
 
-function parseCopilotEngageArgs(args, cwd) {
+export function parseCopilotEngageArgs(args, cwd, { dieFn = die } = {}) {
   let repo = null;
   let prRaw = null;
   let timeoutSeconds = 300;
@@ -2910,10 +2924,15 @@ function parseCopilotEngageArgs(args, cwd) {
   let quiet = false;
   let json = false;
   let submittedAfter = null;
+  let headSha;
+
+  function fail(message, code = 2) {
+    dieFn(message, code);
+  }
 
   function requireValue(i, flagName) {
     if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
-      die(`copilot-engage: missing value for ${flagName}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+      fail(`copilot-engage: missing value for ${flagName}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
     }
     return args[i + 1];
   }
@@ -2926,27 +2945,32 @@ function parseCopilotEngageArgs(args, cwd) {
     } else if (a.startsWith('--repo=')) {
       repo = a.slice('--repo='.length);
     } else if (a === '--poll-timeout') {
-      timeoutSeconds = parseFiniteNumber(requireValue(i, '--poll-timeout'), '--poll-timeout');
+      timeoutSeconds = parseFiniteNumber(requireValue(i, '--poll-timeout'), '--poll-timeout', fail);
       i++;
     } else if (a.startsWith('--poll-timeout=')) {
-      timeoutSeconds = parseFiniteNumber(a.slice('--poll-timeout='.length), '--poll-timeout');
+      timeoutSeconds = parseFiniteNumber(a.slice('--poll-timeout='.length), '--poll-timeout', fail);
     } else if (a === '--poll-interval') {
-      intervalSeconds = parseFiniteNumber(requireValue(i, '--poll-interval'), '--poll-interval');
+      intervalSeconds = parseFiniteNumber(requireValue(i, '--poll-interval'), '--poll-interval', fail);
       i++;
     } else if (a.startsWith('--poll-interval=')) {
-      intervalSeconds = parseFiniteNumber(a.slice('--poll-interval='.length), '--poll-interval');
+      intervalSeconds = parseFiniteNumber(a.slice('--poll-interval='.length), '--poll-interval', fail);
     } else if (a === '--no-poll') {
       noPoll = true;
+    } else if (a === '--head') {
+      headSha = parseSha(requireValue(i, '--head'), '--head', fail);
+      i++;
+    } else if (a.startsWith('--head=')) {
+      headSha = parseSha(a.slice('--head='.length), '--head', fail);
     } else if (a === '--cache-dir') {
       cacheDir = path.resolve(cwd, requireValue(i, '--cache-dir'));
       i++;
     } else if (a.startsWith('--cache-dir=')) {
       cacheDir = path.resolve(cwd, a.slice('--cache-dir='.length));
     } else if (a === '--cache-ttl') {
-      cacheTtlDays = parseFiniteNumber(requireValue(i, '--cache-ttl'), '--cache-ttl');
+      cacheTtlDays = parseFiniteNumber(requireValue(i, '--cache-ttl'), '--cache-ttl', fail);
       i++;
     } else if (a.startsWith('--cache-ttl=')) {
-      cacheTtlDays = parseFiniteNumber(a.slice('--cache-ttl='.length), '--cache-ttl');
+      cacheTtlDays = parseFiniteNumber(a.slice('--cache-ttl='.length), '--cache-ttl', fail);
     } else if (a === '--quiet') {
       quiet = true;
     } else if (a === '--json') {
@@ -2959,38 +2983,38 @@ function parseCopilotEngageArgs(args, cwd) {
     } else if (!a.startsWith('-') && prRaw === null) {
       prRaw = a;
     } else if (!a.startsWith('-')) {
-      die(`copilot-engage: unexpected positional argument '${a}'\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+      fail(`copilot-engage: unexpected positional argument '${a}'\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
     } else {
-      die(`copilot-engage: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+      fail(`copilot-engage: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
     }
   }
 
   if (prRaw === null) {
-    die(`copilot-engage: <pr> is required\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
+    fail(`copilot-engage: <pr> is required\n\n${SUBCOMMAND_HELP['copilot-engage']}`, 2);
   }
   const prNumber = Number.parseInt(prRaw, 10);
   if (!/^\d+$/.test(prRaw) || !Number.isInteger(prNumber) || prNumber < 1) {
-    die(`copilot-engage: <pr> must be a positive integer; got '${prRaw}'`, 2);
+    fail(`copilot-engage: <pr> must be a positive integer; got '${prRaw}'`, 2);
   }
   if (timeoutSeconds < 0) {
-    die(`copilot-engage: --poll-timeout must be non-negative seconds`, 2);
+    fail(`copilot-engage: --poll-timeout must be non-negative seconds`, 2);
   }
   if (intervalSeconds <= 0) {
-    die(`copilot-engage: --poll-interval must be positive seconds`, 2);
+    fail(`copilot-engage: --poll-interval must be positive seconds`, 2);
   }
   if (cacheTtlDays < 0) {
-    die(`copilot-engage: --cache-ttl must be non-negative days`, 2);
+    fail(`copilot-engage: --cache-ttl must be non-negative days`, 2);
   }
 
   repo = repo || detectGitHubRepo(cwd);
   if (!parseRepoSlug(repo)) {
-    die(`copilot-engage: --repo must be 'owner/repo'; got '${repo}'`, 2);
+    fail(`copilot-engage: --repo must be 'owner/repo'; got '${repo}'`, 2);
   }
 
   if (submittedAfter !== null) {
     const submittedAfterMs = Date.parse(submittedAfter);
     if (!Number.isFinite(submittedAfterMs)) {
-      die(`copilot-engage: --submitted-after must be an ISO-8601 timestamp; got '${submittedAfter}'`, 2);
+      fail(`copilot-engage: --submitted-after must be an ISO-8601 timestamp; got '${submittedAfter}'`, 2);
     }
     submittedAfter = new Date(submittedAfterMs).toISOString();
   }
@@ -3006,13 +3030,21 @@ function parseCopilotEngageArgs(args, cwd) {
     quiet,
     json,
     submittedAfter,
+    headSha,
   };
 }
 
-function parseFiniteNumber(raw, flagName) {
+function parseSha(raw, flagName, fail = die) {
+  if (!/^[0-9a-f]{7,40}$/i.test(raw)) {
+    fail(`copilot-engage: ${flagName} must look like a git SHA (7-40 hex chars); got '${raw}'`, 2);
+  }
+  return raw;
+}
+
+function parseFiniteNumber(raw, flagName, fail = die) {
   const value = Number(raw);
   if (!Number.isFinite(value)) {
-    die(`copilot-engage: ${flagName} must be a number; got '${raw}'`, 2);
+    fail(`copilot-engage: ${flagName} must be a number; got '${raw}'`, 2);
   }
   return value;
 }
@@ -3037,16 +3069,20 @@ function detectGitHubRepo(cwd) {
   return repo;
 }
 
-function detectGitHead(cwd) {
+function detectGitHeadBestEffort(cwd) {
   const r = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' });
-  if (r.status !== 0) {
-    die(`copilot-engage: could not detect current HEAD via 'git rev-parse HEAD'`, 2);
-  }
+  if (r.status !== 0) return null;
   const head = r.stdout.trim();
-  if (!/^[0-9a-f]{40}$/i.test(head)) {
-    die(`copilot-engage: git rev-parse HEAD returned an invalid SHA: '${head}'`, 2);
-  }
-  return head;
+  return /^[0-9a-f]{40}$/i.test(head) ? head : null;
+}
+
+function warnOnLocalHeadMismatch({ localHeadSha, polledHeadSha, prHeadSha }) {
+  if (!localHeadSha || !polledHeadSha || localHeadSha === polledHeadSha) return;
+  const targetLabel = prHeadSha && polledHeadSha === prHeadSha ? 'PR head' : 'override head';
+  process.stderr.write(
+    `copilot-engage: warning: local HEAD ${shortDisplaySha(localHeadSha)} differs from ` +
+      `${targetLabel} ${shortDisplaySha(polledHeadSha)} being polled; pass --head <sha> to override\n`,
+  );
 }
 
 function parseGitHubRemote(remote) {

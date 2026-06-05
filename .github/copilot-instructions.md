@@ -137,6 +137,10 @@ Every sub-agent prompt must include, in order:
 8. Findings to surface (learning candidates go in the report).
 9. Report shape (see below).
 
+For a newly-created git worktree or fresh checkout, the briefing must require
+`npm install` in that checkout before dependency-backed harness linters run;
+`node_modules` is gitignored and per-checkout, not shared from the parent tree.
+
 ### Reporting independence (CS48 / issue #142)
 
 **Self-review carries zero review weight.** Any implementer self-review of
