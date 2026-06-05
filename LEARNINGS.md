@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-145
+
+```yaml
+id: LRN-145
+date: 2026-06-04
+category: process
+source_cs: CS60
+status: open
+tags: [schema-source-of-truth, fail-closed, config-reader, rubber-duck, copilot-review, review-coverage-gap, gpt-5.5]
+claim_area: review-loops
+```
+
+**Problem:** In CS60 the LRN-142 de-drift of `scripts/checks/check-independence-invariant.mjs` made `validateReviewsConfig()` *require* `reviews.rubber_duck_model` and `reviews.high_risk_clickstops` (throwing `ConfigError` when absent). But `schemas/harness.config.schema.json` supplies `default`s for both and lists neither in any `required` array — so a schema-valid consumer `harness.config.json` that omits them (relying on the defaults) would have been rejected by the linter, a silent breaking change that violates hard rule #4 (schema is source of truth). The GPT-5.5 rubber-duck review-of-record ran three rounds (R1 Needs-Fix → R3 Go) and **did not catch this** — it verified the fail-closed *logic* against LRN-033, but never diffed the linter's enforced-required set against the schema's `required`/`default` declarations. The defect was caught only by the subsequent GitHub Copilot PR review (which reads the schema), after the local review-of-record had already returned Go.
+
+**Finding:** Two complementary rules.
+
+1. **Engineering rule (resolves the LRN-039 ↔ LRN-033 tension):** an enforcement linter that sources policy from `harness.config.json`/`schemas/` must **apply the schema default when an optional field is absent** and **fail closed only on a present-but-malformed value** (wrong type, bad pattern, duplicate). "Default when absent, fail-closed on malformed" is the correct CS57/CS60 pattern — *not* "throw on absent." Over-requiring fields the schema marks optional-with-default rejects schema-valid configs and makes the linter, not the schema, the de-facto source of truth.
+
+2. **Review-doctrine rule (a schema-conformance analogue of the LRN-139 / REVIEWS.md § 2.6a fact-claim gap):** any rubber-duck review of a change that adds or de-drifts a config/schema reader MUST cross-check the reader's enforced-required set and default values against the actual schema (`required` array + per-field `default`s), not just the local fail-closed control flow. Treat "linter requires a field the schema marks optional/defaulted" (and its inverse) as a P0 blind spot. This is the same class of unverified cross-artifact claim as LRN-139, but for schema conformance in PR-side reviews rather than file/line citations in plan reviews.
+
+**Evidence:** CS60 PR #244. R1–R3 GPT-5.5 review-of-record returned Go at `ef4d323`; Copilot then flagged the over-require on `scripts/checks/check-independence-invariant.mjs:90-101` at that head. Fixed in `0f98a6e` (`validateReviewsConfig` now defaults absent fields, fails closed on malformed) + `9abe13f`/`7d92415` polish, re-reviewed Go (R4–R6), regression coverage in `tests/cs60-config-drift.test.mjs`. Schema check: `schemas/harness.config.schema.json` `reviews` has no `required` array and defines `default`s `rubber_duck_model: "gpt-5.5"` and `high_risk_clickstops: ["CS03","CS11","CS15a","CS18b","CS19"]`. Related: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parsers), LRN-142 (config-vs-code drift), LRN-139 (plan-side fact-claim verification gap). The still-open residual de-drift of `check-review-log-evidence.mjs`'s hard-coded `gpt-5.5` (recorded in the LRN-142 disposition) MUST apply rule 1 above when implemented.
+
 ### LRN-143
 
 ```yaml
