@@ -75,7 +75,7 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 2. **Zero** hard-coded **review-policy** `gpt-5.5` / high-risk-clickstop literals remain under `scripts/checks/` and `scripts/check-clickstop-implementer-not-reviewer.mjs` (examples, help text, comments, and test fixtures are out of scope); all four checks consume the shared reader (C61-3).
 3. The CS57 GPT-5.5 non-high-risk overlap exception and the `MODEL_AUDIT_ENFORCEMENT_DATE` grandfather gate still behave identically (regression-asserted) (C61-3b).
 4. `check-copilot-review-attached` now fails closed on malformed `reviews` (was silently lenient), with fixtures/tests updated; baseline-run recorded in Notes (C61-3c).
-5. `lib/review.mjs`, `bin/harness.mjs`, and `scripts/check-review-gates.mjs` review-policy reads use the shared reader with no behavior change beyond fail-closed-on-malformed; the two schema-vs-runtime default mismatches are explicitly resolved (defer or escalate + CHANGELOG), not silently flipped (C61-4/R6).
+5. `lib/review.mjs`, `bin/harness.mjs`, and `scripts/check-review-gates.mjs` review-policy reads use the shared reader **where behavior-preserving**; the two schema-vs-runtime default mismatches are explicitly resolved (defer or escalate + CHANGELOG), not silently flipped (C61-4/R6).
 6. `REVIEWS.md` carries the schema-conformance review-checklist item, mirrors in lockstep where applicable (C61-5).
 7. LRN-145 `applied`; LRN-142 disposition residual marked resolved (C61-6).
 8. `harness lint --quiet` passes (full suite, incl. composed/managed lockstep); full `node --test` green.
@@ -99,6 +99,7 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: `yoga-ah`) | ccb1eb97ab81 | 2026-06-05T16:03:00Z | Go-with-amendments | Verified C1-3,5,6; fixed C4 (copilot-review-attached is shape-lenient/JSON-fail-closed); added check-review-gates + lib/review.mjs default-divergence consumers; subtree validation. Amendments applied. |
+| R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: `yoga-ah`) | ccb1eb97ab81 | 2026-06-05T16:10:05Z | Go | R1 amendments confirmed applied (C4 wording, +2 consumers, subtree validation, EC2/EC5 scoping); no internal contradictions remain. |
 
 ## Tasks
 
