@@ -209,7 +209,8 @@ export function runIndependenceInvariant({
   if (!reviewer.normalized) emit(`${label}: Reviewer model must be populated.`);
 
   const effectiveCsId = normalizeCsId(csId) ?? inferCsId(body);
-  // harness.config.json reviews.* is authoritative; schema defaults apply only when no config file exists.
+  // harness.config.json reviews.* is authoritative; schema defaults apply when a
+  // value is absent (no config file, no reviews key, or an omitted optional field).
   const highRiskSet = new Set((config.high_risk_clickstops ?? SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS).map((id) => String(id).toUpperCase()));
   const highRisk = effectiveCsId ? highRiskSet.has(effectiveCsId.toUpperCase()) : false;
   const primaryReviewerModel = config.rubber_duck_model ?? SCHEMA_DEFAULT_RUBBER_DUCK_MODEL;

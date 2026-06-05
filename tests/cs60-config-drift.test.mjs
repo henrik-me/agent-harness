@@ -102,6 +102,15 @@ describe('CS60 config drift guard for independence invariant', () => {
     const emptyResult = run(['--pr-body', overlapBody, '--config', emptyReviews, '--cs-id', 'CS03']);
     assert.equal(emptyResult.status, 1, emptyResult.stdout + emptyResult.stderr);
     assert.match(emptyResult.stdout, /high-risk CS03/);
+
+    // Config file with no top-level `reviews` key also inherits schema defaults.
+    const noReviews = writeJson('no-reviews.json', { version: 1, project: { name: 'x' } });
+    const noReviewsHighRisk = run(['--pr-body', overlapBody, '--config', noReviews, '--cs-id', 'CS03']);
+    assert.equal(noReviewsHighRisk.status, 1, noReviewsHighRisk.stdout + noReviewsHighRisk.stderr);
+    assert.match(noReviewsHighRisk.stdout, /high-risk CS03/);
+
+    const noReviewsTolerated = run(['--pr-body', overlapBody, '--config', noReviews, '--cs-id', 'CS60']);
+    assert.equal(noReviewsTolerated.status, 0, noReviewsTolerated.stdout + noReviewsTolerated.stderr);
   });
 
   it('fails closed when a present review policy field is malformed', () => {
