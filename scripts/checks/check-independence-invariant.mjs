@@ -87,36 +87,43 @@ function validateReviewsConfig(reviews, source) {
   if (!reviews || typeof reviews !== 'object' || Array.isArray(reviews)) {
     throw new ConfigError(`${source}: reviews must be an object`);
   }
+  // Schema defines defaults (and does not mark these fields required), so a
+  // schema-valid config that omits them must inherit the schema default rather
+  // than be rejected. Present-but-malformed values still fail closed.
+  let rubberDuckModel;
   if (!hasOwn(reviews, 'rubber_duck_model')) {
-    throw new ConfigError(`${source}: missing reviews.rubber_duck_model`);
-  }
-  if (typeof reviews.rubber_duck_model !== 'string' || reviews.rubber_duck_model.trim() === '') {
+    rubberDuckModel = SCHEMA_DEFAULT_RUBBER_DUCK_MODEL;
+  } else if (typeof reviews.rubber_duck_model !== 'string' || reviews.rubber_duck_model.trim() === '') {
     throw new ConfigError(`${source}: reviews.rubber_duck_model must be a non-empty string`);
+  } else {
+    rubberDuckModel = reviews.rubber_duck_model.trim();
   }
   if (hasOwn(reviews, 'enforce_gates') && typeof reviews.enforce_gates !== 'boolean') {
     throw new ConfigError(`${source}: reviews.enforce_gates must be a boolean when present`);
   }
+  let highRiskClickstops;
   if (!hasOwn(reviews, 'high_risk_clickstops')) {
-    throw new ConfigError(`${source}: missing reviews.high_risk_clickstops`);
-  }
-  if (!Array.isArray(reviews.high_risk_clickstops)) {
+    highRiskClickstops = [...SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS];
+  } else if (!Array.isArray(reviews.high_risk_clickstops)) {
     throw new ConfigError(`${source}: reviews.high_risk_clickstops must be an array`);
-  }
-  const seen = new Set();
-  for (const [index, id] of reviews.high_risk_clickstops.entries()) {
-    if (typeof id !== 'string' || !CLICKSTOP_ID_PATTERN.test(id)) {
-      throw new ConfigError(`${source}: reviews.high_risk_clickstops[${index}] must match ${CLICKSTOP_ID_PATTERN.source}`);
+  } else {
+    const seen = new Set();
+    for (const [index, id] of reviews.high_risk_clickstops.entries()) {
+      if (typeof id !== 'string' || !CLICKSTOP_ID_PATTERN.test(id)) {
+        throw new ConfigError(`${source}: reviews.high_risk_clickstops[${index}] must match ${CLICKSTOP_ID_PATTERN.source}`);
+      }
+      const normalized = id.toUpperCase();
+      if (seen.has(normalized)) {
+        throw new ConfigError(`${source}: reviews.high_risk_clickstops contains duplicate ${id}`);
+      }
+      seen.add(normalized);
     }
-    const normalized = id.toUpperCase();
-    if (seen.has(normalized)) {
-      throw new ConfigError(`${source}: reviews.high_risk_clickstops contains duplicate ${id}`);
-    }
-    seen.add(normalized);
+    highRiskClickstops = reviews.high_risk_clickstops;
   }
   return {
     enforce_gates: reviews.enforce_gates,
-    rubber_duck_model: reviews.rubber_duck_model.trim(),
-    high_risk_clickstops: reviews.high_risk_clickstops,
+    rubber_duck_model: rubberDuckModel,
+    high_risk_clickstops: highRiskClickstops,
   };
 }
 
@@ -139,7 +146,8 @@ function loadReviewsConfig(configPath) {
     throw new ConfigError(`${candidate}: top-level config must be an object`);
   }
   if (!hasOwn(cfg, 'reviews')) {
-    throw new ConfigError(`${candidate}: missing reviews config`);
+    // reviews is not required by the schema; fall back to schema defaults.
+    return schemaDefaultReviewsConfig();
   }
   return validateReviewsConfig(cfg.reviews, candidate);
 }

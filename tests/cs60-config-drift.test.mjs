@@ -78,17 +78,34 @@ describe('CS60 config drift guard for independence invariant', () => {
     assert.match(highRisk.stdout, /claude-opus-4\.7/);
   });
 
-  it('fails closed when configured review policy fields are missing or malformed', () => {
-    const body = writeBody('body.md');
-    const missing = writeJson('missing-high-risk.json', {
-      reviews: {
-        rubber_duck_model: 'gpt-5.5',
-      },
+  it('applies schema defaults when optional review policy fields are absent', () => {
+    // Schema marks neither field required and supplies defaults, so a config
+    // that omits them must inherit the defaults rather than be rejected.
+    const overlapBody = writeBody('body.md', {
+      implementers: 'gpt-5.5',
+      reviewer: 'gpt-5.5',
     });
-    const missingResult = run(['--pr-body', body, '--config', missing]);
-    assert.equal(missingResult.status, 1, missingResult.stdout + missingResult.stderr);
-    assert.match(missingResult.stderr, /missing reviews\.high_risk_clickstops/);
 
+    const onlyModel = writeJson('only-model.json', {
+      reviews: { rubber_duck_model: 'gpt-5.5' },
+    });
+    // CS60 is not in the default high-risk list, so overlap is tolerated.
+    const tolerated = run(['--pr-body', overlapBody, '--config', onlyModel, '--cs-id', 'CS60']);
+    assert.equal(tolerated.status, 0, tolerated.stdout + tolerated.stderr);
+
+    // A default high-risk clickstop (CS03) still forbids overlap.
+    const highRisk = run(['--pr-body', overlapBody, '--config', onlyModel, '--cs-id', 'CS03']);
+    assert.equal(highRisk.status, 1, highRisk.stdout + highRisk.stderr);
+    assert.match(highRisk.stdout, /high-risk CS03/);
+
+    const emptyReviews = writeJson('empty-reviews.json', { reviews: {} });
+    const emptyResult = run(['--pr-body', overlapBody, '--config', emptyReviews, '--cs-id', 'CS03']);
+    assert.equal(emptyResult.status, 1, emptyResult.stdout + emptyResult.stderr);
+    assert.match(emptyResult.stdout, /high-risk CS03/);
+  });
+
+  it('fails closed when a present review policy field is malformed', () => {
+    const body = writeBody('body.md');
     const malformed = writeJson('malformed-high-risk.json', {
       reviews: {
         rubber_duck_model: 'gpt-5.5',
@@ -98,6 +115,13 @@ describe('CS60 config drift guard for independence invariant', () => {
     const malformedResult = run(['--pr-body', body, '--config', malformed]);
     assert.equal(malformedResult.status, 1, malformedResult.stdout + malformedResult.stderr);
     assert.match(malformedResult.stderr, /reviews\.high_risk_clickstops must be an array/);
+
+    const emptyModel = writeJson('empty-model.json', {
+      reviews: { rubber_duck_model: '   ' },
+    });
+    const emptyModelResult = run(['--pr-body', body, '--config', emptyModel]);
+    assert.equal(emptyModelResult.status, 1, emptyModelResult.stdout + emptyModelResult.stderr);
+    assert.match(emptyModelResult.stderr, /reviews\.rubber_duck_model must be a non-empty string/);
   });
 
   it('fails closed when an explicit --config path does not exist', () => {
