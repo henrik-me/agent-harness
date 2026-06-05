@@ -27,7 +27,7 @@ Options:
 
 Exit codes:
   0  pass (or skipped when reviews.enforce_gates=false)
-  1  policy violation
+  1  policy violation or config/validation error
   2  bad usage or transport error
 `;
 
