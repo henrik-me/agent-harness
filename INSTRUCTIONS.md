@@ -67,6 +67,13 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - **State your identity:** in your **first response** write your derived agent ID and
   "INSTRUCTIONS.md re-read complete @ \<SHA\>". Treat session resume as session start
   for this rule — no exceptions.
+- **First-run environment setup (once per fresh clone):** the bootstrap sanity
+  check below runs dependency-backed commands, so install dev dependencies
+  first. Requires **Node ≥ 20**. Run a one-time `npm ci` from the repo root —
+  `node_modules` is gitignored and per-checkout, so a brand-new clone (or a new
+  git worktree) starts with none. Triage: if `node --test` floods with
+  `ERR_MODULE_NOT_FOUND`, run `npm ci` — `main` is **not** broken. (Use
+  `npm install` only when the lockfile is intentionally stale.)
 - **Bootstrap sanity check:** before claiming any CS, run the following from
   the repo root and confirm each command exits clean. The repo's invariant is
   "main is always green" — if any of these fail, **stop and investigate**

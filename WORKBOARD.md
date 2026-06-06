@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-06 (CS61 CLOSED by yoga-ah — shared reviews-policy config reader; LRN-145 applied, LRN-142 residual resolved, LRN-147 + LRN-148 filed; PR #250 merged, PVI GO.)
+> **Last updated:** 2026-06-06 (CS62 CLAIMED by yoga-ah-c2 — fresh-clone bootstrap self-containment + hermetic whoami tests; applies LRN-146.)
 
 ## Orchestrators
 
@@ -12,6 +12,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 |----------|---------|-------------|--------|-----------|
 | omni-ah  | OMNI         | C:\src\agent-harness | 🟡 Idle | 2026-05-28 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-05 |
+| yoga-ah-c2 | HENRIKM-YOGA | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-06 |
 
 ## Active Work
 
@@ -24,5 +25,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS62 | Fresh-clone bootstrap self-containment + hermetic whoami tests | 🟢 Active | yoga-ah-c2 | cs62/content | 2026-06-06 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

@@ -76,6 +76,12 @@ Per-path purpose:
 
 ## Starting an agent session
 
+> **One-time setup (per fresh clone):** install dev dependencies before your
+> first session — **Node ≥ 20**, then `npm ci` at the repo root (`node_modules`
+> is gitignored and per-checkout). See [CONTRIBUTING.md](CONTRIBUTING.md) for
+> detail. Skipping this makes the Session Start bootstrap check fail with
+> `ERR_MODULE_NOT_FOUND` — `main` is not broken.
+
 Open a fresh Copilot CLI (or equivalent) at the repo root and use a starter
 prompt like:
 
