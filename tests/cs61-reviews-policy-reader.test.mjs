@@ -201,7 +201,11 @@ const MALFORMED_CASES = [
   ['review_timeout_minutes non-number', { reviews: { review_timeout_minutes: '30' } }, 'review_timeout_minutes'],
   ['high_risk_clickstops non-array', { reviews: { high_risk_clickstops: 'CS03' } }, 'high_risk_clickstops'],
   ['high_risk_clickstops bad pattern', { reviews: { high_risk_clickstops: ['CS03', 'nope'] } }, 'high_risk_clickstops'],
-  ['high_risk_clickstops duplicate', { reviews: { high_risk_clickstops: ['CS03', 'cs03'] } }, 'high_risk_clickstops'],
+  ['high_risk_clickstops lowercase fails pattern', { reviews: { high_risk_clickstops: ['cs03'] } }, 'high_risk_clickstops'],
+  // Both ids pass the case-sensitive pattern (^CS\d{2,}[A-Za-z]?$) but collide
+  // when upper-cased, so this actually exercises the case-insensitive duplicate
+  // path (not the pattern check, which would short-circuit a lowercase dup).
+  ['high_risk_clickstops duplicate', { reviews: { high_risk_clickstops: ['CS15a', 'CS15A'] } }, 'high_risk_clickstops'],
   ['high_risk_clickstops non-string item', { reviews: { high_risk_clickstops: [3] } }, 'high_risk_clickstops'],
 ];
 
@@ -222,6 +226,25 @@ for (const [label, config, expectedField] of MALFORMED_CASES) {
     );
   });
 }
+
+test('high_risk_clickstops duplicate detection exercises the case-insensitive path, not the pattern check', async (t) => {
+  const cwd = await makeTmpDir('cs61-reader-dup-path-');
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+
+  // CS15a and CS15A both satisfy the pattern, so the failure must come from the
+  // duplicate check (upper-cased collision), proving that code path is reached.
+  await writeConfigFile(cwd, { reviews: { high_risk_clickstops: ['CS15a', 'CS15A'] } });
+  assert.throws(
+    () => loadReviewsPolicy({ cwd }),
+    (err) => {
+      assert(err instanceof ReviewsConfigError);
+      assert.equal(err.code, 'MALFORMED');
+      assert.equal(err.field, 'high_risk_clickstops');
+      assert.match(err.message, /duplicate/i, `expected a duplicate (not pattern) error: ${err.message}`);
+      return true;
+    }
+  );
+});
 
 // --- subtree-only validation -----------------------------------------------
 
