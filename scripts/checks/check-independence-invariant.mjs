@@ -1,16 +1,12 @@
 #!/usr/bin/env node
 /** G-RG-3: independence-invariant. */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { extractH2, isPlaceholder, normalizeModel, parseTable } from './check-review-log-evidence.mjs';
-
-const SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
-const SCHEMA_DEFAULT_RUBBER_DUCK_MODEL = 'gpt-5.5';
-const CLICKSTOP_ID_PATTERN = /^CS\d{2,}[A-Za-z]?$/;
+import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/config-reader.mjs';
 
 const HELP = `Usage: check-independence-invariant.mjs (--pr-body <file> | --repo <owner/repo> --pr <num>) [options]
 
@@ -32,7 +28,6 @@ Exit codes:
 `;
 
 class UsageError extends Error {}
-class ConfigError extends Error {}
 
 function requireValue(args, index, flag) {
   const value = args[index + 1];
@@ -70,86 +65,6 @@ function parseKeyValueAudit(content) {
     }
   }
   return { fields, errors };
-}
-
-function schemaDefaultReviewsConfig() {
-  return {
-    rubber_duck_model: SCHEMA_DEFAULT_RUBBER_DUCK_MODEL,
-    high_risk_clickstops: SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS,
-  };
-}
-
-function hasOwn(object, key) {
-  return Object.prototype.hasOwnProperty.call(object, key);
-}
-
-function validateReviewsConfig(reviews, source) {
-  if (!reviews || typeof reviews !== 'object' || Array.isArray(reviews)) {
-    throw new ConfigError(`${source}: reviews must be an object`);
-  }
-  // Schema defines defaults (and does not mark these fields required), so a
-  // schema-valid config that omits them must inherit the schema default rather
-  // than be rejected. Present-but-malformed values still fail closed.
-  let rubberDuckModel;
-  if (!hasOwn(reviews, 'rubber_duck_model')) {
-    rubberDuckModel = SCHEMA_DEFAULT_RUBBER_DUCK_MODEL;
-  } else if (typeof reviews.rubber_duck_model !== 'string' || reviews.rubber_duck_model.trim() === '') {
-    throw new ConfigError(`${source}: reviews.rubber_duck_model must be a non-empty string`);
-  } else {
-    rubberDuckModel = reviews.rubber_duck_model.trim();
-  }
-  if (hasOwn(reviews, 'enforce_gates') && typeof reviews.enforce_gates !== 'boolean') {
-    throw new ConfigError(`${source}: reviews.enforce_gates must be a boolean when present`);
-  }
-  let highRiskClickstops;
-  if (!hasOwn(reviews, 'high_risk_clickstops')) {
-    highRiskClickstops = [...SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS];
-  } else if (!Array.isArray(reviews.high_risk_clickstops)) {
-    throw new ConfigError(`${source}: reviews.high_risk_clickstops must be an array`);
-  } else {
-    const seen = new Set();
-    for (const [index, id] of reviews.high_risk_clickstops.entries()) {
-      if (typeof id !== 'string' || !CLICKSTOP_ID_PATTERN.test(id)) {
-        throw new ConfigError(`${source}: reviews.high_risk_clickstops[${index}] must match ${CLICKSTOP_ID_PATTERN.source}`);
-      }
-      const normalized = id.toUpperCase();
-      if (seen.has(normalized)) {
-        throw new ConfigError(`${source}: reviews.high_risk_clickstops contains duplicate ${id}`);
-      }
-      seen.add(normalized);
-    }
-    highRiskClickstops = reviews.high_risk_clickstops;
-  }
-  return {
-    enforce_gates: reviews.enforce_gates,
-    rubber_duck_model: rubberDuckModel,
-    high_risk_clickstops: highRiskClickstops,
-  };
-}
-
-function loadReviewsConfig(configPath) {
-  const explicit = configPath != null;
-  const candidate = explicit ? configPath : path.resolve(process.cwd(), 'harness.config.json');
-  if (!existsSync(candidate)) {
-    if (explicit) {
-      throw new ConfigError(`${candidate}: config file not found (path supplied via --config)`);
-    }
-    return schemaDefaultReviewsConfig();
-  }
-  let cfg;
-  try {
-    cfg = JSON.parse(readFileSync(candidate, 'utf8'));
-  } catch (error) {
-    throw new ConfigError(`${candidate}: invalid JSON: ${error.message}`);
-  }
-  if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
-    throw new ConfigError(`${candidate}: top-level config must be an object`);
-  }
-  if (!hasOwn(cfg, 'reviews')) {
-    // reviews is not required by the schema; fall back to schema defaults.
-    return schemaDefaultReviewsConfig();
-  }
-  return validateReviewsConfig(cfg.reviews, candidate);
 }
 
 function normalizeCsId(value) {
@@ -209,11 +124,13 @@ export function runIndependenceInvariant({
   if (!reviewer.normalized) emit(`${label}: Reviewer model must be populated.`);
 
   const effectiveCsId = normalizeCsId(csId) ?? inferCsId(body);
-  // harness.config.json reviews.* is authoritative; schema defaults apply when a
-  // value is absent (no config file, no reviews key, or an omitted optional field).
-  const highRiskSet = new Set((config.high_risk_clickstops ?? SCHEMA_DEFAULT_HIGH_RISK_CLICKSTOPS).map((id) => String(id).toUpperCase()));
+  // config is the normalized reviews policy from loadReviewsPolicy: every field
+  // is already populated from harness.config.json or the schema default, so no
+  // local schema-default fallback is needed here (the `?? []`/`?? ''` guards are
+  // purely defensive for direct callers that pass a partial config object).
+  const highRiskSet = new Set((config.high_risk_clickstops ?? []).map((id) => String(id).toUpperCase()));
   const highRisk = effectiveCsId ? highRiskSet.has(effectiveCsId.toUpperCase()) : false;
-  const primaryReviewerModel = config.rubber_duck_model ?? SCHEMA_DEFAULT_RUBBER_DUCK_MODEL;
+  const primaryReviewerModel = config.rubber_duck_model ?? '';
   const primaryReviewerNormalized = normalizeModel(primaryReviewerModel);
   const overlaps = implementerModels.filter((model) => model.normalized === reviewer.normalized);
 
@@ -273,7 +190,7 @@ async function main() {
   let label;
   let config;
   try {
-    config = loadReviewsConfig(args.configPath);
+    config = loadReviewsPolicy({ configPath: args.configPath });
     if (args.prBody) {
       body = readFileSync(args.prBody, 'utf8');
       label = args.prBody;
@@ -286,7 +203,7 @@ async function main() {
     }
   } catch (error) {
     process.stderr.write(`check-independence-invariant: ${error.message}\n`);
-    process.exit(error instanceof ConfigError ? 1 : 2);
+    process.exit(error instanceof ReviewsConfigError ? 1 : 2);
   }
 
   const result = runIndependenceInvariant({ body, label, config, csId: args.csId, quiet: args.quiet });

@@ -10,8 +10,9 @@
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
+import { loadReviewsPolicy } from '../../lib/config-reader.mjs';
+
 const PASSING_VERDICTS = new Set(['go', 'conditional go', 'go-with-amendments']);
-const PRIMARY_REVIEWER_MODEL = 'gpt-5.5';
 
 const HELP = `Usage: check-review-log-evidence.mjs (--pr-body <file> | --repo <owner/repo> --pr <num>) [options]
 
@@ -21,6 +22,7 @@ Options:
   --pr-body <file>     Read PR body markdown from a local file
   --repo <owner/repo>  GitHub repository for fetching PR body via gh api
   --pr <num>           Pull request number for --repo mode
+  --config <file>      harness.config.json path (default: ./harness.config.json if present)
   --quiet              Suppress per-finding output; print summary only
   --help               Print this help text
 
@@ -165,20 +167,20 @@ function fallbackRationale(fields) {
     ?? '';
 }
 
-function reviewerModelApproved(model, auditFields) {
+function reviewerModelApproved(model, auditFields, primaryReviewerModel) {
   const normalized = normalizeModel(model);
-  if (normalized === PRIMARY_REVIEWER_MODEL) return { ok: true, reason: 'primary reviewer' };
+  if (normalized === primaryReviewerModel) return { ok: true, reason: 'primary reviewer' };
   const rationale = fallbackRationale(auditFields);
   if (rationale && !isPlaceholder(rationale)) {
     return { ok: true, reason: 'fallback rationale populated' };
   }
   return {
     ok: false,
-    reason: `reviewer model "${model}" is not ${PRIMARY_REVIEWER_MODEL} and ## Model audit has no populated Fallback rationale row`,
+    reason: `reviewer model "${model}" is not ${primaryReviewerModel} and ## Model audit has no populated Fallback rationale row`,
   };
 }
 
-export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false }) {
+export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false, configPath = null }) {
   const errors = [];
   const stdout = [];
   const stderr = [];
@@ -186,6 +188,17 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
     errors.push(message);
     if (!quiet) stdout.push(`ERROR: ${message}`);
   };
+
+  // Primary reviewer model is sourced from harness.config.json (reviews.rubber_duck_model)
+  // via the shared reader, falling back to the schema default when absent — never a
+  // hard-coded literal (CS61, LRN-145). A malformed config fails closed (exit 1).
+  let primaryReviewerModel;
+  try {
+    primaryReviewerModel = normalizeModel(loadReviewsPolicy({ configPath }).rubber_duck_model);
+  } catch (error) {
+    emit(`${label}: cannot resolve reviews policy: ${error.message}`);
+    return summarize(errors, stdout, stderr);
+  }
 
   const audit = parseModelAudit(body);
   for (const error of audit.errors) emit(`${label}: ${error}; see REVIEWS.md §2.8 Model audit.`);
@@ -231,7 +244,7 @@ export function runReviewLogEvidence({ body, label = '<pr-body>', quiet = false 
       continue;
     }
     if (!PASSING_VERDICTS.has(verdict)) continue;
-    const approved = reviewerModelApproved(model, audit.fields);
+    const approved = reviewerModelApproved(model, audit.fields, primaryReviewerModel);
     if (!approved.ok) {
       emit(`${label}: ## Review log row ${rowNumber} has unapproved reviewer model: ${approved.reason}; see REVIEWS.md §2.8.`);
       continue;
@@ -252,12 +265,13 @@ function summarize(errors, stdout, stderr) {
 }
 
 function parseCli(argv) {
-  const parsed = { prBody: null, repo: null, pr: null, quiet: false };
+  const parsed = { prBody: null, repo: null, pr: null, configPath: null, quiet: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--pr-body') parsed.prBody = requireValue(argv, i++, '--pr-body');
     else if (arg === '--repo') parsed.repo = requireValue(argv, i++, '--repo');
     else if (arg === '--pr') parsed.pr = requireValue(argv, i++, '--pr');
+    else if (arg === '--config') parsed.configPath = requireValue(argv, i++, '--config');
     else if (arg === '--quiet') parsed.quiet = true;
     else if (arg === '--help' || arg === '-h') parsed.help = true;
     else throw new UsageError(`unknown flag: ${arg}`);
@@ -296,7 +310,7 @@ async function main() {
     process.exit(2);
   }
 
-  const result = runReviewLogEvidence({ body, label, quiet: args.quiet });
+  const result = runReviewLogEvidence({ body, label, quiet: args.quiet, configPath: args.configPath });
   for (const line of result.stderr) process.stderr.write(`${line}\n`);
   for (const line of result.stdout) process.stdout.write(`${line}\n`);
   process.exit(result.exitCode);
