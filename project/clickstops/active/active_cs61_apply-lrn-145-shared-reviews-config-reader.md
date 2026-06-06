@@ -119,7 +119,7 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 
 ### Implementation + review (2026-06-05/06, `yoga-ah`)
 
-Implemented across five workstreams (WS-READER → WS-CHECKS-A/B, WS-RUNTIME, WS-DOCS → integration), all on `claude-opus-4.8`. WS-RUNTIME C61-4 decision: **defer both** schema-vs-runtime default divergences (user-approved 2026-06-05) — see LRN-146.
+Implemented across five workstreams (WS-READER → WS-CHECKS-A/B, WS-RUNTIME, WS-DOCS → integration), all on `claude-opus-4.8`. WS-RUNTIME C61-4 decision: **defer both** schema-vs-runtime default divergences (user-approved 2026-06-05) — see LRN-148.
 
 **Independent review-of-record:** GPT-5.5 rubber-duck (agent `rubber-duck`, model independent of the `claude-opus-4.8` implementer) reviewed the `cs61/content` diff at HEAD `5c86ab9` and returned **Needs-Fix (R1)** with one blocking finding: hard-coded `GPT-5.5` remained in the runtime model-independence *fix-guidance* strings at `scripts/check-clickstop-implementer-not-reviewer.mjs:544-545` (an EC2/F5 violation — emitted policy text, not a comment, that goes wrong when `reviews.rubber_duck_model` is configured otherwise). Plus one non-blocking: the reader's empty-model rejection is stricter than the schema (no `minLength`).
 
