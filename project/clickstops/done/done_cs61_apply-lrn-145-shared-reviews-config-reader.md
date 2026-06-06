@@ -1,10 +1,10 @@
 # CS61 — Apply LRN-145: shared reviews-policy config reader + schema-conformance review item
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs61/content
 **Started:** 2026-06-05
-**Closed:** —
+**Closed:** 2026-06-06
 **Filed by:** CS60 follow-up (2026-06-05 by `yoga-ah`). Applies **LRN-145** (schema-conformance review gap) and closes the **LRN-142** residual (shared `lib/` config accessor + `check-review-log-evidence.mjs` hard-coded `gpt-5.5`). Surfaced when a GPT-5.5 review-of-record gave Go on a linter that over-required schema-optional config fields; Copilot caught it post-Go by cross-referencing the schema.
 **Depends on:** None hard. Builds on CS57 (`check-clickstop-implementer-not-reviewer.mjs` config-sourcing) and CS60 (`check-independence-invariant.mjs` de-drift, which is the gold-standard semantics to factor out). May claim independently.
 
@@ -106,14 +106,14 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| WS-READER: `loadReviewsPolicy({cwd,configPath})` + `ReviewsConfigError` in `lib/config-reader.mjs`; schema-default-sourced, default-when-absent / fail-closed-on-malformed, subtree-only validation; `tests/cs61-reviews-policy-reader.test.mjs` (C61-1/C61-2/C61-7) | planned | — | agent-id=— \| role=ws-reader \| report-status=pending \| learnings=0. BLOCKING prereq; owns lib/config-reader.mjs + new test only. |
-| WS-CHECKS-A: migrate `scripts/checks/check-review-log-evidence.mjs` (drop hard-coded `gpt-5.5`) + `scripts/checks/check-independence-invariant.mjs` (swap local `SCHEMA_DEFAULT_*`/`loadReviewsConfig`) to shared reader (+tests) (C61-3a/C61-3d) | planned | — | agent-id=— \| role=ws-checks-a \| report-status=pending \| learnings=0. After WS-READER; disjoint from WS-CHECKS-B. |
-| WS-CHECKS-B: migrate `scripts/check-clickstop-implementer-not-reviewer.mjs` (drop hard-coded `PRIMARY_REVIEWER_MODEL` + local high-risk loader, PRESERVE CS57 overlap exception + `MODEL_AUDIT_ENFORCEMENT_DATE` gate) + `scripts/checks/check-copilot-review-attached.mjs` (lenient→fail-closed) (+tests/fixtures) (C61-3b/C61-3c) | planned | — | agent-id=— \| role=ws-checks-b \| report-status=pending \| learnings=0. After WS-READER; highest-risk migrations. |
-| WS-RUNTIME: audit `lib/review.mjs`, `bin/harness.mjs`, `scripts/check-review-gates.mjs`; migrate behavior-preserving reads only. DECISION (2026-06-05, user-approved): DEFER both schema-vs-runtime divergences — keep `lib/review.mjs` `high_risk_clickstops: []` and `enforce_gates` absent→skip; document + file one follow-up learning (C61-4) | planned | — | agent-id=— \| role=ws-runtime \| report-status=pending \| learnings=0. After WS-READER; never flip silently. |
-| WS-DOCS: schema-conformance review-checklist item in `REVIEWS.md` adjacent to § 2.6a F1–F5; mirror to composed/managed only if duplicated (C61-5) | planned | — | agent-id=— \| role=ws-docs \| report-status=pending \| learnings=0. Parallel from start; doc-only. |
-| Orchestrator integration: `LEARNINGS.md` (LRN-145 open→applied; LRN-142 residual resolved; new follow-up LRN for deferred divergences) + `CHANGELOG.md` `[Unreleased]` entry; full `harness lint` + `node --test`; PVI gate (C61-6) | planned | — | Single-writer; after all WS complete. |
-| Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, and composed/managed process templates + rendered roots as needed | planned | — | Mandatory close-out row. |
-| Close-out: learnings + follow-ups — transition LRN-145 `open` → `applied`, mark LRN-142 residual resolved in `LEARNINGS.md`; file the deferred-divergences follow-up learning | planned | — | Mandatory close-out row. |
+| WS-READER: `loadReviewsPolicy({cwd,configPath})` + `ReviewsConfigError` (shipped in dep-free `lib/reviews-policy.mjs` — see Notes deviation); schema-default-sourced, default-when-absent / fail-closed-on-malformed, subtree-only validation; `tests/cs61-reviews-policy-reader.test.mjs` (C61-1/C61-2/C61-7) | done | yoga-ah | agent-id=yoga-ah \| role=ws-reader \| report-status=complete \| learnings=1 (LRN-147). |
+| WS-CHECKS-A: migrate `scripts/checks/check-review-log-evidence.mjs` (drop hard-coded `gpt-5.5`) + `scripts/checks/check-independence-invariant.mjs` (swap local `SCHEMA_DEFAULT_*`/`loadReviewsConfig`) to shared reader (+tests) (C61-3a/C61-3d) | done | yoga-ah | agent-id=yoga-ah \| role=ws-checks-a \| report-status=complete \| learnings=0. |
+| WS-CHECKS-B: migrate `scripts/check-clickstop-implementer-not-reviewer.mjs` (drop hard-coded `PRIMARY_REVIEWER_MODEL` + local high-risk loader, PRESERVE CS57 overlap exception + `MODEL_AUDIT_ENFORCEMENT_DATE` gate) + `scripts/checks/check-copilot-review-attached.mjs` (lenient→fail-closed) (+tests/fixtures) (C61-3b/C61-3c) | done | yoga-ah | agent-id=yoga-ah \| role=ws-checks-b \| report-status=complete \| learnings=0. |
+| WS-RUNTIME: audit `lib/review.mjs`, `bin/harness.mjs`, `scripts/check-review-gates.mjs`; migrate behavior-preserving reads only. DECISION (2026-06-05, user-approved): DEFER both schema-vs-runtime divergences — keep `lib/review.mjs` `high_risk_clickstops: []` and `enforce_gates` absent→skip; documented in-place + filed LRN-148 (C61-4) | done | yoga-ah | agent-id=yoga-ah \| role=ws-runtime \| report-status=complete \| learnings=1 (LRN-148). |
+| WS-DOCS: schema-conformance review-checklist item in `REVIEWS.md` § 2.6b adjacent to § 2.6a F1–F5; mirrored to `template/composed/REVIEWS.md` + OPERATIONS.md preamble (C61-5) | done | yoga-ah | agent-id=yoga-ah \| role=ws-docs \| report-status=complete \| learnings=0. |
+| Orchestrator integration: `LEARNINGS.md` (LRN-145 open→applied; LRN-142 residual resolved; LRN-147 + LRN-148 filed) + `CHANGELOG.md` `[Unreleased]` entry; full `harness lint` + `node --test`; PVI gate (C61-6) | done | yoga-ah | Single-writer; complete. |
+| Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, and composed/managed process templates + rendered roots as needed | done | yoga-ah | Mandatory close-out row. |
+| Close-out: learnings + follow-ups — LRN-145 `open` → `applied`, LRN-142 residual resolved in `LEARNINGS.md`; deferred-divergences filed as LRN-148; dep-free gate-script constraint filed as LRN-147 | done | yoga-ah | Mandatory close-out row. |
 
 ## Notes / Learnings
 
@@ -146,4 +146,26 @@ Post-fix: `harness lint --quiet` 30/30, `node --test tests/*.test.mjs` 1111 pass
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Gate:** Plan-vs-implementation review (close-out gate) — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
+
+**Reviewer:** GPT-5.5 (rubber-duck, PVI gate; model independent of the `claude-opus-4.8` implementer; reviewed against the merged content HEAD `7379a6b` from PR #250 squash-merge)
+**Date:** 2026-06-06
+**Outcome:** **GO**
+
+All ten exit criteria PASS and all seven decisions (C61-1..C61-7) are delivered (C61-1 with the documented reader-module-location deviation). Evidence:
+- **EC1** — `lib/reviews-policy.mjs` exposes `loadReviewsPolicy`/`ReviewsConfigError`; defaults sourced from `schemas/harness.config.schema.json`; default-when-absent / fail-closed-on-malformed. Deviation (dep-free module, not `lib/config-reader.mjs`) documented in `## Notes` + LRN-147.
+- **EC2** — zero hard-coded review-policy `gpt-5.5`/high-risk literals in code under `scripts/checks/` + `scripts/check-clickstop-implementer-not-reviewer.mjs` (remaining mentions are format examples/comments).
+- **EC3** — CS57 GPT-5.5 non-high-risk overlap exception + `MODEL_AUDIT_ENFORCEMENT_DATE` grandfather gate regression-asserted.
+- **EC4** — `check-copilot-review-attached` fails closed on malformed `reviews` (was lenient); tests updated.
+- **EC5** — the two schema-vs-runtime default divergences deferred + documented in-place (LRN-148), never silently flipped.
+- **EC6** — `REVIEWS.md § 2.6b` (S1–S3) present + composed mirror + OPERATIONS.md preamble parallel.
+- **EC7** — LRN-145 `applied`; LRN-142 residual resolved; LRN-147 + LRN-148 filed; no duplicate LRN ids (LRN-146 belongs to main #249).
+- **EC8** — `harness lint --quiet` 30/0/3; `node --test` 1113 pass / 0 fail / 1 skip.
+- **EC9** — CHANGELOG `[Unreleased]` entry accurate.
+- **EC10** — this gate: GO.
+
+**Self-checks:** `harness lint --quiet` 30/0/3; `node --test tests/*.test.mjs` 1113 pass; `validate-schemas` 154 passed; `sync --mode=check` No drift.
+
+**Documented deviation:** reader module location (`lib/config-reader.mjs` → dep-free `lib/reviews-policy.mjs`), per LRN-143 pattern (hashed Decisions left intact; deviation recorded in `## Notes`), justified by the `node_modules`-free `.harness-ci` review-gates CI (LRN-147).
+
+**Residual / follow-ups (non-blocking):** (a) LRN-147 already records a deps-stripped CI smoke as a future hardening candidate so third-party-dependency regressions in review-gate scripts fail before live `review-gates` CI; (b) pre-existing LEARNINGS section drift (LRN-014 deferred / LRN-139, LRN-101 open all under `## Applied`) predates CS61 and is owned by other CSs — out of CS61 scope, noted for a future harvest hygiene pass.
