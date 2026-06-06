@@ -257,6 +257,18 @@ post-Go by reading the schema. CS61 (LRN-145) factored the reader into a single
 `loadReviewsPolicy` with default-when-absent / fail-closed-on-malformed
 semantics and added this checklist item.
 
+**Author-side self-check (LRN-149).** Apply S1–S3 to your *own* config/schema
+reader **before** opening the PR. Enumerate every constraint dimension the
+schema declares for the subtree you read — `required`, per-field `default`,
+`type`, `enum`, `pattern`, `uniqueItems`, `additionalProperties`,
+`minLength`/`maxLength`, numeric bounds — and confirm the reader honours each
+(default-when-absent for optional+defaulted; fail-closed on present-but-malformed
+for every constraint). This is the cheapest place to catch the gap: in CS61
+(PR #250) the post-merge-style review surfaced roughly one unhandled dimension
+per round (`additionalProperties:false`, then empty-string `minLength`, then
+whitespace-only `pattern`) across several rounds; a single up-front author S1–S3
+sweep would have collapsed them into the first.
+
 ### 2.7 Finding disposition
 
 **Blocking findings:** must be addressed before merge via one of:
