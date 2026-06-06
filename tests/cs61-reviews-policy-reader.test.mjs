@@ -236,14 +236,22 @@ test('subtree-only: a config that omits unrelated required top-level keys still 
   assert.equal(policy.rubber_duck_model, 'gpt-5.5');
 });
 
-test('subtree-only: unknown reviews keys are ignored, not rejected', async (t) => {
+test('subtree-only: unknown reviews keys fail closed (schema additionalProperties:false)', async (t) => {
   const cwd = await makeTmpDir('cs61-reader-unknown-');
   t.after(() => rm(cwd, { recursive: true, force: true }));
 
+  // The schema sets reviews.additionalProperties:false, so a typo'd/unknown
+  // reviews.* key the full schema would reject must also fail closed here.
   await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.5', made_up_key: true } });
-  const policy = loadReviewsPolicy({ cwd });
-  assert.equal(policy.rubber_duck_model, 'gpt-5.5');
-  assert.equal(policy.made_up_key, undefined);
+  assert.throws(
+    () => loadReviewsPolicy({ cwd }),
+    (err) => {
+      assert(err instanceof ReviewsConfigError);
+      assert.equal(err.code, 'MALFORMED');
+      assert.equal(err.field, 'made_up_key');
+      return true;
+    }
+  );
 });
 
 // --- immutability ----------------------------------------------------------
