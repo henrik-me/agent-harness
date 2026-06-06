@@ -1,10 +1,10 @@
 # CS62 — Make the orchestrator fresh-clone startup self-contained (env-setup docs) + hermetic whoami tests
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs62/content
 **Started:** 2026-06-06
-**Closed:** —
+**Closed:** 2026-06-06
 **Filed by:** Session bootstrap follow-up (2026-06-05 by `yoga-ah-c2`). Applies **LRN-146**. Surfaced when a fresh full clone (`agent-harness_copilot2`) failed the INSTRUCTIONS.md § Session Start bootstrap sanity check with 209 `node --test` failures (all `ERR_MODULE_NOT_FOUND` for `ajv`/`js-yaml`) because `node_modules` was never installed, and — after `npm install` — two `harness whoami` tests stayed red because they assert `id.endsWith('-ah')` while the clone derives a `-c2` suffix from its folder name.
 **Depends on:** None. Touches docs + two test assertions only; no runtime-code change. May claim independently.
 
@@ -95,8 +95,8 @@ Small CS; two disjoint workstreams plus serial orchestrator integration. Can als
 | WS-TESTS: make the two `harness whoami` assertions in `tests/cli.test.mjs` hermetic via `--cwd` pinned to an `agent-harness`-named temp dir (C62-3/C62-4) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=complete \| learnings=0 |
 | WS-DOCS: First-run environment setup precondition in `template/managed/INSTRUCTIONS.md` § Session Start + regen root `INSTRUCTIONS.md` via `sync --mode=apply`; `README.md` cross-ref (C62-1/C62-2) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=complete \| learnings=0 |
 | Orchestrator integration: `CHANGELOG.md` `[Unreleased]` entry; full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review (C62-7) | done | yoga-ah-c2 | Single-writer; orchestrator-implemented (no sub-agent dispatch). |
-| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS62 Active Work row), `CONTEXT.md` if state changed, and any process templates/rendered roots as needed | planned | — | Mandatory close-out row; post-merge. |
-| Close-out: learnings + follow-ups — transition LRN-146 `open → applied` in `LEARNINGS.md` citing the merge SHA (C62-6) | planned | — | Mandatory close-out row; post-merge. |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS62 Active Work row), `CONTEXT.md` if state changed, and any process templates/rendered roots as needed | done | yoga-ah-c2 | WORKBOARD CS62 row removed; CONTEXT rolled forward. |
+| Close-out: learnings + follow-ups — transition LRN-146 `open → applied` in `LEARNINGS.md` citing the merge SHA (C62-6) | done | yoga-ah-c2 | LRN-146 applied, citing 9f26d8d. |
 
 ## Notes / Learnings
 
@@ -113,4 +113,25 @@ Small CS; two disjoint workstreams plus serial orchestrator integration. Can als
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-06-06T22:19:29Z
+**Outcome:** GO
+
+Run against the merged content HEAD (squash commit `9f26d8d`, PR #251). Reviewer model gpt-5.5 differs from the implementer model claude-opus-4.8 (independence invariant).
+
+Per-deliverable outcome:
+
+| Deliverable | Outcome | Rationale (non-match only) |
+|---|---|---|
+| `template/managed/INSTRUCTIONS.md` first-run env-setup precondition (C62-1) | match | — |
+| root `INSTRUCTIONS.md` regenerated / sync clean (C62-1) | match | — |
+| `README.md` § "Starting an agent session" setup cross-ref (C62-2) | match | — |
+| `tests/cli.test.mjs` hermetic whoami tests (C62-3/C62-4) | match | — |
+| `LEARNINGS.md` LRN-146 lifecycle (C62-6) | match | Flip to `applied` correctly deferred to this close-out per C62-6; still `open` at content-merge is correct. |
+| `CHANGELOG.md` `[Unreleased]` entry | match | — |
+
+Scope guard (C62-5) confirmed: `git show 9f26d8d` changed no `bin/harness.mjs`; clone-suffix derivation unmodified.
+
+Test-coverage assessment: **sufficient** — the two modified `harness whoami` tests pin `--cwd` to an `agent-harness` temp dir while preserving strict `endsWith('-ah')` and env-override semantics; the existing Blocker-4 clone-suffix tests cover the intended `-c<N>` derivation. No material untested scenario.
+
+Gates re-run on the merged HEAD: `node --test --test-name-pattern="whoami"` 9/9; `harness lint --quiet` 30 passed / 0 failed; `sync --mode=check` No drift detected.
