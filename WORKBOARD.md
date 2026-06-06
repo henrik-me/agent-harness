@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-05 (CS60 CLOSED by yoga-ah — open-learnings cleanup bundle merged; 7 LRNs applied.)
+> **Last updated:** 2026-06-05 (CS61 CLAIMED by yoga-ah — shared reviews-policy config reader; applies LRN-145, closes LRN-142 residual.)
 
 ## Orchestrators
 
@@ -24,5 +24,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
+| CS61 | Apply LRN-145: shared reviews-policy config reader | 🟢 Active | yoga-ah | cs61/content | 2026-06-05 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

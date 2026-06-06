@@ -1,9 +1,9 @@
 # CS61 — Apply LRN-145: shared reviews-policy config reader + schema-conformance review item
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs61/content
+**Started:** 2026-06-05
 **Closed:** —
 **Filed by:** CS60 follow-up (2026-06-05 by `yoga-ah`). Applies **LRN-145** (schema-conformance review gap) and closes the **LRN-142** residual (shared `lib/` config accessor + `check-review-log-evidence.mjs` hard-coded `gpt-5.5`). Surfaced when a GPT-5.5 review-of-record gave Go on a linter that over-required schema-optional config fields; Copilot caught it post-Go by cross-referencing the schema.
 **Depends on:** None hard. Builds on CS57 (`check-clickstop-implementer-not-reviewer.mjs` config-sourcing) and CS60 (`check-independence-invariant.mjs` de-drift, which is the gold-standard semantics to factor out). May claim independently.
@@ -106,11 +106,27 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| WS-READER: `loadReviewsPolicy({cwd,configPath})` + `ReviewsConfigError` in `lib/config-reader.mjs`; schema-default-sourced, default-when-absent / fail-closed-on-malformed, subtree-only validation; `tests/cs61-reviews-policy-reader.test.mjs` (C61-1/C61-2/C61-7) | planned | — | agent-id=— \| role=ws-reader \| report-status=pending \| learnings=0. BLOCKING prereq; owns lib/config-reader.mjs + new test only. |
+| WS-CHECKS-A: migrate `scripts/checks/check-review-log-evidence.mjs` (drop hard-coded `gpt-5.5`) + `scripts/checks/check-independence-invariant.mjs` (swap local `SCHEMA_DEFAULT_*`/`loadReviewsConfig`) to shared reader (+tests) (C61-3a/C61-3d) | planned | — | agent-id=— \| role=ws-checks-a \| report-status=pending \| learnings=0. After WS-READER; disjoint from WS-CHECKS-B. |
+| WS-CHECKS-B: migrate `scripts/check-clickstop-implementer-not-reviewer.mjs` (drop hard-coded `PRIMARY_REVIEWER_MODEL` + local high-risk loader, PRESERVE CS57 overlap exception + `MODEL_AUDIT_ENFORCEMENT_DATE` gate) + `scripts/checks/check-copilot-review-attached.mjs` (lenient→fail-closed) (+tests/fixtures) (C61-3b/C61-3c) | planned | — | agent-id=— \| role=ws-checks-b \| report-status=pending \| learnings=0. After WS-READER; highest-risk migrations. |
+| WS-RUNTIME: audit `lib/review.mjs`, `bin/harness.mjs`, `scripts/check-review-gates.mjs`; migrate behavior-preserving reads only. DECISION (2026-06-05, user-approved): DEFER both schema-vs-runtime divergences — keep `lib/review.mjs` `high_risk_clickstops: []` and `enforce_gates` absent→skip; document + file one follow-up learning (C61-4) | planned | — | agent-id=— \| role=ws-runtime \| report-status=pending \| learnings=0. After WS-READER; never flip silently. |
+| WS-DOCS: schema-conformance review-checklist item in `REVIEWS.md` adjacent to § 2.6a F1–F5; mirror to composed/managed only if duplicated (C61-5) | planned | — | agent-id=— \| role=ws-docs \| report-status=pending \| learnings=0. Parallel from start; doc-only. |
+| Orchestrator integration: `LEARNINGS.md` (LRN-145 open→applied; LRN-142 residual resolved; new follow-up LRN for deferred divergences) + `CHANGELOG.md` `[Unreleased]` entry; full `harness lint` + `node --test`; PVI gate (C61-6) | planned | — | Single-writer; after all WS complete. |
+| Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, and composed/managed process templates + rendered roots as needed | planned | — | Mandatory close-out row. |
+| Close-out: learnings + follow-ups — transition LRN-145 `open` → `applied`, mark LRN-142 residual resolved in `LEARNINGS.md`; file the deferred-divergences follow-up learning | planned | — | Mandatory close-out row. |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 
