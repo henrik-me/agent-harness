@@ -299,6 +299,11 @@ function loadHighRiskClickstops() {
 // the null fail-closed sentinel, so every overlap is treated as high-risk and
 // this value is never consulted; `?? ''` keeps it defined without a literal.
 const PRIMARY_REVIEWER_MODEL = normalizeModelId(reviewsPolicy?.rubber_duck_model ?? '');
+// Display form of the configured primary reviewer for fix-guidance messages —
+// sourced from reviews.rubber_duck_model (schema default applies when absent),
+// never a hard-coded literal (CS61, LRN-145 EC2). When the config failed to load
+// (reviewsPolicy null), don't name a specific model in the guidance.
+const PRIMARY_REVIEWER_DISPLAY = reviewsPolicy?.rubber_duck_model || 'the configured primary reviewer model';
 const HIGH_RISK_LIST = loadHighRiskClickstops();
 const HIGH_RISK_CLICKSTOPS =
   HIGH_RISK_LIST === null ? null : new Set(HIGH_RISK_LIST.map((id) => id.toUpperCase()));
@@ -535,14 +540,14 @@ function checkFile(filePath, labelPrefix, lifecycleSubdir = labelPrefix.split('/
   if (overlap.length > 0) {
     const csId = clickstopIdFromBasename(basename);
     // Fail-closed config (null high-risk set) forces high-risk treatment so a
-    // GPT-5.5 overlap is never silently allowed when the config is malformed.
+    // primary-reviewer overlap is never silently allowed when the config is malformed.
     const highRisk = HIGH_RISK_CLICKSTOPS === null
       ? true
       : (csId ? HIGH_RISK_CLICKSTOPS.has(csId) : false);
     if (reviewerModel !== PRIMARY_REVIEWER_MODEL || highRisk) {
       const fix = reviewerModel === PRIMARY_REVIEWER_MODEL
-        ? 'obtain an independent GPT-5.5 review or explicit user waiver for this high-risk CS'
-        : 'dispatch an independent reviewer or use GPT-5.5 per the PR-side independence gate';
+        ? `obtain an independent ${PRIMARY_REVIEWER_DISPLAY} review or explicit user waiver for this high-risk CS`
+        : `dispatch an independent reviewer or use ${PRIMARY_REVIEWER_DISPLAY} per the PR-side independence gate`;
       logError(
         `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
         `Implementer models {${implementerModels.join(', ')}} overlap with Reviewer model {${reviewerModel}} ` +

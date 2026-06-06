@@ -117,7 +117,17 @@ The schema (`schemas/harness.config.schema.json`) is the source of truth: `revie
 
 ## Notes / Learnings
 
-(filled during execution)
+### Implementation + review (2026-06-05/06, `yoga-ah`)
+
+Implemented across five workstreams (WS-READER → WS-CHECKS-A/B, WS-RUNTIME, WS-DOCS → integration), all on `claude-opus-4.8`. WS-RUNTIME C61-4 decision: **defer both** schema-vs-runtime default divergences (user-approved 2026-06-05) — see LRN-146.
+
+**Independent review-of-record:** GPT-5.5 rubber-duck (agent `rubber-duck`, model independent of the `claude-opus-4.8` implementer) reviewed the `cs61/content` diff at HEAD `5c86ab9` and returned **Needs-Fix (R1)** with one blocking finding: hard-coded `GPT-5.5` remained in the runtime model-independence *fix-guidance* strings at `scripts/check-clickstop-implementer-not-reviewer.mjs:544-545` (an EC2/F5 violation — emitted policy text, not a comment, that goes wrong when `reviews.rubber_duck_model` is configured otherwise). Plus one non-blocking: the reader's empty-model rejection is stricter than the schema (no `minLength`).
+
+**Fixes applied (R1 → Go):**
+- Blocking: derived the fix-guidance from a new config-sourced `PRIMARY_REVIEWER_DISPLAY` (`reviews.rubber_duck_model`, schema default when absent; generic phrasing when the config failed to load). Verified functionally: a config with `rubber_duck_model: claude-opus-4.8` now emits "obtain an independent claude-opus-4.8 review" — no `gpt-5.5`. EC2 grep clean (only a doc-comment mention at L11 remains, explicitly out of scope).
+- Non-blocking: added `minLength: 1` to `reviews.rubber_duck_model` / `reviews.fallback_model` in `schemas/harness.config.schema.json` (matching the existing `copilot_reviewer_slug` constraint) so the reader's empty-model fail-closed is schema-backed; documented the intentional case-insensitive high-risk uniqueness (stricter than schema `uniqueItems`, mirroring the CS57/CS60 gold standard) in the reader.
+
+Post-fix: `harness lint --quiet` 30/30, `node --test tests/*.test.mjs` 1111 pass, encoding clean. S1–S3 and F1–F5 all pass post-fix (F5 was the blocking violation, now resolved).
 
 ## Model audit
 

@@ -143,12 +143,14 @@
       "properties": {
         "rubber_duck_model": {
           "type": "string",
+          "minLength": 1,
           "description": "Primary rubber-duck reviewer model used by `harness review` when --model is omitted. Defaults to GPT-5.5 per REVIEWS.md §2.1.",
           "default": "gpt-5.5",
           "examples": ["gpt-5.5"]
         },
         "fallback_model": {
           "type": "string",
+          "minLength": 1,
           "description": "Fallback rubber-duck reviewer model allowed only when REVIEWS.md §2.2 permits fallback and the independence guard passes. Defaults to Sonnet 4.6.",
           "default": "sonnet-4.6",
           "examples": ["sonnet-4.6"]
