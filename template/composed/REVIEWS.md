@@ -264,7 +264,7 @@ schema declares for the subtree you read — `required`, per-field `default`,
 `minLength`/`maxLength`, numeric bounds — and confirm the reader honours each
 (default-when-absent for optional+defaulted; fail-closed on present-but-malformed
 for every constraint). This is the cheapest place to catch the gap: in CS61
-(PR #250) the post-merge-style review surfaced roughly one un-handled dimension
+(PR #250) the post-merge-style review surfaced roughly one unhandled dimension
 per round (`additionalProperties:false`, then empty-string `minLength`, then
 whitespace-only `pattern`) across several rounds; a single up-front author S1–S3
 sweep would have collapsed them into the first.
