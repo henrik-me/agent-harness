@@ -28,7 +28,7 @@ Options:
 
 Exit codes:
   0  pass
-  1  policy violation
+  1  policy violation, or malformed/unreadable reviews config (fail-closed)
   2  bad usage or transport error
 `;
 

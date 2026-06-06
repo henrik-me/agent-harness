@@ -28,8 +28,8 @@ Options:
 
 Exit codes:
   0  pass (or skipped when reviews.require_copilot_review=false)
-  1  Copilot review missing
-  2  bad usage or transport error
+  1  Copilot review missing, or malformed/unreadable reviews config (fail-closed)
+  2  bad CLI usage or transport error
 `;
 
 class UsageError extends Error {}
