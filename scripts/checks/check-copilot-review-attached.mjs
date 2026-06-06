@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 import { graphql, GraphQLError } from '../../lib/github-graphql.mjs';
 import { extractH2, isPlaceholder, parseTable } from './check-review-log-evidence.mjs';
-import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/config-reader.mjs';
+import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/reviews-policy.mjs';
 
 const DEFAULT_COPILOT_REVIEWER = 'copilot-pull-request-reviewer[bot]';
 const ACCEPTABLE_STATES = new Set(['APPROVED', 'COMMENTED', 'CHANGES_REQUESTED']);

@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
-import { loadReviewsPolicy } from '../../lib/config-reader.mjs';
+import { loadReviewsPolicy } from '../../lib/reviews-policy.mjs';
 
 const PASSING_VERDICTS = new Set(['go', 'conditional go', 'go-with-amendments']);
 

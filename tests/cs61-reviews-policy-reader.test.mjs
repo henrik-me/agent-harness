@@ -16,7 +16,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { loadReviewsPolicy, ReviewsConfigError } from '../lib/config-reader.mjs';
+import { loadReviewsPolicy, ReviewsConfigError } from '../lib/reviews-policy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.resolve(__dirname, '..', 'schemas', 'harness.config.schema.json');

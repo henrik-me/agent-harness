@@ -23,7 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { headingAnchor } from '../lib/doc-schema.mjs';
-import { loadReviewsPolicy } from '../lib/config-reader.mjs';
+import { loadReviewsPolicy } from '../lib/reviews-policy.mjs';
 
 const LINTED_SUBDIRS = ['planned', 'active', 'done'];
 

@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 import { extractH2, isPlaceholder, normalizeModel, parseTable } from './check-review-log-evidence.mjs';
-import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/config-reader.mjs';
+import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/reviews-policy.mjs';
 
 const HELP = `Usage: check-independence-invariant.mjs (--pr-body <file> | --repo <owner/repo> --pr <num>) [options]
 
