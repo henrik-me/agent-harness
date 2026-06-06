@@ -5,7 +5,7 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** Session bootstrap follow-up (2026-06-05 by `yoga-ah-c2`). Applies **LRN-146**. Surfaced when a fresh full clone (`agent-harness_copilot2`) failed the INSTRUCTIONS.md § Session Start bootstrap sanity check with 209/774 `node --test` failures (all `ERR_MODULE_NOT_FOUND` for `ajv`/`js-yaml`) because `node_modules` was never installed, and — after `npm install` — two `harness whoami` tests stayed red because they assert `id.endsWith('-ah')` while the clone derives a `-c2` suffix from its folder name.
+**Filed by:** Session bootstrap follow-up (2026-06-05 by `yoga-ah-c2`). Applies **LRN-146**. Surfaced when a fresh full clone (`agent-harness_copilot2`) failed the INSTRUCTIONS.md § Session Start bootstrap sanity check with 209 `node --test` failures (all `ERR_MODULE_NOT_FOUND` for `ajv`/`js-yaml`) because `node_modules` was never installed, and — after `npm install` — two `harness whoami` tests stayed red because they assert `id.endsWith('-ah')` while the clone derives a `-c2` suffix from its folder name.
 **Depends on:** None. Touches docs + two test assertions only; no runtime-code change. May claim independently.
 
 ## Goal
@@ -14,7 +14,7 @@ Make the documented orchestrator startup path self-contained for a fresh clone s
 
 ## Background
 
-LRN-146 (this session, `main` @ `7932f9e`): a fresh clone in `C:\src\agent-harness_copilot2` ran the Session Start bootstrap sanity check and saw 564 pass / 209 fail on `node --test`, every failure an `ERR_MODULE_NOT_FOUND` for the dev deps `ajv` / `js-yaml` (imported by `lib/sync.mjs`, `lib/doc-schema.mjs`, and the schema/plan-review linters). Root cause: `node_modules` is gitignored and per-checkout and had never been installed in that clone. After `npm install` the suite went to 1081 pass / 2 fail.
+LRN-146 (this session, `main` @ `7932f9e`): a fresh clone in `C:\src\agent-harness_copilot2` ran the Session Start bootstrap sanity check and saw 564 pass / 209 fail / 1 skip (774 total) on `node --test`, every failure an `ERR_MODULE_NOT_FOUND` for the dev deps `ajv` / `js-yaml` (imported by `lib/sync.mjs`, `lib/doc-schema.mjs`, and the schema/plan-review linters). Root cause: `node_modules` is gitignored and per-checkout and had never been installed in that clone. After `npm install` the suite went to 1081 pass / 2 fail / 1 skip (1084 total).
 
 The documented startup path does not prevent the wall of failures:
 
