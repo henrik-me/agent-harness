@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /** G-RG-2: copilot-review-attached. */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { graphql, GraphQLError } from '../../lib/github-graphql.mjs';
 import { extractH2, isPlaceholder, parseTable } from './check-review-log-evidence.mjs';
+import { loadReviewsPolicy, ReviewsConfigError } from '../../lib/reviews-policy.mjs';
 
 const DEFAULT_COPILOT_REVIEWER = 'copilot-pull-request-reviewer[bot]';
 const ACCEPTABLE_STATES = new Set(['APPROVED', 'COMMENTED', 'CHANGES_REQUESTED']);
@@ -28,8 +28,8 @@ Options:
 
 Exit codes:
   0  pass (or skipped when reviews.require_copilot_review=false)
-  1  Copilot review missing
-  2  bad usage or transport error
+  1  Copilot review missing, or malformed/unreadable reviews config (fail-closed)
+  2  bad CLI usage or transport error
 `;
 
 class UsageError extends Error {}
@@ -45,17 +45,6 @@ function normalizeLogin(value) {
     .trim()
     .toLowerCase()
     .replace(/\[bot\]$/i, '');
-}
-
-function loadReviewsConfig(configPath) {
-  const candidate = configPath ?? path.resolve(process.cwd(), 'harness.config.json');
-  if (!existsSync(candidate)) return {};
-  try {
-    const cfg = JSON.parse(readFileSync(candidate, 'utf8'));
-    return cfg.reviews && typeof cfg.reviews === 'object' ? cfg.reviews : {};
-  } catch (error) {
-    throw new UsageError(`cannot parse --config ${candidate}: ${error.message}`);
-  }
 }
 
 function colMap(headers) {
@@ -240,10 +229,14 @@ async function main() {
 
   let config;
   try {
-    config = loadReviewsConfig(args.configPath);
+    config = loadReviewsPolicy({ configPath: args.configPath });
   } catch (error) {
+    // Fail closed on a malformed reviews config (non-object `reviews`, invalid
+    // JSON, or an explicit --config that does not exist) — CS61 C61-3c replaces
+    // the previous shape-lenient loader that silently returned {} (and accepted
+    // arrays) for malformed input.
     process.stderr.write(`check-copilot-review-attached: ${error.message}\n`);
-    process.exit(2);
+    process.exit(error instanceof ReviewsConfigError ? 1 : 2);
   }
   const reviewerLogin = args.reviewerLogin ?? config.copilot_reviewer_slug ?? DEFAULT_COPILOT_REVIEWER;
 

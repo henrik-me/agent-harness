@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
+> **Last updated:** 2026-06-06 (CS61: LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -36,6 +36,48 @@ claim_area: orchestrator-loop
 
 **Disposition:** open — filed **CS62** (`planned_cs62_fresh-clone-bootstrap-self-containment.md`) to (1) add the one-time env-setup precondition to `template/managed/INSTRUCTIONS.md` § Session Start (regenerating root `INSTRUCTIONS.md` via `harness sync`) and cross-reference it from `README.md` § "Starting an agent session", and (2) make the two whoami tests hermetic to the checkout location. Entry stays `open` until CS62 closes.
 
+## Applied
+
+### LRN-147
+
+```yaml
+id: LRN-147
+date: 2026-06-06
+category: architectural
+source_cs: CS61
+status: applied
+tags: [review-gates, harness-ci, zero-deps, module-boundary, ajv, ci-environment]
+claim_area: review-loops
+```
+
+**Problem:** CS61 migrated four harness linters — the three PR-side review-gate scripts `review-gates.yml` runs (`scripts/checks/check-review-log-evidence.mjs`, `check-independence-invariant.mjs`, `check-copilot-review-attached.mjs`) plus the `harness lint`-run clickstop linter `scripts/check-clickstop-implementer-not-reviewer.mjs` — onto a shared reader that was first placed in `lib/config-reader.mjs`. All local checks (`harness lint`, `node --test`) passed because the dev/CI checkout has `node_modules` installed. But the `review-gates.yml` workflow runs three of those scripts from a **bare `git clone` into `.harness-ci/agent-harness` with NO `npm install`** — so `node .harness-ci/agent-harness/scripts/checks/check-review-log-evidence.mjs` crashed with `ERR_MODULE_NOT_FOUND: Cannot find package 'ajv'`, because `lib/config-reader.mjs` has a top-level `import Ajv2020 from 'ajv/dist/2020.js'` (for its `loadConfig`/`writeConfig` AJV validation) — even though `loadReviewsPolicy` itself never calls AJV. The failure was invisible to every local gate and surfaced only as red CI on the content PR.
+
+**Finding:** **Any module imported (transitively) by a `review-gates.yml` gate script MUST be zero-third-party-dependency (Node builtins + relative imports only), because those scripts run from a `node_modules`-free `.harness-ci` clone.** A top-level third-party import anywhere in the reachable module graph crashes the gate at load time, regardless of whether the imported symbol is used. Concretely: `lib/config-reader.mjs` (AJV) and `lib/doc-schema.mjs` (`js-yaml`) are OFF-LIMITS to the review-gates scripts. CS61 resolved this (and plan Q1) by putting the shared reader in a dedicated dep-free `lib/reviews-policy.mjs` (only `node:fs`/`node:path`/`node:url`, reads the schema JSON directly without AJV) rather than extending `config-reader.mjs`. Verification recipe: copy `lib/`+`scripts/`+`schemas/` to a temp dir WITHOUT `node_modules` and run each gate script there; it must not throw `ERR_MODULE_NOT_FOUND`. A future hardening candidate is a CI job (or lint check) that runs the gate scripts in a deps-stripped sandbox so this regresses loudly at PR time instead of only on the `review-gates` job.
+
+**Evidence:** CS61 PR #250, 2026-06-06. `review-gates.yml` jobs (`mkdir .harness-ci` → `git clone … .harness-ci/agent-harness` → `git checkout "$ref"` → `node .harness-ci/agent-harness/scripts/checks/<gate>.mjs`, no `npm`) at lines 32-40/60-72/94-102/122-133. CI run 27072178894 job 79903294035: `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'ajv' imported from …/.harness-ci/agent-harness/lib/config-reader.mjs`. Fixed by moving `loadReviewsPolicy`/`ReviewsConfigError` to dep-free `lib/reviews-policy.mjs` and repointing all four importing scripts + `tests/cs61-reviews-policy-reader.test.mjs`; confirmed by a `node_modules`-stripped sandbox run (both gate scripts exit 0) and re-greened CI. `package.json` declares `ajv`/`ajv-formats`/`js-yaml` as runtime `dependencies`, but the `.harness-ci` clone never installs them. Cross-refs: LRN-039 (schema-source-of-truth), LRN-141 (fresh-worktree `npm install`), the harness convention "lib/ modules have zero runtime deps beyond Node builtins."
+
+**Disposition:** Applied — shared reader lives in dep-free `lib/reviews-policy.mjs`; documented here as a standing constraint for future review-gate-script changes. Follow-up candidate (not blocking): a deps-stripped CI smoke that exercises the gate scripts so this class of regression fails at PR time rather than only on the live `review-gates` job.
+
+### LRN-148
+
+```yaml
+id: LRN-148
+date: 2026-06-05
+category: architectural
+source_cs: CS61
+status: applied
+tags: [schema-vs-runtime, reviews-policy, high-risk-clickstops, enforce-gates, deferred-divergence, config-reader]
+claim_area: review-loops
+```
+
+**Problem:** CS61 factored the four `scripts/checks/` review-gate linters onto the shared `loadReviewsPolicy` reader (schema-default-sourced). Two *other* review-policy reads carry runtime defaults that deliberately diverge from the schema defaults, so a naive migration to the shared reader would silently change behavior: (1) `lib/review.mjs` `DEFAULT_REVIEW_CONFIG.high_risk_clickstops` is `[]`, vs the schema default `["CS03","CS11","CS15a","CS18b","CS19"]`; (2) `scripts/check-review-gates.mjs` and `bin/harness.mjs` `syncReviewGateRuleset` treat an absent `reviews.enforce_gates` as opt-OUT (skip), vs the schema default `true`.
+
+**Finding:** Neither divergence is a bug to "align away" — each is a deliberate, correct runtime choice, and adopting the schema default would be a regression. (1) The schema's high-risk list is **this harness's own CS ids**, meaningless in a consumer repo; `lib/review.mjs` is consumer-facing runtime, so `[]` is correct there (the linters, which run against THIS repo, correctly use the CS list). (2) Flipping absent `enforce_gates` from skip→enforce is an opt-in→opt-out product change with consumer blast radius and would split the linter from `syncReviewGateRuleset` if done piecemeal. Both are therefore **documented in-place** (code comments at each site) and left unmigrated. Revisit ONLY if the schema gains consumer-relative high-risk semantics, or a deliberate decision makes review-gate enforcement opt-out by default (then change linter + sync + schema together, with a CHANGELOG entry).
+
+**Evidence:** CS61, 2026-06-05. Sites: `lib/review.mjs` `DEFAULT_REVIEW_CONFIG.high_risk_clickstops: []`; `scripts/check-review-gates.mjs` `validate()` `config.reviews?.enforce_gates !== true`; `bin/harness.mjs` `syncReviewGateRuleset` same predicate. Schema: `schemas/harness.config.schema.json` `reviews.high_risk_clickstops.default` (the CS list) and `reviews.enforce_gates.default: true`. User-approved deferral (2026-06-05). Cross-refs: LRN-145 (shared reader + schema-conformance review rule), LRN-142 (config-vs-code drift).
+
+**Disposition:** Applied — both divergences documented in code at all three sites and recorded here. No follow-up CS required unless an assumption above changes.
+
 ### LRN-145
 
 ```yaml
@@ -43,7 +85,7 @@ id: LRN-145
 date: 2026-06-04
 category: process
 source_cs: CS60
-status: open
+status: applied
 tags: [schema-source-of-truth, fail-closed, config-reader, rubber-duck, copilot-review, review-coverage-gap, gpt-5.5]
 claim_area: review-loops
 ```
@@ -57,6 +99,10 @@ claim_area: review-loops
 2. **Review-doctrine rule (a schema-conformance analogue of the LRN-139 / REVIEWS.md § 2.6a fact-claim gap):** any rubber-duck review of a change that adds or de-drifts a config/schema reader MUST cross-check the reader's enforced-required set and default values against the actual schema (`required` array + per-field `default`s), not just the local fail-closed control flow. Treat "linter requires a field the schema marks optional/defaulted" (and its inverse) as a P0 blind spot. This is the same class of unverified cross-artifact claim as LRN-139, but for schema conformance in PR-side reviews rather than file/line citations in plan reviews.
 
 **Evidence:** CS60 PR #244. R1–R3 GPT-5.5 review-of-record returned Go at `ef4d323`; Copilot then flagged the over-require on `scripts/checks/check-independence-invariant.mjs:90-101` at that head. Fixed in `0f98a6e` (`validateReviewsConfig` now defaults absent fields, fails closed on malformed) + `9abe13f`/`7d92415` polish, re-reviewed Go (R4–R6), regression coverage in `tests/cs60-config-drift.test.mjs`. Schema check: `schemas/harness.config.schema.json` `reviews` has no `required` array and defines `default`s `rubber_duck_model: "gpt-5.5"` and `high_risk_clickstops: ["CS03","CS11","CS15a","CS18b","CS19"]`. Related: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parsers), LRN-142 (config-vs-code drift), LRN-139 (plan-side fact-claim verification gap). The still-open residual de-drift of `check-review-log-evidence.mjs`'s hard-coded `gpt-5.5` (recorded in the LRN-142 disposition) MUST apply rule 1 above when implemented.
+
+**Disposition:** Resolved in CS61 (see Applied below). The shared `loadReviewsPolicy` reader in dep-free `lib/reviews-policy.mjs` plus the migration of all four review-gate checks implements rule 1 (default-when-absent / fail-closed-on-malformed, no hard-coded literals); `REVIEWS.md § 2.6b` (S1–S3) implements rule 2 (schema-conformance review doctrine). Cross-references: LRN-142 (residual now closed), LRN-148 (deferred schema-vs-runtime divergences), LRN-147 (dep-free gate-script constraint), LRN-039, LRN-033.
+
+**Applied (CS61, 2026-06-05):** Both rules implemented. **Rule 1** — a single canonical reviews-policy reader `loadReviewsPolicy({cwd,configPath})` + `ReviewsConfigError` added in a new **dep-free** `lib/reviews-policy.mjs` (Node builtins only; NOT `lib/config-reader.mjs`, which imports AJV — the gate scripts run from a `node_modules`-free `.harness-ci` clone, see LRN-147), sourcing per-field defaults from `schemas/harness.config.schema.json` (cached) with **default-when-absent / fail-closed-on-malformed / `reviews`-subtree-only** validation; all four review-gate checks (`check-review-log-evidence.mjs`, `check-independence-invariant.mjs`, `check-clickstop-implementer-not-reviewer.mjs`, `check-copilot-review-attached.mjs`) now consume it, removing every hard-coded `gpt-5.5` / high-risk literal under `scripts/checks/` + `scripts/check-clickstop-implementer-not-reviewer.mjs` (the LRN-142 residual). **Rule 2** — `REVIEWS.md § 2.6b` (schema-conformance S1–S3 checklist) added adjacent to § 2.6a, with a parallel S1–S3 obligation in the OPERATIONS.md reviewer preamble (+ composed mirror). Tests: `tests/cs61-reviews-policy-reader.test.mjs` (28 cases) + all migrated checks' suites green. Two schema-vs-runtime default divergences were deliberately deferred and documented (see LRN-148). CS61.
 
 ### LRN-143
 
@@ -158,8 +204,6 @@ against the merged content HEAD / content diff; record the verdict in the
 step, never performed before the PVI section is populated.
 
 **Applied (CS60, 2026-06-04):** `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` now records that the PVI verdict must be written to the active CS file before the `active → done` rename (renaming first leaves a `done/` file with an unfilled PVI section that `check-clickstop` rejects), and that the gate evaluates the merged content HEAD.
-
-## Applied
 
 ### LRN-001
 
@@ -2525,6 +2569,8 @@ claim_area: lint-and-encoding
 **Disposition:** Resolved in CS60 (see Applied below). CS57 fixed the config-vs-code drift for `check-clickstop-implementer-not-reviewer.mjs`; CS60 completed the follow-up audit of the other harness linters and de-drifted `check-independence-invariant.mjs` (config is now source-of-truth with fail-closed validation). Genuinely-remaining future candidates: a shared `lib/` config accessor so the "default only when absent, honor `[]`, fail-closed on malformed" policy is implemented once rather than re-derived per consumer, and de-drifting `check-review-log-evidence.mjs`'s hard-coded `gpt-5.5`. Cross-references: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parser doctrine).
 
 **Applied (CS60, 2026-06-04):** Follow-up audit completed. `scripts/checks/check-independence-invariant.mjs` no longer hard-codes the high-risk-clickstops list or primary-reviewer model — both are now read from `harness.config.json` with fail-closed validation (CS57 pattern); verdicts for valid configs are unchanged. Regression test `tests/cs60-config-drift.test.mjs` added. Residual (recorded as a deliberate follow-up for a future shared-config-accessor pass): `check-review-log-evidence.mjs` still hard-codes `gpt-5.5`.
+
+**Applied (CS61, 2026-06-05):** Residual resolved. CS61 introduced the shared `loadReviewsPolicy` reader in a new dep-free `lib/reviews-policy.mjs` (the "shared `lib/` config accessor" future candidate noted above; kept separate from `lib/config-reader.mjs` because the gate scripts run dep-free in CI — see LRN-147) and migrated `check-review-log-evidence.mjs` (dropping the hard-coded `gpt-5.5`), `check-clickstop-implementer-not-reviewer.mjs` (dropping its hard-coded primary model + local high-risk loader), and `check-copilot-review-attached.mjs` (replacing its shape-lenient loader) onto it. No hard-coded review-policy literals remain under `scripts/checks/` or `scripts/check-clickstop-implementer-not-reviewer.mjs`. See LRN-145 (applied).
 
 ### LRN-141
 
