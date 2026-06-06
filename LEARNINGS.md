@@ -12,6 +12,8 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+## Applied
+
 ### LRN-147
 
 ```yaml
@@ -74,7 +76,7 @@ claim_area: review-loops
 
 **Evidence:** CS60 PR #244. R1–R3 GPT-5.5 review-of-record returned Go at `ef4d323`; Copilot then flagged the over-require on `scripts/checks/check-independence-invariant.mjs:90-101` at that head. Fixed in `0f98a6e` (`validateReviewsConfig` now defaults absent fields, fails closed on malformed) + `9abe13f`/`7d92415` polish, re-reviewed Go (R4–R6), regression coverage in `tests/cs60-config-drift.test.mjs`. Schema check: `schemas/harness.config.schema.json` `reviews` has no `required` array and defines `default`s `rubber_duck_model: "gpt-5.5"` and `high_risk_clickstops: ["CS03","CS11","CS15a","CS18b","CS19"]`. Related: LRN-039 (schema-is-source-of-truth), LRN-033 (fail-closed parsers), LRN-142 (config-vs-code drift), LRN-139 (plan-side fact-claim verification gap). The still-open residual de-drift of `check-review-log-evidence.mjs`'s hard-coded `gpt-5.5` (recorded in the LRN-142 disposition) MUST apply rule 1 above when implemented.
 
-**Disposition:** Resolved in CS61 (see Applied below). The shared `loadReviewsPolicy` reader in `lib/config-reader.mjs` plus the migration of all four review-gate checks implements rule 1 (default-when-absent / fail-closed-on-malformed, no hard-coded literals); `REVIEWS.md § 2.6b` (S1–S3) implements rule 2 (schema-conformance review doctrine). Cross-references: LRN-142 (residual now closed), LRN-146 (deferred schema-vs-runtime divergences), LRN-039, LRN-033.
+**Disposition:** Resolved in CS61 (see Applied below). The shared `loadReviewsPolicy` reader in dep-free `lib/reviews-policy.mjs` plus the migration of all four review-gate checks implements rule 1 (default-when-absent / fail-closed-on-malformed, no hard-coded literals); `REVIEWS.md § 2.6b` (S1–S3) implements rule 2 (schema-conformance review doctrine). Cross-references: LRN-142 (residual now closed), LRN-146 (deferred schema-vs-runtime divergences), LRN-147 (dep-free gate-script constraint), LRN-039, LRN-033.
 
 **Applied (CS61, 2026-06-05):** Both rules implemented. **Rule 1** — a single canonical reviews-policy reader `loadReviewsPolicy({cwd,configPath})` + `ReviewsConfigError` added in a new **dep-free** `lib/reviews-policy.mjs` (Node builtins only; NOT `lib/config-reader.mjs`, which imports AJV — the gate scripts run from a `node_modules`-free `.harness-ci` clone, see LRN-147), sourcing per-field defaults from `schemas/harness.config.schema.json` (cached) with **default-when-absent / fail-closed-on-malformed / `reviews`-subtree-only** validation; all four review-gate checks (`check-review-log-evidence.mjs`, `check-independence-invariant.mjs`, `check-clickstop-implementer-not-reviewer.mjs`, `check-copilot-review-attached.mjs`) now consume it, removing every hard-coded `gpt-5.5` / high-risk literal under `scripts/checks/` + `scripts/check-clickstop-implementer-not-reviewer.mjs` (the LRN-142 residual). **Rule 2** — `REVIEWS.md § 2.6b` (schema-conformance S1–S3 checklist) added adjacent to § 2.6a, with a parallel S1–S3 obligation in the OPERATIONS.md reviewer preamble (+ composed mirror). Tests: `tests/cs61-reviews-policy-reader.test.mjs` (28 cases) + all migrated checks' suites green. Two schema-vs-runtime default divergences were deliberately deferred and documented (see LRN-146). CS61.
 
@@ -178,8 +180,6 @@ against the merged content HEAD / content diff; record the verdict in the
 step, never performed before the PVI section is populated.
 
 **Applied (CS60, 2026-06-04):** `OPERATIONS.md § Plan-vs-implementation review (close-out gate)` now records that the PVI verdict must be written to the active CS file before the `active → done` rename (renaming first leaves a `done/` file with an unfilled PVI section that `check-clickstop` rejects), and that the gate evaluates the merged content HEAD.
-
-## Applied
 
 ### LRN-001
 
