@@ -8,9 +8,11 @@
  * satisfy the PR-side model-independence policy: model IDs are normalized to a
  * family+version form (so `"Claude Sonnet 4.6"` and `claude-sonnet-4-6` compare
  * equal); a reviewer/implementer overlap is an ERROR unless the reviewer model
- * is the primary reviewer (`gpt-5.5`) AND the clickstop is NOT high-risk. The
- * high-risk set is read from `harness.config.json` → `reviews.high_risk_clickstops`
- * (CS57 C57-3); a malformed config fails closed (CS57 C57-6).
+ * is the configured primary reviewer (`reviews.rubber_duck_model`, schema
+ * default `gpt-5.5`) AND the clickstop is NOT high-risk. Both the primary
+ * reviewer model and the high-risk set are read from `harness.config.json` →
+ * `reviews.*` via the shared `loadReviewsPolicy` reader (CS61, applying
+ * LRN-145; CS57 C57-3); a malformed config fails closed (CS57 C57-6).
  *
  * A missing or structurally-malformed `## Model audit` is an ERROR for files
  * that pass a date gate keyed on `MODEL_AUDIT_ENFORCEMENT_DATE` (CS57 C57-4):
