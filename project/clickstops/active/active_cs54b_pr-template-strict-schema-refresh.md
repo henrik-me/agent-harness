@@ -1,9 +1,9 @@
 # CS54b — PR template strict-schema refresh (sibling of CS54, deferred per D54-5)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs54b/content
+**Started:** 2026-06-06
 **Closed:** —
 **Filed by:** CS54 close-out (2026-06-03 by `yoga-ah`). CS54 D54-5 explicitly deferred the consumer-side `pull_request_template.md` refresh to a sibling CS because it touches consumer scaffold semantics with its own rollout risk. This file makes that deferred sibling concrete so it is not lost.
 **Depends on:** None hard. Related to CS54 (v0.7.0 cross-repo pin-bump checklist) and CS51/CS52 (the strict `## Model audit` / `## Review log` schema). May claim independently.
@@ -66,11 +66,26 @@ The root cause is structural: the harness ships a managed PR template but consum
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1-TEMPLATE: refresh managed `template/managed/.github/pull_request_template.md` to strict v0.6.0+ schema (Model audit incl. `Notes` row + `Review log` 6-column, bare reviewer-model id) per C54b-1; keep any root self-host copy in lockstep per R2 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T2-DOCS: OPERATIONS.md consumer upgrade-path subsection (opt-in adoption; no auto-rewrite of consumer files) per C54b-2 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T3-TEST: structural assertions on the raw managed template + a rendered/filled fixture passing `check-review-evidence.mjs` (default strict) and `check-pr-body.mjs` per C54b-4 (min 2 assertions) | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T4-CHANGELOG: `[Unreleased]` entry per Deliverable 4 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Orchestrator integration: full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review | planned | yoga-ah-c2 | Single-writer; orchestrator-implemented (no sub-agent dispatch). |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS54b Active Work row), `CONTEXT.md`, and any process templates/rendered roots as needed | planned | yoga-ah-c2 | — |
+| Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`; planned follow-ups for unresolved issues | planned | yoga-ah-c2 | — |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 
