@@ -19,7 +19,7 @@ id: LRN-146
 date: 2026-06-05
 category: process
 source_cs: CS62
-status: open
+status: applied
 tags: [bootstrap, fresh-clone, npm-install, node-modules, session-start, test-hermeticity, clone-suffix, whoami, false-red]
 claim_area: orchestrator-loop
 ```
@@ -34,7 +34,9 @@ claim_area: orchestrator-loop
 
 **Evidence:** This session, 2026-06-05, clone `C:\src\agent-harness_copilot2` (`yoga-ah-c2`), `main` @ `7932f9e`. `node --test tests/*.test.mjs` → 564 pass / 209 fail / 1 skip (774 total), all `ERR_MODULE_NOT_FOUND` (`ajv`, `js-yaml`); after `npm install` → 1081 pass / 2 fail / 1 skip (1084 total). The 2 residual failures are `harness whoami` › "prints agent ID ending in -ah…" and "…env var override as machine-short" (`tests/cli.test.mjs:144-149`, `:160-169`), both `assert.ok(id.endsWith('-ah'))` with `id = yoga-ah-c2`. `harness lint --quiet` → 29 passed / 0 failed; `harness sync --mode=check` → No drift. Citations: `run()` cwd default `tests/cli.test.mjs:36`; `cloneSuffixFromDir` `bin/harness.mjs:617-619`; whoami suffix derivation `bin/harness.mjs:3522`; `npm ci` setup step (human/agent-facing) only in `CONTRIBUTING.md:30-31` (CI workflows aside); startup path `README.md:77-93` → `INSTRUCTIONS.md:75-84` (no env-setup step). `package-lock.json` is tracked; `node_modules/` is gitignored. Related: **LRN-141** (per-checkout `node_modules`, applied to sub-agent/worktree dispatch only).
 
-**Disposition:** open — filed **CS62** (`planned_cs62_fresh-clone-bootstrap-self-containment.md`) to (1) add the one-time env-setup precondition to `template/managed/INSTRUCTIONS.md` § Session Start (regenerating root `INSTRUCTIONS.md` via `harness sync`) and cross-reference it from `README.md` § "Starting an agent session", and (2) make the two whoami tests hermetic to the checkout location. Entry stays `open` until CS62 closes.
+**Disposition:** Applied in CS62 (see Applied below).
+
+**Applied (CS62, 2026-06-06):** Both surfaces shipped and merged to `main` as squash commit `9f26d8d` (PR #251). (1) **Env-setup precondition** — `template/managed/INSTRUCTIONS.md` § Session Start now carries a "First-run environment setup" step (Node ≥ 20 + one-time `npm ci`; `node_modules` is gitignored/per-checkout) with an `ERR_MODULE_NOT_FOUND` ⇒ `npm ci` triage line, placed **before** the bootstrap sanity check; the rendered root `INSTRUCTIONS.md` was regenerated via `harness sync --mode=apply`; `README.md` § "Starting an agent session" cross-references the one-time setup and links `CONTRIBUTING.md`. (2) **Test hermeticity** — the two `harness whoami` assertions in `tests/cli.test.mjs` now pin `--cwd` to an `agent-harness`-named temp dir, so the strict `endsWith('-ah')` check is independent of the checkout folder basename (no regex weakening; production `cloneSuffixFromDir` unchanged per Decision #20). gpt-5.5 review-of-record Go (3 rounds incl. 2 post-rebase re-attests) + plan-vs-implementation GO. CS62.
 
 ## Applied
 

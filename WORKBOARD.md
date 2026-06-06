@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-06 (CS62 CLAIMED by yoga-ah-c2 — fresh-clone bootstrap self-containment + hermetic whoami tests; applies LRN-146.)
+> **Last updated:** 2026-06-06 (CS62 CLOSED by yoga-ah-c2 — fresh-clone bootstrap self-containment + hermetic whoami tests. LRN-146 applied; PR #251 merged (squash 9f26d8d), plan-vs-impl GO. No release cut.)
 
 ## Orchestrators
 
@@ -25,6 +25,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS62 | Fresh-clone bootstrap self-containment + hermetic whoami tests | 🟢 Active | yoga-ah-c2 | cs62/content | 2026-06-06 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
