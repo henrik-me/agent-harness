@@ -141,11 +141,27 @@ describe('harness version', () => {
 describe('harness whoami', () => {
   const CONFIG_FLAG = `--config=${path.join(REPO_ROOT, 'examples', 'agent-harness-self.harness.config.json')}`;
 
-  it('prints agent ID ending in -ah with self config (yoga-ah on this machine)', () => {
-    const r = run([CONFIG_FLAG, 'whoami']);
-    assert.equal(r.status, 0);
-    const id = r.stdout.trim();
-    assert.ok(id.endsWith('-ah'), `Expected agent ID ending in "-ah", got: "${id}"`);
+  // Pin --cwd to a temp dir literally named `agent-harness` so the clone-suffix
+  // derivation (cloneSuffixFromDir, Decision #20) yields no `-c<N>` suffix
+  // regardless of this checkout's folder name — keeps the strict `-ah`
+  // terminal-suffix assertion hermetic (CS62 / LRN-146).
+  function agentHarnessCwd() {
+    const parent = makeTmpDir('harness-whoami-cwd-');
+    const dir = path.join(parent, 'agent-harness');
+    mkdirSync(dir);
+    return { parent, dir };
+  }
+
+  it('prints agent ID ending in -ah with self config (hermetic --cwd)', () => {
+    const { parent, dir } = agentHarnessCwd();
+    try {
+      const r = run([CONFIG_FLAG, 'whoami', `--cwd=${dir}`]);
+      assert.equal(r.status, 0);
+      const id = r.stdout.trim();
+      assert.ok(id.endsWith('-ah'), `Expected agent ID ending in "-ah", got: "${id}"`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
   });
 
   it('whoami --explain includes hostname, suffix, and final agent-id', () => {
@@ -158,14 +174,19 @@ describe('harness whoami', () => {
   });
 
   it('whoami picks up env var override as machine-short', () => {
-    const r = run(
-      [CONFIG_FLAG, 'whoami'],
-      { env: { HARNESS_AGENT_AH_MACHINE: 'testmachine' } },
-    );
-    assert.equal(r.status, 0);
-    const id = r.stdout.trim();
-    assert.ok(id.startsWith('testmachine'), `Expected ID starting with "testmachine", got: "${id}"`);
-    assert.ok(id.endsWith('-ah'), `Expected ID ending with "-ah", got: "${id}"`);
+    const { parent, dir } = agentHarnessCwd();
+    try {
+      const r = run(
+        [CONFIG_FLAG, 'whoami', `--cwd=${dir}`],
+        { env: { HARNESS_AGENT_AH_MACHINE: 'testmachine' } },
+      );
+      assert.equal(r.status, 0);
+      const id = r.stdout.trim();
+      assert.ok(id.startsWith('testmachine'), `Expected ID starting with "testmachine", got: "${id}"`);
+      assert.ok(id.endsWith('-ah'), `Expected ID ending with "-ah", got: "${id}"`);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
   });
 
   it('whoami --explain shows env-var-value when override set', () => {

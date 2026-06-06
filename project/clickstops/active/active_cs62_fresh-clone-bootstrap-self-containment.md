@@ -1,9 +1,9 @@
 # CS62 — Make the orchestrator fresh-clone startup self-contained (env-setup docs) + hermetic whoami tests
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs62/content
+**Started:** 2026-06-06
 **Closed:** —
 **Filed by:** Session bootstrap follow-up (2026-06-05 by `yoga-ah-c2`). Applies **LRN-146**. Surfaced when a fresh full clone (`agent-harness_copilot2`) failed the INSTRUCTIONS.md § Session Start bootstrap sanity check with 209 `node --test` failures (all `ERR_MODULE_NOT_FOUND` for `ajv`/`js-yaml`) because `node_modules` was never installed, and — after `npm install` — two `harness whoami` tests stayed red because they assert `id.endsWith('-ah')` while the clone derives a `-c2` suffix from its folder name.
 **Depends on:** None. Touches docs + two test assertions only; no runtime-code change. May claim independently.
@@ -92,11 +92,24 @@ Small CS; two disjoint workstreams plus serial orchestrator integration. Can als
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| WS-TESTS: make the two `harness whoami` assertions in `tests/cli.test.mjs` hermetic via `--cwd` pinned to an `agent-harness`-named temp dir (C62-3/C62-4) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=complete \| learnings=0 |
+| WS-DOCS: First-run environment setup precondition in `template/managed/INSTRUCTIONS.md` § Session Start + regen root `INSTRUCTIONS.md` via `sync --mode=apply`; `README.md` cross-ref (C62-1/C62-2) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=complete \| learnings=0 |
+| Orchestrator integration: `CHANGELOG.md` `[Unreleased]` entry; full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review (C62-7) | done | yoga-ah-c2 | Single-writer; orchestrator-implemented (no sub-agent dispatch). |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS62 Active Work row), `CONTEXT.md` if state changed, and any process templates/rendered roots as needed | planned | — | Mandatory close-out row; post-merge. |
+| Close-out: learnings + follow-ups — transition LRN-146 `open → applied` in `LEARNINGS.md` citing the merge SHA (C62-6) | planned | — | Mandatory close-out row; post-merge. |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck |
 
 ## Plan-vs-implementation review
 
