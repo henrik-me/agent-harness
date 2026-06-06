@@ -548,7 +548,7 @@ function checkFile(filePath, labelPrefix, lifecycleSubdir = labelPrefix.split('/
       : (csId ? HIGH_RISK_CLICKSTOPS.has(csId) : false);
     if (reviewerModel !== PRIMARY_REVIEWER_MODEL || highRisk) {
       const fix = reviewerModel === PRIMARY_REVIEWER_MODEL
-        ? `obtain an independent ${PRIMARY_REVIEWER_DISPLAY} review or explicit user waiver for this high-risk CS`
+        ? `obtain an independent review by ${PRIMARY_REVIEWER_DISPLAY} or explicit user waiver for this high-risk CS`
         : `dispatch an independent reviewer or use ${PRIMARY_REVIEWER_DISPLAY} per the PR-side independence gate`;
       logError(
         `${label}:${reviewerModelLine}: ## Model audit model-independence violation — ` +
