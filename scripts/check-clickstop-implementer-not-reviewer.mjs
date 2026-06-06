@@ -23,17 +23,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { headingAnchor } from '../lib/doc-schema.mjs';
+import { loadReviewsPolicy } from '../lib/config-reader.mjs';
 
 const LINTED_SUBDIRS = ['planned', 'active', 'done'];
-
-/**
- * Documented default high-risk clickstop set, used ONLY when the high-risk set
- * is *absent* — i.e. `harness.config.json` is absent, or parses as valid JSON
- * but the `reviews.high_risk_clickstops` key is missing/undefined (CS57 C57-3).
- * An explicit empty array (`[]`) is honored as an empty set, NOT replaced by
- * this default; a malformed config fails closed (CS57 C57-6).
- */
-const DEFAULT_HIGH_RISK_CLICKSTOPS = ['CS03', 'CS11', 'CS15a', 'CS18b', 'CS19'];
 
 /**
  * CS57 C57-4 — enforcement cutoff for the missing/malformed `## Model audit`
@@ -260,51 +252,53 @@ function normalizeModelId(value) {
 }
 
 /**
- * Load the high-risk clickstop set from `harness.config.json`
- * (`reviews.high_risk_clickstops`), per CS57 C57-3/C57-6:
- *   - config file absent, OR present-and-valid JSON with the key absent →
- *     return `DEFAULT_HIGH_RISK_CLICKSTOPS` (the documented default);
- *   - key present as an array of strings (including `[]`) → return it verbatim
- *     (an explicit empty array is honored as an empty high-risk set);
- *   - JSON parse error, a present-but-non-array value, OR an array containing a
- *     non-string element → emit an ERROR naming the file+key and return `null`
- *     (fail-closed sentinel — stricter than the runtime consumers on purpose).
+ * Read the reviews policy once from `harness.config.json` via the shared
+ * loadReviewsPolicy reader (CS61, applying LRN-145). The reader applies schema
+ * defaults when a field is absent and throws on a present-but-malformed value;
+ * we capture that throw here and fail closed below (logError + `null` high-risk
+ * sentinel) rather than crashing at module load.
+ *
+ * @returns {{policy: object|null, error: Error|null}}
+ */
+function loadReviewsPolicySafe() {
+  try {
+    return { policy: loadReviewsPolicy({ cwd }), error: null };
+  } catch (error) {
+    return { policy: null, error };
+  }
+}
+
+const { policy: reviewsPolicy, error: reviewsPolicyError } = loadReviewsPolicySafe();
+
+/**
+ * High-risk clickstop set from `reviews.high_risk_clickstops` via the shared
+ * reader (CS57 C57-3/C57-6 contract preserved):
+ *   - config absent, or present-and-valid with the key absent → schema default;
+ *   - key present as an array (including `[]`) → returned verbatim (an explicit
+ *     empty array is honored as an empty high-risk set);
+ *   - malformed config (JSON parse error, non-array value, or an element that
+ *     is not a CS-id) → emit an ERROR naming the offending surface and return
+ *     `null` (fail-closed sentinel — stricter than the runtime consumers).
  *
  * @returns {string[] | null}  CS-id list, or `null` on fail-closed config.
  */
 function loadHighRiskClickstops() {
-  const configPath = path.join(cwd, 'harness.config.json');
-  if (!fs.existsSync(configPath)) return DEFAULT_HIGH_RISK_CLICKSTOPS;
-  let cfg;
-  try {
-    cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  } catch (err) {
+  if (reviewsPolicyError) {
     logError(
-      `harness.config.json: cannot parse JSON (${err.message}). Refusing to fall back to the ` +
-      `default high-risk set — failing closed (CS57 C57-6).`
+      `${reviewsPolicyError.message}. Refusing to fall back to the default ` +
+      `high-risk set — failing closed (CS57 C57-6).`
     );
     return null;
   }
-  const raw = cfg?.reviews?.high_risk_clickstops;
-  if (raw === undefined) return DEFAULT_HIGH_RISK_CLICKSTOPS;
-  if (!Array.isArray(raw)) {
-    logError(
-      `harness.config.json: reviews.high_risk_clickstops must be an array of strings, got ${typeof raw}. ` +
-      `Failing closed (CS57 C57-6) rather than substituting the default high-risk set.`
-    );
-    return null;
-  }
-  if (!raw.every((id) => typeof id === 'string')) {
-    logError(
-      `harness.config.json: reviews.high_risk_clickstops must contain only strings; found a non-string element. ` +
-      `Failing closed (CS57 C57-6) rather than coercing or substituting the default high-risk set.`
-    );
-    return null;
-  }
-  return raw;
+  return reviewsPolicy.high_risk_clickstops;
 }
 
-const PRIMARY_REVIEWER_MODEL = normalizeModelId('gpt-5.5');
+// Primary reviewer model from `reviews.rubber_duck_model` via the shared reader
+// (schema default applies when absent) — no hard-coded literal (CS61, LRN-145).
+// When the config is malformed (`reviewsPolicy` is null) the high-risk set is
+// the null fail-closed sentinel, so every overlap is treated as high-risk and
+// this value is never consulted; `?? ''` keeps it defined without a literal.
+const PRIMARY_REVIEWER_MODEL = normalizeModelId(reviewsPolicy?.rubber_duck_model ?? '');
 const HIGH_RISK_LIST = loadHighRiskClickstops();
 const HIGH_RISK_CLICKSTOPS =
   HIGH_RISK_LIST === null ? null : new Set(HIGH_RISK_LIST.map((id) => id.toUpperCase()));
