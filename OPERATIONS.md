@@ -997,7 +997,12 @@ summary stays within the source entry's Problem/Finding scope (no
 generalisation); (F5) cross-doc claims (CHANGELOG vs OPERATIONS vs README
 vs LRN) are mutually consistent. Do NOT issue a Go verdict on a doc PR
 based on diff-internal coherence alone — cross-check claims against the
-shipped surfaces they reference.
+shipped surfaces they reference. For changes that add or edit a config or
+schema reader, you MUST ALSO perform schema-conformance verification per
+REVIEWS.md § 2.6b: (S1) the reader requires no field the schema marks
+optional/defaulted; (S2) each default-when-absent matches the schema's
+declared `default` (or a documented divergence); (S3) present-but-malformed
+values fail closed against the schema's `type`/`pattern`/`enum`.
 
 **independence-invariant:** Your model MUST NOT appear in the active CS file's
 `## Model audit` `Implementer models` field. If it does, refuse the dispatch

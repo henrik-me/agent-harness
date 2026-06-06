@@ -88,6 +88,13 @@ if (!existsSync(configPath)) {
 }
 
 function validate(config) {
+  // CS61 (LRN-145 follow-up) — DEFERRED schema-vs-runtime divergence: absent
+  // `enforce_gates` is treated as opt-OUT (skip) here AND in bin/harness.mjs
+  // syncReviewGateRuleset, which diverges from the schema default `true`.
+  // Migrating to the shared reader's default-when-absent would flip skip→enforce
+  // (opt-in→opt-out) — a product change with consumer blast radius, deferred.
+  // See LEARNINGS.md (deferred divergence) — do not adopt the schema default
+  // here silently.
   if (config.reviews?.enforce_gates !== true) {
     if (!quiet) process.stdout.write('check-review-gates: skipped (reviews.enforce_gates is not true)\n');
     return;

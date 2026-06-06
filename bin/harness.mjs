@@ -841,6 +841,11 @@ function addReviewGateContextsToRuleset(ruleset) {
 
 function syncReviewGateRuleset({ cwd, mode, configPath }) {
   const config = loadConfig(cwd, configPath);
+  // CS61 (LRN-145 follow-up) — DEFERRED schema-vs-runtime divergence: absent
+  // `enforce_gates` is treated as opt-OUT (no ruleset sync) here and in
+  // scripts/check-review-gates.mjs, diverging from the schema default `true`.
+  // Not migrated to the shared reader's default-when-absent (would flip
+  // skip→enforce). See LEARNINGS.md (deferred divergence).
   if (config?.reviews?.enforce_gates !== true) {
     return { drift: false, change: null };
   }
