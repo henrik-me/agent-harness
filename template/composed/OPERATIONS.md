@@ -561,31 +561,40 @@ The harness ships its PR template as a **composed** file
 the shipped template already carries the strict `## Model audit`
 (with `Implementer agent` / `Reviewer agent` rows + optional
 `Notes`) and the 6-column `## Review log`, so a **fresh**
-`harness init` — or a `harness sync` in a consumer that lists
-`.github/pull_request_template.md` under its `harness.config.json`
-`composed.files` — inherits the strict schema automatically.
+`harness init` seeds a consumer with the strict schema
+automatically.
 
 An **existing** consumer can still carry a stale, pre-strict copy
-(this is the SI PR #79 failure mode: a pre-v0.6.0 template silently
-produces an A3 hard-fail on `read-only-gates`). The harness does
-**not** auto-rewrite a consumer's `.github/pull_request_template.md`
-on sync — it is consumer scaffold, and silently overwriting it could
-clobber local customisations. Adoption is therefore **opt-in**, via
-either path:
+(the SI PR #79 failure mode: a pre-v0.6.0 template silently produces
+an A3 hard-fail on `read-only-gates`). The harness does **not**
+auto-rewrite a consumer's `.github/pull_request_template.md` unless
+the consumer has opted the file into the composed flow — it is
+consumer scaffold, and silently overwriting it could clobber local
+customisations. Adoption is therefore **opt-in**:
 
-1. **Reclassify + sync** (recommended for repos that want ongoing
-   harness-managed updates). Add `.github/pull_request_template.md`
-   to the consumer's `harness.config.json` `composed.files` with a
-   `composed.overrides` entry declaring the
-   `pull-request.review-evidence` local block, then run
-   `harness sync`. The harness-owned block is refreshed on every
-   sync while consumer-owned prose outside the markers is preserved.
-2. **One-time copy** (for repos that prefer to own the file
-   outright). Copy
+1. **One-time copy (recommended — simple and reliable).** Copy
    `template/composed/.github/pull_request_template.md` from the
    pinned harness version over the consumer's
-   `.github/pull_request_template.md` and commit it. The file stays
-   consumer-owned; re-copy on future harness bumps if desired.
+   `.github/pull_request_template.md` and commit it. This immediately
+   adopts the strict schema; the file stays consumer-owned (re-copy
+   on future harness bumps if desired).
+
+2. **Reclassify for ongoing harness-managed updates (advanced).**
+   Register `.github/pull_request_template.md` under the consumer's
+   `harness.config.json` `composed.files`, with a `composed.overrides`
+   entry that sets `"_inherited_class": "managed"` **and**
+   `"local_blocks": ["pull-request.review-evidence"]` (mirroring how
+   the harness itself ships the file). On `harness sync` the
+   harness-managed sections **outside** the
+   `pull-request.review-evidence` markers are refreshed verbatim from
+   the template — adopting the strict structure even from a
+   pre-strict file — while the content **inside** the markers (the
+   per-PR `## Model audit` + `## Review log` the author fills in) is
+   consumer-preserved (seeded from the template's placeholder only
+   when absent). Without the `"_inherited_class": "managed"` hint the
+   first sync of a non-matching file fails closed
+   (`EMERGE_LEGACY_UNMAPPED`) rather than guessing — do the one-time
+   copy first, or keep the class hint set.
 
 Until a consumer adopts the strict template by either path, the
 **inline-sections fallback** in the pin-bump checklist above remains
