@@ -69,9 +69,9 @@ files closed on or after CS15a's close-out enforcement date.
 
 ### Pre-claim harvest gate (CS04+)
 
-`harness claim` runs `harness harvest` automatically before opening the
-workboard PR. It prompts the user only if stale `open` learnings tagged
-`process` or `architectural` exist, or learnings tagged with the
+Run `harness harvest` before claiming (a future `harness claim` command will
+run it automatically — tracked in CS64). It surfaces stale `open` learnings
+tagged `process` or `architectural`, or learnings tagged with the
 `claim_area` metadata for the current CS area. Resolve stale learnings
 before the workboard-claim PR lands.
 
@@ -1815,10 +1815,11 @@ harness package is not published to npm. Always use
 
 - **Weekly:** Monday morning, run `harness harvest` (CS04+) and review
   `LEARNINGS.md`. Disposition any `open` entries.
-- **Before-claim (CS04+):** `harness harvest` runs automatically as part of
-  `harness claim`. It prompts for disposition of stale `open` learnings tagged
-  `process` or `architectural`, or tagged with `claim_area` metadata matching
-  the current CS. Resolve before the workboard-claim PR lands.
+- **Before-claim (CS04+):** run `harness harvest` before claiming (a future
+  `harness claim` command will run it automatically — tracked in CS64). It
+  surfaces stale `open` learnings tagged `process` or `architectural`, or
+  tagged with `claim_area` metadata matching the current CS. Resolve before
+  the workboard-claim PR lands.
 
 ### Bounded-before-claim invariant
 
