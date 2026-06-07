@@ -1,9 +1,9 @@
 # CS63b — Lifecycle + context-integrity code + doc-vs-reality (CS63 sibling)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c3
+**Branch:** cs63b/content
+**Started:** 2026-06-07
 **Closed:** —
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **code-class** slice of the CS63 umbrella (workstreams W2 + W3) plus the C1 doc-vs-reality fix.
 **Depends on:** **CS63** (umbrella — all decisions/risks). Shares the orchestrator-owned `bin/harness.mjs` + `INSTRUCTIONS.md`/`OPERATIONS.md` (+ mirrors) with CS63c → those shared-file edits **serialize** (CS63 C63-10); the new-file deliverables (`lib/harvest.mjs`, `scripts/check-closeout-freshness.mjs`) are disjoint and independent. Independent of CS63a.
@@ -62,11 +62,26 @@ Inherits CS63 risks **R4** (advisory harvest must not wedge claims), **R5** (man
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| W2 — adopt + finalize `lib/harvest.mjs` (+ `tests/lib-harvest.test.mjs`); wire `bin/harness.mjs` `cmdHarvest` to it (replace the `die` stub) | done | yoga-ah-c3 | implemented on `cs63b/content`; CS63 deliverables 6,7 (C63-4) |
+| W3 — `scripts/check-closeout-freshness.mjs` (+ tests/fixtures); wire into `cmdLint` aggregator + `pr-evidence` | done | yoga-ah-c3 | implemented on `cs63b/content`; CS63 deliverables 9,10 (C63-5) |
+| C1 — doc-vs-reality: correct INSTRUCTIONS/OPERATIONS harvest/claim automation claims (+ mirrors, lockstep) | done | yoga-ah-c3 | serialized vs CS63c (C63-10) |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | in_progress | yoga-ah-c3 | `cs63b/content` rebased onto current main |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
 
 ## Notes / Learnings
 
 - 2026-06-06: `lib/harvest.mjs` + `tests/lib-harvest.test.mjs` prototyped scope-independently (untracked working-tree spike; 12 tests pass; full suite green). To be adopted as deliverable 1 when this CS is claimed. **Validated end-to-end against the real `LEARNINGS.md`**: bounded pre-claim mode surfaces the stale open LRN-101 (process, 27d) for disposition and correctly excludes the fresh open LRN-139 (9d, < 14d threshold); weekly mode reports both open entries. Remaining W2 work is the thin `cmdHarvest` CLI wiring + the C1 doc-vs-reality edits.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c3 |
+| Reviewer agent | rubber-duck |
+| Notes | W2+W3+C1 implemented on `cs63b/content` (prior session, claude-opus-4.8); reviewer GPT-5.5 + independent reviewer per REVIEWS.md independence invariant. |
 
 ## Plan-vs-implementation review
 
