@@ -1,9 +1,9 @@
 # CS63a — Consumer structural PR gate + bypass hardening (CS63 sibling)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c3
+**Branch:** cs63a/content
+**Started:** 2026-06-07
 **Closed:** —
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **template-class** slice of the CS63 umbrella (workstreams W1 + W5). Kept separate from the code/doc siblings (CS63b/CS63c) to honor the template-changes-own-CS doctrine (INSTRUCTIONS.md:517-518).
 **Depends on:** **CS63** (umbrella — all decisions/risks live there). Disjoint from CS63b/CS63c for its **new files** (the `template/.github/workflows/*` gate, `scripts/check-managed-drift.mjs`, schema/config, tests) — those may be built in parallel. Its **orchestrator-owned shared-file edits** (`bin/harness.mjs` `cmdInit`, `INSTRUCTIONS.md`/`OPERATIONS.md` + mirrors, `CHANGELOG.md`) are **serialized** with CS63b/CS63c per CS63 C63-10. The backing `scripts/check-managed-drift.mjs` is tightly coupled to the workflow gate and rides with it (acceptable per the CS64-rereview ruling that a template gate + its dedicated classifier is one cohesive unit, not piggy-backed implementation).
@@ -65,11 +65,26 @@ Inherits CS63 risks **R2** (seeded-drift classifier), **R3** (ack auditability),
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| W1 — consumer structural PR gate (`harness-pr-check.yml` + `check-managed-drift.mjs` classifier + `pr_check` schema/config) | done | yoga-ah-c3 | implemented on `cs63a/content`; CS63 deliverables 1–5 |
+| W5 — `workboard-only` bypass hardening (`pr-evidence-lint.yml` + `review-gates.yml` path-allowlist confinement + tests) | done | yoga-ah-c3 | implemented on `cs63a/content`; C63-7, deliverables 13–14 |
+| W7 subset — orchestrator integration (`bin/harness.mjs` `cmdInit` wiring + `INSTRUCTIONS.md`/`OPERATIONS.md` (+ mirrors) docs + `CHANGELOG.md`) | done | yoga-ah-c3 | serialized vs CS63b/CS63c per C63-10 |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | in_progress | yoga-ah-c3 | `cs63a/content` rebased onto current main |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c3 |
+| Reviewer agent | rubber-duck |
+| Notes | W1+W5 implemented on `cs63a/content` (prior session, claude-opus-4.8); reviewer GPT-5.5 + independent reviewer per REVIEWS.md independence invariant. |
 
 ## Plan-vs-implementation review
 
