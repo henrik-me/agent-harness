@@ -1208,6 +1208,33 @@ async function cmdInit(args, global) {
     }
   }
 
+  // CS63a / C63-2: fresh init installs the consumer structural PR gate
+  // (harness-pr-check.yml), default-on per the G-gate-default decision. Opt out
+  // by setting pr_check.enabled=false before init (or remove it from managed.files).
+  if (!configExists) {
+    const prCheckTarget = '.github/workflows/harness-pr-check.yml';
+    const prCheckSrc = path.join(REPO_ROOT, 'template', 'managed', ...prCheckTarget.split('/'));
+    const prCheckDest = path.join(targetDir, ...prCheckTarget.split('/'));
+    try {
+      const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      if (cfg.pr_check?.enabled !== false) {
+        if (!isPlainObject(cfg.pr_check)) cfg.pr_check = { enabled: true };
+        const managed = ensureFileClassBlock(cfg, 'managed');
+        addUnique(managed.files, prCheckTarget);
+        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+        if (existsSync(prCheckSrc)) {
+          mkdirSync(path.dirname(prCheckDest), { recursive: true });
+          copyFileSync(prCheckSrc, prCheckDest);
+          process.stdout.write(`Created ${prCheckTarget}\n`);
+        } else {
+          process.stderr.write(`Warning: harness-pr-check workflow template not found at ${prCheckSrc}; skipping workflow copy.\n`);
+        }
+      }
+    } catch (err) {
+      process.stderr.write(`Warning: could not install harness-pr-check workflow: ${err.message}\n`);
+    }
+  }
+
   // Copy seeded template files that are missing
   const seededDir = path.join(REPO_ROOT, 'template', 'seeded');
   if (existsSync(seededDir)) {
