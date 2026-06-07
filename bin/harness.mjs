@@ -265,12 +265,18 @@ Exit codes:
   harvest: `
 Usage: harness harvest [options]
 
-Run the full harvest procedure (collects learnings, updates WORKBOARD, etc.).
-STUB in CS04 — full implementation in a later CS.
+Scan LEARNINGS.md for open learnings needing disposition — the pre-claim gate
+and the weekly sweep. Deterministic, network-free, advisory by default.
 
 Options:
-  --snooze=<reason>:<deferred_until>  Defer harvest with a reason and date
-  --help                              Print this help
+  --weekly             Weekly sweep: surface ALL open learnings (default:
+                       bounded pre-claim — only stale process/architectural
+                       items or claim-area matches).
+  --claim-area <area>  Also surface open learnings whose claim_area == <area>.
+  --stale-days <n>     Staleness threshold for pre-claim mode (default: 14).
+  --strict             Exit 1 if any candidates remain (default: advisory 0).
+  --file <path>        LEARNINGS.md location (default: <cwd>/LEARNINGS.md).
+  --help               Print this help
 `.trimStart(),
 
   'check-migration': `
@@ -2483,18 +2489,59 @@ async function cmdLint(args, _global) {
 // Subcommand: harvest (STUB)
 // ---------------------------------------------------------------------------
 
-async function cmdHarvest(args, _global) {
-  for (const a of args) {
+async function cmdHarvest(args, global) {
+  let mode = 'pre-claim';
+  let claimArea = null;
+  let staleDays;
+  let strict = false;
+  let filePath = null;
+
+  const valueFor = (i, flag) => {
+    if (!args[i + 1] || args[i + 1].startsWith('-')) {
+      die(`harness harvest: missing value for ${flag}\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
+    }
+    return args[i + 1];
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
     if (a === '--help' || a === '-h') {
       process.stdout.write(SUBCOMMAND_HELP['harvest']);
       process.exit(0);
+    } else if (a === '--weekly') {
+      mode = 'weekly';
+    } else if (a === '--claim-area') {
+      claimArea = valueFor(i, '--claim-area'); i++;
+    } else if (a === '--stale-days') {
+      staleDays = Number.parseInt(valueFor(i, '--stale-days'), 10); i++;
+      if (Number.isNaN(staleDays) || staleDays < 0) {
+        die(`harness harvest: --stale-days must be a non-negative integer\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
+      }
+    } else if (a === '--strict') {
+      strict = true;
+    } else if (a === '--file') {
+      filePath = valueFor(i, '--file'); i++;
     } else if (a.startsWith('--snooze=')) {
-      // recognized flag — parsed but ignored until implemented
+      // recognized; snooze persistence is a separate follow-up.
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
     }
   }
-  die('harness harvest: not yet implemented (planned: CS-TBD)', 3);
+
+  const cwd = global && global.cwd ? global.cwd : process.cwd();
+  const learningsPath = filePath ? path.resolve(filePath) : path.join(cwd, 'LEARNINGS.md');
+  if (!existsSync(learningsPath)) {
+    die(`harness harvest: LEARNINGS.md not found at ${learningsPath}`, 1);
+  }
+
+  const { harvestLearnings, formatHarvestReport, harvestExitCode } =
+    await import('../lib/harvest.mjs');
+  const md = readFileSync(learningsPath, 'utf8');
+  const opts = { mode, claimArea, now: new Date() };
+  if (staleDays !== undefined) opts.staleDays = staleDays;
+  const result = harvestLearnings(md, opts);
+  process.stdout.write(formatHarvestReport(result));
+  process.exit(harvestExitCode(result, { strict }));
 }
 
 // ---------------------------------------------------------------------------
