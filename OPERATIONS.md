@@ -266,7 +266,12 @@ Content PRs MUST pass four PR-side status checks before merge:
 | `review-threads-resolved` | Every GitHub review thread on the PR is resolved. |
 
 The `review-gates.yml` workflow runs on every PR except PRs labeled
-`workboard-only`; workboard-only claim/close-out PRs are already constrained by
+`workboard-only`. **The `workboard-only` bypass is confined to its path
+allowlist (CS63 C63-7):** a `validate-workboard-only-scope` job (and the
+`pr-evidence` skip-reason check) rejects a `workboard-only`-labelled PR whose
+diff touches any file outside `WORKBOARD.md` / `CONTEXT.md` / `LEARNINGS.md` /
+`project/clickstops/`, so the label cannot bypass review on content. Genuine
+workboard-only claim/close-out PRs are already constrained by
 the workboard-only validation path. Configure the gates under
 `harness.config.json → reviews`: `enforce_gates` controls workflow/ruleset
 installation, `require_copilot_review` lets consumers without Copilot reviews
@@ -285,6 +290,21 @@ for owner override (LRN-080). Decision #23 activates the
 `workboard-only` label + actor allowlist, submits the approval, and
 auto-merges. The global review-required rule stays in force; the bot's review
 satisfies it for eligible workboard-only PRs.
+
+#### Consumer structural PR gate (harness-pr-check, CS63a)
+
+Fresh `harness init` also installs `.github/workflows/harness-pr-check.yml`
+(default-on; opt out via `harness.config.json → pr_check.enabled: false`). On
+every PR it runs `harness lint` plus a file-class drift classifier
+(`scripts/check-managed-drift.mjs`) that **fails the PR when a `managed` or
+`composed` template file has been diverged** from its rendered template —
+shipping the structural-integrity protection the harness enforces on itself as a
+real consumer merge gate. `seeded` files are consumer-owned and never fail the
+gate. An emergency managed edit can land via a `harness-managed-edit-ack` PR
+label **plus** a `Harness-managed-edit:` justification line in the body (the
+override is surfaced in the gate output, never silent). The workflow reads the
+harness ref from the **base-branch** config and declares least-privilege
+permissions, defeating fork-PR ref injection.
 
 ### Workboard-first for out-of-CS work
 
