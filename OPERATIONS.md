@@ -553,6 +553,58 @@ per workstream, `[harness:csNN]` title prefix) apply unchanged. The
 PR-body checklist is per-PR; the issue-creation guard is
 per-workstream.
 
+### Adopting the strict PR template in an existing consumer (CS54b)
+
+The harness ships its PR template as a **composed** file
+(`.github/pull_request_template.md`, rendered from
+`template/composed/.github/pull_request_template.md`). Since v0.6.0
+the shipped template already carries the strict `## Model audit`
+(with `Implementer agent` / `Reviewer agent` rows + optional
+`Notes`) and the 6-column `## Review log`, so a **fresh**
+`harness init` seeds a consumer with the strict schema
+automatically.
+
+An **existing** consumer can still carry a stale, pre-strict copy
+(the SI PR #79 failure mode: a pre-v0.6.0 template silently produces
+an A3 hard-fail on `read-only-gates`). The harness does **not**
+auto-rewrite a consumer's `.github/pull_request_template.md` unless
+the consumer has opted the file into the composed flow — it is
+consumer scaffold, and silently overwriting it could clobber local
+customisations. Adoption is therefore **opt-in**:
+
+1. **One-time copy (recommended — simple and reliable).** Copy
+   `template/composed/.github/pull_request_template.md` from the
+   pinned harness version over the consumer's
+   `.github/pull_request_template.md` and commit it. This immediately
+   adopts the strict schema; the file stays consumer-owned (re-copy
+   on future harness bumps if desired).
+
+2. **Reclassify for an ongoing harness-seeded evidence block
+   (advanced).** Register `.github/pull_request_template.md` under the
+   consumer's `harness.config.json` `composed.files`, with a
+   `composed.overrides` entry that sets `"_inherited_class": "managed"`
+   **and** `"local_blocks": ["pull-request.review-evidence"]`
+   (mirroring how the harness itself ships the file). With that hint,
+   `harness sync` runs the inherited-managed merge, which **preserves
+   the consumer's existing content as-is** and, when the
+   `pull-request.review-evidence` block is absent, **appends a seeded
+   copy of it at end-of-file** (the strict `## Model audit` +
+   `## Review log` placeholders, with a sync warning to relocate the
+   block to your preferred position); an already-present block is
+   preserved as consumer-owned. This path therefore **adds** the strict
+   evidence sections to the current file rather than replacing it with
+   the canonical template layout — use the one-time copy above if you
+   want the full canonical template. Without the
+   `"_inherited_class": "managed"` hint, the first sync of a file whose
+   content does not already match the template fails closed
+   (`EMERGE_LEGACY_UNMAPPED`).
+
+Until a consumer adopts the strict template by either path, the
+**inline-sections fallback** in the pin-bump checklist above remains
+the safety net: author the canonical `## Model audit` + `## Review
+log` sections directly in each PR body at open time rather than
+relying on the (possibly stale) template to inject them.
+
 ### Narrow re-attest after trivial commits (CS54)
 
 When a content PR receives small follow-on commits in response to

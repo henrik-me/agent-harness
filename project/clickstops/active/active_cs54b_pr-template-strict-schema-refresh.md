@@ -66,17 +66,24 @@ The root cause is structural: the harness ships a managed PR template but consum
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1-TEMPLATE: refresh managed `template/managed/.github/pull_request_template.md` to strict v0.6.0+ schema (Model audit incl. `Notes` row + `Review log` 6-column, bare reviewer-model id) per C54b-1; keep any root self-host copy in lockstep per R2 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
-| T2-DOCS: OPERATIONS.md consumer upgrade-path subsection (opt-in adoption; no auto-rewrite of consumer files) per C54b-2 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
-| T3-TEST: structural assertions on the raw managed template + a rendered/filled fixture passing `check-review-evidence.mjs` (default strict) and `check-pr-body.mjs` per C54b-4 (min 2 assertions) | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
-| T4-CHANGELOG: `[Unreleased]` entry per Deliverable 4 | planned | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=orchestrator \| report-status=pending \| learnings=0 |
-| Orchestrator integration: full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review | planned | yoga-ah-c2 | Single-writer; orchestrator-implemented (no sub-agent dispatch). |
+| T1-TEMPLATE: refresh managed `template/managed/.github/pull_request_template.md` to strict v0.6.0+ schema (Model audit incl. `Notes` row + `Review log` 6-column, bare reviewer-model id) per C54b-1; keep any root self-host copy in lockstep per R2 | done | yoga-ah-c2 | report-status=complete. **Deviation:** target was an orphan; deleted it. Shipped `template/composed/.github/pull_request_template.md` already strict (no change). See Notes. |
+| T2-DOCS: OPERATIONS.md consumer upgrade-path subsection (opt-in adoption; no auto-rewrite of consumer files) per C54b-2 | done | yoga-ah-c2 | report-status=complete. Added "Adopting the strict PR template in an existing consumer (CS54b)" to `template/composed/OPERATIONS.md` + rendered root (lockstep). |
+| T3-TEST: structural assertions on the raw managed template + a rendered/filled fixture passing `check-review-evidence.mjs` (default strict) and `check-pr-body.mjs` per C54b-4 (min 2 assertions) | done | yoga-ah-c2 | report-status=complete. `tests/cs54b-pr-template-strict.test.mjs` (5 cases) — retargeted to the shipped composed template per the deviation. |
+| T4-CHANGELOG: `[Unreleased]` entry per Deliverable 4 | done | yoga-ah-c2 | report-status=complete. |
+| Orchestrator integration: full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review | active | yoga-ah-c2 | Single-writer. node --test 1118 pass / 0 fail; lint 30/0/3; sync no-drift. GPT-5.5 review at PR. |
 | Close-out: docs + restart state — update `WORKBOARD.md` (remove CS54b Active Work row), `CONTEXT.md`, and any process templates/rendered roots as needed | planned | yoga-ah-c2 | — |
 | Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`; planned follow-ups for unresolved issues | planned | yoga-ah-c2 | — |
 
 ## Notes / Learnings
 
-(filled during execution)
+**Deviation (2026-06-06, `yoga-ah-c2`) — C54b-1's target is an orphaned file; implemented against reality per LRN-143 (hashed `## Decisions` / `## Deliverables` left intact).** Pre-implementation investigation found `template/managed/.github/pull_request_template.md` is a **dead orphan**: the PR template was migrated to a *composed* file at CS38a (PR #163), and `.github/pull_request_template.md` is listed under `composed.files` (rendered from `template/composed/.github/pull_request_template.md`), NOT `managed.files`. The `template/managed/` copy is referenced by no code, test, linter, or sync file-list (`grep` across `lib/` / `scripts/` / `bin/` / `tests/` / `harness.config.json`: zero hits) and never ships. The shipped composed template is **already** at the strict v0.6.0+ schema (`## Model audit` with `Implementer agent` / `Reviewer agent` + optional `Notes`; `## Review log` 6-column), so fresh `init` / `sync` consumers already inherit it — the SI PR #79 failure was a *stale consumer copy*, not the harness shipping pre-strict.
+
+**Resolution (delivers the Deliverables' intent against reality):**
+- C54b-1 / Deliverable 1 → **deleted** the orphan `template/managed/.github/pull_request_template.md` (removes the very drift-risk duplicate this CS exists to prevent); the shipped `template/composed/.github/pull_request_template.md` is already strict (verified — no change needed).
+- C54b-4 / Deliverable 3 → the new `tests/cs54b-pr-template-strict.test.mjs` asserts the **composed** (shipped) template's strict structure + a filled fixture passing `check-review-evidence.mjs` (strict) and `check-pr-body.mjs` (retargeted from the orphan).
+- C54b-2 / Deliverables 2 & 4 (OPERATIONS upgrade-path subsection + CHANGELOG) → unchanged.
+
+**Learning:** the plan (and its R1/R2 plan review) targeted an orphaned path and asserted the shipped template was pre-strict — a plan-side fact-claim miss that supports CS58 / LRN-139. To be filed as a new LRN at close-out.
 
 ## Model audit
 
