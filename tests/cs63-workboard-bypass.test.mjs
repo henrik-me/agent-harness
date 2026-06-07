@@ -92,4 +92,16 @@ describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist
       );
     }
   });
+
+  // CS63 Copilot review: both bypass workflows gate on the workboard-only label,
+  // so they MUST re-run on label add/remove or the bypass would not re-evaluate
+  // when the label is toggled after the PR is opened (matches workboard-auto-approve.yml).
+  it('both bypass workflows re-run on label add/remove', () => {
+    for (const w of ['review-gates.yml', 'pr-evidence-lint.yml']) {
+      const doc = yaml.load(read(`.github/workflows/${w}`));
+      const types = doc.on.pull_request.types;
+      assert.ok(types.includes('labeled'), `${w}: pull_request.types must include 'labeled'`);
+      assert.ok(types.includes('unlabeled'), `${w}: pull_request.types must include 'unlabeled'`);
+    }
+  });
 });

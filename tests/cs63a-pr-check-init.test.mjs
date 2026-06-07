@@ -105,4 +105,10 @@ describe('CS63a — harness-pr-check.yml hardening (CS63 R13 / C63-3)', () => {
       'GH_SHA must prefer github.event.pull_request.head.sha'
     );
   });
+
+  it('structural-gate step runs under set -euo pipefail', () => {
+    // CS63 Copilot review: the clone/checkout/npm ci step must fail loudly on any
+    // error (errexit + nounset + pipefail), not silently proceed to the gate.
+    assert.match(wf, /set -euo pipefail/, 'structural-gate run block must enable set -euo pipefail');
+  });
 });

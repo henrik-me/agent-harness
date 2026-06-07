@@ -128,7 +128,7 @@ async function main(argv) {
       configPath,
     });
   } catch (err) {
-    process.stderr.write(`check-managed-drift: sync failed: ${err.message}\n`);
+    process.stderr.write(`check-managed-drift: sync failed: ${err?.message ?? String(err)}\n`);
     process.exit(2);
   }
 

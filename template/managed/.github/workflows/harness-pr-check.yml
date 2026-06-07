@@ -107,6 +107,7 @@ jobs:
           CLI_REF: ${{ steps.derive-ref.outputs.ref }}
           ACK: ${{ steps.ack.outputs.ack }}
         run: |
+          set -euo pipefail
           consumer="$GITHUB_WORKSPACE"
           tmp="$(mktemp -d)"
           git clone --quiet --no-checkout https://github.com/henrik-me/agent-harness.git "$tmp"
