@@ -125,7 +125,8 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - **Pre-claim gate:** before claiming, review `LEARNINGS.md` for stale `open` items
   tagged `process` or `architectural`, or items whose `claim_area` matches the area
   you are about to claim. Disposition all relevant items before proceeding.
-  `harness harvest` (CS04+) runs this check automatically as part of `claim`.
+  `harness harvest` runs this pre-claim scan — run it before claiming. (A future
+  `harness claim` command will invoke it automatically; tracked in CS64.)
 
 ### Re-evaluating private-tier disposition
 
@@ -359,7 +360,8 @@ For each `open` learning, choose one disposition:
 
 #### Before-Claim (bounded)
 
-Triggered automatically by `harness claim` (CS04+). **Silent if no stale relevant
+Run `harness harvest` before claiming a CS (a future `harness claim` command
+will run it automatically — tracked in CS64). **Silent if no stale relevant
 learning exists.** Fires only when at least one of the following is true:
 
 - a stale `open` learning is tagged `process` or `architectural`;
