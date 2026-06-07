@@ -1,9 +1,9 @@
 # CS63c — Guided update + architectural evaluations (CS63 sibling)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c3
+**Branch:** cs63c/content
+**Started:** 2026-06-07
 **Closed:** —
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **guided-update + evaluations** slice of the CS63 umbrella (workstreams W4 + W6).
 **Depends on:** **CS63** (umbrella — all decisions/risks). Shares the orchestrator-owned `bin/harness.mjs` + `OPERATIONS.md`/`README.md` (+ mirrors) with CS63b → those shared-file edits **serialize** (CS63 C63-10). Independent of CS63a. The CS64/CS65 stubs this slice was to file are **already filed** (2026-06-06).
@@ -65,11 +65,29 @@ Inherits CS63 risks **R7** (upgrade must be dry-run-only / no apply-path rewrite
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| W4 — `lib/upgrade.mjs` (guided `harness upgrade` dry-run preview, additive over `lib/sync.mjs`) + `tests/lib-upgrade.test.mjs` | done | yoga-ah-c3 | implemented on `cs63c/content` (prior session); CS63 deliverables 11,12 |
+| W4 — `bin/harness.mjs` `harness upgrade` registration + help (serialized vs CS63b per C63-10) | done | yoga-ah-c3 | on `cs63c/content`; needs rebase onto current main (CS63a/b bin/harness.mjs edits) |
+| W6 — architectural-evaluation proposal artifact (CLI-first skills + OPERATIONS/LEARNINGS right-sizing + C63-11 disposition) in the `done_` dir | pending | yoga-ah-c3 | orchestrator-authored at close-out; records CS63 C63-8/9/11 (already-confirmed decisions) |
+| W6 — `CONTEXT.md` history cap (current + last 2 "Prior" blocks) | pending | yoga-ah-c3 | CS63 deliverable 16 / C63-9; older detail lives in `done_csNN` files |
+| W4 — `README.md`/`OPERATIONS.md` (+ mirror) clone-install first-class + `harness upgrade` documented | pending | yoga-ah-c3 | CS63 deliverables 18,20 subset |
+| CHANGELOG `[Unreleased]` entry for `harness upgrade` | pending | yoga-ah-c3 | CS63 deliverable 21 subset; the minor-bump trigger for the arc |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | pending | yoga-ah-c3 | rebase `cs63c/content` onto current main (resolve bin/harness.mjs) |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
 
 ## Notes / Learnings
 
 (filled during execution)
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c3 |
+| Reviewer agent | rubber-duck |
+| Notes | W4 code implemented on `cs63c/content` (prior session, claude-opus-4.8); W6 deliverables orchestrator-authored (claude-opus-4.8). Reviewer GPT-5.5 + independent reviewer per REVIEWS.md independence invariant. |
 
 ## Plan-vs-implementation review
 
