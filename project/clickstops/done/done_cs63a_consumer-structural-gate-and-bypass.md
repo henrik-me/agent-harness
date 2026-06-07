@@ -68,9 +68,9 @@ Inherits CS63 risks **R2** (seeded-drift classifier), **R3** (ack auditability),
 | W1 — consumer structural PR gate (`harness-pr-check.yml` + `check-managed-drift.mjs` classifier + `pr_check` schema/config) | done | yoga-ah-c3 | implemented on `cs63a/content`; CS63 deliverables 1–5 |
 | W5 — `workboard-only` bypass hardening (`pr-evidence-lint.yml` + `review-gates.yml` path-allowlist confinement + tests) | done | yoga-ah-c3 | implemented on `cs63a/content`; C63-7, deliverables 13–14 |
 | W7 subset — orchestrator integration (`bin/harness.mjs` `cmdInit` wiring + `INSTRUCTIONS.md`/`OPERATIONS.md` (+ mirrors) docs + `CHANGELOG.md`) | done | yoga-ah-c3 | serialized vs CS63b/CS63c per C63-10 |
-| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | in_progress | yoga-ah-c3 | `cs63a/content` rebased onto current main |
-| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
-| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | done | yoga-ah-c3 | PR #264 merged (squash `547d25a`); 8 review rounds (gpt-5.5 R1–R8 + 5 Copilot) |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | done | yoga-ah-c3 | WORKBOARD row removed; CONTEXT Last-updated + suggested-next refreshed; CHANGELOG `[Unreleased]` |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | done | yoga-ah-c3 | LRN-155 filed; C63a-2 deviation escalated → CS63c/CS64 |
 
 ## Notes / Learnings
 
