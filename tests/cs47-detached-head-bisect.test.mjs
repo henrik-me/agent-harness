@@ -228,6 +228,10 @@ const SUBCOMMAND_PLAN = {
     skip: 'Reads a reviewer-output file + read-only `git diff` (scripts/check-review-output.mjs); ' +
       'a post-review capture tool, not exercised here.',
   },
+  upgrade: {
+    skip: 'Clones the harness at a target ref + runs a dry-run sync to preview an upgrade; ' +
+      'network-dependent and performs no HEAD-moving git operation in this repo (lib/upgrade.mjs).',
+  },
 };
 
 function git(cwd, args, env) {
