@@ -104,4 +104,16 @@ describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist
       assert.ok(types.includes('unlabeled'), `${w}: pull_request.types must include 'unlabeled'`);
     }
   });
+
+  // CS63 Copilot review: piping `gh api ... | grep ... || true` masks gh api
+  // failures (auth/rate-limit/network) as "no files outside allowlist", which would
+  // FAIL OPEN (wrongly confirm the bypass). The guard must capture the API result
+  // first and fail closed on error.
+  it('the bypass guard fails closed on a gh api error', () => {
+    for (const w of ['review-gates.yml', 'pr-evidence-lint.yml']) {
+      const src = read(`.github/workflows/${w}`);
+      assert.match(src, /files=\$\(gh api/, `${w}: gh api output must be captured into a variable, not piped straight into grep`);
+      assert.match(src, /gh api failed; refusing to confirm bypass/, `${w}: must fail closed (exit 1) on a gh api error`);
+    }
+  });
 });
