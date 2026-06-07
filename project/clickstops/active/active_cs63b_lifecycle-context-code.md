@@ -65,13 +65,19 @@ Inherits CS63 risks **R4** (advisory harvest must not wedge claims), **R5** (man
 | W2 — adopt + finalize `lib/harvest.mjs` (+ `tests/lib-harvest.test.mjs`); wire `bin/harness.mjs` `cmdHarvest` to it (replace the `die` stub) | done | yoga-ah-c3 | implemented on `cs63b/content`; CS63 deliverables 6,7 (C63-4) |
 | W3 — `scripts/check-closeout-freshness.mjs` (+ tests/fixtures); wire into `cmdLint` aggregator + `pr-evidence` | done | yoga-ah-c3 | implemented on `cs63b/content`; CS63 deliverables 9,10 (C63-5) |
 | C1 — doc-vs-reality: correct INSTRUCTIONS/OPERATIONS harvest/claim automation claims (+ mirrors, lockstep) | done | yoga-ah-c3 | serialized vs CS63c (C63-10) |
-| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | in_progress | yoga-ah-c3 | `cs63b/content` rebased onto current main |
-| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
-| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | done | yoga-ah-c3 | PR #267 merged (squash `219fbfc`); 6 gpt-5.5 rounds + 5 Copilot rounds |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs so a fresh agent can restart | done | yoga-ah-c3 | WORKBOARD row removed; CONTEXT refreshed; OPERATIONS C1 gap fixed at close-out |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | done | yoga-ah-c3 | LRN-156 filed |
 
 ## Notes / Learnings
 
 - 2026-06-06: `lib/harvest.mjs` + `tests/lib-harvest.test.mjs` prototyped scope-independently (untracked working-tree spike; 12 tests pass; full suite green). To be adopted as deliverable 1 when this CS is claimed. **Validated end-to-end against the real `LEARNINGS.md`**: bounded pre-claim mode surfaces the stale open LRN-101 (process, 27d) for disposition and correctly excludes the fresh open LRN-139 (9d, < 14d threshold); weekly mode reports both open entries. Remaining W2 work is the thin `cmdHarvest` CLI wiring + the C1 doc-vs-reality edits.
+
+**Close-out deviations (2026-06-07, `yoga-ah-c3`):**
+
+- **Deliverable 4 (C1) — OPERATIONS.md fixed at close-out.** The plan named INSTRUCTIONS.md **and** OPERATIONS.md, but the content PR (#267) corrected only INSTRUCTIONS.md (+ template/managed mirror). The plan-vs-implementation gate (PVI-R1, gpt-5.5) caught that OPERATIONS.md (+ template/composed mirror) still falsely said "`harness claim` runs `harness harvest` automatically" (no `claim` command exists; auto-invocation is CS64). **Fixed in this close-out PR**: both OPERATIONS surfaces now say "run `harness harvest` before claiming; a future `harness claim` will run it automatically (CS64)", matching INSTRUCTIONS.md. PVI-R2 → GO.
+- **Deliverable 2 divergence (accepted by PVI).** The planned `tests/fixtures/cs63/closeout/**` committed fixtures were not added; the tests instead build temp git repos (`os.tmpdir()`) and perform real `git mv` renames — stronger coverage that directly catches the `--name-only` rename-collapse regression.
+- **LRN-156** filed: `git diff --name-only` collapses a rename to the destination path only; gates needing the rename source must use `--no-renames` / `--name-status -M` / files-API `previous_filename`. This same bug independently broke CS63a's bypass guard **and** CS63b's close-out gate.
 
 ## Model audit
 

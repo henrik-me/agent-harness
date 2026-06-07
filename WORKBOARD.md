@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-07 (CS63b CLAIMED by yoga-ah-c3 — lifecycle/context-integrity code (CS63 arc W2+W3): real `harness harvest` + close-out-freshness gate + doc-vs-reality fixes; branch `cs63b/content`. Prior: CS63a CLOSED by yoga-ah-c3 (consumer structural PR gate, PR #264/#265, LRN-155); CS61b active by yoga-ah.)
+> **Last updated:** 2026-06-07 (CS63b CLOSED by yoga-ah-c3 — real `harness harvest` (W2) + close-out context-integrity gate (W3) + C1 doc-vs-reality; PR #267 content merged (squash `219fbfc`), 6 gpt-5.5 rounds + 5 Copilot rounds, plan-vs-impl GO (R2 after the OPERATIONS.md C1 gap fix). LRN-156 filed (`git diff --name-only` collapses renames). Prior: CS63a CLOSED by yoga-ah-c3 (PR #264/#265, LRN-155); CS61b active by yoga-ah.)
 
 ## Orchestrators
 
@@ -27,6 +27,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS61b | Out-of-CS learnings hygiene: restore LRN-106 header + knowledge-capture doctrine (LRN-153/154) + INSTRUCTIONS rule | 🟢 Active | yoga-ah | fix/lrn-106-missing-header | 2026-06-06 | — |
-| CS63b | Lifecycle + context-integrity code (CS63 arc sibling, W2+W3) | 🟢 Active | yoga-ah-c3 | cs63b/content | 2026-06-07 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
