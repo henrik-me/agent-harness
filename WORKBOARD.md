@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-06 (CS54b CLAIMED by yoga-ah-c2 — PR template strict-schema refresh; content branch cs54b/content. Prior: CS62 CLOSED — fresh-clone bootstrap self-containment, LRN-146 applied, PR #251 merged (squash 9f26d8d).)
+> **Last updated:** 2026-06-07 (CS54b CLOSED by yoga-ah-c2 — strict PR-template lock + consumer upgrade-path doc; deleted orphan managed template (deviation per LRN-143); PR #258 merged (squash b4d44d0), plan-vs-impl GO. LRN-152 filed. No release cut.)
 
 ## Orchestrators
 
@@ -25,6 +25,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS54b | PR template strict-schema refresh | 🟢 Active | yoga-ah-c2 | cs54b/content | 2026-06-06 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
