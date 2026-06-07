@@ -1,10 +1,10 @@
 # CS63b — Lifecycle + context-integrity code + doc-vs-reality (CS63 sibling)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c3
 **Branch:** cs63b/content
 **Started:** 2026-06-07
-**Closed:** —
+**Closed:** 2026-06-07
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **code-class** slice of the CS63 umbrella (workstreams W2 + W3) plus the C1 doc-vs-reality fix.
 **Depends on:** **CS63** (umbrella — all decisions/risks). Shares the orchestrator-owned `bin/harness.mjs` + `INSTRUCTIONS.md`/`OPERATIONS.md` (+ mirrors) with CS63c → those shared-file edits **serialize** (CS63 C63-10); the new-file deliverables (`lib/harvest.mjs`, `scripts/check-closeout-freshness.mjs`) are disjoint and independent. Independent of CS63a.
 
@@ -91,4 +91,18 @@ Inherits CS63 risks **R4** (advisory harvest must not wedge claims), **R5** (man
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 rubber-duck
+**Date:** 2026-06-07T21:00:00Z
+**Outcome:** GO
+
+R1 (NEEDS-FIX) flagged one blocker — deliverable 4 (C1) was incomplete: `OPERATIONS.md` (+ `template/composed/OPERATIONS.md` mirror) still falsely said `harness claim` runs `harness harvest` automatically (no `claim` command exists; auto-invocation is CS64). Fixed in this close-out PR (both surfaces now match `INSTRUCTIONS.md`; `sync --mode=check` no drift); R2 → GO.
+
+| # | Deliverable | Outcome |
+|---|---|---|
+| 1 | `lib/harvest.mjs` + `tests/lib-harvest.test.mjs` | match — deterministic, network-free, advisory; stale/fresh/weekly/claim-area/advisory covered |
+| 2 | `scripts/check-closeout-freshness.mjs` + tests (+ fixtures) | diverged / accepted — tests build temp git repos with real `git mv` instead of committed `tests/fixtures/cs63/closeout/**`; stronger regression coverage for the `--name-only` rename-collapse bug |
+| 3 | `bin/harness.mjs` wiring (cmdHarvest, cmdLint + pr-evidence, STUB help) | match — harvest de-STUBbed; check-migration/composed-audit remain STUB; close-out gate wired into both lint + pr-evidence with `--no-renames` |
+| 4 | INSTRUCTIONS + OPERATIONS (+ mirrors) C1 doc fix | match — OPERATIONS gap fixed at close-out per PVI-R1; no false "claim runs harvest automatically" passage remains |
+| 5 | CHANGELOG `[Unreleased]` entry | match |
+
+**Test coverage:** sufficient — harvest modes, close-out-freshness (real-rename integration + `--files`/`--base-head` mutual exclusivity), and CLI all covered; `harness lint` 30/0, `sync --mode=check` no drift.
