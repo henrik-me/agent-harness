@@ -15,11 +15,12 @@
  * existing `done_` file (e.g. a typo fix) does NOT trigger it (CS63 risk R6).
  *
  * Usage:
- *   node scripts/check-closeout-freshness.mjs --files <csv|@file>
- *     [--base <ref> --head <ref>] [--quiet] [--help]
+ *   node scripts/check-closeout-freshness.mjs
+ *     (--files <csv|@file> | --base <ref> --head <ref>) [--quiet] [--help]
  *
- *   Pass the PR's changed files via --files (comma-separated, or @path to a
- *   newline-delimited file). With --base/--head the changed set is computed via
+ *   Provide EITHER --files (comma-separated, or @path to a newline-delimited
+ *   file) OR --base/--head — the two are alternatives, not add-ons. With
+ *   --base/--head the changed set is computed via
  *   `git diff --name-only --no-renames <base> <head>`. `--no-renames` is required
  *   so an active->done rename surfaces as delete(active)+add(done) — both paths —
  *   which the same-CS-id close-out detector needs; `--name-only` alone reports only
