@@ -579,22 +579,25 @@ customisations. Adoption is therefore **opt-in**:
    adopts the strict schema; the file stays consumer-owned (re-copy
    on future harness bumps if desired).
 
-2. **Reclassify for ongoing harness-managed updates (advanced).**
-   Register `.github/pull_request_template.md` under the consumer's
-   `harness.config.json` `composed.files`, with a `composed.overrides`
-   entry that sets `"_inherited_class": "managed"` **and**
-   `"local_blocks": ["pull-request.review-evidence"]` (mirroring how
-   the harness itself ships the file). On `harness sync` the
-   harness-managed sections **outside** the
-   `pull-request.review-evidence` markers are refreshed verbatim from
-   the template — adopting the strict structure even from a
-   pre-strict file — while the content **inside** the markers (the
-   per-PR `## Model audit` + `## Review log` the author fills in) is
-   consumer-preserved (seeded from the template's placeholder only
-   when absent). Without the `"_inherited_class": "managed"` hint the
-   first sync of a non-matching file fails closed
-   (`EMERGE_LEGACY_UNMAPPED`) rather than guessing — do the one-time
-   copy first, or keep the class hint set.
+2. **Reclassify for an ongoing harness-seeded evidence block
+   (advanced).** Register `.github/pull_request_template.md` under the
+   consumer's `harness.config.json` `composed.files`, with a
+   `composed.overrides` entry that sets `"_inherited_class": "managed"`
+   **and** `"local_blocks": ["pull-request.review-evidence"]`
+   (mirroring how the harness itself ships the file). With that hint,
+   `harness sync` runs the inherited-managed merge, which **preserves
+   the consumer's existing content as-is** and, when the
+   `pull-request.review-evidence` block is absent, **appends a seeded
+   copy of it at end-of-file** (the strict `## Model audit` +
+   `## Review log` placeholders, with a sync warning to relocate the
+   block to your preferred position); an already-present block is
+   preserved as consumer-owned. This path therefore **adds** the strict
+   evidence sections to the current file rather than replacing it with
+   the canonical template layout — use the one-time copy above if you
+   want the full canonical template. Without the
+   `"_inherited_class": "managed"` hint, the first sync of a file whose
+   content does not already match the template fails closed
+   (`EMERGE_LEGACY_UNMAPPED`).
 
 Until a consumer adopts the strict template by either path, the
 **inline-sections fallback** in the pin-bump checklist above remains
