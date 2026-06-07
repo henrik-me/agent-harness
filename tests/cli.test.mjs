@@ -660,14 +660,14 @@ describe('harness lint', () => {
 });
 
 // ---------------------------------------------------------------------------
-// harvest (STUB)
+// harvest
 // ---------------------------------------------------------------------------
 
 describe('harness harvest', () => {
-  it('exits 3 with not-yet-implemented message', () => {
+  it('runs a learnings scan and exits 0 (advisory) by default', () => {
     const r = run(['harvest']);
-    assert.equal(r.status, 3, `Expected exit 3, got ${r.status}`);
-    assert.ok(r.stderr.includes('not yet implemented'), `Expected "not yet implemented" in stderr; got: ${r.stderr}`);
+    assert.equal(r.status, 0, `Expected advisory exit 0, got ${r.status}: ${r.stderr}`);
+    assert.match(r.stdout, /^harvest:/, `Expected a harvest report; got: ${r.stdout}`);
   });
 });
 
@@ -1187,9 +1187,9 @@ describe('stub subcommand fail-closed (Blocker 7)', () => {
     assert.equal(r.status, 2, `Expected exit 2; got ${r.status}`);
   });
 
-  it('harvest --snooze=reason:2099-01-01 exits 3 (recognized flag, still not implemented)', () => {
+  it('harvest --snooze=reason:2099-01-01 is a recognized flag (exits 0 advisory)', () => {
     const r = run(['harvest', '--snooze=reason:2099-01-01']);
-    assert.equal(r.status, 3, `Expected exit 3; got ${r.status}`);
+    assert.equal(r.status, 0, `Expected advisory exit 0; got ${r.status}`);
   });
 });
 

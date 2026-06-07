@@ -103,7 +103,7 @@ Subcommands:
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
   lint              Run all harness structural + policy linters (14 linters)
-  harvest           Run harvest procedure (STUB — full impl in later CS)
+  harvest           Scan LEARNINGS.md for stale open learnings (pre-claim/weekly)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
   copilot-engage    Request Copilot review on a PR + poll for completion
@@ -265,12 +265,18 @@ Exit codes:
   harvest: `
 Usage: harness harvest [options]
 
-Run the full harvest procedure (collects learnings, updates WORKBOARD, etc.).
-STUB in CS04 — full implementation in a later CS.
+Scan LEARNINGS.md for open learnings needing disposition — the pre-claim gate
+and the weekly sweep. Deterministic, network-free, advisory by default.
 
 Options:
-  --snooze=<reason>:<deferred_until>  Defer harvest with a reason and date
-  --help                              Print this help
+  --weekly             Weekly sweep: surface ALL open learnings (default:
+                       bounded pre-claim — only stale process/architectural
+                       items or claim-area matches).
+  --claim-area <area>  Also surface open learnings whose claim_area == <area>.
+  --stale-days <n>     Staleness threshold for pre-claim mode (default: 14).
+  --strict             Exit 1 if any candidates remain (default: advisory 0).
+  --file <path>        LEARNINGS.md location (default: <cwd>/LEARNINGS.md).
+  --help               Print this help
 `.trimStart(),
 
   'check-migration': `
@@ -2387,6 +2393,42 @@ async function cmdLint(args, _global) {
   const results = [];
   let anyError = false;
 
+  // CS63 C63-5: close-out context-integrity — wire into the lint aggregator too
+  // (not only pr-evidence). Self-host-safe: included ONLY when the working
+  // branch's diff vs its origin/main fork point contains an active->done
+  // close-out rename; skipped silently when origin/main / the merge-base is
+  // unavailable (e.g. a shallow checkout), so it never false-fails non-close-out
+  // PRs or offline runs. --no-renames so a rename surfaces as delete+add (both
+  // paths), which the same-id active+done detector needs.
+  try {
+    const mb = spawnSync('git', ['merge-base', 'origin/main', 'HEAD'], { cwd, encoding: 'utf8' });
+    if (mb.status === 0 && mb.stdout.trim()) {
+      const cbase = mb.stdout.trim();
+      const cdiff = spawnSync('git', ['diff', '--name-only', '--no-renames', cbase, 'HEAD'], { cwd, encoding: 'utf8' });
+      if (cdiff.status === 0) {
+        const changed = cdiff.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+        const dIds = new Set();
+        const aIds = new Set();
+        for (const f of changed) {
+          const dm = /(?:^|\/)done_cs(\d+[a-z]?)_/.exec(f);
+          if (dm) dIds.add(dm[1]);
+          const am = /(?:^|\/)active_cs(\d+[a-z]?)_/.exec(f);
+          if (am) aIds.add(am[1]);
+        }
+        if ([...dIds].some((id) => aIds.has(id))) {
+          linters.push({
+            name: 'closeout-freshness',
+            script: 'check-closeout-freshness.mjs',
+            args: ['--files', changed.join(',')],
+            target: path.join(cwd, 'project', 'clickstops'),
+          });
+        }
+      }
+    }
+  } catch {
+    // advisory: never block lint on a git failure
+  }
+
   // CS31 + CS32/D1: validate that every name in --only / --skip matches at
   // least one known linter base name. Without this, a typo like
   // `lint --only text-encding` or `lint --skip text-encding` silently exits 0
@@ -2483,18 +2525,59 @@ async function cmdLint(args, _global) {
 // Subcommand: harvest (STUB)
 // ---------------------------------------------------------------------------
 
-async function cmdHarvest(args, _global) {
-  for (const a of args) {
+async function cmdHarvest(args, global) {
+  let mode = 'pre-claim';
+  let claimArea = null;
+  let staleDays;
+  let strict = false;
+  let filePath = null;
+
+  const valueFor = (i, flag) => {
+    if (!args[i + 1] || args[i + 1].startsWith('-')) {
+      die(`harness harvest: missing value for ${flag}\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
+    }
+    return args[i + 1];
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
     if (a === '--help' || a === '-h') {
       process.stdout.write(SUBCOMMAND_HELP['harvest']);
       process.exit(0);
+    } else if (a === '--weekly') {
+      mode = 'weekly';
+    } else if (a === '--claim-area') {
+      claimArea = valueFor(i, '--claim-area'); i++;
+    } else if (a === '--stale-days') {
+      staleDays = Number.parseInt(valueFor(i, '--stale-days'), 10); i++;
+      if (Number.isNaN(staleDays) || staleDays < 0) {
+        die(`harness harvest: --stale-days must be a non-negative integer\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
+      }
+    } else if (a === '--strict') {
+      strict = true;
+    } else if (a === '--file') {
+      filePath = valueFor(i, '--file'); i++;
     } else if (a.startsWith('--snooze=')) {
-      // recognized flag — parsed but ignored until implemented
+      // recognized; snooze persistence is a separate follow-up.
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['harvest']}`, 2);
     }
   }
-  die('harness harvest: not yet implemented (planned: CS-TBD)', 3);
+
+  const cwd = global && global.cwd ? global.cwd : process.cwd();
+  const learningsPath = filePath ? path.resolve(filePath) : path.join(cwd, 'LEARNINGS.md');
+  if (!existsSync(learningsPath)) {
+    die(`harness harvest: LEARNINGS.md not found at ${learningsPath}`, 1);
+  }
+
+  const { harvestLearnings, formatHarvestReport, harvestExitCode } =
+    await import('../lib/harvest.mjs');
+  const md = readFileSync(learningsPath, 'utf8');
+  const opts = { mode, claimArea, now: new Date() };
+  if (staleDays !== undefined) opts.staleDays = staleDays;
+  const result = harvestLearnings(md, opts);
+  process.stdout.write(formatHarvestReport(result));
+  process.exit(harvestExitCode(result, { strict }));
 }
 
 // ---------------------------------------------------------------------------
@@ -3272,6 +3355,36 @@ async function cmdPrEvidence(args, _global) {
       `harness pr-evidence: warning — could not compute planned/active diff ` +
       `(git exit ${diffResult.status}); A6 not registered. ` +
       `Ensure both base and head SHAs are fetched locally.\n`
+    );
+  }
+
+  // C2 close-out context-integrity (CS63 C63-5) — diff-scoped like A6. Register
+  // ONLY when the PR diff contains an active->done close-out rename (the same CS
+  // id appears as both active_ and done_); otherwise the gate is irrelevant and
+  // is omitted, leaving non-close-out PR evidence unchanged.
+  const fullDiff = spawnSync('git', ['diff', '--name-only', '--no-renames', `${base}..${head}`], { cwd, encoding: 'utf8' });
+  if (fullDiff.status === 0) {
+    const allChanged = fullDiff.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+    const doneIds = new Set();
+    const activeIds = new Set();
+    for (const f of allChanged) {
+      const d = /(?:^|\/)done_cs(\d+[a-z]?)_/.exec(f);
+      if (d) doneIds.add(d[1]);
+      const a = /(?:^|\/)active_cs(\d+[a-z]?)_/.exec(f);
+      if (a) activeIds.add(a[1]);
+    }
+    const hasCloseoutRename = [...doneIds].some((id) => activeIds.has(id));
+    if (hasCloseoutRename) {
+      gates.push({
+        name: 'C2 close-out-freshness',
+        script: 'check-closeout-freshness.mjs',
+        args: ['--files', allChanged.join(',')],
+      });
+    }
+  } else if (!quiet) {
+    process.stderr.write(
+      `harness pr-evidence: warning — could not compute full diff ` +
+      `(git exit ${fullDiff.status}); C2 close-out-freshness not registered.\n`
     );
   }
 
