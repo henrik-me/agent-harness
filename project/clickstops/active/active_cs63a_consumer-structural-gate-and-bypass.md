@@ -74,7 +74,14 @@ Inherits CS63 risks **R2** (seeded-drift classifier), **R3** (ack auditability),
 
 ## Notes / Learnings
 
-(filled during execution)
+**Close-out deviations (2026-06-07, `yoga-ah-c3`):**
+
+- **C63a-2 / CS63 C63-2 — existing-consumer auto-delivery NOT delivered (escalated).** The plan stated existing consumers receive the gate "on next `harness sync`". `harness sync` has **no new-managed-file reconciliation** — it processes only files already in the consumer's config `managed`/`composed`/`seeded` arrays (`lib/sync.mjs`) — and `cmdInit` installs the gate only on fresh init (`if (!configExists)`). Shipped the **accurate** claim instead (fresh-init default-on + documented manual adoption: copy the workflow + add it to `managed.files`); **escalated** the auto-delivery decision to the user and deferred it to CS63c (guided update) / CS64. **LRN-155** filed. (Caught by the GitHub Copilot content review on PR #264.)
+- **D3 (Deliverable 3) — fresh-init default-on via `cmdInit`, not the seeded config block.** `template/seeded/harness.config.json` was not given an explicit `pr_check` block; `cmdInit` materializes `pr_check.enabled: true` + the workflow on fresh init instead. Functionally equivalent and covered by `tests/cs63a-pr-check-init.test.mjs`. Accepted divergence (PVI).
+- **D4 (Deliverable 5) — test filename.** Fresh-init/schema coverage landed as `tests/cs63a-pr-check-init.test.mjs` rather than the plan's `tests/cs63-consumer-pr-check.test.mjs`. Cosmetic; coverage is present. Accepted divergence (PVI).
+- **D7 (Deliverable 7) — INSTRUCTIONS.md not updated.** The consumer PR gate + bypass tightening are documented in `OPERATIONS.md` (+ `template/composed/OPERATIONS.md` mirror), the procedures home; `INSTRUCTIONS.md` (orchestrator quick-ref) was not the appropriate home. Accepted divergence (PVI).
+
+**Review:** 8 rounds (gpt-5.5 R1–R8 + 5 GitHub Copilot rounds) on PR #264 caught 13+ real issues in the prior session's implementation — including security hardening (base-config opt-out vs PR-head self-disable, exact-match + rename-aware + fail-closed `workboard-only` bypass) and correctness (`await` async `main`, accurate adoption docs). The mandatory multi-reviewer content-PR gate proved its value on code that had never had a content PR.
 
 ## Model audit
 

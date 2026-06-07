@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-07 (CS63a CLAIMED by yoga-ah-c3 — consumer structural PR gate + bypass hardening (CS63 arc sibling W1+W5); CS63 arc plan filed via PR #260. Prior: CS61b active by yoga-ah (LRN-106 header restore); CS54b CLOSED by yoga-ah-c2 — strict PR-template lock, PR #258, LRN-152.)
+> **Last updated:** 2026-06-07 (CS63a CLOSED by yoga-ah-c3 — consumer structural PR gate + `workboard-only` bypass hardening shipped (CS63 arc W1+W5); PR #264 content merged (squash `547d25a`), 8 review rounds (gpt-5.5 R1–R8 + 5 Copilot), plan-vs-impl GO (R2 after CHANGELOG fix). LRN-155 filed (sync has no new-managed-file reconciliation). C63a-2 auto-sync-delivery deviation escalated → CS63c/CS64. Prior: CS61b active by yoga-ah; CS54b CLOSED by yoga-ah-c2.)
 
 ## Orchestrators
 
@@ -27,6 +27,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS61b | Out-of-CS learnings hygiene: restore LRN-106 header + knowledge-capture doctrine (LRN-153/154) + INSTRUCTIONS rule | 🟢 Active | yoga-ah | fix/lrn-106-missing-header | 2026-06-06 | — |
-| CS63a | Consumer structural PR gate + bypass hardening (CS63 arc sibling, W1+W5) | 🟢 Active | yoga-ah-c3 | cs63a/content | 2026-06-07 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
