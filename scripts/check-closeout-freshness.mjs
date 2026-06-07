@@ -122,6 +122,11 @@ function main(argv) {
     else { process.stderr.write(`check-closeout-freshness: unknown flag: ${a}\n\n${USAGE}\n`); process.exit(2); }
   }
 
+  if (files && (base || head)) {
+    process.stderr.write(`check-closeout-freshness: --files and --base/--head are mutually exclusive\n\n${USAGE}\n`);
+    process.exit(2);
+  }
+
   if (!files) {
     if (base && head) {
       const r = spawnSync('git', ['diff', '--name-only', '--no-renames', base, head], { encoding: 'utf8' });

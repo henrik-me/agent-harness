@@ -85,6 +85,12 @@ test('CLI: --help exits 0, missing args exit 2', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' }).status, 2);
 });
 
+test('CLI: --files and --base/--head together => exit 2 (mutually exclusive)', () => {
+  const r = spawnSync(process.execPath, [SCRIPT, '--files', 'CONTEXT.md', '--base', 'HEAD~1', '--head', 'HEAD'], { encoding: 'utf8' });
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.match(r.stderr, /mutually exclusive/);
+});
+
 test('harness pr-evidence wires the C2 close-out-freshness gate (diff-scoped)', () => {
   const cli = readFileSync(path.join(__dirname, '..', 'bin', 'harness.mjs'), 'utf8');
   assert.match(cli, /name: 'C2 close-out-freshness'/, 'cmdPrEvidence must register the C2 gate');
