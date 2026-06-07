@@ -51,6 +51,25 @@ issue (rather than commit/push/PR directly) and is expected to create
 exactly one tracking issue labeled `harness-orchestrator` per cross-repo
 workstream.
 
+### Knowledge lives in the repo, not agent memory
+
+Durable, project-applicable knowledge MUST be recorded in versioned repo docs —
+never in an assistant's private "memory" feature. Learnings go in `LEARNINGS.md`
+(entry schema + harvest per [RETROSPECTIVES.md](RETROSPECTIVES.md)); doctrine and
+process go in this file, `OPERATIONS.md`, `CONVENTIONS.md`, or `REVIEWS.md`. The
+orchestrator may run across multiple machines and multiple repo clones, and
+per-agent memory is not committed, not shared, and not portable across them — so
+memory-only knowledge is invisible to every other clone and to any agent that
+restarts from the repo alone. The planning-locality rule makes the same point for
+session state: tactical session notes are allowed, but durable or strategic content
+must live in the repo, not in non-durable session files — if a fact is worth
+remembering, it is worth a commit. Use agent memory only for ephemeral, session-local
+scratch.
+
+This rule is doctrine — not mechanically enforceable (the harness cannot inspect an
+agent's private memory store). Orchestrator self-check and code review enforce it.
+Per [LRN-153](LEARNINGS.md#lrn-153).
+
 ---
 
 ## Quick Reference Checklist
