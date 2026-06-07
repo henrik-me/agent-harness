@@ -1,10 +1,10 @@
 # CS63a — Consumer structural PR gate + bypass hardening (CS63 sibling)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c3
 **Branch:** cs63a/content
 **Started:** 2026-06-07
-**Closed:** —
+**Closed:** 2026-06-07
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **template-class** slice of the CS63 umbrella (workstreams W1 + W5). Kept separate from the code/doc siblings (CS63b/CS63c) to honor the template-changes-own-CS doctrine (INSTRUCTIONS.md:517-518).
 **Depends on:** **CS63** (umbrella — all decisions/risks live there). Disjoint from CS63b/CS63c for its **new files** (the `template/.github/workflows/*` gate, `scripts/check-managed-drift.mjs`, schema/config, tests) — those may be built in parallel. Its **orchestrator-owned shared-file edits** (`bin/harness.mjs` `cmdInit`, `INSTRUCTIONS.md`/`OPERATIONS.md` + mirrors, `CHANGELOG.md`) are **serialized** with CS63b/CS63c per CS63 C63-10. The backing `scripts/check-managed-drift.mjs` is tightly coupled to the workflow gate and rides with it (acceptable per the CS64-rereview ruling that a template gate + its dedicated classifier is one cohesive unit, not piggy-backed implementation).
 
@@ -95,4 +95,22 @@ Inherits CS63 risks **R2** (seeded-drift classifier), **R3** (ack auditability),
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 rubber-duck
+**Date:** 2026-06-07T20:01:18Z
+**Outcome:** GO
+
+R1 (NEEDS-FIX) flagged one blocker — the missing CHANGELOG `[Unreleased]` entry (deliverable 6 / exit criterion 4); R2 confirmed the added entry's content was accurate but uncommitted; R3 verified it committed on `cs63a/close-out` (`6c88ef6`), non-empty vs `origin/main`, and accurate to the shipped implementation. Accepted divergences are recorded in `## Notes / Learnings`; LRN-155 documents the sync/new-managed-file delivery gap.
+
+| # | Deliverable | Outcome |
+|---|---|---|
+| 1 | `harness-pr-check.yml` consumer structural gate (base-config ref/opt-out, least-privilege perms, head-SHA fallback, ack valve) | match |
+| 2 | `check-managed-drift.mjs` classifier (managed/composed fail; seeded advisory) + tests | match |
+| 3 | `pr_check.enabled` default-on | diverged / accepted — delivered via `cmdInit` fresh-init wiring (tested), not an explicit seeded-config block |
+| 4 | fresh-init/schema test | diverged / accepted — landed as `tests/cs63a-pr-check-init.test.mjs` (cosmetic filename) |
+| 5 | `workboard-only` bypass hardening + tests | match — exact-match allowlist, rename/copy-source aware, label re-trigger, fail-closed on files-API error |
+| 6 | `cmdInit` wiring + CHANGELOG `[Unreleased]` | match — wiring present; CHANGELOG entry committed + accurate |
+| 7 | INSTRUCTIONS/OPERATIONS docs | diverged / accepted — documented in `OPERATIONS.md` (+ composed mirror), the procedures home; not `INSTRUCTIONS.md` |
+
+**Test coverage:** sufficient — drift classification, fresh-init/default-on, schema/config, and hardened `workboard-only` bypass scenarios are covered.
+
+**C63a-2 deviation (accepted/escalated):** existing-consumer auto-delivery on `sync` is not delivered (`harness sync` has no new-managed-file reconciliation); accurate manual-adoption claim shipped + escalated to the user → CS63c/CS64. See `## Notes / Learnings` + LRN-155.
