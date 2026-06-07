@@ -20,7 +20,10 @@
  *
  *   Pass the PR's changed files via --files (comma-separated, or @path to a
  *   newline-delimited file). With --base/--head the changed set is computed via
- *   `git diff --name-only <base> <head>`.
+ *   `git diff --name-only --no-renames <base> <head>`. `--no-renames` is required
+ *   so an active->done rename surfaces as delete(active)+add(done) — both paths —
+ *   which the same-CS-id close-out detector needs; `--name-only` alone reports only
+ *   the rename destination and would silently no-op the gate.
  *
  * Exit codes:
  *   0 — no close-out rename, or close-out with CONTEXT.md updated.
