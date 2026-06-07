@@ -54,3 +54,35 @@ describe('CS63a — config schema defines pr_check', () => {
     assert.equal(prCheck.properties?.enabled?.default, true);
   });
 });
+
+describe('CS63a — harness-pr-check.yml hardening (CS63 R13 / C63-3)', () => {
+  const wf = readFileSync(
+    path.join(REPO_ROOT, 'template', 'managed', '.github', 'workflows', 'harness-pr-check.yml'),
+    'utf8'
+  );
+
+  it('reads pr_check.enabled from the BASE config, never the PR head (self-disable guard)', () => {
+    // R13: a PR must not be able to set pr_check.enabled=false in its own diff to
+    // disable the structural gate on itself.
+    assert.match(wf, /PR_BASE_SHA/, 'opt-out must reference the base SHA');
+    assert.match(
+      wf,
+      /git show "\$\{PR_BASE_SHA\}:harness\.config\.json"/,
+      'opt-out must read pr_check.enabled from the base-tree config'
+    );
+    assert.doesNotMatch(
+      wf,
+      /require\('\.\/harness\.config\.json'\)/,
+      'opt-out must not read the PR-checkout config (a PR-head read is self-disabling)'
+    );
+  });
+
+  it('managed-edit-ack requires a non-empty justification line (bare label does not clear the gate)', () => {
+    // C63-3: label + a *non-empty* `Harness-managed-edit:` rationale are BOTH required.
+    assert.match(
+      wf,
+      /Harness-managed-edit:\[\[:space:\]\]\*\[\^\[:space:\]\]/,
+      'ack justification regex must require non-whitespace after the colon'
+    );
+  });
+});

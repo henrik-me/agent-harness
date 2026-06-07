@@ -138,7 +138,7 @@
     },
     "pr_check": {
       "type": "object",
-      "description": "CS63a / C63-2: configuration for the consumer PR-time structural gate (template/managed/.github/workflows/harness-pr-check.yml), which runs `harness lint` + a managed/composed drift classifier on every PR. Default-on for fresh `harness init` (CS63 G-gate-default); existing consumers receive it on the next `harness sync`.",
+      "description": "CS63a / C63-2: configuration for the consumer PR-time structural gate (template/managed/.github/workflows/harness-pr-check.yml), which runs `harness lint` + a managed/composed drift classifier on every PR. Default-on for fresh `harness init` (CS63 G-gate-default). Existing consumers adopt it by adding `.github/workflows/harness-pr-check.yml` to `managed.files` (or re-running `harness init`); automatic delivery on `harness sync` is tracked as guided-update follow-up (CS63c/CS64).",
       "additionalProperties": false,
       "properties": {
         "enabled": {

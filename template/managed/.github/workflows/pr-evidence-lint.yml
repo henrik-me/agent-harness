@@ -97,7 +97,11 @@ jobs:
           # A mislabeled PR touching files outside the allowlist is REJECTED here,
           # not skipped, so the label cannot be used to bypass review on content.
           if printf '%s' "$PR_LABELS" | grep -Fq '"workboard-only"'; then
-            outside=$(gh pr diff "$PR_NUM" --repo "$REPO" --name-only \
+            # CS63 R8: rename/copy-source aware — check BOTH the current path and the
+            # previous (rename/copy source) path so a PR cannot rename a non-allowlisted
+            # file into an allowlisted path to dodge the workboard-only skip.
+            outside=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUM}/files" \
+              --jq '.[] | .filename, (.previous_filename // empty)' \
               | grep -Ev '^(WORKBOARD\.md|CONTEXT\.md|LEARNINGS\.md|project/clickstops/(planned|active|done)/)' || true)
             if [ -n "$outside" ]; then
               echo "::error ::workboard-only label present but the PR changes files OUTSIDE the workboard allowlist (WORKBOARD.md / CONTEXT.md / LEARNINGS.md / project/clickstops/). Remove the label or split the PR."

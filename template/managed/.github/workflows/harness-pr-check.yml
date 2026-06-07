@@ -74,11 +74,17 @@ jobs:
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       - id: optout
-        name: Check pr_check opt-out
+        name: Check pr_check opt-out (BASE config, never PR head)
+        # CS63 R13: read pr_check.enabled from the BASE tree, NEVER the PR head —
+        # otherwise a PR could set pr_check.enabled=false in its own diff to
+        # disable the structural gate on itself.
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          enabled=$(node -e "try{const c=require('./harness.config.json');process.stdout.write(String(c.pr_check?.enabled!==false))}catch{process.stdout.write('true')}")
+          base_config=$(git show "${PR_BASE_SHA}:harness.config.json" 2>/dev/null || echo '')
+          enabled=$(printf '%s' "$base_config" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(String(JSON.parse(s).pr_check?.enabled!==false))}catch{process.stdout.write('true')}})")
           echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
-          if [ "$enabled" != "true" ]; then echo "harness-pr-check disabled via pr_check.enabled=false; skipping."; fi
+          if [ "$enabled" != "true" ]; then echo "harness-pr-check disabled via pr_check.enabled=false (base config); skipping."; fi
 
       - id: ack
         name: Detect managed-edit-ack valve
@@ -90,7 +96,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           has_label=$(printf '%s' "$PR_LABELS" | grep -q 'harness-managed-edit-ack' && echo true || echo false)
-          has_just=$(printf '%s' "$PR_BODY" | grep -qi '^Harness-managed-edit:' && echo true || echo false)
+          has_just=$(printf '%s' "$PR_BODY" | grep -qiE '^Harness-managed-edit:[[:space:]]*[^[:space:]]' && echo true || echo false)
           if [ "$has_label" = "true" ] && [ "$has_just" = "true" ]; then ack=true; else ack=false; fi
           echo "ack=$ack" >> "$GITHUB_OUTPUT"
           echo "managed-edit-ack: label=$has_label justification=$has_just => downgrade=$ack"

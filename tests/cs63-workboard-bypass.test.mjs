@@ -62,4 +62,17 @@ describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist
     // The guard exits non-zero (rejects) rather than silently skipping.
     assert.ok(src.includes('exit 1'), 'mislabeled PR must fail (exit 1), not skip');
   });
+
+  // CS63 R8: a name-only diff misses rename/copy SOURCES, so a PR could rename a
+  // non-allowlisted content file into an allowlisted path and still dodge the
+  // workboard-only skip. The guard must enumerate PR files and check BOTH the
+  // current path and previous_filename (matching workboard-auto-approve.yml).
+  it('the bypass guard is rename/copy-source aware (checks previous_filename)', () => {
+    for (const w of ['review-gates.yml', 'pr-evidence-lint.yml']) {
+      const src = read(`.github/workflows/${w}`);
+      assert.match(src, /previous_filename/, `${w}: guard must inspect rename/copy source paths (previous_filename)`);
+      assert.match(src, /pulls\/\$\{PR_NUM\}\/files/, `${w}: guard must enumerate PR files via the GitHub files API`);
+      assert.doesNotMatch(src, /--name-only/, `${w}: name-only diff omits rename sources (CS63 R8) — must not be used by the bypass guard`);
+    }
+  });
 });
