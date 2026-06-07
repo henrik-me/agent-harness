@@ -161,5 +161,5 @@ async function main(argv) {
 const invokedDirectly =
   process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
-  main(process.argv.slice(2));
+  await main(process.argv.slice(2));
 }

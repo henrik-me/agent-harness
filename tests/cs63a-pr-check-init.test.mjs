@@ -85,4 +85,24 @@ describe('CS63a — harness-pr-check.yml hardening (CS63 R13 / C63-3)', () => {
       'ack justification regex must require non-whitespace after the colon'
     );
   });
+
+  it('re-runs on label add/remove so the managed-edit-ack valve is reliable', () => {
+    // The ack valve toggles on a PR label; without labeled/unlabeled triggers the
+    // override would not take effect until an unrelated event.
+    assert.match(
+      wf,
+      /types:\s*\[[^\]]*\blabeled\b[^\]]*\bunlabeled\b[^\]]*\]/,
+      'pull_request.types must include labeled + unlabeled'
+    );
+  });
+
+  it('self-host ref fallback uses the PR head sha, not the merge sha', () => {
+    // github.sha is the merge commit on pull_request events and may not exist in a
+    // fresh clone; prefer head.sha (matches pr-evidence-lint.yml).
+    assert.match(
+      wf,
+      /GH_SHA:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\|\|\s*github\.sha\s*\}\}/,
+      'GH_SHA must prefer github.event.pull_request.head.sha'
+    );
+  });
 });

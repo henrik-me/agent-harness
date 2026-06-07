@@ -25,7 +25,7 @@ name: harness-pr-check
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -50,7 +50,7 @@ jobs:
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GH_REPO: ${{ github.repository }}
-          GH_SHA: ${{ github.sha }}
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           base_config=$(git show "${PR_BASE_SHA}:harness.config.json" 2>/dev/null || echo '')
           if [ -z "$base_config" ]; then
