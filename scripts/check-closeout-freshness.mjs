@@ -120,7 +120,7 @@ function main(argv) {
 
   if (!files) {
     if (base && head) {
-      const r = spawnSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' });
+      const r = spawnSync('git', ['diff', '--name-only', '--no-renames', base, head], { encoding: 'utf8' });
       if (r.status !== 0) {
         process.stderr.write(`check-closeout-freshness: git diff failed: ${r.stderr}\n`);
         process.exit(2);

@@ -103,7 +103,7 @@ Subcommands:
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
   lint              Run all harness structural + policy linters (14 linters)
-  harvest           Run harvest procedure (STUB — full impl in later CS)
+  harvest           Scan LEARNINGS.md for stale open learnings (pre-claim/weekly)
   check-migration   Detect migration issues from an existing harness (STUB)
   composed-audit    Audit composed blocks from an existing harness (STUB)
   copilot-engage    Request Copilot review on a PR + poll for completion
@@ -2393,6 +2393,42 @@ async function cmdLint(args, _global) {
   const results = [];
   let anyError = false;
 
+  // CS63 C63-5: close-out context-integrity — wire into the lint aggregator too
+  // (not only pr-evidence). Self-host-safe: included ONLY when the working
+  // branch's diff vs its origin/main fork point contains an active->done
+  // close-out rename; skipped silently when origin/main / the merge-base is
+  // unavailable (e.g. a shallow checkout), so it never false-fails non-close-out
+  // PRs or offline runs. --no-renames so a rename surfaces as delete+add (both
+  // paths), which the same-id active+done detector needs.
+  try {
+    const mb = spawnSync('git', ['merge-base', 'origin/main', 'HEAD'], { cwd, encoding: 'utf8' });
+    if (mb.status === 0 && mb.stdout.trim()) {
+      const cbase = mb.stdout.trim();
+      const cdiff = spawnSync('git', ['diff', '--name-only', '--no-renames', cbase, 'HEAD'], { cwd, encoding: 'utf8' });
+      if (cdiff.status === 0) {
+        const changed = cdiff.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+        const dIds = new Set();
+        const aIds = new Set();
+        for (const f of changed) {
+          const dm = /(?:^|\/)done_cs(\d+[a-z]?)_/.exec(f);
+          if (dm) dIds.add(dm[1]);
+          const am = /(?:^|\/)active_cs(\d+[a-z]?)_/.exec(f);
+          if (am) aIds.add(am[1]);
+        }
+        if ([...dIds].some((id) => aIds.has(id))) {
+          linters.push({
+            name: 'closeout-freshness',
+            script: 'check-closeout-freshness.mjs',
+            args: ['--files', changed.join(',')],
+            target: path.join(cwd, 'project', 'clickstops'),
+          });
+        }
+      }
+    }
+  } catch {
+    // advisory: never block lint on a git failure
+  }
+
   // CS31 + CS32/D1: validate that every name in --only / --skip matches at
   // least one known linter base name. Without this, a typo like
   // `lint --only text-encding` or `lint --skip text-encding` silently exits 0
@@ -3326,7 +3362,7 @@ async function cmdPrEvidence(args, _global) {
   // ONLY when the PR diff contains an active->done close-out rename (the same CS
   // id appears as both active_ and done_); otherwise the gate is irrelevant and
   // is omitted, leaving non-close-out PR evidence unchanged.
-  const fullDiff = spawnSync('git', ['diff', '--name-only', `${base}..${head}`], { cwd, encoding: 'utf8' });
+  const fullDiff = spawnSync('git', ['diff', '--name-only', '--no-renames', `${base}..${head}`], { cwd, encoding: 'utf8' });
   if (fullDiff.status === 0) {
     const allChanged = fullDiff.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
     const doneIds = new Set();

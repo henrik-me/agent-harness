@@ -7,7 +7,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classifyCloseoutFreshness } from '../scripts/check-closeout-freshness.mjs';
@@ -89,4 +90,64 @@ test('harness pr-evidence wires the C2 close-out-freshness gate (diff-scoped)', 
   assert.match(cli, /name: 'C2 close-out-freshness'/, 'cmdPrEvidence must register the C2 gate');
   assert.match(cli, /script: 'check-closeout-freshness\.mjs'/, 'C2 gate must invoke the linter');
   assert.match(cli, /hasCloseoutRename/, 'C2 gate must be diff-scoped to close-out renames (omitted otherwise)');
+});
+
+test('harness lint (cmdLint) also wires the close-out-freshness gate', () => {
+  const cli = readFileSync(path.join(__dirname, '..', 'bin', 'harness.mjs'), 'utf8');
+  assert.match(cli, /name: 'closeout-freshness'/, 'cmdLint must register the close-out-freshness linter');
+});
+
+// Regression for the rename-collapse bug: `git diff --name-only` reports ONLY the
+// rename DESTINATION, so the same-CS-id active+done detector saw only `done_` and
+// silently no-op'd the gate. The fix passes `--no-renames` so a rename surfaces as
+// delete(active)+add(done). These tests exercise the real --base/--head git path.
+function initRepo(prefix) {
+  const repo = mkdtempSync(path.join(os.tmpdir(), prefix));
+  const git = (...args) => {
+    const r = spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+    assert.equal(r.status, 0, `git ${args.join(' ')} failed: ${r.stderr}`);
+    return r;
+  };
+  git('init', '-q', '-b', 'main');
+  git('config', 'user.email', 'test@example.com');
+  git('config', 'user.name', 'test');
+  git('config', 'commit.gpgsign', 'false');
+  mkdirSync(path.join(repo, 'project', 'clickstops', 'active'), { recursive: true });
+  mkdirSync(path.join(repo, 'project', 'clickstops', 'done'), { recursive: true });
+  return { repo, git };
+}
+
+test('CLI --base/--head: real active->done rename with NO CONTEXT change => exit 1 (stale)', () => {
+  const { repo, git } = initRepo('closeout-freshness-stale-');
+  try {
+    writeFileSync(path.join(repo, 'project', 'clickstops', 'active', 'active_cs99_demo.md'), '# CS99\n');
+    writeFileSync(path.join(repo, 'CONTEXT.md'), 'context v1\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'seed active CS99');
+    git('mv', 'project/clickstops/active/active_cs99_demo.md', 'project/clickstops/done/done_cs99_demo.md');
+    git('commit', '-q', '-m', 'close out CS99 (no CONTEXT change)');
+    const r = spawnSync(process.execPath, [SCRIPT, '--base', 'HEAD~1', '--head', 'HEAD'], { cwd: repo, encoding: 'utf8' });
+    assert.equal(r.status, 1, `expected stale exit 1; got ${r.status}\n${r.stdout}${r.stderr}`);
+    assert.match(r.stdout + r.stderr, /CONTEXT\.md/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('CLI --base/--head: real active->done rename WITH a CONTEXT change => exit 0', () => {
+  const { repo, git } = initRepo('closeout-freshness-ok-');
+  try {
+    writeFileSync(path.join(repo, 'project', 'clickstops', 'active', 'active_cs99_demo.md'), '# CS99\n');
+    writeFileSync(path.join(repo, 'CONTEXT.md'), 'context v1\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'seed');
+    git('mv', 'project/clickstops/active/active_cs99_demo.md', 'project/clickstops/done/done_cs99_demo.md');
+    writeFileSync(path.join(repo, 'CONTEXT.md'), 'context v2 (updated at close-out)\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'close out CS99 + CONTEXT update');
+    const r = spawnSync(process.execPath, [SCRIPT, '--base', 'HEAD~1', '--head', 'HEAD'], { cwd: repo, encoding: 'utf8' });
+    assert.equal(r.status, 0, `expected ok exit 0; got ${r.status}\n${r.stdout}${r.stderr}`);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
 });
