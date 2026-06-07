@@ -87,10 +87,23 @@ jobs:
           PR_AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           PR_BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
           reasons=""
-          # workboard-only label short-circuits all gates (per C35-19).
+          # workboard-only label short-circuits all gates (per C35-19) — but ONLY
+          # when the diff is confined to the workboard path allowlist (CS63 C63-7).
+          # A mislabeled PR touching files outside the allowlist is REJECTED here,
+          # not skipped, so the label cannot be used to bypass review on content.
           if printf '%s' "$PR_LABELS" | grep -Fq '"workboard-only"'; then
+            outside=$(gh pr diff "$PR_NUM" --repo "$REPO" --name-only \
+              | grep -Ev '^(WORKBOARD\.md|CONTEXT\.md|LEARNINGS\.md|project/clickstops/(planned|active|done)/)' || true)
+            if [ -n "$outside" ]; then
+              echo "::error ::workboard-only label present but the PR changes files OUTSIDE the workboard allowlist (WORKBOARD.md / CONTEXT.md / LEARNINGS.md / project/clickstops/). Remove the label or split the PR."
+              printf '%s\n' "$outside" | sed 's/^/::error ::  outside-allowlist: /'
+              exit 1
+            fi
             reasons="${reasons:+$reasons,}workboard-only"
           fi
           # Bot-author detection: GitHub App / bot accounts have a [bot] suffix on login.
