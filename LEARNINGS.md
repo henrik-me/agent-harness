@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-06-06 (CS62 follow-up: **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
+> **Last updated:** 2026-06-06 (out-of-CS learnings hygiene (CS61b): **LRN-106**'s missing `### LRN-106` header restored; **LRN-153** added — durable knowledge belongs in repo docs (`LEARNINGS.md` + process docs), **not** agent memory, because the orchestrator runs across multiple machines/clones; **LRN-154** added (`open`) — `check-learnings.mjs` does not enforce a `### LRN-NNN` header matching each entry's frontmatter `id`. Earlier (CS62 follow-up): **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -11,6 +11,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 ---
 
 ## Open
+
+### LRN-154
+
+```yaml
+id: LRN-154
+date: 2026-06-06
+category: tooling
+source_cs: CS61b
+status: open
+tags: [learnings, check-learnings, header, frontmatter, linter-gap, counting, broken-anchor]
+claim_area: harness-cli
+```
+
+**Problem:** `LEARNINGS.md` entry **LRN-106** shipped with valid YAML frontmatter (`id: LRN-106`, `status: applied`) but **no `### LRN-106` H3 header** — the only entry missing one. `scripts/check-learnings.mjs` passed it with 0 errors: the linter validates frontmatter against `schemas/learning.schema.json` but never asserts that each entry has a `### LRN-<id>` markdown header matching its frontmatter `id`. Two consequences: (a) header-based counts undercount — `^### LRN-` matched one fewer than the authoritative frontmatter count (`^id: LRN-` / `^status:`); (b) a latent broken anchor — any `[LRN-106](LEARNINGS.md#lrn-106)` link (the form `scripts/check-instructions.mjs` resolves) would not reach a heading.
+
+**Finding:** Until the linter enforces it, count learnings by frontmatter (`^id: LRN-` / `^status:`), not by `^### LRN-` headers. `check-learnings.mjs` should gain a rule: every frontmatter `id: LRN-<n>` must be immediately preceded by a matching `### LRN-<n>` H3 header, so headerless entries (broken anchors + undercounting) fail CI. The LRN-106 header was restored in this change; the linter rule is the remaining open follow-up (small planned CS).
+
+**Evidence:** This session, 2026-06-06, clone `C:\src\agent-harness` (`yoga-ah`). Pre-fix: `^### LRN-\d+` matched one fewer entry than `^id:\s*LRN-`, the gap localised to `id: LRN-106` having no matching header. `node scripts/check-learnings.mjs --file LEARNINGS.md` reported 0 errors both before and after restoring the header, proving the linter does not check header presence. Cross-refs: LRN-153 (why captured here, not in agent memory); `scripts/check-instructions.mjs` (resolves `LEARNINGS.md#lrn-NNN` anchors).
+
+**Disposition:** Open — LRN-106 header restored in this change; the `check-learnings.mjs` header-presence rule remains to be implemented (file a planned CS). claim_area: harness-cli.
 
 ### LRN-152
 
@@ -81,6 +101,26 @@ claim_area: orchestrator-loop
 **Applied (CS62, 2026-06-06):** Both surfaces shipped and merged to `main` as squash commit `9f26d8d` (PR #251). (1) **Env-setup precondition** — `template/managed/INSTRUCTIONS.md` § Session Start now carries a "First-run environment setup" step (Node ≥ 20 + one-time `npm ci`; `node_modules` is gitignored/per-checkout) with an `ERR_MODULE_NOT_FOUND` ⇒ `npm ci` triage line, placed **before** the bootstrap sanity check; the rendered root `INSTRUCTIONS.md` was regenerated via `harness sync --mode=apply`; `README.md` § "Starting an agent session" cross-references the one-time setup and links `CONTRIBUTING.md`. (2) **Test hermeticity** — the two `harness whoami` assertions in `tests/cli.test.mjs` now pin `--cwd` to an `agent-harness`-named temp dir, so the strict `endsWith('-ah')` check is independent of the checkout folder basename (no regex weakening; production `cloneSuffixFromDir` unchanged per Decision #20). gpt-5.5 review-of-record Go (3 rounds incl. 2 post-rebase re-attests) + plan-vs-implementation GO. CS62.
 
 ## Applied
+
+### LRN-153
+
+```yaml
+id: LRN-153
+date: 2026-06-06
+category: process
+source_cs: CS61b
+status: applied
+tags: [knowledge-capture, learnings, agent-memory, multi-clone, multi-machine, portability, repo-docs]
+claim_area: orchestrator-loop
+```
+
+**Problem:** While doing post-CS61 learnings hygiene in clone `C:\src\agent-harness` (agent `yoga-ah`), the orchestrator tried to persist two harness facts — the layout of `LEARNINGS.md` and a counting/header gotcha (LRN-154) — via the assistant's `store_memory` tool instead of the repo. Agent/assistant "memory" is per-user and per-environment: it is never committed and does not travel to the other machines and repo clones this project is developed from (the WORKBOARD Orchestrators table lists both `yoga-ah` @ `C:\src\agent-harness` and `yoga-ah-c2` @ `C:\src\agent-harness_copilot2`). Knowledge captured only in agent memory is therefore invisible to every other clone, every other machine, and to any agent that restarts from the repo alone — the same non-durability the planning-locality rule (CS35 C35-11) guards against (it permits tactical session notes but keeps durable/strategic content in the repo, not in non-durable session-state files).
+
+**Finding:** **Durable, project-applicable knowledge MUST live in versioned repo docs, never in agent memory.** Learnings → `LEARNINGS.md` (entry schema + harvest per RETROSPECTIVES.md); doctrine/process → `INSTRUCTIONS.md` / `OPERATIONS.md` / `CONVENTIONS.md` / `REVIEWS.md`. The repo is the single portable source of truth across machines and clones; if a fact is worth remembering, it is worth a commit. Agent memory is for ephemeral, session-local scratch only.
+
+**Evidence:** This session, 2026-06-06, clone `C:\src\agent-harness` (`yoga-ah`), `main` @ `5517b20`. User directive: "you should store learnings in the learnings file and there should be a reference to this in instructions, agents will run on multiple different machines, and different clones of the repo" and "put knowledge in the relevant repo docs." Multi-clone coordination is already first-class in the harness (WORKBOARD.md Orchestrators table: `yoga-ah` and `yoga-ah-c2`). Cross-ref: planning-locality doctrine (INSTRUCTIONS.md § Hard rules; CS35 C35-11), which likewise keeps durable/strategic content out of non-durable session-state storage (tactical session notes are allowed).
+
+**Disposition:** Applied — `INSTRUCTIONS.md` § Hard rules gains a **"Knowledge lives in the repo, not agent memory"** rule (rendered from `template/managed/INSTRUCTIONS.md`), citing this learning. status: applied.
 
 ### LRN-149
 
@@ -3452,7 +3492,7 @@ Otherwise the doctrine is silently optional in consumers regardless of how rigor
 
 **Disposition:** Applied via [CS35](project/clickstops/active/active_cs35_enforcement-doctrine-and-planning-locality.md) Decision C35-16 (the gap-class doctrine itself), and operationalised across CS36 (PR-evidence FS+git linters), CS37 (Copilot review GraphQL spike), CS38a (CI workflow + `harness init` wiring), CS38b (retroactive PR #28 self-test), CS41 (Copilot engagement procedure + `harness copilot-engage`). v0.4.0 ships the verification half (B1/A2/A3/A4/A5/A6/A16-verify); v0.5.0 ships the engagement half (A16-engage). Status: applied.
 
-
+### LRN-106
 
 ```yaml
 id: LRN-106
