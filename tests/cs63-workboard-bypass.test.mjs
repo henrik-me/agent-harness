@@ -21,7 +21,9 @@ function read(rel) {
   return readFileSync(path.join(REPO_ROOT, rel), 'utf8');
 }
 
-const ALLOWLIST_RE = /WORKBOARD\\\.md\|CONTEXT\\\.md\|LEARNINGS\\\.md\|project\/clickstops\/\(planned\|active\|done\)\//;
+// Strict allowlist: the 3 root files are END-anchored (exact filenames, so
+// `WORKBOARD.md.bak` is rejected — CS63 Copilot review), clickstops by prefix.
+const ALLOWLIST_RE = /\(WORKBOARD\\\.md\|CONTEXT\\\.md\|LEARNINGS\\\.md\)\$\|\^project\/clickstops\/\(planned\|active\|done\)\//;
 
 describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist', () => {
   for (const w of ['review-gates.yml', 'pr-evidence-lint.yml']) {
@@ -73,6 +75,21 @@ describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist
       assert.match(src, /previous_filename/, `${w}: guard must inspect rename/copy source paths (previous_filename)`);
       assert.match(src, /pulls\/\$\{PR_NUM\}\/files/, `${w}: guard must enumerate PR files via the GitHub files API`);
       assert.doesNotMatch(src, /--name-only/, `${w}: name-only diff omits rename sources (CS63 R8) — must not be used by the bypass guard`);
+    }
+  });
+
+  // CS63 Copilot review: the 3 root files must be exact (end-anchored). The old
+  // form `LEARNINGS\.md|project/clickstops/...` prefix-matched, so `WORKBOARD.md.bak`
+  // would slip through the workboard-only skip.
+  it('the allowlist exact-matches the 3 root files (end-anchored, no prefix slip)', () => {
+    for (const w of ['review-gates.yml', 'pr-evidence-lint.yml']) {
+      const src = read(`.github/workflows/${w}`);
+      assert.match(src, ALLOWLIST_RE, `${w}: root-file allowlist must be end-anchored (exact filenames)`);
+      assert.doesNotMatch(
+        src,
+        /LEARNINGS\\\.md\|project\/clickstops/,
+        `${w}: root files must not be prefix-joined to the clickstops dir (WORKBOARD.md.bak would slip)`
+      );
     }
   });
 });

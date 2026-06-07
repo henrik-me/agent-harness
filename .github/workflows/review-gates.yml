@@ -33,7 +33,7 @@ jobs:
           # file into an allowlisted path to dodge the workboard-only skip.
           outside=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUM}/files" \
             --jq '.[] | .filename, (.previous_filename // empty)' \
-            | grep -Ev '^(WORKBOARD\.md|CONTEXT\.md|LEARNINGS\.md|project/clickstops/(planned|active|done)/)' || true)
+            | grep -Ev '^(WORKBOARD\.md|CONTEXT\.md|LEARNINGS\.md)$|^project/clickstops/(planned|active|done)/' || true)
           if [ -n "$outside" ]; then
             echo "::error ::workboard-only label present but the PR changes files OUTSIDE the workboard allowlist (WORKBOARD.md / CONTEXT.md / LEARNINGS.md / project/clickstops/). Remove the label or split the PR."
             printf '%s\n' "$outside" | sed 's/^/::error ::  outside-allowlist: /'

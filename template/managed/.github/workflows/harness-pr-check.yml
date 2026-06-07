@@ -95,7 +95,7 @@ jobs:
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          has_label=$(printf '%s' "$PR_LABELS" | grep -q 'harness-managed-edit-ack' && echo true || echo false)
+          has_label=$(printf '%s' "$PR_LABELS" | grep -Fq '"harness-managed-edit-ack"' && echo true || echo false)
           has_just=$(printf '%s' "$PR_BODY" | grep -qiE '^Harness-managed-edit:[[:space:]]*[^[:space:]]' && echo true || echo false)
           if [ "$has_label" = "true" ] && [ "$has_just" = "true" ]; then ack=true; else ack=false; fi
           echo "ack=$ack" >> "$GITHUB_OUTPUT"
