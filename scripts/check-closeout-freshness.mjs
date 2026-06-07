@@ -84,7 +84,7 @@ export function classifyCloseoutFreshness(changedFiles) {
 // ---------------------------------------------------------------------------
 
 const USAGE = [
-  'Usage: check-closeout-freshness.mjs --files <csv|@file> [--base <ref> --head <ref>] [--quiet] [--help]',
+  'Usage: check-closeout-freshness.mjs (--files <csv|@file> | --base <ref> --head <ref>) [--quiet] [--help]',
   '',
   'Fail (exit 1) when a CS close-out rename (active_csNN -> done_csNN) lands without a',
   'CONTEXT.md change. Warns if LEARNINGS.md is untouched. Exit codes: 0 ok, 1 stale, 2 usage.',
