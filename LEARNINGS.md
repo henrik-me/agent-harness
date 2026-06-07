@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-152
+
+```yaml
+id: LRN-152
+date: 2026-06-07
+category: process
+source_cs: CS54b
+status: open
+tags: [plan-review, fact-claim, deliverable-target, orphan-file, shipped-surface, doctrine-gap]
+claim_area: review-loops
+```
+
+**Problem:** CS54b's plan (C54b-1 / Deliverable 1) named `template/managed/.github/pull_request_template.md` as the PR template to refresh to the strict schema and asserted the harness ships a pre-strict template. Both plan-review rounds (R1/R2, gpt-5.5) passed without catching that this file is a **dead orphan**: the PR template was migrated to a *composed* file at CS38a (#163), so the shipped source is `template/composed/.github/pull_request_template.md` (already strict), and the `template/managed/` copy is unreferenced by `managed.files` / `composed.files` / any code and never ships.
+
+**Finding:** **Plan reviews must verify that a "modify file X" deliverable's target is the ACTUAL shipped/loaded surface, not merely that the path exists.** This is a distinct fact-claim failure mode from LRN-139 (a false-positive line citation): here the cited file *exists* but is the wrong (orphaned) surface, and the plan's premise about what ships was inverted. The check: confirm X is referenced by the relevant manifest (`harness.config.json` `managed.files` / `composed.files`), by code, or by sync — i.e. that editing X actually changes a shipped/consumed artefact. Folds into planned CS58 (extend REVIEWS.md §2.6a F1–F5 to plan reviews): add an F-check that each deliverable target path resolves to a live surface.
+
+**Evidence:** CS54b, 2026-06-07. `done_cs54b_*.md` C54b-1 / Deliverable 1 + `## Plan review` R1/R2 (both Go, gpt-5.5) named the orphan. Discovered pre-implementation: `grep -rn 'managed/.github/pull_request_template' lib scripts bin tests harness.config.json` → 0 hits; `harness.config.json` lists `.github/pull_request_template.md` under `composed.files` (override `_inherited_class:"managed"`), not `managed.files`; git shows the composed migration at CS38a (#163). Resolved in CS54b PR #258 (squash `b4d44d0`) by deleting the orphan + retargeting the test to the composed template (deviation per LRN-143). Related: LRN-139 (plan-side fact-claim gap), planned CS58 (the fix).
+
+**Disposition:** Open — folds into planned CS58. Adds the "deliverable target resolves to a live shipped/loaded surface" check to that scope.
+
 ### LRN-151
 
 ```yaml

@@ -1,10 +1,10 @@
 # CS54b — PR template strict-schema refresh (sibling of CS54, deferred per D54-5)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs54b/content
 **Started:** 2026-06-06
-**Closed:** —
+**Closed:** 2026-06-07
 **Filed by:** CS54 close-out (2026-06-03 by `yoga-ah`). CS54 D54-5 explicitly deferred the consumer-side `pull_request_template.md` refresh to a sibling CS because it touches consumer scaffold semantics with its own rollout risk. This file makes that deferred sibling concrete so it is not lost.
 **Depends on:** None hard. Related to CS54 (v0.7.0 cross-repo pin-bump checklist) and CS51/CS52 (the strict `## Model audit` / `## Review log` schema). May claim independently.
 
@@ -70,9 +70,9 @@ The root cause is structural: the harness ships a managed PR template but consum
 | T2-DOCS: OPERATIONS.md consumer upgrade-path subsection (opt-in adoption; no auto-rewrite of consumer files) per C54b-2 | done | yoga-ah-c2 | report-status=complete. Added "Adopting the strict PR template in an existing consumer (CS54b)" to `template/composed/OPERATIONS.md` + rendered root (lockstep). |
 | T3-TEST: structural assertions on the raw managed template + a rendered/filled fixture passing `check-review-evidence.mjs` (default strict) and `check-pr-body.mjs` per C54b-4 (min 2 assertions) | done | yoga-ah-c2 | report-status=complete. `tests/cs54b-pr-template-strict.test.mjs` (5 cases) — retargeted to the shipped composed template per the deviation. |
 | T4-CHANGELOG: `[Unreleased]` entry per Deliverable 4 | done | yoga-ah-c2 | report-status=complete. |
-| Orchestrator integration: full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review | active | yoga-ah-c2 | Single-writer. node --test 1118 pass / 0 fail; lint 30/0/3; sync no-drift. GPT-5.5 review at PR. |
-| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS54b Active Work row), `CONTEXT.md`, and any process templates/rendered roots as needed | planned | yoga-ah-c2 | — |
-| Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`; planned follow-ups for unresolved issues | planned | yoga-ah-c2 | — |
+| Orchestrator integration: full `node --test` + `harness lint --quiet` + `sync --mode=check`; GPT-5.5 rubber-duck local review | done | yoga-ah-c2 | Single-writer. node --test 1118 pass / 0 fail; lint 30/0/3; sync no-drift. Review ladder R1 Needs-Fix → R2 Needs-Fix → R3 Go (gpt-5.5); Copilot clean. |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS54b Active Work row), `CONTEXT.md`, and any process templates/rendered roots as needed | done | yoga-ah-c2 | WORKBOARD CS54b row removed; CONTEXT rolled forward. |
+| Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`; planned follow-ups for unresolved issues | done | yoga-ah-c2 | LRN-152 filed (plan-side fact-claim miss → supports CS58/LRN-139). |
 
 ## Notes / Learnings
 
@@ -96,4 +96,21 @@ The root cause is structural: the harness ships a managed PR template but consum
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-06-07T01:32:18Z
+**Outcome:** GO
+
+Run against the merged content HEAD (squash commit `b4d44d0`, PR #258). Reviewer model gpt-5.5 differs from the implementer model claude-opus-4.8 (independence invariant). No findings.
+
+Per-deliverable outcome:
+
+| Deliverable | Outcome | Rationale (non-match only) |
+|---|---|---|
+| 1. Managed PR template refreshed to strict (C54b-1) | diverged | Literal target `template/managed/.github/pull_request_template.md` was a dead orphan (the PR template became composed at CS38a #163; unreferenced by `managed.files` / `composed.files` / any code). Deleted it; the shipped source `template/composed/.github/pull_request_template.md` is already strict and is now locked by the new test — INTENT (shipped template strict, consumers inherit it) met. Deviation recorded in `## Notes` per LRN-143. |
+| 2. OPERATIONS consumer upgrade-path subsection (C54b-2) | match | — |
+| 3. Test: structural template + filled-fixture strict linters (C54b-4) | match | Retargeted to the shipped composed template per the deviation. |
+| 4. CHANGELOG `[Unreleased]` entry | match | — |
+
+Test-coverage assessment: **sufficient** — `tests/cs54b-pr-template-strict.test.mjs` (5 cases) locks the shipped composed template's strict structure (Model audit agent rows + 6-column Review log), asserts the orphan stays deleted, and derives a filled fixture that passes `check-review-evidence.mjs` (default strict) and `check-pr-body.mjs`. Full suite 1118 pass / 0 fail; `harness lint` 30/0; `sync --mode=check` no drift.
+
+The local review ladder (R1 Needs-Fix → R2 Needs-Fix → R3 Go, gpt-5.5) corrected two factual errors in the OPERATIONS adoption-path doc before merge; Copilot review at the content HEAD returned no findings.
