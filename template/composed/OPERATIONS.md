@@ -553,6 +553,46 @@ per workstream, `[harness:csNN]` title prefix) apply unchanged. The
 PR-body checklist is per-PR; the issue-creation guard is
 per-workstream.
 
+### Adopting the strict PR template in an existing consumer (CS54b)
+
+The harness ships its PR template as a **composed** file
+(`.github/pull_request_template.md`, rendered from
+`template/composed/.github/pull_request_template.md`). Since v0.6.0
+the shipped template already carries the strict `## Model audit`
+(with `Implementer agent` / `Reviewer agent` rows + optional
+`Notes`) and the 6-column `## Review log`, so a **fresh**
+`harness init` — or a `harness sync` in a consumer that lists
+`.github/pull_request_template.md` under its `harness.config.json`
+`composed.files` — inherits the strict schema automatically.
+
+An **existing** consumer can still carry a stale, pre-strict copy
+(this is the SI PR #79 failure mode: a pre-v0.6.0 template silently
+produces an A3 hard-fail on `read-only-gates`). The harness does
+**not** auto-rewrite a consumer's `.github/pull_request_template.md`
+on sync — it is consumer scaffold, and silently overwriting it could
+clobber local customisations. Adoption is therefore **opt-in**, via
+either path:
+
+1. **Reclassify + sync** (recommended for repos that want ongoing
+   harness-managed updates). Add `.github/pull_request_template.md`
+   to the consumer's `harness.config.json` `composed.files` with a
+   `composed.overrides` entry declaring the
+   `pull-request.review-evidence` local block, then run
+   `harness sync`. The harness-owned block is refreshed on every
+   sync while consumer-owned prose outside the markers is preserved.
+2. **One-time copy** (for repos that prefer to own the file
+   outright). Copy
+   `template/composed/.github/pull_request_template.md` from the
+   pinned harness version over the consumer's
+   `.github/pull_request_template.md` and commit it. The file stays
+   consumer-owned; re-copy on future harness bumps if desired.
+
+Until a consumer adopts the strict template by either path, the
+**inline-sections fallback** in the pin-bump checklist above remains
+the safety net: author the canonical `## Model audit` + `## Review
+log` sections directly in each PR body at open time rather than
+relying on the (possibly stale) template to inject them.
+
 ### Narrow re-attest after trivial commits (CS54)
 
 When a content PR receives small follow-on commits in response to
