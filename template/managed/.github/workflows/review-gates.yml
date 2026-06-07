@@ -9,6 +9,39 @@ on:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 jobs:
+  validate-workboard-only-scope:
+    name: validate-workboard-only-scope
+    # CS63 C63-7: the four gates below skip on the `workboard-only` label. This
+    # job is the guard that the bypass is legitimate — it runs ONLY when the
+    # label is present and FAILS if the PR diff touches any file outside the
+    # workboard path allowlist, so the label cannot bypass review on content.
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'workboard-only')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Enforce workboard-only path allowlist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # CS63 R8: rename/copy-source aware — check BOTH the current path and the
+          # previous (rename/copy source) path so a PR cannot rename a non-allowlisted
+          # file into an allowlisted path to dodge the workboard-only skip.
+          # Fail CLOSED on a gh api error (auth/rate-limit/network): capture the file
+          # list first so a failure is not masked by the grep's `|| true` below.
+          files=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUM}/files" --jq '.[] | .filename, (.previous_filename // empty)') || { echo "::error ::workboard-only scope check: gh api failed; refusing to confirm bypass."; exit 1; }
+          outside=$(printf '%s\n' "$files" | grep -Ev '^(WORKBOARD\.md|CONTEXT\.md|LEARNINGS\.md)$|^project/clickstops/(planned|active|done)/' || true)
+          if [ -n "$outside" ]; then
+            echo "::error ::workboard-only label present but the PR changes files OUTSIDE the workboard allowlist (WORKBOARD.md / CONTEXT.md / LEARNINGS.md / project/clickstops/). Remove the label or split the PR."
+            printf '%s\n' "$outside" | sed 's/^/::error ::  outside-allowlist: /'
+            exit 1
+          fi
+          echo "workboard-only scope OK: all changed files are within the allowlist."
+
   review-log-evidence:
     name: review-log-evidence
     if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'workboard-only')

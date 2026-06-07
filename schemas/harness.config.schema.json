@@ -136,6 +136,18 @@
         }
       }
     },
+    "pr_check": {
+      "type": "object",
+      "description": "CS63a / C63-2: configuration for the consumer PR-time structural gate (template/managed/.github/workflows/harness-pr-check.yml), which runs `harness lint` + a managed/composed drift classifier on every PR. Default-on for fresh `harness init` (CS63 G-gate-default). Existing consumers adopt it by copying the workflow from the harness template and adding `.github/workflows/harness-pr-check.yml` to `managed.files` (re-running `harness init` does NOT install it — init does not mutate pre-existing configs, LRN-057); automatic delivery on `harness sync` is tracked as guided-update follow-up (CS63c/CS64).",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Master switch for the structural PR gate. When false, harness-pr-check.yml exits 0 (no-op) and is omitted from fresh-init managed.files. Default true.",
+          "default": true
+        }
+      }
+    },
     "reviews": {
       "type": "object",
       "description": "Configuration for the orchestrator-side `harness review <pr>` command (CS52) and CS51 REVIEWS.md PR-side status checks: rubber-duck reviewer model defaults, fallback policy inputs, Copilot trigger mode, timeout, gate enforcement toggles, and project-specific HIGH-RISK clickstops.",

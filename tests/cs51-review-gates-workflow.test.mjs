@@ -31,10 +31,13 @@ describe('CS51 review-gates workflow template', () => {
     assert.equal(readFileSync(WORKFLOW, 'utf8'), readFileSync(MANAGED_WORKFLOW, 'utf8'));
   });
 
-  it('parses as YAML and declares exactly the four required job contexts', () => {
+  it('parses as YAML and declares the four required job contexts plus the C63-7 guard', () => {
     const doc = parseWorkflow();
     assert.equal(doc.name, 'review-gates');
-    assert.deepEqual(Object.keys(doc.jobs).sort(), EXPECTED_JOBS.toSorted());
+    assert.deepEqual(
+      Object.keys(doc.jobs).sort(),
+      [...EXPECTED_JOBS, 'validate-workboard-only-scope'].toSorted()
+    );
     for (const job of EXPECTED_JOBS) {
       assert.equal(doc.jobs[job].name, job);
     }
