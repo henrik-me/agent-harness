@@ -3322,6 +3322,36 @@ async function cmdPrEvidence(args, _global) {
     );
   }
 
+  // C2 close-out context-integrity (CS63 C63-5) — diff-scoped like A6. Register
+  // ONLY when the PR diff contains an active->done close-out rename (the same CS
+  // id appears as both active_ and done_); otherwise the gate is irrelevant and
+  // is omitted, leaving non-close-out PR evidence unchanged.
+  const fullDiff = spawnSync('git', ['diff', '--name-only', `${base}..${head}`], { cwd, encoding: 'utf8' });
+  if (fullDiff.status === 0) {
+    const allChanged = fullDiff.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+    const doneIds = new Set();
+    const activeIds = new Set();
+    for (const f of allChanged) {
+      const d = /(?:^|\/)done_cs(\d+[a-z]?)_/.exec(f);
+      if (d) doneIds.add(d[1]);
+      const a = /(?:^|\/)active_cs(\d+[a-z]?)_/.exec(f);
+      if (a) activeIds.add(a[1]);
+    }
+    const hasCloseoutRename = [...doneIds].some((id) => activeIds.has(id));
+    if (hasCloseoutRename) {
+      gates.push({
+        name: 'C2 close-out-freshness',
+        script: 'check-closeout-freshness.mjs',
+        args: ['--files', allChanged.join(',')],
+      });
+    }
+  } else if (!quiet) {
+    process.stderr.write(
+      `harness pr-evidence: warning — could not compute full diff ` +
+      `(git exit ${fullDiff.status}); C2 close-out-freshness not registered.\n`
+    );
+  }
+
   // A5 + A16 (Copilot review gate) — CS37. Requires --repo + --pr to query GitHub
   // GraphQL. Skip with a notice when either is missing (e.g. local dogfood without
   // a real PR context).

@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classifyCloseoutFreshness } from '../scripts/check-closeout-freshness.mjs';
@@ -81,4 +82,11 @@ test('CLI: no close-out rename exits 0 (self-host-safe on unrelated diffs)', () 
 test('CLI: --help exits 0, missing args exit 2', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--help'], { encoding: 'utf8' }).status, 0);
   assert.equal(spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' }).status, 2);
+});
+
+test('harness pr-evidence wires the C2 close-out-freshness gate (diff-scoped)', () => {
+  const cli = readFileSync(path.join(__dirname, '..', 'bin', 'harness.mjs'), 'utf8');
+  assert.match(cli, /name: 'C2 close-out-freshness'/, 'cmdPrEvidence must register the C2 gate');
+  assert.match(cli, /script: 'check-closeout-freshness\.mjs'/, 'C2 gate must invoke the linter');
+  assert.match(cli, /hasCloseoutRename/, 'C2 gate must be diff-scoped to close-out renames (omitted otherwise)');
 });
