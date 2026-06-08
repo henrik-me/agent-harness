@@ -1,10 +1,10 @@
 # CS63 — Harness hardening: consumer guardrails, lifecycle automation & context-integrity
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
-**Closed:** —
+**Status:** done
+**Owner:** yoga-ah-c3
+**Branch:** cs63a/content, cs63b/content, cs63c/content (siblings)
+**Started:** 2026-06-06
+**Closed:** 2026-06-08
 **Filed by:** Harness self-review (2026-06-06 by `yoga-ah-c3`). A structural review of the harness against three axes — (1) right-sized guardrails for consumers, (2) easy install/update/extend, (3) workflows that stop agents doing forbidden things / closing too soon / losing context — surfaced nine findings plus two architectural evaluations (skills extraction, process-doc right-sizing). Consolidated here per user request to "move these into one CS."
 **Depends on:** None hard. Relates to CS59 (release-process docs — shares the OPERATIONS.md surface) and CS54b (PR-template strict refresh — shares the consumer-template surface). Coordinate doc edits if claimed concurrently.
 
@@ -161,7 +161,11 @@ Per-item "what can break" — the user's explicit ask.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Sibling **CS63a** (template guardrails W1+W5) — content #264, close-out #265 | done | yoga-ah-c3 | PVI GO; LRN-155 |
+| Sibling **CS63b** (lifecycle/context code W2+W3+C1) — content #267, close-out #268 | done | yoga-ah-c3 | PVI GO; LRN-156 |
+| Sibling **CS63c** (guided update + evaluations W4+W6) — content #270, close-out #272 | done | yoga-ah-c3 | PVI GO; LRN-157 |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs | done | yoga-ah-c3 | umbrella close-out; CONTEXT history capped at CS63c; WORKBOARD updated |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and planned follow-up CSs | done | yoga-ah-c3 | LRN-155/156/157 filed; CS64–CS67 follow-up stubs filed |
 
 ## Notes / Learnings
 
@@ -172,6 +176,33 @@ Per-item "what can break" — the user's explicit ask.
   4. **Q2 = (a)** — CLI-commands-first; runtime skills only as thin wrappers; go/no-go after the CS64 spike.
   These resolve the blocking G-scope gate; sibling index files CS63a/b/c filed per deliverable 18.
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c3 |
+| Reviewer agent | rubber-duck |
+| Notes | Umbrella — no direct implementation; the three sibling CSs (CS63a/b/c) carry the code, each reviewed by gpt-5.5 (rubber-duck) + GitHub Copilot with an independent plan-vs-impl GO. Reviewer (gpt-5.5) differs from implementer (claude-opus-4.8) per the independence invariant. |
+
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck; orchestrator yoga-ah-c3)
+**Date:** 2026-06-08
+**Outcome:** GO
+
+The CS63 umbrella has no implementation of its own — it is realized by the three
+sibling CSs, each of which passed its own GPT-5.5 plan-vs-implementation gate:
+
+- **CS63a** (W1+W5 template guardrails) — PVI GO; merged #264, closed #265.
+- **CS63b** (W2+W3+C1 lifecycle/context code) — PVI GO; merged #267, closed #268.
+- **CS63c** (W4+W6 guided update + evaluations) — PVI GO; merged #270, closed #272.
+
+All 10 umbrella exit criteria are met: consumer PR gate (1); real `harvest` +
+accurate automation docs (2); close-out-freshness gate (3); `harness upgrade`
+dry-run preview + first-class clone install (4); `workboard-only` bypass
+tightening (5); W6 proposal artifact + `CONTEXT.md` cap + CS64/CS65 stubs filed
+(6); recorded execution split + serial shared-file edits + C63-11 advisory
+disposition (7); green self-host lint/tests/sync (8); per-sibling PVI GO (9);
+CHANGELOG `[Unreleased]` entries (10).

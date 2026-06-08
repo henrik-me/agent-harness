@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-08 (CS63c CLOSED by yoga-ah-c3 — guided update preview (`harness upgrade`, W4) + architectural-evaluation proposal artifact + `CONTEXT.md` history cap (W6); PR #270 squash `4d72b14`, plan-vs-impl GO, **LRN-157**. The **CS63 arc (a/b/c) is complete** — next: close the CS63 umbrella. Prior: CS63b CLOSED by yoga-ah-c3 (PR #267/#268, LRN-156); CS63a CLOSED (PR #264/#265, LRN-155); CS61b active by yoga-ah.)
+> **Last updated:** 2026-06-08 (CS63 umbrella CLOSED by yoga-ah-c3 — the **CS63 arc is complete**: umbrella + all siblings (CS63a/b/c) closed (PRs #264, #267, #270); umbrella moved to `done_cs63_*`. Next: **CS64** (lifecycle commands) / **CS65** (doc right-sizing). Prior: CS63c CLOSED (PR #270/#272, LRN-157); CS63b CLOSED (PR #267/#268, LRN-156); CS61b active by yoga-ah.)
 
 ## Orchestrators
 
