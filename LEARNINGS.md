@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-06-07 (CS63b close-out: **LRN-156** added (`open`) — `git diff --name-only` collapses renames to the destination path only, silently breaking gates that need the rename SOURCE (it broke CS63a's bypass guard **and** CS63b's close-out gate); use `--no-renames` / `--name-status -M` / files-API `previous_filename`. Earlier 2026-06-07 (CS63a close-out: **LRN-155** added (`open`) — `harness sync` has **no new-managed-file reconciliation**, so a newly-added managed file never reaches existing consumers via sync (only fresh `init` or a manual `managed.files` addition); folds into CS63c (guided update) / CS64. Earlier 2026-06-06 (out-of-CS learnings hygiene (CS61b): **LRN-106**'s missing `### LRN-106` header restored; **LRN-153** added — durable knowledge belongs in repo docs (`LEARNINGS.md` + process docs), **not** agent memory, because the orchestrator runs across multiple machines/clones; **LRN-154** added (`open`) — `check-learnings.mjs` does not enforce a `### LRN-NNN` header matching each entry's frontmatter `id`. Earlier (CS62 follow-up): **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
+> **Last updated:** 2026-06-08 (CS63c close-out: **LRN-157** added (`open`) — an injectable side-effecting seam should OWN its cleanup (return `{path, cleanup}`), never be deleted by the caller via a path-prefix guess (not provenance-safe); also reject leading-dash refs before `git checkout` (option-injection; `--` is unusable for `<tree-ish>`). Earlier 2026-06-07 (CS63b close-out: **LRN-156** added (`open`) — `git diff --name-only` collapses renames to the destination path only, silently breaking gates that need the rename SOURCE (it broke CS63a's bypass guard **and** CS63b's close-out gate); use `--no-renames` / `--name-status -M` / files-API `previous_filename`. Earlier 2026-06-07 (CS63a close-out: **LRN-155** added (`open`) — `harness sync` has **no new-managed-file reconciliation**, so a newly-added managed file never reaches existing consumers via sync (only fresh `init` or a manual `managed.files` addition); folds into CS63c (guided update) / CS64. Earlier 2026-06-06 (out-of-CS learnings hygiene (CS61b): **LRN-106**'s missing `### LRN-106` header restored; **LRN-153** added — durable knowledge belongs in repo docs (`LEARNINGS.md` + process docs), **not** agent memory, because the orchestrator runs across multiple machines/clones; **LRN-154** added (`open`) — `check-learnings.mjs` does not enforce a `### LRN-NNN` header matching each entry's frontmatter `id`. Earlier (CS62 follow-up): **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -11,6 +11,51 @@ This file captures durable, project-applicable insights surfaced by completing C
 ---
 
 ## Open
+
+### LRN-157
+
+```yaml
+id: LRN-157
+date: 2026-06-08
+category: architectural
+source_cs: CS63c
+status: open
+tags: [resource-cleanup, injectable-seam, provenance, temp-dir, code-review, git-injection]
+claim_area: cli
+```
+
+**Problem:** CS63c's `harness upgrade` fetches the target harness ref into a
+temp `git clone` via an injectable seam, then runs a dry-run sync against it.
+The first cleanup attempt had `planUpgrade()` delete the fetched dir only if its
+path string started with `os.tmpdir()/harness-upgrade-` — a **path-prefix
+guess**. GitHub Copilot's review showed this is **not provenance-safe**: an
+injected/caller-owned fetcher returning a path under that prefix (e.g. a test
+fixture) would be deleted. The original code also leaked the temp clone on the
+success path and on clone/checkout failure, and reported an empty error message
+when `spawnSync` failed before exec (git missing → `status: null`).
+
+**Finding:** **An injectable side-effecting seam should OWN the lifetime of what
+it creates — return a disposer (`{path, cleanup}`), not a bare path the caller
+deletes by guessing.** The consumer invokes only the seam-provided `cleanup()`
+(best-effort, in a `finally`, errors swallowed so they can't mask the primary
+result), and never deletes by path-string inference — so a caller-owned fixture
+is never removed. Failure paths must clean up their own temp dirs before
+rethrowing, and error detail must fall back `stderr.trim() →
+spawnSync().error?.message → status` so a pre-exec spawn failure is not an empty
+message. Separately: validate refs to **reject a leading dash** before passing
+to `git checkout` (a `--` separator is unusable for `git checkout <tree-ish>` —
+it reassigns the ref as a pathspec), closing a git-option-injection vector.
+
+**Evidence:** CS63c PR #270 — `lib/upgrade.mjs` (`defaultFetchHarnessAtRef`
+returns `{path, cleanup}`; `planUpgrade` finally invokes only `cleanup()`;
+`REF_ALLOWLIST` requires a leading alphanumeric). GitHub Copilot caught the
+non-provenance-safe guard, the leaks, and the leading-dash ref; gpt-5.5 R4/R5/R7
+confirmed the redesign. Tests: cleanup-called, cleanup-on-sync-throw,
+string-path-never-deleted (provenance), and leading-dash-ref rejected.
+
+**Disposition:** Open — a reusable design rule for future injectable resource
+seams (fetchers, temp workspaces, clones). Candidate to fold into a
+CONVENTIONS/REVIEWS note when CS64 adds more lifecycle verbs that fetch/clone.
 
 ### LRN-156
 

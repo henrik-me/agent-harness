@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-07 (CS63c CLAIMED by yoga-ah-c3 — guided update (`harness upgrade`, W4) + architectural evaluations (W6: proposal artifact, `CONTEXT.md` cap); branch `cs63c/content`. The last CS63 arc sibling — W4 code is on the branch; W6 deliverables are orchestrator-authored. Prior: CS63b CLOSED by yoga-ah-c3 (PR #267/#268, LRN-156); CS63a CLOSED (PR #264/#265, LRN-155); CS61b active by yoga-ah.)
+> **Last updated:** 2026-06-08 (CS63c CLOSED by yoga-ah-c3 — guided update preview (`harness upgrade`, W4) + architectural-evaluation proposal artifact + `CONTEXT.md` history cap (W6); PR #270 squash `4d72b14`, plan-vs-impl GO, **LRN-157**. The **CS63 arc (a/b/c) is complete** — next: close the CS63 umbrella. Prior: CS63b CLOSED by yoga-ah-c3 (PR #267/#268, LRN-156); CS63a CLOSED (PR #264/#265, LRN-155); CS61b active by yoga-ah.)
 
 ## Orchestrators
 
@@ -13,7 +13,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 | omni-ah  | OMNI         | C:\src\agent-harness | 🟡 Idle | 2026-05-28 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-06 |
 | yoga-ah-c2 | HENRIKM-YOGA | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-06 |
-| yoga-ah-c3 | HENRIKM-YOGA | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-07 |
+| yoga-ah-c3 | HENRIKM-YOGA | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-08 |
 
 ## Active Work
 
@@ -27,6 +27,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS61b | Out-of-CS learnings hygiene: restore LRN-106 header + knowledge-capture doctrine (LRN-153/154) + INSTRUCTIONS rule | 🟢 Active | yoga-ah | fix/lrn-106-missing-header | 2026-06-06 | — |
-| CS63c | Guided update + architectural evaluations (CS63 arc sibling, W4+W6) | 🟢 Active | yoga-ah-c3 | cs63c/content | 2026-06-07 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

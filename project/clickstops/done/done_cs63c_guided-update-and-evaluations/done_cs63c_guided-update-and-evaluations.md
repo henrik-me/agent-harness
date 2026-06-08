@@ -1,10 +1,10 @@
 # CS63c — Guided update + architectural evaluations (CS63 sibling)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c3
 **Branch:** cs63c/content
 **Started:** 2026-06-07
-**Closed:** —
+**Closed:** 2026-06-08
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) per the **G-scope=(a)** user decision — the **guided-update + evaluations** slice of the CS63 umbrella (workstreams W4 + W6).
 **Depends on:** **CS63** (umbrella — all decisions/risks). Shares the orchestrator-owned `bin/harness.mjs` + `OPERATIONS.md`/`README.md` (+ mirrors) with CS63b → those shared-file edits **serialize** (CS63 C63-10). Independent of CS63a. The CS64/CS65 stubs this slice was to file are **already filed** (2026-06-06).
 
@@ -67,17 +67,31 @@ Inherits CS63 risks **R7** (upgrade must be dry-run-only / no apply-path rewrite
 |---|---|---|---|
 | W4 — `lib/upgrade.mjs` (guided `harness upgrade` dry-run preview, additive over `lib/sync.mjs`) + `tests/lib-upgrade.test.mjs` | done | yoga-ah-c3 | implemented on `cs63c/content` (prior session); CS63 deliverables 11,12 |
 | W4 — `bin/harness.mjs` `harness upgrade` registration + help (serialized vs CS63b per C63-10) | done | yoga-ah-c3 | on `cs63c/content`; needs rebase onto current main (CS63a/b bin/harness.mjs edits) |
-| W6 — architectural-evaluation proposal artifact (CLI-first skills + OPERATIONS/LEARNINGS right-sizing + C63-11 disposition) in the `done_` dir | pending | yoga-ah-c3 | orchestrator-authored at close-out; records CS63 C63-8/9/11 (already-confirmed decisions) |
-| W6 — `CONTEXT.md` history cap (current + last 2 "Prior" blocks) | pending | yoga-ah-c3 | CS63 deliverable 16 / C63-9; older detail lives in `done_csNN` files |
-| W4 — `README.md`/`OPERATIONS.md` (+ mirror) clone-install first-class + `harness upgrade` documented | pending | yoga-ah-c3 | CS63 deliverables 18,20 subset |
-| CHANGELOG `[Unreleased]` entry for `harness upgrade` | pending | yoga-ah-c3 | CS63 deliverable 21 subset; the minor-bump trigger for the arc |
-| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | pending | yoga-ah-c3 | rebase `cs63c/content` onto current main (resolve bin/harness.mjs) |
-| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs | pending | yoga-ah-c3 | per OPERATIONS.md § Claim close-out |
-| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | pending | yoga-ah-c3 | per RETROSPECTIVES.md |
+| W6 — architectural-evaluation proposal artifact (CLI-first skills + OPERATIONS/LEARNINGS right-sizing + C63-11 disposition) in the `done_` dir | done | yoga-ah-c3 | `architectural-evaluation-proposal.md` authored at close-out; records CS63 C63-8/9/11 |
+| W6 — `CONTEXT.md` history cap (current + last 2 "Prior" blocks) | done | yoga-ah-c3 | capped at close-out; older detail retained in `done_csNN` files |
+| W4 — `README.md`/`OPERATIONS.md` (+ mirror) clone-install first-class + `harness upgrade` documented | done | yoga-ah-c3 | merged in PR #270 (squash `4d72b14`); OPERATIONS root + composed lockstep |
+| CHANGELOG `[Unreleased]` entry for `harness upgrade` | done | yoga-ah-c3 | merged in PR #270; the minor-bump trigger for the arc |
+| Content PR — GPT-5.5 rubber-duck + independent reviewer, CI green, squash-merge | done | yoga-ah-c3 | PR #270 (squash `4d72b14`); 8 gpt-5.5 (R1–R8) + 3 Copilot passes; CI green |
+| Close-out: docs + restart state — update WORKBOARD, CONTEXT, relevant docs | done | yoga-ah-c3 | this close-out; CONTEXT capped + WORKBOARD updated |
+| Close-out: learnings + follow-ups — file/disposition LEARNINGS and any planned follow-up CSs | done | yoga-ah-c3 | LRN-157 filed; CS64–CS67 stubs confirmed filed |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **8 gpt-5.5 rubber-duck rounds (R1–R8) + 3 GitHub Copilot passes** on the
+  content PR #270 caught 7 real issues: module-header doc-accuracy; an
+  unguarded temp-clone leak on the success path; a temp-dir leak + empty error
+  on fetch failure; a **non-provenance-safe** cleanup guard (a path-prefix
+  check could delete an injected fixture) → redesigned the fetch seam to return
+  `{path, cleanup}` so disposal is owned by the seam, never guessed by path; a
+  `finally` cleanup-mask; a **leading-dash ref → git-option injection** vector
+  (closed by requiring a leading alphanumeric in `REF_ALLOWLIST`, since `--` is
+  not usable for `git checkout <tree-ish>`); and a test fixture using a
+  non-existent sync action. → **LRN-157** (seam-owns-cleanup pattern).
+- The architectural evaluations (C63-8/9/11) were **already-confirmed**
+  decisions (Q2 user-confirmed 2026-06-06); this CS records them in the
+  proposal artifact and executes only the safe `CONTEXT.md` cap (C63-9), with
+  OPERATIONS/LEARNINGS right-sizing deferred to CS65 and the full lifecycle
+  command/skill surface to CS64.
 
 ## Model audit
 
@@ -91,4 +105,26 @@ Inherits CS63 risks **R7** (upgrade must be dry-run-only / no apply-path rewrite
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck; orchestrator yoga-ah-c3)
+**Date:** 2026-06-08
+**Outcome:** GO
+
+Reviewed the merged CS63c content (PR #270, squash `4d72b14`) against the six
+plan deliverables. Deliverables 3 and 4 were noted by the reviewer as
+`deferred-to-closeout` (the proposal artifact and `CONTEXT.md` cap are authored
+in this close-out commit) — both are completed here.
+
+| Deliverable | Status | Notes |
+|---|---|---|
+| 1. `lib/upgrade.mjs` + tests (additive over `lib/sync.mjs`) | match | `planUpgrade()` runs sync in `mode:'dry-run'`; tests cover filtering, version read, ref validation, seam cleanup, CLI help/errors, and R7 no-write. |
+| 2. `bin/harness.mjs` `harness upgrade` registry + help | match | Present in `TOP_HELP`, `SUBCOMMAND_HELP.upgrade`, `cmdUpgrade`, `COMMAND_REGISTRY`. |
+| 3. Proposal artifact in `done_cs63c_*/` | done at close-out | `architectural-evaluation-proposal.md` records C63-8/9/11 + the CS64/CS65 follow-up map. |
+| 4. `CONTEXT.md` history cap (current + last 2 Prior) | done at close-out | Capped to current + 2 Prior; older detail retained in `done_csNN` files. |
+| 5. README/OPERATIONS (+ mirror): clone-install + `harness upgrade` | match | README Option A + `## Upgrading`; OPERATIONS root + composed both carry `### Previewing an upgrade` (lockstep PASS). |
+| 6. `CHANGELOG.md` `[Unreleased]` CS63c entry | match | Present under `### Added`. |
+
+Exit criteria: (1) met; (2) `harness lint --quiet`, `node --test tests/*.test.mjs`,
+and `sync --mode=check` all pass (verified by the reviewer); (3) this review = GO;
+(4) CHANGELOG entry present. **R7 invariant verified** — `harness upgrade` passes
+`mode:'dry-run'` to sync, exposes no apply path, and only removes its own temp
+clone; no consumer-write path exists.
