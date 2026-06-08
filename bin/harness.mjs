@@ -102,6 +102,7 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
+  upgrade           Preview upgrading the pinned harness ref (dry-run diff)
   lint              Run all harness structural + policy linters (14 linters)
   harvest           Scan LEARNINGS.md for stale open learnings (pre-claim/weekly)
   check-migration   Detect migration issues from an existing harness (STUB)
@@ -299,6 +300,21 @@ STUB in CS04 — full implementation planned for CS06/CS19.
 Options:
   --from-existing-harness  Required flag; indicates audit context
   --help                   Print this help
+`.trimStart(),
+
+  upgrade: `
+Usage: harness upgrade <ref> [options]
+
+Preview upgrading the pinned harness to <ref> (semver tag, branch, or 40-char
+SHA): fetches that ref's templates and runs a DRY-RUN sync against this repo,
+printing the list of files that would change (per-file action + class) + a
+change-count summary. Nothing is applied.
+
+To apply after reviewing: set harness.config.json "version" to <ref> and run
+\`harness sync --mode=apply\` (use --accept-major for a major bump).
+
+Options:
+  --help  Print this help
 `.trimStart(),
 
   pack: `
@@ -1678,6 +1694,44 @@ async function cmdCheck(args, global) {
     die('harness check: --mode and --dry-run are not allowed (check is read-only)', 2);
   }
   return cmdSync(args, global, 'check');
+}
+
+// ---------------------------------------------------------------------------
+// Subcommand: upgrade (CS63a / C63-6 — guided update preview, U2)
+// ---------------------------------------------------------------------------
+
+async function cmdUpgrade(args, global) {
+  let targetRef = null;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['upgrade']);
+      process.exit(0);
+    } else if (!a.startsWith('-') && targetRef === null) {
+      targetRef = a;
+    } else {
+      die(`harness upgrade: unexpected argument "${a}"\n\n${SUBCOMMAND_HELP['upgrade']}`, 2);
+    }
+  }
+  if (!targetRef) {
+    die(`harness upgrade: <ref> is required\n\n${SUBCOMMAND_HELP['upgrade']}`, 2);
+  }
+
+  const cwd = global && global.cwd ? global.cwd : process.cwd();
+  const { planUpgrade, formatUpgradePlan, UpgradeError } = await import('../lib/upgrade.mjs');
+  try {
+    const plan = await planUpgrade({
+      consumerRepoPath: cwd,
+      targetRef,
+      configPath: global && global.config ? global.config : null,
+    });
+    process.stdout.write(formatUpgradePlan(plan));
+  } catch (err) {
+    if (err instanceof UpgradeError) {
+      die(`harness upgrade: ${err.message}`, 1);
+    }
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -3702,6 +3756,7 @@ export const COMMAND_REGISTRY = {
   init: cmdInit,
   sync: cmdSync,
   check: cmdCheck,
+  upgrade: cmdUpgrade,
   lint: cmdLint,
   harvest: cmdHarvest,
   'check-migration': cmdCheckMigration,

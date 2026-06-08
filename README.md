@@ -21,9 +21,18 @@ Three file classes:
 
 ## Installation
 
-Two install models are supported:
+Three install models are supported:
 
-**Option B — install from GitHub by ref** (today, default install path): `npx -y github:henrik-me/agent-harness#<ref>` works anonymously now that the repo is public — no token required. `<ref>` is a semver tag (e.g. `v0.7.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility. (For private forks of this harness, see [`docs/private-consumption.md`](docs/private-consumption.md) for the `GITHUB_TOKEN` setup.)
+**Option A — clone and run directly** (recommended for CI and for previewing upgrades): clone the harness and invoke its CLI with Node —
+
+```bash
+git clone https://github.com/henrik-me/agent-harness.git
+node agent-harness/bin/harness.mjs <command>
+```
+
+This avoids the npm `GitFetcher` regression noted below and is the pattern the harness's own reusable workflow uses (clone-then-`node bin/harness.mjs`). Pin the harness version in `harness.config.json` `version` for reproducibility, and use `harness upgrade <ref>` (see [§ Upgrading](#upgrading)) to preview a bump before applying it.
+
+**Option B — install from GitHub by ref** (today, default `npx` path): `npx -y github:henrik-me/agent-harness#<ref>` works anonymously now that the repo is public — no token required. `<ref>` is a semver tag (e.g. `v0.7.0`), branch name, or 40-character commit SHA. Recommend pinning to a semver tag in `harness.config.json` `version` for reproducibility. (For private forks of this harness, see [`docs/private-consumption.md`](docs/private-consumption.md) for the `GITHUB_TOKEN` setup.)
 
 > **Note:** as of v0.2.0 the bare `npx -y "github:owner/repo#<sha>"` install path hits an npm 10.8.x/10.9.x `GitFetcher requires an Arborist constructor` regression on GitHub Actions runners. The harness's own reusable workflow (`harness-checks.yml`) bypasses this by cloning + invoking `node bin/harness.mjs` directly. External consumers running their own CI may want to do the same. Tracked as a known issue. (Still applies under v0.7.0 — same npm CLI versions on the runners.)
 
@@ -36,6 +45,23 @@ Two install models are supported:
 npx -y github:henrik-me/agent-harness#v0.7.0 init
 # review the generated harness.config.json, then:
 npx -y github:henrik-me/agent-harness#v0.7.0 sync
+```
+
+## Upgrading
+
+`harness upgrade <ref>` **previews** upgrading the pinned harness to `<ref>` (a
+semver tag, branch, or 40-char SHA): it fetches that ref's templates and runs a
+**dry-run** sync against your repo, printing the list of files that would change
+(per-file action + class) plus a change-count summary. **Nothing is applied** — it
+is a safe, read-only preview (additive over `sync`; no apply-path rewrite). To
+apply after reviewing, set `harness.config.json` `version` to `<ref>` and run
+`harness sync --mode=apply` (add `--accept-major` for a major bump). See
+[OPERATIONS.md § Sync](OPERATIONS.md) for the full preview-then-apply flow.
+
+```bash
+node agent-harness/bin/harness.mjs upgrade v0.8.0   # preview only
+# review the change list, then bump harness.config.json "version" to v0.8.0 and:
+node agent-harness/bin/harness.mjs sync --mode=apply
 ```
 
 ## Repo layout
