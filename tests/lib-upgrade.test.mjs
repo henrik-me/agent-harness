@@ -97,7 +97,7 @@ test('planUpgrade never reaches the apply/write path (R7 — no consumer write)'
     // upgrade/sync boundary (no consumer-repo mutation from `harness upgrade`).
     const syncSpy = async (a) => {
       if (a.mode === 'apply') writeFileSync(sentinel, 'x');
-      return { changes: [{ action: 'update', class: 'managed', target: 'X.md' }], driftDetected: true, warnings: [] };
+      return { changes: [{ action: 'updated', class: 'managed', target: 'X.md' }], driftDetected: true, warnings: [] };
     };
     await planUpgrade({ consumerRepoPath: repo, targetRef: 'v1.2.3', fetchHarnessAtRef: fetchStub, sync: syncSpy });
     assert.equal(existsSync(sentinel), false, 'upgrade must never run sync in apply mode — no consumer write');
