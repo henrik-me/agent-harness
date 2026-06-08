@@ -98,19 +98,48 @@ test('planUpgrade never reaches the apply/write path (R7 — no consumer write)'
   }
 });
 
-test('planUpgrade cleans up the default fetcher temp clone (no leak)', async () => {
-  // Inject a fetcher returning a real `harness-upgrade-*` dir (the shape the
-  // default fetcher creates); planUpgrade must clean it up so repeated runs do
-  // not accumulate dirs in os.tmpdir().
-  const fakeClone = mkdtempSync(path.join(os.tmpdir(), 'harness-upgrade-'));
-  writeFileSync(path.join(fakeClone, 'marker'), 'x');
+test('planUpgrade invokes the fetch seam cleanup() when the preview finishes', async () => {
+  let cleaned = 0;
   await planUpgrade({
     consumerRepoPath: os.tmpdir(),
     targetRef: 'v1.0.0',
-    fetchHarnessAtRef: () => fakeClone,
+    fetchHarnessAtRef: () => ({ path: '/tmp/fake-harness-clone', cleanup: () => { cleaned += 1; } }),
     sync: fakeSync([]),
   });
-  assert.equal(existsSync(fakeClone), false, 'planUpgrade must clean up a harness-upgrade-* clone dir');
+  assert.equal(cleaned, 1, 'planUpgrade must invoke the fetcher cleanup() exactly once');
+});
+
+test('planUpgrade invokes cleanup() even when the dry-run sync throws', async () => {
+  let cleaned = 0;
+  await assert.rejects(
+    planUpgrade({
+      consumerRepoPath: os.tmpdir(),
+      targetRef: 'v1.0.0',
+      fetchHarnessAtRef: () => ({ path: '/tmp/fake-harness-clone', cleanup: () => { cleaned += 1; } }),
+      sync: async () => { throw new Error('boom'); },
+    }),
+    /boom/,
+  );
+  assert.equal(cleaned, 1, 'cleanup() must run even if the dry-run sync throws');
+});
+
+test('planUpgrade never deletes a string-returning fetcher path (provenance-safe)', async () => {
+  // A fetcher returning a bare path string (no cleanup) — even one under the
+  // `harness-upgrade-*` prefix — is a caller-owned fixture planUpgrade must NOT
+  // remove. Only the fetch seam's own cleanup() may delete what it created.
+  const fixture = mkdtempSync(path.join(os.tmpdir(), 'harness-upgrade-'));
+  writeFileSync(path.join(fixture, 'marker'), 'x');
+  try {
+    await planUpgrade({
+      consumerRepoPath: os.tmpdir(),
+      targetRef: 'v1.0.0',
+      fetchHarnessAtRef: () => fixture,
+      sync: fakeSync([]),
+    });
+    assert.equal(existsSync(fixture), true, 'planUpgrade must not delete a caller-owned fetcher path');
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
 });
 
 test('formatUpgradePlan: no changes vs changes', () => {
