@@ -54,9 +54,10 @@ Mechanically enforced by `scripts/check-clickstop.mjs` and
 `scripts/check-clickstop-plan-review.mjs`:
 
 - **Header fields (all required):** `**Status:** planned`, `**Owner:**`,
-  `**Branch:**`, `**Started:**`, `**Closed:**`, `**Depends on:**` (filing
-  agents also add `**Filed by:**`). `Status` must read `planned` while the
-  file lives in `planned/`.
+  `**Branch:**`, `**Started:**`, `**Closed:**`, `**Depends on:**`. `Status`
+  must read `planned` while the file lives in `planned/`. (Filing agents also
+  add a `**Filed by:**` line by convention — it carries useful provenance but
+  is not one of the fields `scripts/check-clickstop.mjs` enforces.)
 - **`## Plan review`** — present, with the 8-column table and at least one
   row: `Round | Reviewer model | Plan author model(s) | Reviewer agent |
   Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200
