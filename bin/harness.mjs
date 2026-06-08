@@ -307,7 +307,8 @@ Usage: harness upgrade <ref> [options]
 
 Preview upgrading the pinned harness to <ref> (semver tag, branch, or 40-char
 SHA): fetches that ref's templates and runs a DRY-RUN sync against this repo,
-printing the file diff + a migration summary. Nothing is applied.
+printing the list of files that would change (per-file action + class) + a
+change-count summary. Nothing is applied.
 
 To apply after reviewing: set harness.config.json "version" to <ref> and run
 \`harness sync --mode=apply\` (use --accept-major for a major bump).
