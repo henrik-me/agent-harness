@@ -23,6 +23,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Documentation
 
+- **Document the clickstop-filing procedure + file CS68:** Add `OPERATIONS.md § Filing a clickstop` (+ `template/composed/OPERATIONS.md`) — the ordered procedure for creating a `planned` CS (pick a collision-free id, author from a canonical skeleton, required header fields + `## Plan review` attestation, independent GPT-5.5 plan review, `harness plan-review-hash`, `harness lint`) so the shape no longer has to be reverse-engineered from an existing CS file — with a "Filing a CS" pointer added to the `INSTRUCTIONS.md` quick-reference (+ `template/managed/INSTRUCTIONS.md`). Files `project/clickstops/planned/planned_cs68_dependency-bump-adoption-procedure.md` (plan-reviewed by gpt-5.5: R1 Needs-Fix → R2 Go-with-amendments), capturing the dependency-bump adoption procedure + a `harness review` non-CS enhancement surfaced while adopting Dependabot #226 as PR #262.
+
 - **CS61 / LRN-145 rule 2:** Add `REVIEWS.md § 2.6b` (rubber-duck **schema-conformance verification** — checks S1/S2/S3) adjacent to the § 2.6a fact-claim checklist, mirrored in `template/composed/REVIEWS.md`, with a parallel S1–S3 obligation added to the canonical reviewer preamble in `OPERATIONS.md` (+ `template/composed/OPERATIONS.md`). Codifies that a rubber-duck reviewing a change that adds/edits a config or schema reader MUST diff the reader's required/default/validation contract against the schema — the gap that let the CS60 over-require pass three review rounds before GitHub Copilot caught it.
 
 ### Fixed

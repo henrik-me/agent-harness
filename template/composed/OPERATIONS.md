@@ -5,9 +5,111 @@
 > inside the `operations.project-deploy` local block (see § Local block at the end of this file).
 > All managed-core sections are overwritten on every `harness sync`.
 
-Day-to-day procedures for claiming, dispatching, syncing, and harvesting
-with the agent harness. This is the canonical operational reference for all
-harness-enabled projects.
+Day-to-day procedures for filing, claiming, dispatching, syncing, and
+harvesting with the agent harness. This is the canonical operational
+reference for all harness-enabled projects.
+
+---
+
+## Filing a clickstop
+
+A clickstop (CS) is the unit of planned work. **File a CS** when the work
+involves design decisions, multiple files, or a doctrine/process change —
+anything that benefits from a written plan and a plan review. Trivial
+dependency bumps, pure `WORKBOARD.md` edits, and one-line doc fixes do not
+need a CS (use the workboard-only / maintenance PR path instead). Filing
+creates the `planned` plan only; moving it into flight (the
+`planned → active` rename, the WORKBOARD row, the branch) is the separate
+claim step in § Claim. Follow the steps below rather than reverse-engineering
+the shape from an existing CS file.
+
+### Steps
+
+1. **Pick a collision-free id.** Use the next unused `CS<NN>` above every id
+   already present under `project/clickstops/{planned,active,done}/`. A
+   trailing letter (`CS63a`) marks a sub-task within one arc; when sibling
+   orchestrators are active, leave a margin above their in-flight arc.
+2. **Create** `project/clickstops/planned/planned_cs<NN>_<slug>.md` with LF
+   line endings and no BOM (the text-encoding gate rejects CRLF/BOM).
+3. **Author the plan** from the skeleton below.
+4. **Get an independent plan review.** Dispatch the `## Decisions` +
+   `## Deliverables` to the primary reviewer model (GPT-5.5; see
+   [REVIEWS.md](REVIEWS.md)), which MUST differ from every `Plan author
+   model(s)`. Iterate until the verdict is `Go` or `Go-with-amendments`.
+5. **Pin the attestation.** Compute the 12-char hash of the current
+   Decisions+Deliverables with `harness plan-review-hash <file>` and record
+   it in a `## Plan review` row. The latest row's hash MUST equal the
+   current Decisions+Deliverables hash, and its verdict MUST be `Go` or
+   `Go-with-amendments`.
+6. **Validate** with `harness lint` — it runs `check-clickstop` (structure),
+   `check-clickstop-plan-review` (attestation), and `check-text-encoding`
+   (LF/BOM).
+7. **Open a content PR** adding the file, with the `## Model audit` +
+   `## Review log` review evidence ([REVIEWS.md](REVIEWS.md) § 2.8). Filing
+   does not claim the CS.
+
+### Required structure
+
+Mechanically enforced by `scripts/check-clickstop.mjs` and
+`scripts/check-clickstop-plan-review.mjs`:
+
+- **Header fields (all required):** `**Status:** planned`, `**Owner:**`,
+  `**Branch:**`, `**Started:**`, `**Closed:**`, `**Depends on:**`. `Status`
+  must read `planned` while the file lives in `planned/`. (Filing agents also
+  add a `**Filed by:**` line by convention — it carries useful provenance but
+  is not one of the fields `scripts/check-clickstop.mjs` enforces.)
+- **`## Plan review`** — present, with the 8-column table and at least one
+  row: `Round | Reviewer model | Plan author model(s) | Reviewer agent |
+  Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200
+  chars)`. Reviewer model ∉ author models; ISO-8601 UTC timestamps; the
+  latest hash/verdict stay fresh per step 5.
+- **`## Plan-vs-implementation review`** — include the placeholder now; it is
+  only *enforced* once the file reaches `active/` or `done/` at close-out.
+
+The remaining sections are canonical convention — but `## Decisions` and
+`## Deliverables` are required in practice because the plan-review hash is
+computed over their bodies.
+
+### Skeleton
+
+```markdown
+# CS<NN> — <title>
+
+**Status:** planned
+**Owner:** —
+**Branch:** —
+**Started:** —
+**Closed:** —
+**Filed by:** <who filed it, when, and the surfacing context>
+**Depends on:** <none | CS refs>
+
+## Goal
+## Background
+## Decisions
+
+| # | Decision | Choice | Rationale |
+|---|---|---|---|
+
+## Deliverables
+## User-approval gates
+## Exit criteria
+## Risks + open questions
+## Plan review
+
+| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
+|---|---|---|---|---|---|---|---|
+
+## Tasks
+
+| Task | State | Owner | Notes |
+|---|---|---|---|
+| (populated at claim time per § Claim) | planned | — | — |
+
+## Notes / Learnings
+## Plan-vs-implementation review
+
+> _(filled at close-out per the gate)_
+```
 
 ---
 

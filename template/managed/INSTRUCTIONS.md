@@ -109,6 +109,15 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   git ls-files project/clickstops/{planned,active}/ | sort   # show in-flight CS arc; resume rather than restart (CS35 C35-14)
   ```
 
+### Filing a CS
+
+- A CS must exist as a `planned` plan before it can be claimed. To create one,
+  follow [OPERATIONS.md § Filing a clickstop](OPERATIONS.md#filing-a-clickstop):
+  pick a collision-free `CS<NN>`, author the plan from the canonical skeleton,
+  get an independent GPT-5.5 plan review, pin the `## Plan review` attestation
+  hash, then run `harness lint`. The procedure and skeleton live there — don't
+  reverse-engineer the shape from an existing CS file.
+
 ### Claiming a CS
 
 - Follow [OPERATIONS.md § Claim](OPERATIONS.md#claim) for the step-by-step procedure.
