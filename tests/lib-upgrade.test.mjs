@@ -67,6 +67,14 @@ test('planUpgrade rejects a missing or invalid ref', async () => {
     planUpgrade({ consumerRepoPath: os.tmpdir(), targetRef: 'bad ref;rm -rf', fetchHarnessAtRef: fetchStub, sync: fakeSync([]) }),
     (e) => e instanceof UpgradeError && e.code === 'EUPGRADE_BAD_REF'
   );
+  // A leading-dash ref must be rejected so `git checkout` can't read it as an option.
+  for (const bad of ['-rf', '--upload-pack=x', '-foo']) {
+    await assert.rejects(
+      planUpgrade({ consumerRepoPath: os.tmpdir(), targetRef: bad, fetchHarnessAtRef: fetchStub, sync: fakeSync([]) }),
+      (e) => e instanceof UpgradeError && e.code === 'EUPGRADE_BAD_REF',
+      `ref "${bad}" must be rejected`
+    );
+  }
 });
 
 test('planUpgrade never applies (dry-run mode is passed to sync)', async () => {
