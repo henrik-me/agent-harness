@@ -98,6 +98,21 @@ test('planUpgrade never reaches the apply/write path (R7 — no consumer write)'
   }
 });
 
+test('planUpgrade cleans up the default fetcher temp clone (no leak)', async () => {
+  // Inject a fetcher returning a real `harness-upgrade-*` dir (the shape the
+  // default fetcher creates); planUpgrade must clean it up so repeated runs do
+  // not accumulate dirs in os.tmpdir().
+  const fakeClone = mkdtempSync(path.join(os.tmpdir(), 'harness-upgrade-'));
+  writeFileSync(path.join(fakeClone, 'marker'), 'x');
+  await planUpgrade({
+    consumerRepoPath: os.tmpdir(),
+    targetRef: 'v1.0.0',
+    fetchHarnessAtRef: () => fakeClone,
+    sync: fakeSync([]),
+  });
+  assert.equal(existsSync(fakeClone), false, 'planUpgrade must clean up a harness-upgrade-* clone dir');
+});
+
 test('formatUpgradePlan: no changes vs changes', () => {
   const none = formatUpgradePlan({ targetRef: 'v2', currentVersion: 'v1', changes: [], summary: {} });
   assert.match(none, /No changes/);
