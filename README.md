@@ -51,16 +51,17 @@ npx -y github:henrik-me/agent-harness#v0.7.0 sync
 
 `harness upgrade <ref>` **previews** upgrading the pinned harness to `<ref>` (a
 semver tag, branch, or 40-char SHA): it fetches that ref's templates and runs a
-**dry-run** sync against your repo, printing the file diff + a migration summary.
-**Nothing is applied** — it is a safe, read-only preview (additive over `sync`; no
-apply-path rewrite). To apply after reviewing, set `harness.config.json` `version`
-to `<ref>` and run `harness sync` (add `--accept-major` for a major bump). See
+**dry-run** sync against your repo, printing the list of files that would change
+(per-file action + class) plus a change-count summary. **Nothing is applied** — it
+is a safe, read-only preview (additive over `sync`; no apply-path rewrite). To
+apply after reviewing, set `harness.config.json` `version` to `<ref>` and run
+`harness sync --mode=apply` (add `--accept-major` for a major bump). See
 [OPERATIONS.md § Sync](OPERATIONS.md) for the full preview-then-apply flow.
 
 ```bash
 node agent-harness/bin/harness.mjs upgrade v0.8.0   # preview only
-# review the diff, then bump harness.config.json "version" to v0.8.0 and:
-node agent-harness/bin/harness.mjs sync
+# review the change list, then bump harness.config.json "version" to v0.8.0 and:
+node agent-harness/bin/harness.mjs sync --mode=apply
 ```
 
 ## Repo layout

@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -78,6 +78,24 @@ test('planUpgrade never applies (dry-run mode is passed to sync)', async () => {
     sync: async (a) => { observedMode = a.mode; return { changes: [] }; },
   });
   assert.equal(observedMode, 'dry-run', 'upgrade must run sync in dry-run, never apply');
+});
+
+test('planUpgrade never reaches the apply/write path (R7 — no consumer write)', async () => {
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'upgrade-nowrite-'));
+  try {
+    const sentinel = path.join(repo, 'WRITTEN');
+    // A sync seam that writes a sentinel ONLY in apply mode. Upgrade must never
+    // reach apply, so the sentinel must not exist — locks R7 end-to-end at the
+    // upgrade/sync boundary (no consumer-repo mutation from `harness upgrade`).
+    const syncSpy = async (a) => {
+      if (a.mode === 'apply') writeFileSync(sentinel, 'x');
+      return { changes: [{ action: 'update', class: 'managed', target: 'X.md' }], driftDetected: true, warnings: [] };
+    };
+    await planUpgrade({ consumerRepoPath: repo, targetRef: 'v1.2.3', fetchHarnessAtRef: fetchStub, sync: syncSpy });
+    assert.equal(existsSync(sentinel), false, 'upgrade must never run sync in apply mode — no consumer write');
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
 });
 
 test('formatUpgradePlan: no changes vs changes', () => {

@@ -1599,10 +1599,11 @@ pinned harness version recorded in `.harness-lock.json`.
 `harness upgrade <ref>` is a **read-only preview** of bumping the pinned harness
 to `<ref>` (a semver tag, branch, or 40-char SHA). It fetches that ref's
 templates and runs a **dry-run** `sync` against the consumer repo, printing the
-would-change file diff + a migration summary. **It never writes** — it is
-additive over `lib/sync.mjs` (no apply-path rewrite), so it cannot cause data
-loss. To apply after reviewing: set `harness.config.json` `version` to `<ref>`
-and run `harness sync` (add `--accept-major` for a major bump per § SemVer
+list of files that would change (per-file action + class) + a change-count
+summary. **It never writes** — it is additive over `lib/sync.mjs` (no apply-path
+rewrite), so it cannot cause data loss. To apply after reviewing: set
+`harness.config.json` `version` to `<ref>` and run `harness sync --mode=apply`
+(add `--accept-major` for a major bump per § SemVer
 policy). This replaces the previous hand-edit-`version`-then-sync-blind workflow
 with a previewable upgrade.
 
