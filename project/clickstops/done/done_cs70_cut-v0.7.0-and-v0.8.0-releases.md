@@ -1,10 +1,10 @@
 # CS70 — Cut harness v0.7.0 (backfill) + v0.8.0 (Unreleased)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah (Copilot CLI / Claude Opus 4.7 1M)
 **Branch:** cs70/release-v0.8.0
 **Started:** 2026-06-09
-**Closed:** —
+**Closed:** 2026-06-09
 **Filed by:** `omni-ah` (Copilot CLI / Claude Opus 4.7 1M) on 2026-06-09, surfacing context: while resolving the **G-release** user-approval gate in the CS64 pre-claim conversation, discovered that the existing `## [0.7.0] — 2026-06-03` CHANGELOG section was authored at CS54's close-out (PR #227, commit `53e1a09`) and `package.json` was bumped 0.6.0→0.7.0 in the same commit, but **no `v0.7.0` git tag was ever created** and **no GitHub Release was published**. Subsequent CSs (CS54b, CS61, CS62, CS63a/b/c) all landed under a new `[Unreleased]` section without further `package.json` bumps — yet that section includes new CLI subcommands (`harness upgrade` from CS63c; `harness harvest` de-stub from CS63b) and a new managed template file (CS63a) which are SemVer-minor signals per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy). The repo's release state is therefore drifted: `package.json` claims `0.7.0` but no `v0.7.0` tag exists, and minor-warranting work has piled up since.
 **Depends on:** None hard. CS59 (release-process docs) + CS67 (`harness release` verb) remain planned; CS70 is the **manual one-off** that closes the v0.7.0 drift and clears the v0.8.0 backlog without waiting for that automation. CS70 inherits the standard release-cut shape established by CS53 / CS42 / CS39 and adapts it for the two-phase backfill-plus-cut scenario.
 
@@ -115,12 +115,12 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 | Phase 2: branch `cs70/release-v0.8.0` + CHANGELOG promote (`[Unreleased]` → `[0.8.0]`) | done | omni-ah | em-dash, fresh `Added/Changed/Documentation/Fixed` skeleton, link refs updated (C70-4) |
 | Phase 2: `npm version 0.8.0 --no-git-tag-version` | done | omni-ah | C70-5; lockfile parity per `check-pack.mjs` |
 | Phase 2: README pin-version sweep | done | omni-ah | C70-7; install-pins bumped v0.7.0 → v0.8.0 (README.md lines 35/37/45/47), v0.8.0 status paragraph prepended at line 5 (R2 found my initial sweep had missed these — sweep was scoped too narrowly to non-doc files). |
-| Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | in_progress | omni-ah | CS51 gates; capture squash SHA |
-| Phase 2: `git tag -a v0.8.0 <squash-sha>` + push + publish Release | pending | omni-ah | C70-6 / C70-3 reconcile-with-auto-draft pattern |
-| Phase 2: SI cross-repo handoff issue (issue-only per Hard Rule §6) | pending | omni-ah | C70-8; `harness cross-repo open-issue`; 9 OPERATIONS canonical body fields |
-| Plan-vs-implementation review gate (GPT-5.5) | pending | rubber-duck (orchestrator: omni-ah) | required before close-out per OPERATIONS § Plan-vs-implementation review |
-| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | pending | omni-ah | rename active→done; remove WORKBOARD row |
-| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | pending | omni-ah | minimum 2 LRN entries: release-cut findings + v0.7.0-missed-tag root cause |
+| Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | done | omni-ah | PR #278 merged 2026-06-09T17:55:41Z at squash SHA `2352d38b3ea7dff3147bc0c70c29cb0d5c4815b2`. Rubber-duck R2 Needs-Fix (README pin sweep) → R3 Go (gpt-5.5). Copilot review COMMENTED at HEAD `85fd05d`. Admin override on the final merge (REVIEW_REQUIRED status is the standing pattern for content PRs in this repo). |
+| Phase 2: `git tag -a v0.8.0 <squash-sha>` + push + publish Release | done | omni-ah | Tagged `v0.8.0` at `2352d38b`; pushed; `release.yml` LRN-121 auto-draft (id `336781228`) reconciled and published (Latest, published_at 2026-06-09T17:56:38Z). Auto-draft body had the LRN-121 awk-extractor regression (30-char body); PATCHed via gh API with the full `[0.8.0]` CHANGELOG section (16920 chars). |
+| Phase 2: SI cross-repo handoff issue (issue-only per Hard Rule §6) | done | omni-ah | https://github.com/henrik-me/sub-invaders/issues/93 — filed via `harness cross-repo open-issue`. Body has all 9 OPERATIONS canonical fields + verbatim pin-bump checklist. Body-file kept under `.tmp/` (gitignored, inside repo) per CS56 realpath-cwd-containment guard. |
+| Plan-vs-implementation review gate (GPT-5.5) | done | rubber-duck (orchestrator: omni-ah) | GO verdict 2026-06-09T18:01:48Z (3 deliverables diverged for documented Phase 1 deviation; no NEEDS-FIX); recorded verbatim in § Plan-vs-implementation review. |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | in_progress | omni-ah | rename active→done; remove WORKBOARD row; refresh CONTEXT |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | in_progress | omni-ah | 2 new LRN entries: release-cut audit-before-build (status:open) + LRN-121 draft-cleanup gap (status:open) |
 
 ## Model audit
 
@@ -140,4 +140,24 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, independent of implementer claude-opus-4.7-1m-internal)
+**Date:** 2026-06-09T18:01:48Z
+**Outcome:** GO
+
+| Deliverable | Outcome | Rationale (only for non-match) |
+|---|---|---|
+| C70-1 | diverged | Phase 1 became verification plus stale duplicate draft cleanup because the v0.7.0 tag and published Release already existed; the deviation is documented in Notes per LRN-143. |
+| C70-2 | diverged | The v0.7.0 tag already existed at `53e1a09` as a lightweight tag, so no annotated replacement/tag push was performed to avoid mutating an existing release artifact. |
+| C70-3 | diverged | The v0.7.0 Release was already published; implementation verified it and deleted the stale sibling draft instead of creating/promoting a new release. |
+| C70-4 | match |  |
+| C70-5 | match |  |
+| C70-6 | match |  |
+| C70-7 | match |  |
+| C70-8 | match |  |
+| C70-9 | match |  |
+| C70-10 | match |  |
+| C70-11 | match |  |
+
+Test-coverage assessment: **sufficient**. Re-ran `npm test --silent` summary at HEAD: 1182 tests, 1181 pass, 0 fail, 1 skipped, matching the PR body; `node bin\harness.mjs lint --quiet` reports 30 passed, 0 failed, 3 skipped; `sync --mode=check` reports no drift. Release artifact checks also passed: `v0.8.0` is latest/published, `v0.7.0` is published, package/lock versions are 0.8.0, and the v0.8.0 Release body equals the CHANGELOG section body. The LRN-101 audit remains valid: post-merge count is 49 only because it now includes the release-cut squash itself; the PR-body 48-commit audit covered the pre-release accumulated content.
+
+Overall reasoning: **GO**. The v0.8.0 CHANGELOG content matches the shipped delta, the minor bump is SemVer-justified by new CLI subcommands and managed-template/config surface, the LRN-121 release-body regression was corrected, SI issue #93 contains the 9 canonical handoff fields plus the verbatim pin-bump checklist, and the Phase 1 deviations are explicitly captured as Notes/LRN candidates specific enough for close-out filing.

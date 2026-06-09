@@ -1,6 +1,6 @@
 # Learnings & Decisions
 
-> **Last updated:** 2026-06-08 — CS61b close-out: **LRN-153** `applied`, disposition records the PR #256 squash SHA `019ba8c`; LRN-154 open → CS69. (CS63c close-out: **LRN-157** added (`open`) — an injectable side-effecting seam should OWN its cleanup (return `{path, cleanup}`), never be deleted by the caller via a path-prefix guess (not provenance-safe); also reject leading-dash refs before `git checkout` (option-injection; `--` is unusable for `<tree-ish>`). Earlier 2026-06-07 (CS63b close-out: **LRN-156** added (`open`) — `git diff --name-only` collapses renames to the destination path only, silently breaking gates that need the rename SOURCE (it broke CS63a's bypass guard **and** CS63b's close-out gate); use `--no-renames` / `--name-status -M` / files-API `previous_filename`. Earlier 2026-06-07 (CS63a close-out: **LRN-155** added (`open`) — `harness sync` has **no new-managed-file reconciliation**, so a newly-added managed file never reaches existing consumers via sync (only fresh `init` or a manual `managed.files` addition); folds into CS63c (guided update) / CS64. Earlier 2026-06-06 (out-of-CS learnings hygiene (CS61b): **LRN-106**'s missing `### LRN-106` header restored; **LRN-153** added — durable knowledge belongs in repo docs (`LEARNINGS.md` + process docs), **not** agent memory, because the orchestrator runs across multiple machines/clones; **LRN-154** added (`open`) — `check-learnings.mjs` does not enforce a `### LRN-NNN` header matching each entry's frontmatter `id`. Earlier (CS62 follow-up): **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
+> **Last updated:** 2026-06-09 — CS70 close-out: **LRN-158** added (`open`) — release-cuts must `gh release list` + `gh api releases --jq '.[]'` for both published AND draft state BEFORE filing the backfill CS (CS70 was planned as a 2-phase release on the premise that `v0.7.0` was unshipped; in reality the tag + Release had existed since CS54's PR #227 created them via `release.yml` LRN-121, and the only Phase 1 action needed was deleting a stale duplicate Draft). **LRN-159** added (`open`) — `release.yml` LRN-121's tag-create event can produce a *second* artifact when manual reconciliation races with the auto-draft, leaving an `untagged-...` Draft alongside the published Release; every release-publish playbook must idempotently delete any `tag_name==<version> && draft==true` sibling. Also: confirmed the LRN-121 awk-extractor regression (auto-draft body was 30 chars / header only) — CS70 patched the body via gh API; if it recurs, file CS59 priority bump. Earlier (2026-06-08): CS61b close-out: **LRN-153** `applied`, disposition records the PR #256 squash SHA `019ba8c`; LRN-154 open → CS69. (CS63c close-out: **LRN-157** added (`open`) — an injectable side-effecting seam should OWN its cleanup (return `{path, cleanup}`), never be deleted by the caller via a path-prefix guess (not provenance-safe); also reject leading-dash refs before `git checkout` (option-injection; `--` is unusable for `<tree-ish>`). Earlier 2026-06-07 (CS63b close-out: **LRN-156** added (`open`) — `git diff --name-only` collapses renames to the destination path only, silently breaking gates that need the rename SOURCE (it broke CS63a's bypass guard **and** CS63b's close-out gate); use `--no-renames` / `--name-status -M` / files-API `previous_filename`. Earlier 2026-06-07 (CS63a close-out: **LRN-155** added (`open`) — `harness sync` has **no new-managed-file reconciliation**, so a newly-added managed file never reaches existing consumers via sync (only fresh `init` or a manual `managed.files` addition); folds into CS63c (guided update) / CS64. Earlier 2026-06-06 (out-of-CS learnings hygiene (CS61b): **LRN-106**'s missing `### LRN-106` header restored; **LRN-153** added — durable knowledge belongs in repo docs (`LEARNINGS.md` + process docs), **not** agent memory, because the orchestrator runs across multiple machines/clones; **LRN-154** added (`open`) — `check-learnings.mjs` does not enforce a `### LRN-NNN` header matching each entry's frontmatter `id`. Earlier (CS62 follow-up): **LRN-151** added (open) — a crash-corrupted local remote-tracking ref (`.git/refs/remotes/origin/<branch>` left as NUL/whitespace) makes *all* `git fetch` abort with `fatal: bad object`; repair = verify the remote via `git ls-remote`, delete the loose ref file, re-fetch (no reclone). Earlier same day (CS61 follow-up): **LRN-149** added — apply REVIEWS.md § 2.6b S1–S3 schema-conformance checks to your *own* config/schema reader BEFORE opening the PR (author-side self-check; enumerate all schema constraint dimensions up front to avoid per-dimension review-round ping-pong); **LRN-150** added — `git merge` commits also need the `Co-authored-by` trailer, which `git commit --no-edit` omits and `check-commit-trailers` then fails. Earlier same day (CS61): LRN-145 → `applied` — shared `loadReviewsPolicy` reader now backs all four review-gate linters, removing hard-coded `gpt-5.5`/high-risk literals; `REVIEWS.md § 2.6b` schema-conformance review checklist added; LRN-142 residual resolved; LRN-148 added — two schema-vs-runtime default divergences deliberately deferred + documented; LRN-147 added — review-gate scripts run from a `node_modules`-free `.harness-ci` clone, so the shared reader lives in dep-free `lib/reviews-policy.mjs`, never `config-reader.mjs` (AJV).) Earlier: 2026-06-05 (LRN-146 added — the orchestrator fresh-clone Session Start bootstrap is not self-contained: `node_modules` is gitignored/per-checkout so a fresh clone floods `node --test` with `ERR_MODULE_NOT_FOUND` (ajv/js-yaml) until dependencies are installed, and two `harness whoami` tests assert `id.endsWith('-ah')` which false-reds in any clone not named `agent-harness` (e.g. `agent-harness_copilot2` → `yoga-ah-c2`). The one-time `npm ci`/`npm install` setup step is not surfaced on the INSTRUCTIONS startup path (it lives only in CONTRIBUTING.md); filed CS62.) Earlier: 2026-06-04 (CS27 follow-up: LRN-143 added — post-plan-hash factual corrections go to implementation + a `## Notes` deviation record, never to the hashed `## Decisions`/`## Deliverables` rows (C27-3 / Copilot PR #239); LRN-144 added — the plan-vs-implementation close-out gate evaluates the merged content HEAD / content diff and its verdict is recorded in the **active** CS file *before* the active→done rename; doing the rename first leaves a half-migrated worktree (done file, unfilled PVI section) that check-clickstop false-rejects.) Earlier: 2026-05-15 (post-v0.5.2 retroactive close-out sweep: LRN-131 added — CS lifecycle compression on the SI-feedback velocity batch (CS48-CS52) left 5 stale `planned_*` files for ~16h until PR #204 retroactively renamed them; canonical close-out compression note documented as future template. Earlier post-v0.5.2 doc-sweep PR #203 added LRN-128 (orchestrator self-review on close-out), LRN-129 (gate auto-rerun on body edit), LRN-130 (UTC timestamp discipline), and amended LRN-124 with strike-count tracking.)
 
 This file captures durable, project-applicable insights surfaced by completing CSs. See [RETROSPECTIVES.md](RETROSPECTIVES.md) for the precise definition of a "learning", the entry schema, and the harvest procedure.
 
@@ -11,6 +11,156 @@ This file captures durable, project-applicable insights surfaced by completing C
 ---
 
 ## Open
+
+### LRN-158
+
+```yaml
+id: LRN-158
+date: 2026-06-09
+category: process
+source_cs: CS70
+status: open
+tags: [release-cuts, release-management, planning, audit-before-build, lrn-101-extension]
+claim_area: orchestrator
+```
+
+**Problem:** CS70 was filed as a two-phase release CS on the premise that
+`v0.7.0` had been bumped in `package.json` + CHANGELOG (at CS54's close-out,
+commit `53e1a09`, 2026-06-03) but never tagged or shipped as a GitHub
+Release. The plan went through three rounds of GPT-5.5 plan review
+(R1 Needs-Fix → R2 Needs-Fix → R3 Go, hash `7ab92e2eb150`) and was
+filed as PR #275 — all without the planner ever running
+`gh release list` or `gh api repos/<owner>/<repo>/releases --jq '.[]'`
+to verify the premise. Execution discovered the tag + a published
+Release had existed at `53e1a09` since the same day CS54 closed
+(auto-created by `release.yml` LRN-121); the only Phase 1 action
+actually needed was deleting a stale duplicate Draft sibling.
+
+**Finding:** Release-cut and release-backfill CSs need an
+**audit-before-build precondition** as part of the planning skeleton.
+LRN-101 already established this for *content* validation
+(`git log v<prev>..main` to confirm the `[Unreleased]` section
+matches what shipped). The same discipline applies to *release-state*
+validation: before declaring a phase that mutates tag/release state,
+verify the current state of both published AND draft releases.
+
+**Evidence:**
+- CS70 plan filed 2026-06-09 ~17:15Z (PR #275) on the unverified
+  premise; the actual `v0.7.0` Release was published 2026-06-03 at
+  21:39:48Z (created at 21:39:18Z), 6 days before CS70's plan filing.
+- `gh api repos/henrik-me/agent-harness/releases --jq '.[] | select(.tag_name=="v0.7.0")'`
+  returned both the published Release **and** a sibling stale Draft
+  (release id `334015036`, created 21:39:18Z) — two artifacts from
+  the same `release.yml` LRN-121 run.
+- CS70 plan went through 3 GPT-5.5 plan-review rounds (R1/R2/R3 all
+  attested at hash `7ab92e2eb150`) without anyone checking the
+  release state.
+- Recovery cost: 1 round-trip (claim PR #277 merged + content PR #278
+  prep + R2 README pin sweep finding) before the discovery surfaced
+  during Phase 1 ruleset inspection; the audit itself is ~10 seconds.
+
+**Disposition:** Pending. Folds into CS59 (release-process docs) and
+CS67 (`harness release` verb). Concrete asks for those CSs:
+
+1. CS59 should document the audit-before-build precondition as a
+   numbered step in OPERATIONS § Release process, with the three
+   verification commands inline: `gh release list --limit N`,
+   `git ls-remote --tags origin <tag>`, and
+   `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'`
+   (both published+draft).
+2. CS67's `harness release` verb should refuse to proceed when the
+   target tag already exists (published or draft) without an
+   explicit `--reconcile` flag, surfacing the conflicting
+   release id(s).
+3. CS70's planning skeleton (OPERATIONS § Filing a clickstop) should
+   mention the audit for any CS whose deliverables touch tag/release
+   state — recommended pattern: copy the verification output into the
+   plan's Constraints section so plan reviewers can validate the
+   premise.
+
+**Implications:** This is the same class of finding as LRN-101's
+release-cuts content audit but extends to release-*state*. Without
+this disposition, the next release-backfill CS will repeat the same
+plan-then-discover round-trip.
+
+---
+
+### LRN-159
+
+```yaml
+id: LRN-159
+date: 2026-06-09
+category: tooling
+source_cs: CS70
+status: open
+tags: [release-management, release-yml, lrn-121-followup, draft-cleanup, gh-cli]
+claim_area: workflows
+```
+
+**Problem:** `release.yml` (LRN-121) creates a draft GitHub Release on
+every tag push. When manual reconciliation races with the auto-draft
+(e.g. orchestrator publishes the release via `gh release create`
+before noticing the draft, or the workflow run lands after a manual
+publish), the result is **two release records for the same tag** —
+the manually-published one (as Latest) and a stale `untagged-...`
+Draft. The stale draft is not visible in the public release page
+but appears in `gh release list` and `gh api repos/.../releases`,
+causing confusion in audits and inflating the release count.
+
+**Finding:** Every release-publish playbook must idempotently
+**delete** any `tag_name==<version> && draft==true` sibling
+release after the publish step lands, using `gh api -X DELETE
+repos/<owner>/<repo>/releases/<release-id>`. This is independent of
+LRN-121's draft-vs-published reconciliation (which only handles the
+case where the auto-draft IS the one to promote); the cleanup step
+handles the leftover sibling.
+
+**Evidence:**
+- CS70 Phase 1 discovered a stale Draft (release id `334015036`)
+  alongside the published `v0.7.0` Release (release id different,
+  published 2026-06-03T21:39:48Z) — both created within 30 seconds
+  of each other on 2026-06-03 via the same CS54 PR #227 tag-push
+  event. The Draft had never been cleaned up and survived for 6 days.
+- CS70 Phase 2: same pattern observed on `v0.8.0` — the
+  `release.yml` run after the `v0.8.0` tag push (run id
+  `27225057`-era, ran 2026-06-09 17:55:57Z) produced auto-draft
+  release id `336781228`. Phase 2 reconciled by PATCHing that draft
+  in-place to published (so no orphan sibling for v0.8.0 this time)
+  — but the manual workflow is fragile and depends on noticing the
+  draft within the same session.
+- Recovery for the v0.7.0 case:
+  `gh api -X DELETE repos/henrik-me/agent-harness/releases/334015036`
+  — idempotent, ~1s.
+
+**Disposition:** Pending. Three potential homes:
+
+1. **CS59** (release-process docs) should document the cleanup step
+   as the final action in OPERATIONS § Release process, after
+   "publish the release", with the explicit `gh api -X DELETE`
+   pattern.
+2. **CS67** (`harness release` verb) should automate the cleanup
+   in its publish path: after the release is published, scan for
+   any `tag_name==<version> && draft==true && id != <published-id>`
+   sibling and delete it (idempotent; safe re-run).
+3. **Tactical:** `release.yml` itself could be amended to mark the
+   draft with a unique label (e.g. release annotation) the cleanup
+   script can target, but that's a workflow change and probably not
+   worth it if CS67 lands first.
+
+Additionally, the `release.yml` awk-extractor regression that
+truncated the v0.8.0 auto-draft body to just the section header
+(`## [0.8.0] — 2026-06-09`, 30 chars) is **separately confirmed**
+during CS70 and should be diagnosed as part of CS59. The CS70 fix
+was a one-off API PATCH; without CS59 the next release-cut will
+repeat the same body-empty workaround.
+
+**Implications:** Without this cleanup, every harness release leaves
+a stale draft sibling in the repo's release list, accumulating over
+time. The audit-before-build doctrine in LRN-158 will surface them
+(`gh release list` shows drafts), but each one then requires a
+manual cleanup step that should be mechanical.
+
+---
 
 ### LRN-157
 
