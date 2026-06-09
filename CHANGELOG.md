@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.8.0] — 2026-06-09
+
+### Added
+
 - **CS63c (guided update + architectural evaluations — CS63 arc, W4+W6):** Add **`harness upgrade <ref>`** — a **read-only preview** of bumping the pinned harness to `<ref>` (semver tag, branch, or 40-char SHA). It fetches that ref's templates and runs a **dry-run** sync against the consumer repo, printing the list of files that would change (per-file action + class) + a change-count summary; **nothing is applied** (additive over `lib/sync.mjs` — no apply-path rewrite, so it cannot cause data loss). To apply after reviewing, set `harness.config.json` `version` to `<ref>` and run `harness sync --mode=apply` (`--accept-major` for a major bump). New `lib/upgrade.mjs` + `tests/lib-upgrade.test.mjs`; registered in `bin/harness.mjs` `COMMAND_REGISTRY` + help (the `harness upgrade` subcommand is the minor-bump trigger for the CS63 arc). Documents clone-based install as a first-class path and the preview-then-apply upgrade flow in `README.md` + `OPERATIONS.md` (+ composed mirror). The architectural-evaluation outcomes (CLI-commands-first skills, `CONTEXT.md` history cap now + defer `OPERATIONS.md`/`LEARNINGS.md` right-sizing to CS65, C63-11 advisory disposition) are recorded in the CS63c close-out proposal artifact; follow-ups are tracked in the already-filed CS64–CS67 stubs.
 
 - **CS63b (lifecycle automation + close-out context-integrity — CS63 arc, W2+W3+C1):** Make the advertised-but-stubbed lifecycle automation real and add the missing context-integrity gate. **`harness harvest`** is now implemented (`lib/harvest.mjs` + `bin/harness.mjs` `cmdHarvest` wired to it, replacing the `die` stub): a deterministic, network-free, **advisory** scan of `LEARNINGS.md` that surfaces stale `open` learnings (pre-claim bounded mode flags stale `process`/`architectural` entries past the threshold; weekly mode reports all open entries) — it never wedges a claim. New **`scripts/check-closeout-freshness.mjs`** (C63-5) ties the "repo is the memory" invariant to a mechanical gate: when a PR's diff contains an `active_csNN_* → done_csNN_*` close-out rename, it **requires** a `CONTEXT.md` change in the same PR (fail) and **warns** if `LEARNINGS.md` is untouched; it is narrowly scoped to the rename event (a typo fix in an existing `done_` file does not trigger it) and self-host-safe. Wired into **both** the `harness lint` aggregator (`cmdLint`, self-host-safe — runs only when the branch diff vs its `origin/main` fork point contains a close-out rename) **and** `harness pr-evidence`. Rename detection uses `git diff --no-renames` so a rename surfaces as delete+add (both the old `active_` and new `done_` paths), which the same-CS-id detector needs — `--name-only` alone reports only the destination and silently no-ops the gate. Corrects the INSTRUCTIONS.md (+ `template/managed/` mirror) doc-vs-reality automation claims (C1) and de-STUBs the top-level `harvest` CLI help. Adds `tests/lib-harvest.test.mjs`, `tests/check-closeout-freshness.test.mjs` (+ a real-rename integration regression), and updates `tests/cli.test.mjs`.
@@ -433,7 +443,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/henrik-me/agent-harness/compare/v0.6.0...v0.7.0
 [0.2.0]: https://github.com/henrik-me/agent-harness/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/henrik-me/agent-harness/releases/tag/v0.1.0
