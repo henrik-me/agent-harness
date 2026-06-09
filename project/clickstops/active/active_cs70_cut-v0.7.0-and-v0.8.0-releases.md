@@ -1,9 +1,9 @@
 # CS70 — Cut harness v0.7.0 (backfill) + v0.8.0 (Unreleased)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah (Copilot CLI / Claude Opus 4.7 1M)
+**Branch:** cs70/release-v0.8.0
+**Started:** 2026-06-09
 **Closed:** —
 **Filed by:** `omni-ah` (Copilot CLI / Claude Opus 4.7 1M) on 2026-06-09, surfacing context: while resolving the **G-release** user-approval gate in the CS64 pre-claim conversation, discovered that the existing `## [0.7.0] — 2026-06-03` CHANGELOG section was authored at CS54's close-out (PR #227, commit `53e1a09`) and `package.json` was bumped 0.6.0→0.7.0 in the same commit, but **no `v0.7.0` git tag was ever created** and **no GitHub Release was published**. Subsequent CSs (CS54b, CS61, CS62, CS63a/b/c) all landed under a new `[Unreleased]` section without further `package.json` bumps — yet that section includes new CLI subcommands (`harness upgrade` from CS63c; `harness harvest` de-stub from CS63b) and a new managed template file (CS63a) which are SemVer-minor signals per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy). The repo's release state is therefore drifted: `package.json` claims `0.7.0` but no `v0.7.0` tag exists, and minor-warranting work has piled up since.
 **Depends on:** None hard. CS59 (release-process docs) + CS67 (`harness release` verb) remain planned; CS70 is the **manual one-off** that closes the v0.7.0 drift and clears the v0.8.0 backlog without waiting for that automation. CS70 inherits the standard release-cut shape established by CS53 / CS42 / CS39 and adapts it for the two-phase backfill-plus-cut scenario.
@@ -109,7 +109,28 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS § Claim) | planned | — | — |
+| Phase 1: pre-tag rulesets + 53e1a09 sanity check | in_progress | omni-ah | `gh api repos/henrik-me/agent-harness/rulesets --jq '.[] \| select(.target=="tag")'` + `git log 53e1a09 -1` |
+| Phase 1: `git tag -a v0.7.0 53e1a09 -m "Release v0.7.0"` + push | pending | omni-ah | annotated tag at the historical CHANGELOG/package.json point |
+| Phase 1: reconcile `release.yml` auto-draft (LRN-121) + publish v0.7.0 Release | pending | omni-ah | `gh run watch` → `gh release edit v0.7.0 --draft=false`; notes-body matches `[0.7.0]` section |
+| Phase 2: branch `cs70/release-v0.8.0` + CHANGELOG promote (`[Unreleased]` → `[0.8.0]`) | pending | omni-ah | em-dash, fresh skeleton, link refs (C70-4) |
+| Phase 2: `npm version 0.8.0 --no-git-tag-version` | pending | omni-ah | C70-5; lockfile parity per `check-pack.mjs` |
+| Phase 2: README pin-version sweep | pending | omni-ah | C70-7; empty result is acceptable |
+| Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | pending | omni-ah | CS51 gates; capture squash SHA |
+| Phase 2: `git tag -a v0.8.0 <squash-sha>` + push + publish Release | pending | omni-ah | C70-6 / C70-3 reconcile-with-auto-draft pattern |
+| Phase 2: SI cross-repo handoff issue (issue-only per Hard Rule §6) | pending | omni-ah | C70-8; `harness cross-repo open-issue`; 9 OPERATIONS canonical body fields |
+| Plan-vs-implementation review gate (GPT-5.5) | pending | rubber-duck (orchestrator: omni-ah) | required before close-out per OPERATIONS § Plan-vs-implementation review |
+| Close-out: docs + restart-state (CONTEXT/WORKBOARD/HANDOFF + relevant docs) | pending | omni-ah | rename active→done; remove WORKBOARD row |
+| Close-out: learnings + follow-ups (LEARNINGS.md + planned CSs) | pending | omni-ah | minimum 2 LRN entries: release-cut findings + v0.7.0-missed-tag root cause |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | _(updated at close-out with any additional implementer/reviewer models materially used; CS70 is HIGH-RISK per C70-10, no Sonnet fallback per REVIEWS § 2.3)_ |
 
 ## Notes / Learnings
 
