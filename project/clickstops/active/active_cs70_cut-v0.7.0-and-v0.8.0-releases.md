@@ -109,13 +109,13 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Phase 1: pre-tag rulesets + 53e1a09 sanity check | in_progress | omni-ah | `gh api repos/henrik-me/agent-harness/rulesets --jq '.[] \| select(.target=="tag")'` + `git log 53e1a09 -1` |
-| Phase 1: `git tag -a v0.7.0 53e1a09 -m "Release v0.7.0"` + push | pending | omni-ah | annotated tag at the historical CHANGELOG/package.json point |
-| Phase 1: reconcile `release.yml` auto-draft (LRN-121) + publish v0.7.0 Release | pending | omni-ah | `gh run watch` → `gh release edit v0.7.0 --draft=false`; notes-body matches `[0.7.0]` section |
-| Phase 2: branch `cs70/release-v0.8.0` + CHANGELOG promote (`[Unreleased]` → `[0.8.0]`) | pending | omni-ah | em-dash, fresh skeleton, link refs (C70-4) |
-| Phase 2: `npm version 0.8.0 --no-git-tag-version` | pending | omni-ah | C70-5; lockfile parity per `check-pack.mjs` |
-| Phase 2: README pin-version sweep | pending | omni-ah | C70-7; empty result is acceptable |
-| Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | pending | omni-ah | CS51 gates; capture squash SHA |
+| Phase 1: pre-tag rulesets + 53e1a09 sanity check | done | omni-ah | only `branch:main-protection` ruleset present (no tag ruleset); 53e1a09 = "CS54: cut v0.7.0 release (CS54+CS55+CS56) and close out (#227)" ✓ |
+| Phase 1: `git tag -a v0.7.0 53e1a09 -m "Release v0.7.0"` + push | n/a (already done) | omni-ah | **Discovery during execution:** v0.7.0 tag already existed on origin (lightweight) pointing at 53e1a09 — created 2026-06-03 alongside the CS54 PR. CS70 plan filed on a faulty premise; see LRN candidate in Notes. |
+| Phase 1: reconcile `release.yml` auto-draft (LRN-121) + publish v0.7.0 Release | done | omni-ah | Published v0.7.0 Release already existed (createdAt 2026-06-03T21:39:18Z, publishedAt 2026-06-03T21:39:48Z). Stale Draft v0.7.0 (release id 334015036, created same day) deleted via `gh api -X DELETE`. |
+| Phase 2: branch `cs70/release-v0.8.0` + CHANGELOG promote (`[Unreleased]` → `[0.8.0]`) | done | omni-ah | em-dash, fresh `Added/Changed/Documentation/Fixed` skeleton, link refs updated (C70-4) |
+| Phase 2: `npm version 0.8.0 --no-git-tag-version` | done | omni-ah | C70-5; lockfile parity per `check-pack.mjs` |
+| Phase 2: README pin-version sweep | done | omni-ah | C70-7; no `v0.7.0` pins in README or other shipped non-CHANGELOG/non-LEARNINGS files |
+| Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | in_progress | omni-ah | CS51 gates; capture squash SHA |
 | Phase 2: `git tag -a v0.8.0 <squash-sha>` + push + publish Release | pending | omni-ah | C70-6 / C70-3 reconcile-with-auto-draft pattern |
 | Phase 2: SI cross-repo handoff issue (issue-only per Hard Rule §6) | pending | omni-ah | C70-8; `harness cross-repo open-issue`; 9 OPERATIONS canonical body fields |
 | Plan-vs-implementation review gate (GPT-5.5) | pending | rubber-duck (orchestrator: omni-ah) | required before close-out per OPERATIONS § Plan-vs-implementation review |
@@ -134,7 +134,9 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 
 ## Notes / Learnings
 
-(filled during execution)
+- **Phase 1 already complete (discovered at execution time, 2026-06-09):** The v0.7.0 tag and published v0.7.0 GitHub Release already existed at the planned target commit `53e1a09` since 2026-06-03 — created automatically alongside the CS54 release-cut PR #227. The CS70 plan was filed on the (incorrect) premise that the v0.7.0 ship was incomplete; the actual gap was an auxiliary **Draft** v0.7.0 release (release id `334015036`, sibling artifact from the same `release.yml` LRN-121 run) that was never reconciled and lingered as a duplicate. **Recovery action:** deleted the stale Draft via `gh api -X DELETE repos/henrik-me/agent-harness/releases/334015036`; no tag mutation needed.
+- **LRN candidate (release-cuts / audit-before-build, applies LRN-101 doctrine):** before filing any release-backfill or release-validation CS, the planner must run `gh release list --limit N`, `git ls-remote --tags origin <tag>`, and `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'` for both **published** and **draft** states, and record the result in the plan's Constraints. CS70 spent one round-trip (claim + content PR setup) before the discovery surfaced; the audit is ~10 seconds and would have re-scoped CS70 from a 2-phase release to a 1-phase release + draft cleanup.
+- **LRN candidate (`release.yml` LRN-121 follow-on):** the LRN-121 auto-draft can produce a *second* artifact when the tag-create event races with manual reconciliation, leaving an `untagged-...` Draft alongside the published Release. The orchestrator should idempotently delete any `tag_name == <version> && draft == true` siblings as part of every release-publish playbook.
 
 ## Plan-vs-implementation review
 
