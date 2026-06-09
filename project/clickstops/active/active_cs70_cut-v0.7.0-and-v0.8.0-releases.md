@@ -114,7 +114,7 @@ So `[Unreleased]` carries multiple **minor**-warranting additions, which per OPE
 | Phase 1: reconcile `release.yml` auto-draft (LRN-121) + publish v0.7.0 Release | done | omni-ah | Published v0.7.0 Release already existed (createdAt 2026-06-03T21:39:18Z, publishedAt 2026-06-03T21:39:48Z). Stale Draft v0.7.0 (release id 334015036, created same day) deleted via `gh api -X DELETE`. |
 | Phase 2: branch `cs70/release-v0.8.0` + CHANGELOG promote (`[Unreleased]` → `[0.8.0]`) | done | omni-ah | em-dash, fresh `Added/Changed/Documentation/Fixed` skeleton, link refs updated (C70-4) |
 | Phase 2: `npm version 0.8.0 --no-git-tag-version` | done | omni-ah | C70-5; lockfile parity per `check-pack.mjs` |
-| Phase 2: README pin-version sweep | done | omni-ah | C70-7; no `v0.7.0` pins in README or other shipped non-CHANGELOG/non-LEARNINGS files |
+| Phase 2: README pin-version sweep | done | omni-ah | C70-7; install-pins bumped v0.7.0 → v0.8.0 (README.md lines 35/37/45/47), v0.8.0 status paragraph prepended at line 5 (R2 found my initial sweep had missed these — sweep was scoped too narrowly to non-doc files). |
 | Phase 2: open content PR, run GPT-5.5 rubber-duck + Copilot review, merge | in_progress | omni-ah | CS51 gates; capture squash SHA |
 | Phase 2: `git tag -a v0.8.0 <squash-sha>` + push + publish Release | pending | omni-ah | C70-6 / C70-3 reconcile-with-auto-draft pattern |
 | Phase 2: SI cross-repo handoff issue (issue-only per Hard Rule §6) | pending | omni-ah | C70-8; `harness cross-repo open-issue`; 9 OPERATIONS canonical body fields |
