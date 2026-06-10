@@ -8,6 +8,63 @@
 **Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** [CS25](../done/done_cs25_hotfix-runtime-deps.md) (**closed 2026-05-11**; ajv/ajv-formats/js-yaml moved to runtime dependencies so the init flow has a working ajv — dependency satisfied; CS25 is on `main`). No remaining blocker. (Note: no `v0.2.1` tag was cut — the patch-release step was reframed; `v0.2.0` remains the latest `v0.2.x` tag.)
 
+## Status update (2026-06-09, `omni-ah-c2`, disposition pass)
+
+> Per the 2026-06-09 pre-claim backlog-disposition pass at repo HEAD
+> `0f434c7`, CS26 is **partially obsolete**. Two of the six findings
+> (#4, #5) have been silently addressed by other CSs since this plan
+> was filed; four remain real defects against `main` today
+> (#2, #3, #6, #9). Decision: **keep planned**, but **the next claimer
+> should re-author the plan body down to those four remaining
+> findings** rather than execute the full 6-finding / 4-sub-agent
+> fan-out as written.
+>
+> **Finding-by-finding triage (verified at HEAD `0f434c7`):**
+>
+> | Finding | Topic | State today | Disposition |
+> |---|---|---|---|
+> | #2 | seed `harness.config.json` `version` field with actual invocation ref (not `v0.1.0`) | `template/seeded/harness.config.json` still hardcodes `"version": "v0.1.0"`. `cmdInit` copies it verbatim via `copyFileSync` (no ref-detect step). | **Still relevant** |
+> | #3 | new `scripts/check-config-placeholders.mjs` linter for `REPLACE_ME` tokens | Linter file does not exist. Seeded `template/seeded/harness.config.json` still ships **6× `REPLACE_ME` tokens across 5 config fields**: `project.repo` (set to `"REPLACE_ME/REPLACE_ME"`, i.e. two tokens in one slot), `templating.repo_owner`, `templating.default_codeowner`, `templating.lib_codeowner`, `templating.repo_short`. | **Still relevant** |
+> | #4 | populate `.harness-lock.json` `harness_ref` + `resolved_sha` (not `"unknown"`) | **Done** by other means: `lib/sync.mjs:resolveHarnessRef` (line 260) resolves both via `git rev-parse HEAD` + `git describe --tags --exact-match HEAD`, fallback to abbrev-ref, and writes them through `writeLock` (imported from `lib/lock.mjs`; `lib/sync.mjs:1038`). | **Obsolete** |
+> | #5 | replace `template/seeded/flags/flags.json` example flags with empty array | **Obsolete by elimination**: the entire `template/seeded/flags/` subtree no longer exists; no `flags.json` is seeded. The defect cannot occur. | **Obsolete** |
+> | #6 | stop creating stray root `.gitkeep` from `cmdInit` | **Still relevant** — mechanism changed but the defect persists: the unconditional `Created .gitkeep` line in `cmdInit` is gone (`grep '\.gitkeep' bin/harness.mjs` = no matches), but `template/seeded/.gitkeep` exists and `cmdInit`'s seeded-file copy loop (lines 1260–1278) recursively copies all seeded files including this one, so fresh consumers still receive a root `.gitkeep`. Fix is now to delete `template/seeded/.gitkeep` (and/or add an explicit skip in the copy loop). | **Still relevant** |
+> | #9 | seed `template/seeded/.gitattributes` with `* text=auto eol=lf` + per-extension overrides | `template/seeded/.gitattributes` does not exist; fresh consumers still hit Windows CRLF round-trip warnings on first commit. | **Still relevant** |
+>
+> **Re-authoring guidance for the next claimer:**
+>
+> - **Scope:** Findings #2, #3, #6, #9 only. The 4-sub-agent fan-out
+>   (table under `## Sub-agent fan-out`) is over-engineered for what
+>   remains — one orchestrator-owned session is sufficient, with
+>   optional 2-way split if desired (sub-agent A: cmdInit
+>   version-detect + seeded `.gitattributes` + delete seeded
+>   `.gitkeep`; sub-agent B: `check-config-placeholders.mjs`).
+> - **Decisions retained from the plan body below:**
+>   - C26-2 (version-detect strategy via npx cache `.package-lock.json`)
+>     — still appropriate; the seeded config still needs a real version.
+>   - C26-3 (placeholder-linter scope) — still appropriate.
+>   - C26-6 (root `.gitkeep`) — still appropriate, but **update the
+>     mechanism**: rather than removing a `cmdInit` line that no longer
+>     exists, delete `template/seeded/.gitkeep` (and any sub-dir
+>     `.gitkeep` whose target dir is now non-empty in a fresh init)
+>     and/or add an explicit skip in the seeded-copy loop.
+>   - C26-7 (`.gitattributes` shape: `* text=auto eol=lf` + binary/LF
+>     overrides) — still appropriate.
+>   - C26-8 (backwards compatibility: init-only, additive) — still
+>     appropriate.
+> - **Decisions obsolete:**
+>   - C26-4 (lock-file resolved-ref) — implemented; remove from re-author.
+>   - C26-5 (seeded `flags.json` shape) — moot; remove from re-author.
+> - **CHANGELOG bullet** should cite this Status update note as the
+>   reason the scope is smaller than the original `## Deliverables`
+>   table.
+> - **Release follow-up:** the original C26-9 mentioned a `v0.2.2` cut;
+>   that's stale — the next release post-`v0.8.0` (currently Latest) is
+>   `v0.8.1` or `v0.9.0` depending on the apply set's SemVer level.
+>
+> Plan body below is preserved verbatim for traceability against the
+> original CS16 sub-invaders-bootstrap-summary citations (Findings #2,
+> #3, #4, #5, #6, #9).
+
 ## Goal
 
 Fix six `harness init` defects observed during the first downstream-consumer init (CS16, sub-invaders bootstrap, 2026-05-11). All six leave a fresh consumer in a partially-broken state that requires manual cleanup before the consumer can productively use the harness. Together they represent a poor first-run experience for the consumer onboarding flow.

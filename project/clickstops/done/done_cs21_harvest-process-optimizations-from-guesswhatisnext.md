@@ -1,12 +1,43 @@
 # CS21 — Harvest process optimizations from guesswhatisnext into harness templates
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
-**Closed:** —
+> **⚠️ Closed obsolete — never implemented.** Per the 2026-06-09 pre-claim
+> backlog-disposition pass (orchestrator `omni-ah-c2`, repo HEAD `0f434c7`),
+> CS21 is closed without producing any Phase 1/2/3 deliverable. The plan's
+> central premise — that the harness lags `henrik-me/guesswhatisnext` (gwn)
+> after the CS01 fork and must catch up before CS19 and SI-CS03 — has
+> **inverted** between filing (2026-05-10) and disposition (2026-06-09):
+>
+> - **gwn is dormant.** `origin/main` HEAD is `ee01bba` ("docs: capture
+>   CS75 scale-to-zero learnings"), committed 2026-05-10, last pushed
+>   2026-05-11. No activity for ~1 month.
+> - **The harness has pulled far ahead.** Since CS21 was filed, the harness
+>   has shipped CS27..CS70 (≈ 30 CSs) across **six minor releases**
+>   (`v0.3.0` → `v0.4.0` → `v0.5.0` → `v0.6.0` → `v0.7.0` → `v0.8.0`,
+>   plus interim patches `v0.3.1` / `v0.5.1` / `v0.5.2`),
+>   including the entire CS35/CS35b plan-review-attestation arc, the
+>   CS41/CS48/CS57/CS61 review-gate hardening, the CS63 hardening
+>   guardrails / lifecycle / context arc, and CS70's release cuts.
+> - **The downstream dependency chain dissolved.** CS19 (gwn master-plan
+>   migration onto the harness) has never been claimed and exists only as
+>   a notional entry in `harness-cs-plan.md` and the high-risk CS list in
+>   `harness.config.json`. Sub-invaders ran its own CS01/CS02/CS03 track
+>   directly against the harness without waiting for a gwn parity pass.
+>
+> The plan body below is preserved verbatim for historical context — no
+> harvest report, no apply set, no follow-up CSs were produced. If a
+> future need surfaces for a *narrow* one-shot scan of gwn for any
+> remaining transferable patterns, file a new, drastically smaller CS
+> rather than reviving this plan's heavyweight Phase 1/2/3 fan-out.
+>
+> See PR for the disposition trail.
+
+**Status:** done
+**Owner:** omni-ah-c2
+**Branch:** chore/disposition-cs20s-backlog
+**Started:** 2026-06-09
+**Closed:** 2026-06-09
 **Filed by:** Authored 2026-05-10 per user direction. The harness was forked out of `henrik-me/guesswhatisnext` (gwn) at CS01 (rev. 2 master plan, line 3). Since then both repos have evolved independently; gwn has accumulated process optimizations (per user 2026-05-10: *"a few new process optimizations have made it to the structure there"*) that the harness needs to capture before serving as gwn's governance layer at CS19 (master-plan migration CS) and ideally before SI-CS03 (which exercises the version-pin upgrade path on sub-invaders).
-**Depends on:** CS16 (**closed 2026-05-11** — see [`done_cs16`](../done/done_cs16_bootstrap-sub-invaders/done_cs16_bootstrap-sub-invaders.md); dependency satisfied); ideally completes BEFORE SI-CS03 in sub-invaders so SI-CS03's `harness sync --mode=apply` exercise validates a non-trivial template/root delta in a real consumer.
+**Depends on:** CS16 (**closed 2026-05-11** — see [`done_cs16`](done_cs16_bootstrap-sub-invaders/done_cs16_bootstrap-sub-invaders.md); dependency satisfied); ideally completes BEFORE SI-CS03 in sub-invaders so SI-CS03's `harness sync --mode=apply` exercise validates a non-trivial template/root delta in a real consumer.
 
 ## Goal
 
@@ -170,12 +201,31 @@ Each filer briefing must follow the planned-file template shape proven by `plann
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| Close-out: docs + restart state — update WORKBOARD.md (no row to remove; closed pre-claim) and CONTEXT.md to reflect CS21 closed obsolete | done | omni-ah-c2 | disposition pass 2026-06-09 |
+| Close-out: learnings + follow-ups — no learnings generated; no follow-up CSs filed (obsolete-without-implementation) | done | omni-ah-c2 | disposition pass 2026-06-09 |
 
 ## Notes / Learnings
 
-(filled during execution)
+Closed obsolete without implementation per the 2026-06-09 backlog-disposition
+pass. No deliverables produced; no learnings emitted. See the disposition
+banner at the top of this file for the rationale.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Closed obsolete without implementation — no plan code/content was authored. The "implementer" row reflects the orchestrator/model that performed the close-out disposition itself (banner + headers + Tasks); the "reviewer" row reflects the standard rubber-duck that reviews the disposition PR. Independence invariant trivially holds (claude-opus-4.7-1m-internal ≠ gpt-5.5). CS21 is not on the high-risk CS list. |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** n/a — not implemented
+**Date:** 2026-06-09
+**Outcome:** Closed obsolete without implementation per the 2026-06-09
+pre-claim backlog-disposition pass (orchestrator `omni-ah-c2`). No
+implementation against this plan was ever attempted, so a substantive
+plan-vs-implementation review is not applicable. The disposition rationale
+is recorded in the banner at the top of this file and in `CONTEXT.md`.

@@ -5,8 +5,52 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** Pre-CS16 disposition of [LRN-101](../../../LEARNINGS.md#lrn-101) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. The LRN's recommended fix is two-pronged: (a) **pilot** CHANGELOG-on-every-CS-close-out in CS16 + CS21 (handled at those CSs' close-outs by adding a CHANGELOG-touch row to their `## Tasks` tables), and (b) **enforce** mechanically by extending `scripts/check-clickstop.mjs`. This CS handles part (b). Until CS24 lands, the convention is honour-system only.
-**Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. **CS16 closed 2026-05-11** (one pilot satisfied); **CS21 remains planned**. The "at least one pilot close-out" gate is therefore met by CS16, but the recommended order is still CS16 close-out → CS21 close-out → CS24 claim. May claim earlier if the pilot LRNs from CS16/CS21 invalidate the design here, in which case re-author this plan first.
+**Filed by:** Pre-CS16 disposition of [LRN-101](../../../LEARNINGS.md#lrn-101) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. The LRN's recommended fix is two-pronged: (a) **pilot** CHANGELOG-on-every-CS-close-out in CS16 + CS21 (CS16's close-out added a CHANGELOG-touch row to its `## Tasks` table; **CS21 was later closed obsolete on 2026-06-09 without implementation** — see Status update below, so no pilot run was produced from CS21), and (b) **enforce** mechanically by extending `scripts/check-clickstop.mjs`. This CS handles part (b). Until CS24 lands, the convention is honour-system only.
+**Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. **CS16 closed 2026-05-11** (one pilot satisfied); **CS21 closed obsolete 2026-06-09** per the disposition pass below (no pilot run produced). The "at least one pilot close-out" gate is satisfied by CS16 alone. May claim earlier if any pilot LRNs from CS16 invalidate the design here, in which case re-author this plan first.
+
+## Status update (2026-06-09, `omni-ah-c2`, disposition pass)
+
+> Per the 2026-06-09 pre-claim backlog-disposition pass at repo HEAD
+> `0f434c7`, CS24 is **still relevant but lower-value than originally
+> framed**. Decision: **keep planned, low priority**.
+>
+> **What changed since filing (2026-05-11):**
+>
+> - The pilot convention has been **organically adopted** across the v0.5.0
+>   → v0.8.0 arc. Every CS in the `CHANGELOG.md` `[Unreleased]` and
+>   `[0.8.0]` windows (CS54b, CS58, CS61, CS62, CS63a, CS63b, CS63c, and
+>   the CS70 release-cut itself) added its own CHANGELOG bullets at
+>   close-out, with no retroactive sweep required. Per-CS authoring has
+>   held across ~30 CSs by honour-system alone.
+> - The mechanical enforcement (`scripts/check-clickstop.mjs` extension)
+>   has **not** been built. Verified 2026-06-09: `grep -i changelog
+>   scripts/check-clickstop.mjs` returns zero matches.
+> - LRN-101's status remains `open` in `LEARNINGS.md`. The
+>   "Disposition update (2026-05-11)" note inside the LRN still names
+>   CS24 as the mechanical-enforcement vehicle.
+> - **CS21 (one of the two named pilot CSs in this plan's "Depends on"
+>   header) is itself now closed obsolete** without implementation per the
+>   same 2026-06-09 disposition pass. The "CS16 close-out → CS21
+>   close-out → CS24 claim" sequencing in the original `Depends on`
+>   header should be read as "CS16 close-out is sufficient pilot evidence;
+>   the CS21 prerequisite is moot."
+>
+> **Implications for the plan body below:**
+>
+> - C24-3, C24-4, C24-5, C24-7 stand as designed.
+> - C24-1's distributed-surface path list is still aligned with the
+>   current shipped surface; no schema/path additions have moved the
+>   target.
+> - The risk that the linter retroactively trips existing CSs is low
+>   because every recent CS already follows the convention; the
+>   `CHANGELOG_TOUCH_ENFORCEMENT_DATE` grandfathering pattern remains
+>   appropriate.
+>
+> **Recommendation for the next claimer:** proceed with the plan as
+> written — it is a ~1–2 hour CS that locks in a practice already in
+> effect. Alternatively, flip LRN-101 to `applied` citing the organic
+> adoption and downgrade CS24 to a deferred "nice to have." Either path
+> is defensible.
 
 ## Goal
 

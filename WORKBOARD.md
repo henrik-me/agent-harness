@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-10 (CS59 CLOSED by omni-ah — release-cut process documented in OPERATIONS.md § Release process (mirrored byte-equal into template/composed); CHANGELOG dangling link fixed to `#release-process`; INSTRUCTIONS.md quick-reference pointer added (mirrored in managed template); content/release-PR admin-merge subsection scoped narrowly (solo orchestrator + both substantive reviews passed). PR #285 merged at HEAD 5a6db14. PVI **GO** at 5a6db14 (2026-06-10T06:48:57Z). Phase-2 Copilot review R1 COMMENTED (1 nit on placeholder consistency, addressed) → R2 COMMENTED (no new findings). Closes the doctrinal gap exposed by the v0.7.0 + v0.8.0 cuts (LRN-158 audit-before-build precondition now lives in `§ Pre-release audit` + `§ State-of-the-world probes`; LRN-159 stale duplicate drafts captured in post-merge step 10 recheck). No new learnings. Prior: CS58 CLOSED by omni-ah — plan-side fact-claim verification doctrine shipped: REVIEWS.md § 2.6c (F1–F6 incl. F6 state-of-the-world); OPERATIONS.md plan-review attestation + canonical preamble updated; LRN-139 + LRN-158 → applied. PR #281 merged at HEAD bb44def. Prior: CS70 CLOSED 2026-06-09 (PR #279) — v0.8.0 shipped Latest; LRN-158/159 filed.)
+> **Last updated:** 2026-06-10 (omni-ah-c2 — pre-claim backlog disposition of CS21/CS22b/CS24/CS26: CS21 (gwn process harvest) and CS22b (multi-orchestrator coordination) **closed obsolete without implementation** via planned→done rename + disposition banner (premise inverted for CS21; discipline-only multi-orch has won in practice for CS22b); CS24 (CHANGELOG-touch linter) and CS26 (init improvements bundle) annotated with `## Status update (2026-06-09)` sections — CS24 still relevant but lower-value (convention organically adopted across ~30 CSs), CS26 partially obsolete (findings #4/#5 done by other means; #2/#3/#6/#9 remain — #6 has a new mechanism via seeded `.gitkeep` rather than `cmdInit` code, but the root-`.gitkeep` defect persists for fresh consumers). Prior: 2026-06-10 (CS59 CLOSED by omni-ah — release-cut process documented in OPERATIONS.md § Release process (mirrored into template/composed/); CHANGELOG dangling link fixed; INSTRUCTIONS.md pointer added (mirrored in template/managed/); content/release-PR admin-merge subsection scoped narrowly. PR #285 admin-squash-merged at HEAD 5a6db14.) Prior: 2026-06-10 (CS58 CLOSED by omni-ah — plan-side fact-claim verification doctrine shipped: REVIEWS.md § 2.6c (F1–F6 incl. F6 state-of-the-world); OPERATIONS.md plan-review attestation + canonical preamble updated; LRN-139 + LRN-158 → applied. PR #281 merged at HEAD bb44def.)
 
 ## Orchestrators
 
@@ -10,7 +10,8 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| omni-ah  | OMNI         | C:\src\agent-harness | 🟢 Active | 2026-06-10 |
+| omni-ah  | HENRIKM-OMNI | C:\src\agent-harness | 🟢 Active | 2026-06-10 |
+| omni-ah-c2 | HENRIKM-OMNI | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-10 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-08 |
 | yoga-ah-c2 | HENRIKM-YOGA | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-06 |
 | yoga-ah-c3 | HENRIKM-YOGA | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-08 |
