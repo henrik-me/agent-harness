@@ -11,6 +11,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS69 (apply LRN-154 — `### LRN-NNN` H3-header enforcement in `check-learnings.mjs`):** Extend `scripts/check-learnings.mjs` with a new Check 7 that requires every learning entry's `id: LRN-<n>` frontmatter to be preceded by a matching `### LRN-<n>` H3 header. The check enforces a **strict adjacency** rule: walking backwards from the entry's opening ```yaml fence, skip only blank lines, and the immediately-preceding nonblank line MUST be the `### LRN-<n>` candidate — intervening prose, code fences, or other content disqualify the line as the entry's header. This rule ensures a `### LRN-XXX` line that appears anywhere inside a previous entry's body (e.g. as illustrative prose or a cross-reference) cannot be misclassified as the next entry's header. A missing header and a present-but-numerically-mismatched header are reported as distinct errors so copy-paste / renumber drift (e.g. `### LRN-105` precedes `id: LRN-106`) is named precisely. Closes the linter gap recorded in [LRN-154](LEARNINGS.md#lrn-154) where `LEARNINGS.md` entry LRN-106 shipped with valid frontmatter but no `### LRN-106` H3 header and `check-learnings.mjs` reported 0 errors. New fixtures under `tests/fixtures/cs69/` (valid-header-matches, invalid-header-missing, invalid-header-mismatched, invalid-header-shadowed-by-prior-body) + 4 new cases in `tests/check-learnings.test.mjs` (tests #18–#21, including a regression test for prior-body header shadowing).
+
 ### Changed
 
 ### Documentation

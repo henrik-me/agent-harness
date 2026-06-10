@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const LINTER = path.join(REPO_ROOT, 'scripts', 'check-learnings.mjs');
 const FIXTURES = path.join(__dirname, 'fixtures', 'cs05');
+const FIXTURES_CS69 = path.join(__dirname, 'fixtures', 'cs69');
 const NODE = process.execPath;
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,16 @@ function runLinter(args = []) {
  */
 function fixture(name) {
   return path.join(FIXTURES, name);
+}
+
+/**
+ * Return the absolute path to a fixture file under tests/fixtures/cs69/.
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+function cs69Fixture(name) {
+  return path.join(FIXTURES_CS69, name);
 }
 
 // ---------------------------------------------------------------------------
@@ -344,6 +355,77 @@ describe('check-learnings linter', () => {
     assert.ok(
       r.stdout.includes('LRN-001'),
       `Expected LRN-001 mentioned; got:\n${r.stdout}`
+    );
+  });
+
+  // 18. CS69 / LRN-154 — entry preceded by matching `### LRN-<n>` header exits 0
+  it('18. valid: matching `### LRN-NNN` header above entry exits 0', () => {
+    const r = runLinter(['--file', cs69Fixture('valid-header-matches.md')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 for matching headers; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('✅'),
+      `Expected success indicator; got:\n${r.stdout}`
+    );
+  });
+
+  // 19. CS69 / LRN-154 — entry missing its `### LRN-<n>` header exits 1 with error
+  it('19. invalid: missing `### LRN-NNN` header exits 1 with error', () => {
+    const r = runLinter(['--file', cs69Fixture('invalid-header-missing.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('LRN-002'),
+      `Expected LRN-002 mentioned in error; got:\n${r.stdout}`
+    );
+    assert.ok(
+      /missing\s+`?### LRN-002`?/i.test(r.stdout),
+      `Expected "missing \`### LRN-002\` H3 header" error wording; got:\n${r.stdout}`
+    );
+  });
+
+  // 20. CS69 / LRN-154 — header↔id mismatch exits 1 with distinct error
+  it('20. invalid: header LRN-X precedes id LRN-Y exits 1 with mismatch error', () => {
+    const r = runLinter(['--file', cs69Fixture('invalid-header-mismatched.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    // Distinct from the "missing" message — must name BOTH ids
+    assert.ok(
+      r.stdout.includes('LRN-005') && r.stdout.includes('LRN-006'),
+      `Expected both LRN-005 (header) and LRN-006 (id) mentioned; got:\n${r.stdout}`
+    );
+    assert.ok(
+      /does not match/i.test(r.stdout),
+      `Expected "does not match" mismatch wording; got:\n${r.stdout}`
+    );
+  });
+
+  // 21. CS69 / LRN-154 — `### LRN-X` line in prior entry's body must NOT be
+  //   accepted as the next entry's header (strict adjacency rule).
+  //   Regression for R1 finding F1.
+  it('21. invalid: prior-body `### LRN-X` does not shadow a headerless next entry', () => {
+    const r = runLinter(['--file', cs69Fixture('invalid-header-shadowed-by-prior-body.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 (strict adjacency: header must be the immediately-preceding nonblank line); got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('LRN-002'),
+      `Expected LRN-002 mentioned in error; got:\n${r.stdout}`
+    );
+    assert.ok(
+      /missing\s+`?### LRN-002`?/i.test(r.stdout),
+      `Expected "missing \`### LRN-002\` H3 header" error wording (not a mismatch error); got:\n${r.stdout}`
+    );
+    assert.ok(
+      !/does not match/i.test(r.stdout),
+      `Expected NO mismatch wording for the shadowed-prior-body case; got:\n${r.stdout}`
     );
   });
 });

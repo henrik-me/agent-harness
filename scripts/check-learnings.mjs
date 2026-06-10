@@ -244,8 +244,9 @@ for (let i = 1; i < lrnNums.length; i++) {
 // ---------------------------------------------------------------------------
 
 const normalizedText = markdownText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+const normalizedLines = normalizedText.split('\n');
 const existingH2Headings = new Set();
-for (const line of normalizedText.split('\n')) {
+for (const line of normalizedLines) {
   const m = line.match(/^## (.+)$/);
   if (m) existingH2Headings.add(m[1].trim());
 }
@@ -274,6 +275,58 @@ for (const [status, heading] of Object.entries(statusToHeading)) {
 for (const h of existingH2Headings) {
   if (!allowedH2.has(h)) {
     logError(`Undocumented section heading: "## ${h}"`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check 7 — H3 header presence and id↔header match (LRN-154, CS69)
+//   Every entry with `id: LRN-<n>` must be preceded by a matching
+//   `### LRN-<n>` H3 header. Per C69-1, the header sits on the line(s)
+//   immediately above the opening ```yaml fence, separated from it by only
+//   blank lines — NOT by intervening prose. The strict adjacency rule
+//   (skip blanks, require the next nonblank line above the fence to be the
+//   `### LRN-<n>` candidate) ensures a `### LRN-XXX` that appears anywhere
+//   inside a previous entry's body (prose or otherwise) cannot be
+//   misclassified as the current entry's header.
+//
+//   - Missing header (the nonblank line above the fence is not `### LRN-<n>`)
+//     → error "missing `### LRN-<n>` H3 header".
+//   - Present but numerically mismatched (e.g. `### LRN-105` precedes
+//     `id: LRN-106`) → distinct error naming both ids.
+// ---------------------------------------------------------------------------
+
+for (const block of validBlocks) {
+  const { parsed, lineNumber } = block;
+  if (!/^LRN-\d+$/.test(parsed.id ?? '')) continue;
+
+  const expectedNum = parseInt(parsed.id.slice(4), 10);
+  const openIdx = lineNumber - 1; // convert to 0-indexed
+
+  // Skip blank lines walking backwards from immediately above the fence.
+  let k = openIdx - 1;
+  while (k >= 0 && /^\s*$/.test(normalizedLines[k])) k--;
+
+  // The next nonblank line above the fence must be the H3 header.
+  // Match `### LRN-<n>` optionally followed by descriptive trailer text
+  // (e.g. `### LRN-001 — title`).
+  const candidateLine = k >= 0 ? normalizedLines[k] : null;
+  const h3Match = candidateLine
+    ? candidateLine.match(/^###\s+LRN-(\d+)(?:[\s—\-:.,].*)?\s*$/)
+    : null;
+
+  if (!h3Match) {
+    logError(
+      `${parsed.id} (line ${lineNumber}): missing \`### LRN-${String(expectedNum).padStart(3, '0')}\` H3 header on the line immediately above the entry's YAML frontmatter block (LRN-154)`
+    );
+    continue;
+  }
+
+  const candidateHeaderNum = parseInt(h3Match[1], 10);
+  if (candidateHeaderNum !== expectedNum) {
+    const headerStr = `LRN-${String(candidateHeaderNum).padStart(3, '0')}`;
+    logError(
+      `${parsed.id} (line ${lineNumber}): H3 header "### ${headerStr}" (line ${k + 1}) does not match frontmatter id "${parsed.id}" (LRN-154)`
+    );
   }
 }
 
