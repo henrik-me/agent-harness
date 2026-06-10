@@ -80,8 +80,8 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 
 - **Pull:** `git pull` to fetch the latest state before doing anything else.
 - **Derive your agent ID** per [TRACKING.md § Agent Identification](TRACKING.md#agent-identification):
-  format `<machine-short>-ah[-c<N>]`. Override the machine segment via the
-  `HARNESS_AGENT_AH_MACHINE` environment variable if needed
+  format `<machine-short>-{{agent_suffix}}[-c<N>]`. Override the machine segment via the
+  `HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE` environment variable if needed
   (per Decision #20c).
 - **State your identity:** in your **first response** write your derived agent ID and
   "INSTRUCTIONS.md re-read complete @ \<SHA\>". Treat session resume as session start
@@ -608,14 +608,14 @@ When in doubt, file a CS. Small, focused CSs are cheaper than scope-inflated PRs
 | Accumulated project knowledge (LRN entries) | [LEARNINGS.md](LEARNINGS.md) |
 | The CS plan that drives this project | [project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) |
 
-### agent-harness — Project-Specific Pointers
+### {{project_name}} — Project-Specific Pointers
 
 The following pointers are specific to this deployment of the harness in
-**agent-harness** (repo slug: `henrik-me/agent-harness`). They are filled in by `harness sync`
+**{{project_name}}** (repo slug: `{{repo_slug}}`). They are filled in by `harness sync`
 from `harness.config.json` at sync time.
 
-- Agent ID suffix for this repo: `ah`
-- Agent ID env-var override: `HARNESS_AGENT_AH_MACHINE`
+- Agent ID suffix for this repo: `{{agent_suffix}}`
+- Agent ID env-var override: `HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE`
 - Project deploy procedures: see `OPERATIONS.md` local block `id=operations.project-deploy`
 - Project review gates: see `REVIEWS.md` local block `id=reviews.project-gates`
 - Project conventions: see `CONVENTIONS.md` local block `id=conventions.project`

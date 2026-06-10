@@ -1142,7 +1142,7 @@ need" produces silent gaps that surface as integration failures later.
   `--quiet` suppresses success stdout only. Errors always go to stderr.
 
 - No dot-notation placeholders (LRN-049). Use flat keys only:
-  `ah` not `{{project.agent_suffix}}`. Dot-notation is not
+  `{{agent_suffix}}` not `{{project.agent_suffix}}`. Dot-notation is not
   supported by the template engine and will be emitted literally.
 
 - Consumer-root-relative paths (LRN-050). Scripts run from the consumer's
@@ -2014,7 +2014,7 @@ consumer repo has drifted from the harness version pinned in
    whose body explains the drift, links to the harness ref, and lists changed
    files.
 
-The template uses `agent-harness` and `henrik-me` placeholders
+The template uses `{{repo_short}}` and `{{default_codeowner}}` placeholders
 for PR reviewer/assignee fields; all YAML scalar values containing
 `{{...}}` placeholders are quoted so the unrendered template parses as valid
 YAML.
