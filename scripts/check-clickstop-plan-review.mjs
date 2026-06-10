@@ -364,7 +364,7 @@ function extractPlanReviewTable(content) {
  * scoped to the CS. The CS's main file (matching this pattern) carries the
  * canonical `## Plan review` attestation.
  */
-const CS_FILENAME_RE = /^(planned|active|done)_cs\d+[a-z]?_[a-z0-9][a-z0-9_-]*\.md$/;
+const CS_FILENAME_RE = /^(planned|active|done)_cs\d+[a-z]?_[a-z0-9][a-z0-9._-]*\.md$/;
 
 function checkFile(filePath, subdir) {
   const basename = path.basename(filePath);
