@@ -1,7 +1,10 @@
 /**
  * tests/lib-closeout.test.mjs — unit tests for lib/closeout.mjs (CS64 C64-5).
  *
- * In-memory fakes throughout — no git, no REPO_ROOT writes (LRN-094).
+ * In-memory fakes for the pure logic. The runCloseoutFromDisk
+ * idempotent-no-op tests use real filesystem fixtures under `os.tmpdir()`
+ * (the early-return path never invokes the git runner, so no git is
+ * required). NO real git, NO REPO_ROOT writes (LRN-094).
  */
 
 import { test } from 'node:test';
@@ -12,11 +15,13 @@ import {
   parsePviSection,
   removeActiveWorkRow,
   findActiveClickstop,
+  findDoneByCsId,
   planCloseout,
   preflightCloseout,
   applyCloseoutPlan,
   formatPreflightReport,
   formatApplyReport,
+  runCloseoutFromDisk,
 } from '../lib/closeout.mjs';
 import { parseActiveWorkRows } from '../lib/claim.mjs';
 
@@ -198,6 +203,42 @@ test('findActiveClickstop: zero matches → error', () => {
   });
   assert.ok(!r.ok);
   assert.match(r.error, /no active CS64/);
+});
+
+/* ---------- findDoneByCsId (C64-5 idempotency helper) ------------------- */
+
+test('findDoneByCsId: flat form', () => {
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs({ [DONE]: ['done_cs64_my-slug.md', 'done_cs02_other.md'] }),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, false);
+  assert.equal(r.listing.slug, 'my-slug');
+  assert.match(r.listing.csFilePath, /done_cs64_my-slug\.md$/);
+});
+
+test('findDoneByCsId: directory form', () => {
+  const dirP = P(DONE, 'done_cs64_my-slug');
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs({ [DONE]: ['done_cs64_my-slug'] }, new Set([dirP])),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, true);
+  assert.match(r.listing.directoryPath, /done_cs64_my-slug$/);
+});
+
+test('findDoneByCsId: zero matches → error', () => {
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs({ [DONE]: [] }),
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /no done CS64/);
 });
 
 /* ---------- planCloseout, preflight, apply ------------------------------ */
@@ -607,4 +648,74 @@ test('formatApplyReport: not-ready run lists freshness reason', () => {
   });
   assert.match(out, /NOT ready to open close-out PR/);
   assert.match(out, /CONTEXT\.md was not modified/);
+});
+
+/* ---------- runCloseoutFromDisk idempotency (C64-5) ---------------------- */
+
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+/**
+ * Build a minimal tmpdir fixture with a done CS file already in place,
+ * mimicking a post-closeout-merged tree. tmpdir parent per LRN-094 — never
+ * write under REPO_ROOT.
+ */
+function mkAlreadyDoneTree(csId, slug) {
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-idemp-'));
+  const doneDir = path.join(root, 'project', 'clickstops', 'done');
+  mkdirSync(doneDir, { recursive: true });
+  const num = csId.replace(/^CS/i, '').toLowerCase();
+  const filename = `done_cs${num}_${slug}.md`;
+  writeFileSync(path.join(doneDir, filename), `# ${csId} — ${slug}\n\nplaceholder\n`);
+  return { root, filename };
+}
+
+test('runCloseoutFromDisk: idempotent when CS already done (post-closeout-merge re-run)', () => {
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
+    assert.match(result.message, /CS64 is already closed-out/);
+    assert.match(result.message, new RegExp(filename));
+    // Must NOT produce a preflight/plan/apply for the idempotent path.
+    assert.equal(result.plan, undefined);
+    assert.equal(result.preflight, undefined);
+    assert.equal(result.apply, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: idempotent path supports directory-form done CS', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-idemp-dir-'));
+  try {
+    const dirName = 'done_cs64_dir-form';
+    const dirPath = path.join(root, 'project', 'clickstops', 'done', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    writeFileSync(path.join(dirPath, `${dirName}.md`), '# CS64\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.directoryForm, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: neither active nor done → returns the original "no active" error', () => {
+  // Genuine missing-CS case must still produce the actionable error rather
+  // than being masked by the idempotent path.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-missing-'));
+  try {
+    mkdirSync(path.join(root, 'project', 'clickstops', 'active'), { recursive: true });
+    mkdirSync(path.join(root, 'project', 'clickstops', 'done'), { recursive: true });
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /no active CS64/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

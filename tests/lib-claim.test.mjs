@@ -2,7 +2,11 @@
  * tests/lib-claim.test.mjs — unit tests for lib/claim.mjs (CS64 C64-4).
  *
  * Drives the pure logic (find / plan / format / insert / apply) against
- * in-memory fixtures. NO real git, NO REPO_ROOT writes (LRN-094).
+ * in-memory fixtures. The runClaimFromDisk idempotent-no-op tests use real
+ * filesystem fixtures under `os.tmpdir()` (the early-return path never
+ * invokes the git runner, so no git is required). NO real git, NO REPO_ROOT
+ * writes (LRN-094 — REPO_ROOT writes race with check-text-encoding's
+ * recursive walk under parallel `node --test`).
  */
 
 import { test } from 'node:test';
@@ -13,11 +17,13 @@ import {
   normalizeCsId,
   slugIsValid,
   findPlannedClickstop,
+  findActiveByCsId,
   parseActiveWorkRows,
   insertActiveWorkRow,
   planClaim,
   formatClaimPlan,
   applyClaimPlan,
+  runClaimFromDisk,
 } from '../lib/claim.mjs';
 
 // Use the real path separator so Windows + POSIX tests agree on string equality.
@@ -120,6 +126,64 @@ test('findPlannedClickstop: two matches → ambiguous error', () => {
   });
   assert.ok(!r.ok);
   assert.match(r.error, /ambiguous: 2 planned CS64/);
+});
+
+/* ---------- findActiveByCsId (C64-4 idempotency helper) ------------------ */
+
+const ACTIVE = P(ROOT, 'active');
+
+test('findActiveByCsId: flat form (active_csNN_<slug>.md)', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs({ [ACTIVE]: ['active_cs64_my-slug.md', 'active_cs02_other.md'] }),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.cs, 'CS64');
+  assert.equal(r.listing.slug, 'my-slug');
+  assert.equal(r.listing.directoryForm, false);
+  assert.match(r.listing.entryPath, /active_cs64_my-slug\.md$/);
+});
+
+test('findActiveByCsId: directory form', () => {
+  const dirPath = P(ACTIVE, 'active_cs64_my-slug');
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [ACTIVE]: ['active_cs64_my-slug'],
+        [dirPath]: ['active_cs64_my-slug.md'],
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, true);
+  assert.match(r.listing.directoryPath, /active_cs64_my-slug$/);
+});
+
+test('findActiveByCsId: zero matches → error', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs({ [ACTIVE]: [] }),
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /no active CS64/);
+});
+
+test('findActiveByCsId: missing dir → propagates error (not "no matches")', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    readdir: () => {
+      throw new Error('ENOENT');
+    },
+    isDirectory: () => false,
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /cannot read/);
 });
 
 /* ---------- parseActiveWorkRows + insertActiveWorkRow -------------------- */
@@ -630,4 +694,75 @@ test('findPlannedClickstop: directory-form with inner readdir failure surfaces t
   );
   // Must NOT mislead the user into thinking the .md is missing.
   assert.doesNotMatch(r.error, /missing its main markdown file/);
+});
+
+/* ---------- runClaimFromDisk idempotency (C64-4) ------------------------- */
+
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+/**
+ * Build a minimal tmpdir fixture with an active CS file already in place,
+ * mimicking a post-claim-merged tree. No .git, no WORKBOARD.md needed —
+ * runClaimFromDisk's idempotent early-return runs BEFORE the git/workboard
+ * preflights so a fresh checkout with only the active file is enough.
+ *
+ * tmpdir parent per LRN-094 — never write under REPO_ROOT (races with the
+ * recursive linters under parallel `node --test`).
+ */
+function mkAlreadyActiveTree(csId, slug) {
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-idemp-'));
+  const activeDir = path.join(root, 'project', 'clickstops', 'active');
+  mkdirSync(activeDir, { recursive: true });
+  const num = csId.replace(/^CS/i, '').toLowerCase();
+  const filename = `active_cs${num}_${slug}.md`;
+  writeFileSync(path.join(activeDir, filename), `# ${csId} — ${slug}\n\nplaceholder\n`);
+  return { root, filename };
+}
+
+test('runClaimFromDisk: idempotent when CS already active (post-claim-merge re-run)', () => {
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+    assert.match(result.message, /CS64 is already claimed/);
+    assert.match(result.message, new RegExp(filename));
+    // Must NOT include a plan or apply result for the idempotent path.
+    assert.equal(result.plan, undefined);
+    assert.equal(result.apply, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: idempotent path supports directory-form active CS', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-idemp-dir-'));
+  try {
+    const dirName = 'active_cs64_dir-form';
+    const dirPath = path.join(root, 'project', 'clickstops', 'active', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    writeFileSync(path.join(dirPath, `${dirName}.md`), '# CS64\n');
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.directoryForm, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

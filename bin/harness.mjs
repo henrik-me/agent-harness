@@ -3994,6 +3994,12 @@ async function cmdClaim(args, global) {
     }
     process.exit(1);
   }
+  if (result.alreadyClaimed) {
+    // C64-4 idempotency: nothing to do. Print the message and exit 0 so
+    // re-runs (e.g. after the claim PR merged) are a clean no-op.
+    process.stdout.write(`${result.message}\n`);
+    process.exit(0);
+  }
   if (result.plan) process.stdout.write(formatClaimPlan(result.plan));
   if (result.apply) {
     process.stdout.write('\nApplied:\n');
@@ -4027,6 +4033,12 @@ async function cmdCloseOut(args, global) {
     '../lib/closeout.mjs'
   );
   const result = runCloseoutFromDisk({ cwd, csId, apply });
+  if (result.alreadyClosedOut) {
+    // C64-5 idempotency: nothing to do. Print the message and exit 0 so
+    // re-runs (e.g. after the close-out PR merged) are a clean no-op.
+    process.stdout.write(`${result.message}\n`);
+    process.exit(0);
+  }
   if (result.preflight) {
     process.stdout.write(formatPreflightReport({ plan: result.plan, preflight: result.preflight, apply }));
   } else if (result.errors && result.errors.length) {
