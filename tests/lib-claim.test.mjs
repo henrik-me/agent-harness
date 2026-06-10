@@ -430,17 +430,20 @@ test('applyClaimPlan: R3 race-aware — uses fresh WORKBOARD content, not the pl
     today: '2026-06-10',
   });
   const { files, runner } = fakeRunner();
-  // Simulate sibling clone landing CS63 in the meantime.
+  // Simulate sibling clone landing a non-Active CS63 (e.g. Blocked) in the
+  // meantime. Sibling row must be preserved alongside our new row; this
+  // verifies the freshness-re-read path independent of the apply-time
+  // any-other-Active invariant (covered by the dedicated regression below).
   const sibling = insertActiveWorkRow({
     workboardMd: WB_EMPTY,
     row: {
       cs: 'CS63',
       title: 'Sibling',
-      state: '🟢 Active',
+      state: '🟡 Blocked',
       owner: 'yoga-ah',
       branch: 'cs63/content',
       lastUpdated: '2026-06-10',
-      blocked: '—',
+      blocked: 'awaiting decision',
     },
   });
   files.set('/p/WORKBOARD.md', sibling.md);
@@ -491,6 +494,45 @@ test('applyClaimPlan: apply-time race re-check — refuses when this orchestrato
   assert.ok(files.has('/p/planned/planned_cs64_my-slug.md'));
   assert.ok(!files.has(plan.destPath));
   assert.equal(files.get('/p/WORKBOARD.md'), selfRace.md);
+});
+
+// Companion to the self-race regression above: enforce the *global*
+// one-CS-at-a-time invariant at apply time. A different orchestrator
+// claiming a different CS between plan and apply must still block us;
+// otherwise a second Active row slips into WORKBOARD silently.
+test('applyClaimPlan: apply-time race re-check — refuses when a DIFFERENT orchestrator gained any Active row between plan and apply', () => {
+  const { plan } = planClaim({
+    csId: 'CS64',
+    listing: fakeListing(),
+    workboardMd: WB_EMPTY,
+    workboardPath: '/p/WORKBOARD.md',
+    plannedDir: '/p/planned',
+    activeDir: '/p/active',
+    agentId: 'omni-ah',
+    title: 'My Title',
+    today: '2026-06-10',
+  });
+  const { files, runner } = fakeRunner();
+  const otherRace = insertActiveWorkRow({
+    workboardMd: WB_EMPTY,
+    row: {
+      cs: 'CS63',
+      title: 'Race winner',
+      state: '🟢 Active',
+      owner: 'yoga-ah',
+      branch: 'cs63/content',
+      lastUpdated: '2026-06-10',
+      blocked: '—',
+    },
+  });
+  files.set('/p/WORKBOARD.md', otherRace.md);
+  assert.throws(
+    () => applyClaimPlan({ plan, runner }),
+    /apply-time race: another CS is already Active.*CS63.*owner yoga-ah/,
+  );
+  assert.ok(files.has('/p/planned/planned_cs64_my-slug.md'));
+  assert.ok(!files.has(plan.destPath));
+  assert.equal(files.get('/p/WORKBOARD.md'), otherRace.md);
 });
 
 test('applyClaimPlan: throws when source is missing and dest is also missing', () => {

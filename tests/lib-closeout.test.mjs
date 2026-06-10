@@ -391,6 +391,36 @@ test('applyCloseoutPlan: CONTEXT untouched → prReady=false + freshness reason'
   assert.ok(applied.freshness.some((f) => /CONTEXT\.md was not modified/.test(f)));
 });
 
+// Regression: the freshness gate must NOT treat a touched nested CONTEXT.md
+// (e.g. template/seeded/CONTEXT.md, which exists in this repo) as satisfying
+// the root-CONTEXT.md requirement. A permissive endsWith match would yield
+// a false positive and let a close-out PR be marked ready without the real
+// root-level restart-state update.
+test('applyCloseoutPlan: freshness gate ignores nested CONTEXT.md (template/seeded/CONTEXT.md must not count)', () => {
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(false),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  const { runner } = fakeRunner(
+    {
+      changedFiles: () => [
+        'WORKBOARD.md',
+        'template/seeded/CONTEXT.md',
+        'project/clickstops/done/done_cs64_my-slug.md',
+      ],
+    },
+    { [plan.sourcePath]: GOOD_PVI }
+  );
+  const applied = applyCloseoutPlan({ plan, runner });
+  assert.equal(applied.contextChanged, false);
+  assert.equal(applied.prReady, false);
+  assert.ok(applied.freshness.some((f) => /CONTEXT\.md was not modified/.test(f)));
+});
+
 test('applyCloseoutPlan: idempotent — re-running after partial completion only does the remainder', () => {
   const { plan } = planCloseout({
     csId: 'CS64',

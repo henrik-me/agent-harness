@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runStartup, formatStartupReport } from '../lib/startup.mjs';
+import { runStartup, formatStartupReport, parseNodeTestSummary } from '../lib/startup.mjs';
 
 function makeRunner(overrides = {}) {
   return {
@@ -183,3 +183,22 @@ test('formatStartupReport: pass-only run uses ✓ glyphs and elides "(advisory)"
   assert.doesNotMatch(out, /⚠/);
   assert.match(out, /✓ node --test tests\/\*\.test\.mjs\b(?! \(advisory\))/);
 });
+
+/* ---------- parseNodeTestSummary ---------------------------------------- */
+
+test('parseNodeTestSummary: parses spec-reporter output (TTY) — ℹ pass/fail', () => {
+  const text = ['# tests/foo.test.mjs', 'ℹ tests 1273', 'ℹ pass 1272', 'ℹ fail 0', 'ℹ skipped 1'].join('\\n');
+  assert.deepEqual(parseNodeTestSummary(text), { pass: 1272, fail: 0 });
+});
+
+test('parseNodeTestSummary: parses TAP-reporter output (non-TTY) — # pass/fail', () => {
+  const text = ['TAP version 13', '1..3', 'ok 1 - foo', 'ok 2 - bar', 'ok 3 - baz', '# tests 3', '# pass 3', '# fail 0', '# duration_ms 12.345'].join('\\n');
+  assert.deepEqual(parseNodeTestSummary(text), { pass: 3, fail: 0 });
+});
+
+test('parseNodeTestSummary: returns zeros on empty / unrecognized input', () => {
+  assert.deepEqual(parseNodeTestSummary(''), { pass: 0, fail: 0 });
+  assert.deepEqual(parseNodeTestSummary(null), { pass: 0, fail: 0 });
+  assert.deepEqual(parseNodeTestSummary('random gibberish, no counts'), { pass: 0, fail: 0 });
+});
+
