@@ -353,6 +353,28 @@ test('preflightCloseout: green PVI + clean wt + correct branch → ok', () => {
   assert.equal(r.pvi.outcome, 'GO');
 });
 
+test('preflightCloseout: directory-form with missing inner .md is a clean error, not a crash (Copilot R6)', () => {
+  // The directory itself exists (so the first exists() check passes) but
+  // the inner main markdown file is missing. Before the fix, readFile()
+  // would throw and crash the command. Now we surface a helpful error.
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(true),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  // Seed only the directory (sourcePath) — NOT the inner csFilePath.
+  const { runner } = fakeRunner({}, { [plan.sourcePath]: '<dir marker>' });
+  const r = preflightCloseout({ plan, runner });
+  assert.equal(r.ok, false);
+  assert.ok(
+    r.errors.some((e) => /missing its main markdown file/.test(e)),
+    `expected helpful 'missing its main markdown file' error; got: ${JSON.stringify(r.errors)}`,
+  );
+});
+
 test('applyCloseoutPlan: rename + workboard row removal + CONTEXT detected', () => {
   const { plan } = planCloseout({
     csId: 'CS64',

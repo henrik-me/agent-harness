@@ -81,7 +81,13 @@ test('findPlannedClickstop: directory form (planned_csNN_<slug>/planned_csNN_<sl
   const r = findPlannedClickstop({
     plannedDir: PLANNED,
     csId: 'CS64',
-    ...fakeFs({ [PLANNED]: ['planned_cs64_my-slug'] }, new Set([dirPath])),
+    ...fakeFs(
+      {
+        [PLANNED]: ['planned_cs64_my-slug'],
+        [dirPath]: ['planned_cs64_my-slug.md'],
+      },
+      new Set([dirPath]),
+    ),
   });
   assert.ok(r.ok);
   assert.equal(r.listing.directoryForm, true);
@@ -100,12 +106,16 @@ test('findPlannedClickstop: zero matches → error', () => {
 });
 
 test('findPlannedClickstop: two matches → ambiguous error', () => {
+  const twoDir = P(PLANNED, 'planned_cs64_two');
   const r = findPlannedClickstop({
     plannedDir: PLANNED,
     csId: 'CS64',
     ...fakeFs(
-      { [PLANNED]: ['planned_cs64_one.md', 'planned_cs64_two'] },
-      new Set([P(PLANNED, 'planned_cs64_two')])
+      {
+        [PLANNED]: ['planned_cs64_one.md', 'planned_cs64_two'],
+        [twoDir]: ['planned_cs64_two.md'],
+      },
+      new Set([twoDir])
     ),
   });
   assert.ok(!r.ok);
@@ -550,4 +560,46 @@ test('applyClaimPlan: throws when source is missing and dest is also missing', (
   const { files, runner } = fakeRunner();
   files.delete('/p/planned/planned_cs64_my-slug.md');
   assert.throws(() => applyClaimPlan({ plan, runner }), /source missing/);
+});
+
+/* ---------- findPlannedClickstop: directory-form malformation guard ----- */
+
+test('findPlannedClickstop: directory-form with missing inner main .md is a clean error (Copilot R6)', () => {
+  const dirPath = P(PLANNED, 'planned_cs64_my-slug');
+  const r = findPlannedClickstop({
+    plannedDir: PLANNED,
+    csId: 'CS64',
+    // Outer dir lists the planned_cs64_my-slug directory; inner readdir
+    // returns ONLY sibling artifacts (no main .md).
+    ...fakeFs(
+      {
+        [PLANNED]: ['planned_cs64_my-slug'],
+        [dirPath]: ['some-research-notes.md', 'runtime-skill-spike.md'],
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.equal(r.ok, false);
+  assert.match(
+    r.error,
+    /missing its main markdown file/,
+    `expected helpful malformed-directory error; got: ${r.error}`,
+  );
+});
+
+test('findPlannedClickstop: directory-form with present inner main .md still passes', () => {
+  const dirPath = P(PLANNED, 'planned_cs64_my-slug');
+  const r = findPlannedClickstop({
+    plannedDir: PLANNED,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [PLANNED]: ['planned_cs64_my-slug'],
+        [dirPath]: ['planned_cs64_my-slug.md', 'runtime-skill-spike.md'],
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.listing.directoryForm, true);
 });
