@@ -850,9 +850,12 @@ test('activeWorkRowExists: detects row presence by CS-id prefix', () => {
   }
 });
 
-test('activeWorkRowExists: CS64 does NOT match sibling CS64b row (R2 boundary fix)', () => {
-  // R2 reviewer (gpt-5.5): startsWith('CS64') would falsely match 'CS64b'.
-  // Exact id OR sub-task cell form `<id>-T<n>` is the right predicate.
+test('activeWorkRowExists: CS64 does NOT match sibling CS64b row (R2 boundary regression)', () => {
+  // R2 reviewer (gpt-5.5) originally caught that startsWith('CS64') falsely
+  // matched 'CS64b'. The deployed predicate is now plain exact match
+  // (cell === target) — see the comment in lib/closeout.mjs cite of
+  // scripts/check-workboard.mjs:242 and the Copilot review on PR #299.
+  // Exact match is strictly stricter and still rejects the sibling form.
   const root = mkdtempSync(path.join(tmpdir(), 'wb-boundary-'));
   try {
     const wb = [
