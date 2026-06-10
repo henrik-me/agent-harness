@@ -883,3 +883,99 @@ test('findActiveByCsId: directory form missing inner .md → malformed error (no
   assert.match(r.error, /missing its main markdown file/);
   assert.match(r.error, /malformed/);
 });
+
+/* ---------- Copilot reviewer (PR #299 round 2) regression tests ---------- */
+
+test('runClaimFromDisk: ambiguous active CS surfaces verbatim (does NOT fall through to planned flow)', () => {
+  // Copilot reviewer on PR #299 round 2: when findActiveByCsId returns an
+  // ambiguous/malformed/I-O error, runClaimFromDisk must surface it rather
+  // than silently treating it as "not yet claimed" and erroring downstream
+  // with "no planned CS<NN>".
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-ambig-'));
+  try {
+    const activeDir = path.join(root, 'project', 'clickstops', 'active');
+    mkdirSync(activeDir, { recursive: true });
+    writeFileSync(path.join(activeDir, 'active_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(activeDir, 'active_cs64_two.md'), '# CS64 dup\n');
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /ambiguous/.test(e)),
+      `expected ambiguous error, got ${JSON.stringify(result.errors)}`);
+    // Critically: must NOT be the "no planned" error from the fall-through path.
+    assert.ok(!result.errors.some((e) => /no planned/.test(e)),
+      'must not mask ambiguous-active state with no-planned error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: malformed active directory surfaces verbatim (does NOT fall through)', () => {
+  // Copilot reviewer on PR #299 round 2: companion to the ambiguous test.
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-malformed-'));
+  try {
+    const dirName = 'active_cs64_dirform';
+    const dirPath = path.join(root, 'project', 'clickstops', 'active', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    // Intentionally do NOT create the inner ${dirName}.md → malformed.
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /malformed/.test(e)),
+      `expected malformed error, got ${JSON.stringify(result.errors)}`);
+    assert.ok(!result.errors.some((e) => /no planned/.test(e)),
+      'must not mask malformed-active state with no-planned error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyClaimed message points to project/clickstops/planned/planned_csNN_ path', () => {
+  // Copilot reviewer on PR #299 round 2: the no-op message previously hinted
+  // at planned/${id}_<slug>.md which is the wrong path. Real planned CSs live
+  // under project/clickstops/planned/planned_csNN_<slug>.md.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Add a consistent WORKBOARD row so we land on the success path.
+    const wb = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | lifecycle | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.match(result.message, /project\/clickstops\/planned\/planned_cs64_/,
+      `message should reference the correct planned path; got: ${result.message}`);
+    assert.doesNotMatch(result.message, /^planned\/cs64_/m,
+      'message should not use the old (wrong) planned/cs64_<slug>.md hint');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

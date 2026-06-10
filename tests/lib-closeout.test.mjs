@@ -901,3 +901,66 @@ test('activeWorkRowExists: CS64 does NOT match malformed sub-task cell CS64-T1 (
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+/* ---------- Copilot reviewer (PR #299 round 2) regression tests ---------- */
+
+test('runCloseoutFromDisk: ambiguous done state surfaces verbatim (does NOT mask with no-active error)', () => {
+  // Copilot reviewer on PR #299 round 2: when findActiveByCsId returns
+  // "no active <CS>" AND findDoneByCsId returns ambiguous/malformed/I-O
+  // error, the original implementation returned the "no active" error and
+  // hid the underlying done/ corruption. Only the genuine "no done" case
+  // should re-raise the active error.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-done-ambig-'));
+  try {
+    const doneDir = path.join(root, 'project', 'clickstops', 'done');
+    mkdirSync(doneDir, { recursive: true });
+    writeFileSync(path.join(doneDir, 'done_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(doneDir, 'done_cs64_two.md'), '# CS64 dup\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /ambiguous/.test(e) && /done/.test(e)),
+      `expected ambiguous done error, got ${JSON.stringify(result.errors)}`);
+    // Critically: must NOT be the "no active" error masking the real problem.
+    assert.ok(!result.errors.some((e) => /^no active /.test(e)),
+      'must not mask ambiguous-done state with no-active error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: malformed done directory surfaces verbatim (does NOT mask with no-active error)', () => {
+  // Copilot reviewer on PR #299 round 2: companion to the ambiguous test.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-done-malformed-'));
+  try {
+    const dirName = 'done_cs64_dirform';
+    const dirPath = path.join(root, 'project', 'clickstops', 'done', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    // Intentionally do NOT create the inner ${dirName}.md → malformed.
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /malformed/.test(e)),
+      `expected malformed done error, got ${JSON.stringify(result.errors)}`);
+    assert.ok(!result.errors.some((e) => /^no active /.test(e)),
+      'must not mask malformed-done state with no-active error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: genuine "not yet closed out" (no active + no done) preserves no-active error', () => {
+  // Copilot reviewer on PR #299 round 2: confirm the legitimate path —
+  // neither active nor done exists — still re-raises the "no active" error
+  // so the CLI sees a coherent "you have not started this CS" message.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-neither-'));
+  try {
+    mkdirSync(path.join(root, 'project', 'clickstops', 'active'), { recursive: true });
+    mkdirSync(path.join(root, 'project', 'clickstops', 'done'), { recursive: true });
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS99', apply: false });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /^no active CS99/.test(e)),
+      `expected "no active CS99" error, got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
