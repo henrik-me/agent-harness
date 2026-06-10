@@ -825,9 +825,21 @@ test('findDoneByCsId: directory form missing inner .md → malformed error', () 
 });
 
 test('activeWorkRowExists: missingFile flag when WORKBOARD.md absent', () => {
-  const r = activeWorkRowExists(P(tmpdir(), 'definitely-not-a-file-xxxx.md'), 'CS64');
-  assert.equal(r.exists, false);
-  assert.equal(r.missingFile, true);
+  // Copilot reviewer on PR #299 round 4: use a unique mkdtempSync directory
+  // so we can guarantee the path does not exist, rather than relying on a
+  // hard-coded filename under os.tmpdir() that could (rarely) collide with
+  // leftovers from prior runs or other processes.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-missing-unique-'));
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    // Sanity check: the file is guaranteed not to exist inside this fresh dir.
+    const r = activeWorkRowExists(wbPath, 'CS64');
+    assert.equal(r.exists, false);
+    assert.equal(r.missingFile, true);
+    assert.equal(r.readError, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('activeWorkRowExists: detects row presence by exact CS-id match', () => {
