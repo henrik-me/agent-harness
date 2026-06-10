@@ -308,9 +308,10 @@ Specifically:
 - **F6** every **state-of-the-world claim** (release/tag/PR/issue/label
   state, branch protection, ruleset config, etc.) is verified at
   plan-review time via a non-mutating CLI probe — `gh release list`,
-  `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'`
-  (both published AND draft), `git ls-remote --tags origin`, `gh pr view`,
-  `gh issue view`, `gh label list`, etc. — and the probe is recorded in
+  `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
+  (both published AND draft), `git ls-remote origin refs/tags/<tag>`,
+  `gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
+  `gh label list --repo <owner>/<repo>`, etc. — and the probe is recorded in
   the plan's Background or Constraints so subsequent reviewers can audit
   the same premise.
 
@@ -1242,9 +1243,10 @@ syncs); (F3) doctrine-strength claims match the cited source verbatim;
 (F5) cross-doc claims are mutually consistent; (F6) every
 state-of-the-world claim (release/tag/PR/issue/label state) is verified
 via a non-mutating CLI probe (`gh release list`,
-`gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'`
-covering BOTH published and draft, `git ls-remote --tags origin`,
-`gh pr view`, `gh issue view`, `gh label list`) and the probe is recorded
+`gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
+covering BOTH published and draft, `git ls-remote origin refs/tags/<tag>`,
+`gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
+`gh label list --repo <owner>/<repo>`) and the probe is recorded
 in the plan's Background or Constraints. Inherited findings (citations
 from other repos, prior snapshots, or earlier CS plans) MUST be
 re-verified against the current HEAD. Do NOT issue a Go verdict on a plan
