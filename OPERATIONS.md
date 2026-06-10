@@ -286,13 +286,17 @@ the row's `Plan author model(s)` column or in any earlier row's
 Before recording a `Go` (or `Go-with-amendments`) verdict, the reviewer
 MUST have affirmatively verified every factual claim the plan makes about
 the repository at the analyzed HEAD — across **all** reviewer-consumed
-sections (Background, Decisions, Deliverables, Exit criteria, Risks), not
-only the hashed Decisions+Deliverables. The plan-review hash attests only
-that the reviewer saw a particular Decisions+Deliverables body; F1–F6
-attest that the reviewer verified the plan's factual premises across the
-whole reviewer-consumed surface. Specifically:
+sections enumerated above (Background, Decisions, Deliverables,
+Sub-agent fan-out, Exit criteria, Risks + open questions, and any
+cross-CS dependencies), not only the hashed Decisions+Deliverables. The
+plan-review hash attests only that the reviewer saw a particular
+Decisions+Deliverables body; F1–F6 attest that the reviewer verified the
+plan's factual premises across the whole reviewer-consumed surface.
+Specifically:
 
-- **F1** every `--flag` named in the plan exists in the CLI surface;
+- **F1** every `--flag` named in the plan exists in the CLI surface (or
+  is explicitly described as not-yet-existing — for plans whose
+  deliverables include adding a new flag);
 - **F2** every `path:line` citation actually contains what the plan asserts
   at the analyzed HEAD (line numbers drift across snapshots/syncs/edits);
 - **F3** doctrine-strength claims (`required`, `mandatory`, `enforces`,
@@ -1226,8 +1230,11 @@ values fail closed against the schema's `type`/`pattern`/`enum`. For
 [Plan review attestation procedure (CS35b)](#plan-review-attestation-procedure-cs35b)),
 you MUST ALSO perform plan-side fact-claim verification per REVIEWS.md
 § 2.6c across **all** reviewer-consumed plan sections (Background,
-Decisions, Deliverables, Exit criteria, Risks — not only the hashed
-Decisions+Deliverables): (F1) every named `--flag` exists; (F2) every
+Decisions, Deliverables, Sub-agent fan-out, Exit criteria, Risks +
+open questions, and any cross-CS dependencies the plan declares —
+not only the hashed Decisions+Deliverables): (F1) every named `--flag`
+exists (or is explicitly described as not-yet-existing — for plans
+whose deliverables include adding a new flag); (F2) every
 `path:line` citation actually contains what the plan asserts at the
 analyzed HEAD (open the file — line numbers drift across snapshots and
 syncs); (F3) doctrine-strength claims match the cited source verbatim;

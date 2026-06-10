@@ -285,13 +285,16 @@ assume a state-of-the-world that is wrong (CS70 — premise wrong across
 3 plan-review rounds; the audit itself was ~10 seconds).
 
 **Scope — all reviewer-consumed plan sections.** Per OPERATIONS.md
-§ Plan review attestation procedure, the reviewer consumes Background,
-Decisions, Deliverables, Exit criteria, and Risks + open questions.
-Fact-claim verification applies to every factual claim in any of those
-sections, not only Decisions+Deliverables (the surface covered by the
-plan-review hash). The hash attests the reviewer saw a particular
-Decisions+Deliverables body; F1–F6 attest the reviewer verified the
-plan's factual premises across the whole reviewer-consumed surface.
+§ Plan review attestation procedure, the reviewer consumes the full
+plan file — Background, Decisions, Deliverables, Sub-agent fan-out,
+Exit criteria, Risks + open questions — together with any cross-CS
+dependencies the plan declares. Fact-claim verification applies to
+every factual claim in any of those sections (the list is exhaustive
+for the inputs CS35b enumerates), not only Decisions+Deliverables (the
+surface covered by the plan-review hash). The hash attests the reviewer
+saw a particular Decisions+Deliverables body; F1–F6 attest the reviewer
+verified the plan's factual premises across the whole reviewer-consumed
+surface.
 
 **Required checks for every plan-review `Go` verdict:**
 
