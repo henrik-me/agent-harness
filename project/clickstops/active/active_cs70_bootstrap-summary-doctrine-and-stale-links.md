@@ -1,9 +1,9 @@
 # CS70 — Bootstrap-summary doctrine + stale-link cleanup
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c3
+**Branch:** cs70/bootstrap-summary-doctrine
+**Started:** 2026-06-10
 **Closed:** —
 **Filed by:** Investigation of [agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290) on 2026-06-10 by `omni-ah-c3` (claude-opus-4.7). The issue surfaced two coupled bugs from `henrik-me/sub-invaders#91`: (a) the orchestrator-authored `sub-invaders-bootstrap-summary.md` was dropped during CS16's directory-form close-out rename and now 404s from four CS files, and (b) cross-repo doctrine fired against the same filename in `sub-invaders` even though it has never existed there and is not produced by any harness contract.
 **Depends on:** None. May claim independently of CS64 (in flight) and the CS64b / CS65–CS68 planned queue. _(Filing-time note, rebased onto `main` `51953da`: since the authoring probe at `fa7a9fb`, CS69 has closed to `done/` and CS64b was filed; CS70 remains independent of all of them and collision-free. See the Background § filing-time refresh for the full delta.)_
@@ -114,7 +114,25 @@ State-of-the-world probes (per REVIEWS.md § 2.6c F6, recorded for the plan revi
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| D1: Restore `sub-invaders-bootstrap-summary.md` to `done_cs16_bootstrap-sub-invaders/` verbatim from `e2b233a` + Archive-note banner (C70-1). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D2/D3: Stale-reference fixes — Type-A repoints + Type-B parentheticals across `done_cs25`/`done_cs27`/`done_cs30`, `planned_cs26` (L103 carved out), `done_cs16` (L542 + L623) (C70-2/C70-4). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D4: Close-out doctrine bullet in `OPERATIONS.md § Claim` + `template/composed/OPERATIONS.md` mirror (C70-5). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D5: Cross-repo target-verification doctrine in `OPERATIONS.md` + composed mirror + INSTRUCTIONS cross-link (C70-7). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D6: Extend `scripts/check-clickstop.mjs` with dir-form orphan detection + `.harness-closeout-allow-drop` allow-list + ≥4 tests (C70-6/C70-6a). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D7: File LRN-A (process) + LRN-B (architectural) in `LEARNINGS.md` (C70-8). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D8: `CHANGELOG.md` `[Unreleased]` entry summarising C70-1/C70-5/C70-6/C70-7. | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state — rename `active_cs70_*` → `done_cs70_*`, remove the CS70 WORKBOARD row, refresh `CONTEXT.md` if codebase state changed, run `harness sync --mode=check` (no drift). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups — confirm LRN-A / LRN-B filed in `LEARNINGS.md`; disposition issue #290 per Hard Rule C35-13; run `harness harvest` if the cadence triggers. | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c3 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c3) |
+| Notes | Implementer + reviewer model independence per REVIEWS § 2.3 (`claude-opus-4.8` ≠ `gpt-5.5`). The plan was filed by `claude-opus-4.7` in a prior session; this CS70 implementation is by `claude-opus-4.8`. CS70 is NOT on `reviews.high_risk_clickstops`; fallback `claude-sonnet-4.6` is permitted if `gpt-5.5` is unavailable. |
 
 ## Notes / Learnings
 
