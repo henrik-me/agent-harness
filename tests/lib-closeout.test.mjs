@@ -872,7 +872,11 @@ test('activeWorkRowExists: CS64 does NOT match sibling CS64b row (R2 boundary fi
   }
 });
 
-test('activeWorkRowExists: CS64 matches sub-task cell CS64-T1 (boundary-aware)', () => {
+test('activeWorkRowExists: CS64 does NOT match malformed sub-task cell CS64-T1 (Copilot review on PR #299)', () => {
+  // Copilot reviewer on PR #299: scripts/check-workboard.mjs enforces
+  // `^CS\d{2,}[a-z]?$` on Active Work CS-Task IDs. Hyphenated forms like
+  // `CS64-T1` are rejected by the schema, so the idempotency predicate must
+  // never treat them as a match — exact match is the right semantics.
   const root = mkdtempSync(path.join(tmpdir(), 'wb-subtask-'));
   try {
     const wb = [
@@ -880,12 +884,16 @@ test('activeWorkRowExists: CS64 matches sub-task cell CS64-T1 (boundary-aware)',
       '',
       '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
       '|---|---|---|---|---|---|---|',
-      '| CS64-T1 | sub-task | 🟢 Active | a | b | c | — |',
+      '| CS64-T1 | malformed sub-task | 🟢 Active | a | b | c | — |',
       '',
     ].join('\n');
     const wbPath = path.join(root, 'WORKBOARD.md');
     writeFileSync(wbPath, wb);
-    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, true, 'CS64 must match CS64-T1 sub-task cell');
+    assert.equal(
+      activeWorkRowExists(wbPath, 'CS64').exists,
+      false,
+      'CS64 must NOT match a malformed CS64-T1 row (workboard schema rejects hyphens)'
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
