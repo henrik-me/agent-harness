@@ -1,10 +1,10 @@
 # CS69 — Enforce `### LRN-NNN` header presence in check-learnings.mjs (apply LRN-154)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs69/content
 **Started:** 2026-06-10
-**Closed:** —
+**Closed:** 2026-06-10
 **Filed by:** CS61b close-out (2026-06-07 by `yoga-ah`). Applies **LRN-154** (`LEARNINGS.md` § LRN-154, status `open`), surfaced during CS61b when `LEARNINGS.md` entry LRN-106 shipped with valid frontmatter but no `### LRN-106` H3 header and `scripts/check-learnings.mjs` still reported 0 errors.
 **Depends on:** None hard. Pure linter/tooling CS on `scripts/check-learnings.mjs` + `tests/check-learnings.test.mjs` + fixtures. May claim independently. Coordinate only to avoid landing concurrently with a CS that restructures `LEARNINGS.md` entry parsing.
 
@@ -66,18 +66,18 @@ LRN-154 documents that `check-learnings.mjs` validates each entry's YAML frontma
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Extend `scripts/check-learnings.mjs` with header-presence + header↔id-match rule per C69-1/C69-2 | pending | omni-ah-c2 | Mirror existing per-entry walk; honour `--file` / `--quiet` flags + exit-code contract |
-| T2 — Add valid fixture (header-present-matches) under `tests/fixtures/cs69/` | pending | omni-ah-c2 | Follow `tests/fixtures/cs05/` pattern |
-| T3 — Add invalid fixture (header-missing) | pending | omni-ah-c2 | Must exit 1 with precise message |
-| T4 — Add invalid fixture (header-present-but-mismatched) | pending | omni-ah-c2 | Distinct error message naming both ids |
-| T5 — Extend `tests/check-learnings.test.mjs` with ≥3 new fixture-based cases | pending | omni-ah-c2 | Use `os.tmpdir()` if any scratch space needed (LRN-094) |
-| T6 — Verify `node scripts/check-learnings.mjs --file LEARNINGS.md` exits 0 on real file | pending | omni-ah-c2 | Exit criterion 2 |
-| T7 — Flip `LEARNINGS.md` LRN-154 frontmatter `status: open` → `applied`; append Disposition with merge SHA | pending | omni-ah-c2 | At close-out (post-merge SHA needed) |
-| T8 — Add CHANGELOG `[Unreleased]` `### Added` (or `Changed`) bullet for the new linter rule | pending | omni-ah-c2 | Per LRN-101 distributed-surface CHANGELOG-touch convention |
-| T9 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c2 | Independence-invariant: reviewer ≠ implementer |
-| T10 — Open PR, dispatch PR-level R1 rubber-duck + `harness copilot-engage`, address review threads, merge | pending | omni-ah-c2 | Standard close-out flow |
-| T11 — Close-out docs/restart-state: rename `active_cs69_*.md` → `done_cs69_*.md`; update WORKBOARD + CONTEXT handoff; file any new LEARNINGS | pending | omni-ah-c2 | Per OPERATIONS.md § Close-out |
-| T12 — Close-out learnings sweep: scan execution for follow-ups; file as new LRN entries or follow-up planned CSs as warranted | pending | omni-ah-c2 | Per OPERATIONS.md § Close-out |
+| T1 — Extend `scripts/check-learnings.mjs` with header-presence + header↔id-match rule per C69-1/C69-2 | done | omni-ah-c2 | Mirror existing per-entry walk; honour `--file` / `--quiet` flags + exit-code contract |
+| T2 — Add valid fixture (header-present-matches) under `tests/fixtures/cs69/` | done | omni-ah-c2 | Follow `tests/fixtures/cs05/` pattern |
+| T3 — Add invalid fixture (header-missing) | done | omni-ah-c2 | Must exit 1 with precise message |
+| T4 — Add invalid fixture (header-present-but-mismatched) | done | omni-ah-c2 | Distinct error message naming both ids |
+| T5 — Extend `tests/check-learnings.test.mjs` with ≥3 new fixture-based cases | done | omni-ah-c2 | Delivered 6 cases (#18–#23) incl. R1 regression (shadowing), Copilot R1 F1 (leading-zero mismatch), F2 (decorated rejection). Use `os.tmpdir()` if any scratch space needed (LRN-094). |
+| T6 — Verify `node scripts/check-learnings.mjs --file LEARNINGS.md` exits 0 on real file | done | omni-ah-c2 | Exit criterion 2: confirmed 0 errors / 1 warning on 159 entries. |
+| T7 — Flip `LEARNINGS.md` LRN-154 frontmatter `status: open` → `applied`; append Disposition with merge SHA | done | omni-ah-c2 | At close-out: applied with merge SHA `b580260`. |
+| T8 — Add CHANGELOG `[Unreleased]` `### Added` (or `Changed`) bullet for the new linter rule | done | omni-ah-c2 | Per LRN-101 distributed-surface CHANGELOG-touch convention |
+| T9 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | done | omni-ah-c2 | R1 Needs-Fix (backwards-walk too permissive) → fix → R2 Go-with-amendments (CHANGELOG nit) → R3 Go before PR open. Independence-invariant: reviewer ≠ implementer. |
+| T10 — Open PR, dispatch PR-level R1 rubber-duck + `harness copilot-engage`, address review threads, merge | done | omni-ah-c2 | PR #295 merged at `b580260`. R3+R4+R6 (gpt-5.5 Go), R5+R7 (Copilot No-Findings); 3 Copilot R1 findings (parseInt, trailer regex, fixture) addressed in `8a175d4`; R2 typo addressed in `789fc4e`. |
+| T11 — Close-out docs/restart-state: rename `active_cs69_*.md` → `done_cs69_*.md`; update WORKBOARD + CONTEXT handoff; file any new LEARNINGS | done | omni-ah-c2 | This workboard-only PR. |
+| T12 — Close-out learnings sweep: scan execution for follow-ups; file as new LRN entries or follow-up planned CSs as warranted | done | omni-ah-c2 | Candidates filed: LRN-160 (`gh pr edit --add-reviewer` silent no-op on Copilot bot — re-add to confirm via `requested_reviewers`); LRN-161 (intermittent GraphQL 401 storm during the session — retry-with-backoff worked across `gh pr edit`, `gh api graphql`, and CI checks). |
 
 ## Model audit
 
@@ -95,4 +95,31 @@ LRN-154 documents that `check-learnings.mjs` validates each entry's YAML frontma
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (multi-round PR-level rubber-duck; merged R3@`06c12bf` + R4@`8a175d4` + R6@`789fc4e`) + claude-sonnet (Copilot R5@`8a175d4` No-Findings + R7@`789fc4e` No-Findings).
+**Date:** 2026-06-10
+**Outcome:** GO — all R3/R4/R6 verdicts Go; both Copilot rounds No-Findings after addressing R1 (3 Important Suggestions: parseInt → string compare, tighten regex, drop decorated fixture) + R2 (2 Suggestions: typo + PR-body 4→6 cases drift). Merged at `b580260` (2026-06-10T16:14:41Z).
+
+| Round | Reviewer model | Reviewer agent | Implementer model(s) | Verdict | Findings recap (≤200 chars) | Evidence |
+|---|---|---|---|---|---|---|
+| R1 (local, pre-PR) | gpt-5.5 | rubber-duck (PvI) | claude-opus-4.7-1m-internal | Needs-Fix | F1: backwards-walk too permissive — a `### LRN-X` inside a prior entry's body could be accepted as the next entry's header. Fixed in-flight by strict-adjacency rewrite + new shadowing fixture (test #21). | Local session transcript |
+| R2 (local, post-fix) | gpt-5.5 | rubber-duck (PvI) | claude-opus-4.7-1m-internal | Go-with-amendments | F1 resolved; CHANGELOG wording nit (still described superseded walk-back algorithm) — fixed before commit. | Local session transcript |
+| R3 (PR-level R1, @ `06c12bf`) | gpt-5.5 | rubber-duck (PR-level) | claude-opus-4.7-1m-internal | Go | Verified strict adjacency / regex / errors / fixtures / tests / LEARNINGS.md 159 entries 0 errors; scope/security/perf OK. | PR #295 body Review log |
+| Copilot R1 (@ `06c12bf`) | claude-sonnet | copilot-pull-request-reviewer | n/a | 3 Important Suggestions | F1: parseInt drops leading zeros (`### LRN-1` would silently match `id: LRN-001` → broken anchor). F2: trailer regex accepts decorated headers but real LEARNINGS.md is bare 159/159 and `assertHeadings()` exact-match. F3: valid fixture's decorated form inconsistent with real convention. All 3 addressed in `8a175d4`: string-compare digits, tightened regex `^### LRN-(\d+)\s*$`, fixture cleanup + 2 new regression fixtures (#22 decorated-rejected, #23 leading-zero-mismatch). | https://github.com/henrik-me/agent-harness/pull/295#pullrequestreview-4469409621 |
+| R4 (PR-level R2, @ `8a175d4`) | gpt-5.5 | rubber-duck (PR-level) | claude-opus-4.7-1m-internal | Go | Verified F1+F2+F3 all addressed cleanly; strict adjacency intact; 24/24 tests; LEARNINGS.md 159 entries 0 errors; no scope creep; merge as-is. | PR #295 body Review log |
+| Copilot R2 (@ `8a175d4`) | claude-sonnet | copilot-pull-request-reviewer | n/a | 2 Suggestions | (a) typo `Per C69-1` → `Per CS69-1` in Check 7 comment, (b) PR description still said 4 cases/fixtures but actually 6. Both addressed: (a) in `789fc4e`, (b) via PR body PATCH. | https://github.com/henrik-me/agent-harness/pull/295#pullrequestreview-4469477138 |
+| R6 (PR-level R3, @ `789fc4e`) | gpt-5.5 | rubber-duck (PR-level, delta attestation) | claude-opus-4.7-1m-internal | Go | 1-char comment typo only; no behavior impact; clean scope. | PR #295 body Review log |
+| Copilot R3 (@ `789fc4e`) | claude-sonnet | copilot-pull-request-reviewer | n/a | No-Findings | Reviewed 9/9 files, no new comments. | https://github.com/henrik-me/agent-harness/pull/295#pullrequestreview-4469521219 |
+
+**Merge SHA:** `b580260f88cc2a9bf7f0c8911bf6531c46608b30` (squash-merge by orchestrator @ 2026-06-10T16:14:41Z).
+**Independence-invariant:** implementer `claude-opus-4.7-1m-internal` ∩ reviewers `{gpt-5.5, claude-sonnet}` = ∅ ✓.
+**Deliverables verified:**
+1. `scripts/check-learnings.mjs` Check 7 — strict adjacency + bare-header regex + exact digit-string comparison. ✓
+2. 6 new fixture-based test cases (#18–#23) — all pass. ✓
+3. 6 new fixtures under `tests/fixtures/cs69/`. ✓
+4. `LEARNINGS.md` LRN-154 flipped `open → applied` with merge SHA disposition. ✓ (this PR)
+5. CHANGELOG `[Unreleased]/Added` bullet. ✓
+6. `node scripts/check-learnings.mjs --file LEARNINGS.md` exits 0 on real file (159 entries, 0 errors, 1 unrelated warning). ✓
+7. `node bin/harness.mjs lint --quiet` → 30/0/3 (post-merge). ✓
+8. Full test suite 1188 → 1190 pass after merge (2 additional cases beyond original plan).
+
+**New LRNs filed by this CS:** LRN-160 (`gh pr edit --add-reviewer` silent no-op), LRN-161 (GraphQL-401 storm + retry pattern). See `LEARNINGS.md`.

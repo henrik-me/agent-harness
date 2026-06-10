@@ -100,6 +100,50 @@ plan-then-discover round-trip.
 
 ---
 
+### LRN-160
+
+```yaml
+id: LRN-160
+date: 2026-06-10
+category: tooling
+source_cs: CS69
+status: open
+tags: [gh-cli, copilot-engage, reviewer-bot, idempotency, silent-no-op]
+claim_area: harness-cli
+```
+
+**Problem:** `gh pr edit <pr> --add-reviewer copilot-pull-request-reviewer` can silently no-op: the command returns the PR URL and exit 0, but `gh api repos/<o>/<r>/pulls/<n> --jq .requested_reviewers` shows `[]`. The Copilot review pipeline then never triggers, and CI's A16 gate (Copilot review attached) keeps failing even though the orchestrator believes the reviewer was added.
+
+**Finding:** After `gh pr edit --add-reviewer copilot-pull-request-reviewer` returns success, ALWAYS verify the result via `gh api repos/<o>/<r>/pulls/<n> --jq .requested_reviewers[].login`. If the list is empty, re-add (a second attempt usually sticks). The race appears related to the GraphQL backend's `requestReviews` idempotency: a recently-completed Copilot review on a stale HEAD seems to make the next add a no-op even when the new HEAD genuinely needs a fresh review. Empirically observed twice in this CS (PR #295): once after the first add returned `requested_reviewers: []` silently, again after a 401-flake retry. Re-adding always works on the second attempt.
+
+**Evidence:** PR #295 (CS69, 2026-06-10, clone `agent-harness_copilot2`, `omni-ah-c2`). First `gh pr edit 295 --add-reviewer copilot-pull-request-reviewer` returned `https://github.com/henrik-me/agent-harness/pull/295` with exit 0; `gh api ... --jq .requested_reviewers` returned `[]`. Re-adding succeeded and Copilot reviewed within ~5 min. Pattern reproduced on the second engage cycle for HEAD `789fc4e` after the typo fix. Tangentially related: `harness copilot-engage 295` failed with GraphQL 401 inside the embedded `gh api graphql` call, so the workaround path (`gh pr edit --add-reviewer`) is the routinely-needed escape hatch.
+
+**Disposition:** Open — candidate work: harden `harness copilot-engage` to (a) detect and recover from GraphQL-401 by retry-with-backoff, (b) post-add verify `requested_reviewers` and re-add on silent no-op, (c) optionally hide the underlying `gh` flakiness by polling for the actual Copilot review submission rather than just trusting the add. claim_area: harness-cli.
+
+---
+
+### LRN-161
+
+```yaml
+id: LRN-161
+date: 2026-06-10
+category: process
+source_cs: CS69
+status: open
+tags: [gh-cli, graphql, 401-flake, retry-with-backoff, ci-stability]
+claim_area: orchestrator
+```
+
+**Problem:** Throughout this CS, `gh api graphql` and any `gh` command that internally uses GraphQL (`gh pr edit --add-reviewer`, `gh pr create` in some modes) randomly returned HTTP 401 with body `{"message":"Requires authentication","documentation_url":"https://docs.github.com/rest","status":"401"}` even though `gh auth status` reported a valid token, no `GH_TOKEN`/`GITHUB_TOKEN` env was overriding, and the next identical command 2-3 seconds later succeeded. The same 401 also affected CI workflow gates (`check-copilot-review-attached`, `check-review-threads-resolved`, gitleaks installer) that call GraphQL with the workflow-injected `GITHUB_TOKEN`. The flake rate during this CS was roughly 30% on graphql-bearing calls.
+
+**Finding:** Treat any GraphQL 401 from `gh` or harness CI gates as a transient and retry up to 5 times with 3-second backoff before declaring failure. **Always retry the verification too** (e.g. `gh api repos/.../pulls/<n> --jq ...` after `gh pr edit`), since the flake doesn't respect operation type. For CI gates, `gh run rerun <id> --failed` is the right escalation; multiple reruns of the same job were needed for `review-threads-resolved` and `copilot-review-attached` in this CS, but each eventually passed without code change. The `gh pr create` GraphQL 401 has a clean REST workaround: `gh api repos/<o>/<r>/pulls --method POST --input -` with `{title, head, base, body}` JSON.
+
+**Evidence:** PR #294 (CS69 claim) and PR #295 (CS69 content), 2026-06-10, clone `agent-harness_copilot2`. CI runs 27288770319, 27288873263, 27289137451 each hit 401 in at least one job and recovered after rerun. Local: `gh pr edit 295 --add-reviewer copilot-pull-request-reviewer` returned 401 on attempts 1 and 4 but succeeded on 2/3/5. `gh api graphql -f query=...` for `resolveReviewThread` hit 401 on first attempt of each thread, succeeded on second. No correlation observed with rate limits (well below 5000/h ceiling), token expiry, or specific endpoints — purely random across the GitHub GraphQL gateway. Useful pattern: wrap `gh api graphql` in a PowerShell `while($attempts -lt 5 -and -not $ok) { ... ; if ($out -match '^non-200|^HTTP') { Start-Sleep 3; continue } }` loop.
+
+**Disposition:** Open — candidate work: add a retry-with-backoff wrapper to harness CLI commands that internally call `gh api graphql` (especially `harness copilot-engage`, `harness review`); document the pattern in OPERATIONS.md § "When gh GraphQL 401-flakes"; consider an exponential-backoff helper in `lib/` for CI gate scripts to absorb the same flake server-side rather than relying on operators noticing and reissuing `gh run rerun --failed`. claim_area: orchestrator.
+
+---
+
 ### LRN-159
 
 ```yaml
@@ -277,7 +321,7 @@ id: LRN-154
 date: 2026-06-06
 category: tooling
 source_cs: CS61b
-status: open
+status: applied
 tags: [learnings, check-learnings, header, frontmatter, linter-gap, counting, broken-anchor]
 claim_area: harness-cli
 ```
@@ -291,6 +335,8 @@ claim_area: harness-cli
 **Disposition:** Open — LRN-106 header restored in this change; the `check-learnings.mjs` header-presence rule remains to be implemented (file a planned CS). claim_area: harness-cli.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** The planned CS exists: **CS69** (`planned_cs69_check-learnings-header-enforcement.md` — "Enforce `### LRN-NNN` header presence in check-learnings.mjs (apply LRN-154)"). Flip status to `applied` at CS69 close-out.
+
+**Disposition update (2026-06-10, `omni-ah-c2`, CS69 close-out):** **Applied** in PR #295 (squash-merge SHA **`b580260f88cc2a9bf7f0c8911bf6531c46608b30`**, 2026-06-10T16:14:41Z). `scripts/check-learnings.mjs` Check 7 now enforces canonical `### LRN-NNN` H3 headers via strict-adjacency + bare-header regex + exact digit-string id comparison (per Copilot R1 hardening). 6 fixtures + 6 test cases (#18–#23) under `tests/fixtures/cs69/`. Real `LEARNINGS.md` (159 entries) passes with 0 errors. Status flipped open → applied in this close-out.
 
 ### LRN-152
 
