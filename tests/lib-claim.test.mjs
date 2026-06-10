@@ -603,3 +603,31 @@ test('findPlannedClickstop: directory-form with present inner main .md still pas
   assert.equal(r.ok, true);
   assert.equal(r.listing.directoryForm, true);
 });
+
+test('findPlannedClickstop: directory-form with inner readdir failure surfaces the underlying error (R13 amendment)', () => {
+  const dirPath = P(PLANNED, 'planned_cs64_my-slug');
+  // Mock readdir throws EACCES on the inner dir. Outer dir read succeeds.
+  const readdir = (p) => {
+    if (p === PLANNED) return ['planned_cs64_my-slug'];
+    if (p === dirPath) {
+      const err = new Error('permission denied');
+      err.code = 'EACCES';
+      throw err;
+    }
+    return [];
+  };
+  const r = findPlannedClickstop({
+    plannedDir: PLANNED,
+    csId: 'CS64',
+    readdir,
+    isDirectory: (p) => p === dirPath,
+  });
+  assert.equal(r.ok, false);
+  assert.match(
+    r.error,
+    /cannot read planned directory.*permission denied/,
+    `expected error to surface underlying I/O failure; got: ${r.error}`,
+  );
+  // Must NOT mislead the user into thinking the .md is missing.
+  assert.doesNotMatch(r.error, /missing its main markdown file/);
+});
