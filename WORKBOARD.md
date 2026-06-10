@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-09 (CS58 CLAIMED by omni-ah — plan-side fact-claim verification; consumes LRN-139 + LRN-158/CS70 release-state premise gap as second incident. Prior: CS70 CLOSED 2026-06-09 (PR #279) — v0.8.0 shipped Latest; LRN-158/159 filed. Prior: CS61b CLOSED by yoga-ah — out-of-CS hygiene, PR #256/#261, LRN-153 applied, CS69 filed.)
+> **Last updated:** 2026-06-10 (CS58 CLOSED by omni-ah — plan-side fact-claim verification doctrine shipped: REVIEWS.md § 2.6c (F1–F6 incl. F6 state-of-the-world); OPERATIONS.md plan-review attestation + canonical preamble updated; LRN-139 + LRN-158 → applied. PR #281 merged at HEAD bb44def. Prior: CS70 CLOSED 2026-06-09 (PR #279) — v0.8.0 shipped Latest; LRN-158/159 filed. Prior: CS61b CLOSED by yoga-ah — out-of-CS hygiene, PR #256/#261, LRN-153 applied, CS69 filed.)
 
 ## Orchestrators
 
@@ -26,6 +26,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS58 | Plan-side fact-claim verification (apply LRN-139 + LRN-158) | active | omni-ah | cs58/plan-side-fact-claim-verification | 2026-06-09 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

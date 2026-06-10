@@ -1,10 +1,10 @@
 # CS58 — Plan-side fact-claim verification (apply LRN-139)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah (Copilot CLI / Claude Opus 4.7 1M)
 **Branch:** cs58/plan-side-fact-claim-verification
 **Started:** 2026-06-09
-**Closed:** —
+**Closed:** 2026-06-10
 **Filed by:** CS54 close-out (2026-06-03 by `yoga-ah`). Applies **LRN-139** (`LEARNINGS.md` § LRN-139, status `open`), surfaced during CS54 implementation when task T1's plan-asserted "stray triple-backtick fence at `template/composed/OPERATIONS.md:680`" turned out to be a false positive that survived 17 rubber-duck plan-review rounds before being caught at implementation time.
 
 Additionally consumes **LRN-158** (`LEARNINGS.md` § LRN-158, status `open`) — surfaced during CS70 (2026-06-09) when a release-cut plan asserted "v0.7.0 has been bumped but never tagged or shipped" and 3 GPT-5.5 plan-review rounds (R1/R2/R3 at hash `7ab92e2eb150`) accepted the premise without anyone running `gh release list` / `gh api repos/<owner>/<repo>/releases`. Execution then discovered the tag + a published GitHub Release had existed at the asserted commit for 6 days. This is the same fact-claim verification gap LRN-139 surfaced, but on a non-file/line surface (release/tag state) — included here so the shipped doctrine covers state-of-the-world assertions, not only `file:line` citations. LRN-159 is a tooling consequence and lives with CS59/CS67; CS58 only needs to keep the doctrine general enough to cover the LRN-158 class.
@@ -80,10 +80,10 @@ The plan-review attestation procedure lives in `OPERATIONS.md § Plan review att
 | T6: (NEW per LRN-158 background extension) transition LRN-158 `open` → `applied` with prose disposition noting the plan-side doctrine ships in CS58; CS59/CS67 dispositions remain unchanged (release-process docs + verb still own their parts) | done | omni-ah | Plan-side ask shipped via F6; CS59 + CS67 asks remain open in those CSs as planned. |
 | T7: CHANGELOG.md `[Unreleased]` entry citing plan-side fact-claim verification doctrine | done | omni-ah | Added under § Documentation. |
 | T8: (optional) reviewer-prompt scaffold update if a canonical plan-review dispatch template exists | done | omni-ah | Verified via grep: no standalone plan-review dispatch template exists beyond the canonical reviewer preamble in OPERATIONS.md § Reviewer dispatch — canonical preamble. T3 already extended that preamble's `scope:` field with the F1–F6 plan-review clause, so the optional ask is satisfied by T3. No separate scaffold file to add. |
-| T9: harness lint --quiet — full suite incl. composed-blocks lockstep | pending | omni-ah | Exit criterion 4 |
-| T10: open content/release PR; pass A4 review-log currency + Copilot review | pending | omni-ah | Standard content-PR flow |
-| T11: Plan-vs-implementation review gate (GPT-5.5) | pending | rubber-duck (orchestrator: omni-ah) | Exit criterion 6 |
-| T12: close-out (rename active→done; update WORKBOARD/CONTEXT/LEARNINGS) | pending | omni-ah | Standard close-out per OPERATIONS § Close-out |
+| T9: harness lint --quiet — full suite incl. composed-blocks lockstep | done | omni-ah | Exit criterion 4. 30/0/3 at merged HEAD `bb44def`. |
+| T10: open content/release PR; pass A4 review-log currency + Copilot review | done | omni-ah | PR #281 (cs58/plan-side-fact-claim-verification) opened, 7 rubber-duck rounds (R1 Needs-Fix → R2–R7 Go) + 6 Copilot rounds (last converged with "no new comments"), merged via admin at HEAD `bb44def` on 2026-06-10. |
+| T11: Plan-vs-implementation review gate (GPT-5.5) | done | rubber-duck (orchestrator: omni-ah) | Exit criterion 6. GO at HEAD `bb44def` (2026-06-10). Per-deliverable outcome recorded in `## Plan-vs-implementation review` below. |
+| T12: close-out (rename active→done; update WORKBOARD/CONTEXT/LEARNINGS) | done | omni-ah | This commit. |
 
 ## Model audit
 
@@ -123,4 +123,27 @@ The plan-review attestation procedure lives in `OPERATIONS.md § Plan review att
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-06-10T02:49:16Z
+**Outcome:** GO
+
+| Deliverable | Outcome (match/diverged/added/dropped) | Rationale |
+|---|---|---|
+| D58-1 | match | `REVIEWS.md` adds § 2.6c with plan-review F1–F6, including LRN-139/LRN-158 motivation and full reviewer-consumed-plan scope. |
+| D58-2 | match | `template/composed/REVIEWS.md` is byte-equal to root `REVIEWS.md` (`git diff --no-index` exit 0). |
+| D58-3 | match | `OPERATIONS.md` Plan review attestation procedure now has `Required verifications` cross-referencing REVIEWS § 2.6c and enumerating F1–F6. |
+| D58-4 | match | `template/composed/OPERATIONS.md` mirrors the OPERATIONS change; only the two pre-existing template-var diffs remain. |
+| D58-5 | match | Sentinel-guarded canonical reviewer preamble includes the plan-review F1–F6 clause and tells reviewers not to issue Go on prose-internal coherence alone. |
+| D58-6 | match | LRN-139 status is `applied` with an Applied CS58 disposition paragraph. |
+| D58-7 | match | LRN-158 status is `applied` with an Applied CS58 paragraph; residual CS59/CS67 asks are explicitly scoped as remaining in their own CSs. |
+| D58-8 | match | `CHANGELOG.md` `[Unreleased]` Documentation entry records CS58, F1–F6, F6 state-of-world checks, mirrors, LRN transitions, and no-linter decision. |
+| D58-9 | match | No mechanical linter was added; merged diff changes only docs/active CS content, matching C58-3. |
+
+**Test-coverage assessment:** sufficient
+
+- `node --test tests/*.test.mjs` at HEAD: tests 1182, pass 1181, fail 0, skipped 1.
+- Delta vs CS58 prior-state: +0 tests / +0 passing tests, expected because C58-3 explicitly chose reviewer-prompt doctrine over new mechanical linting.
+- `node bin/harness.mjs lint`: 30 passed, 0 failed, 3 skipped.
+- No coverage gaps for the planned scope. Existing lint covers composed-blocks lockstep and reviewer-preamble structure; semantic doctrine correctness is appropriately covered by this PVI review rather than a new linter (per C58-3).
+
+Merged CS58 content matches the plan deliverables and decisions. PR body Model audit + 7-round Review log populated correctly; tests/lint pass at merged HEAD `bb44def`; no-new-linter decision preserved. Overall outcome: GO.
