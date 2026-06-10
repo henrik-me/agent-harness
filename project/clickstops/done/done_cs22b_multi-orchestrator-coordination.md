@@ -1,10 +1,50 @@
 # CS22b — Multi-orchestrator coordination
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
-**Closed:** —
+> **⚠️ Closed obsolete — never implemented.** Per the 2026-06-09 pre-claim
+> backlog-disposition pass (orchestrator `omni-ah-c2`, repo HEAD `0f434c7`),
+> CS22b is closed without producing any of the planned CLI subcommands,
+> WORKBOARD schema additions, or linter changes. The plan proposed
+> mechanical infrastructure for safe multi-orchestrator parallelism
+> (`harness reserve-lrn`, `harness lock`, `harness release`,
+> `harness pre-claim`, `check-lrn-ranges`, multi-row Active Work in
+> `check-workboard`, WORKBOARD `## LRN ranges` + `## Area locks`
+> sections). **Discipline-only multi-orchestration has won in practice:**
+>
+> - **Multi-orch is already the operating mode.** `WORKBOARD.md` registers
+>   five orchestrators (`omni-ah`, `omni-ah-c2`, `yoga-ah`, `yoga-ah-c2`,
+>   `yoga-ah-c3`) on two machines / multiple clones. The ecosystem of CSs
+>   claimed and closed across that period shows no LRN reporting an LRN-ID
+>   collision, a file race attributable to cross-orchestrator overlap, or
+>   an Active Work double-claim. The CS35b plan-review-attestation arc, the
+>   CS41 independence invariant, the CS48 implementer-not-reviewer linter,
+>   the CS50 workboard admin-bypass, CS54/CS54b/CS55/CS56 cross-repo
+>   handoff doctrine, and the CS63 hardening arc were all delivered under
+>   the discipline-only model without the CS22b infrastructure.
+> - **None of the proposed CLI surface was built and nothing has called
+>   for it.** No CS in the v0.3.0 → v0.8.0 arc has invoked
+>   `harness reserve-lrn`, `harness lock`, `harness release`, or
+>   `harness pre-claim`. LRN-122 (CS42-7 grandfather sweep) lists CS22b
+>   as part of the pre-CS35b backlog that needs disposition — but the
+>   subsequent multi-orch arc has not produced a single LRN citing
+>   absence of these primitives as a blocker.
+> - **The one remaining real defect is doc drift, not missing CLI.**
+>   `CONTEXT.md § Parallelism` still claims "single-orchestrator default".
+>   That doc surface is genuinely out of step with reality and should be
+>   rewritten in a small follow-up if/when an orchestrator picks it up;
+>   it does not need the CS22b CLI infrastructure to fix.
+>
+> If a real cross-orchestrator race is observed in the future, file a
+> *new* tightly-scoped CS targeting the specific observed defect rather
+> than reviving this plan's full 5-sub-agent wave. The plan body below is
+> preserved verbatim for historical context.
+>
+> See PR for the disposition trail.
+
+**Status:** done
+**Owner:** omni-ah-c2
+**Branch:** chore/disposition-cs20s-backlog
+**Started:** 2026-06-09
+**Closed:** 2026-06-09
 **Filed by:** Pre-CS16 doc-state audit. Captures the parallel-orchestrator model discussed in [`CONTEXT.md`](../../../CONTEXT.md) § Parallelism and [`OPERATIONS.md`](../../../OPERATIONS.md).
 **Depends on:** CS22 — **done** ([`v0.2.0`](https://github.com/henrik-me/agent-harness/releases/tag/v0.2.0) tagged and published; the CS16 pin target; CS file under [`project/clickstops/done/`](../done/done_cs22_cut-harness-v0.2.0/)). Dependency satisfied; public flip (CS15a) is likewise done, so no remaining blocker. (Note: the `done_cs22` file header still reads `Status: active` — a stale close-out artefact; the published `v0.2.0` tag is the authoritative completion evidence.)
 
@@ -89,12 +129,32 @@ Briefings MUST include all standard guards (no-commit preflight per [LRN-021](..
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| Close-out: docs + restart state — update WORKBOARD.md (no row to remove; closed pre-claim) and CONTEXT.md to reflect CS22b closed obsolete | done | omni-ah-c2 | disposition pass 2026-06-09 |
+| Close-out: learnings + follow-ups — no learnings generated; no follow-up CSs filed (obsolete-without-implementation) | done | omni-ah-c2 | disposition pass 2026-06-09 |
 
 ## Notes / Learnings
 
-(filled during execution)
+Closed obsolete without implementation per the 2026-06-09 backlog-disposition
+pass. No CLI subcommands, WORKBOARD schema additions, or linters were
+produced. See the disposition banner at the top of this file for the
+rationale.
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Closed obsolete without implementation — no plan code/content was authored. The "implementer" row reflects the orchestrator/model that performed the close-out disposition itself (banner + headers + Tasks); the "reviewer" row reflects the standard rubber-duck that reviews the disposition PR. Independence invariant trivially holds (claude-opus-4.7-1m-internal ≠ gpt-5.5). CS22b is not on the high-risk CS list. |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** n/a — not implemented
+**Date:** 2026-06-09
+**Outcome:** Closed obsolete without implementation per the 2026-06-09
+pre-claim backlog-disposition pass (orchestrator `omni-ah-c2`). No
+implementation against this plan was ever attempted, so a substantive
+plan-vs-implementation review is not applicable. The disposition rationale
+is recorded in the banner at the top of this file and in `CONTEXT.md`.
