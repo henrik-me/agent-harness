@@ -59,8 +59,7 @@ verify the current state of both published AND draft releases.
   prep + R2 README pin sweep finding) before the discovery surfaced
   during Phase 1 ruleset inspection; the audit itself is ~10 seconds.
 
-**Disposition:** Pending. Folds into CS59 (release-process docs) and
-CS67 (`harness release` verb). Concrete asks for those CSs:
+**Disposition:** Partially applied — CS58 (2026-06-09) shipped the plan-side ask (REVIEWS.md § 2.6c F6); the content (CS59) and tooling (CS67) asks below remain pending and fold into those CSs. Concrete asks for the pending CSs:
 
 1. CS59 should document the audit-before-build precondition as a
    numbered step in OPERATIONS § Release process, with the three
@@ -3017,7 +3016,7 @@ The rule is symmetric with PR-side F1-F5: any reviewer asked to bless an impleme
 
 **Evidence:** CS54 active plan (`active_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) Plan review table R1-R17 at hash `5c40242b24c7`, all GO. CS54 implementation discovered T1 was a false positive during commit a770134 (revert + Notes update). Lint regression caught via `node bin/harness.mjs lint` after the wrong fix landed locally. T2 (the other half of the same plan paragraph) was a real defect (prose vs label case mismatch) and shipped correctly — so the plan had mixed signal, not pure noise.
 
-**Disposition:** Open. Follow-up CS candidate (CS55+ or post-v0.6.1): extend `REVIEWS.md § 2.6a Rubber-duck scope — fact-claim verification` to explicitly cover plan reviews (currently scoped to "any review of a PR" / "shipped code"). Add a `### Plan-side fact-claim verification` H3 to the same § that states the rule, gives a worked example (this LRN), and updates the plan-review checklist. Optionally: add a `harness plan-review-checklist` CLI subcommand that, given a planned CS file path, emits a machine-readable list of factual claims (file:line citations) for the reviewer to verify. Cross-reference: REVIEWS.md § 2.6a (PR-side F1-F5); CS54 (this LRN's source); PR #218 (where F1-F5 was first codified).
+**Disposition:** Applied (CS58, 2026-06-09); see **Applied** paragraph below. Original follow-up plan (CS55+ or post-v0.6.1): extend `REVIEWS.md § 2.6a Rubber-duck scope — fact-claim verification` to explicitly cover plan reviews (currently scoped to "any review of a PR" / "shipped code"). Add a `### Plan-side fact-claim verification` H3 to the same § that states the rule, gives a worked example (this LRN), and updates the plan-review checklist. Optionally: add a `harness plan-review-checklist` CLI subcommand that, given a planned CS file path, emits a machine-readable list of factual claims (file:line citations) for the reviewer to verify. Cross-reference: REVIEWS.md § 2.6a (PR-side F1-F5); CS54 (this LRN's source); PR #218 (where F1-F5 was first codified).
 
 **Applied (CS58, 2026-06-09):** Shipped as **REVIEWS.md § 2.6c
 Plan-review scope — fact-claim verification (LRN-139 / LRN-158)**, an
