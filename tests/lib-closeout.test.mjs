@@ -830,7 +830,7 @@ test('activeWorkRowExists: missingFile flag when WORKBOARD.md absent', () => {
   assert.equal(r.missingFile, true);
 });
 
-test('activeWorkRowExists: detects row presence by CS-id prefix', () => {
+test('activeWorkRowExists: detects row presence by exact CS-id match', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'wb-row-'));
   try {
     const wb = [
@@ -960,6 +960,37 @@ test('runCloseoutFromDisk: genuine "not yet closed out" (no active + no done) pr
     assert.equal(result.ok, false);
     assert.ok(result.errors.some((e) => /^no active CS99/.test(e)),
       `expected "no active CS99" error, got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: missing WORKBOARD.md => exists:false + missingFile:true (fresh checkout OK)', () => {
+  // Copilot reviewer on PR #299 round 3: the missing-file case is the
+  // legitimate "fresh checkout" path and must remain distinguishable from
+  // the unreadable-file case so callers can decide whether to surface an
+  // error or allow a clean no-op.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-missing-'));
+  try {
+    const result = activeWorkRowExists(path.join(root, 'WORKBOARD.md'), 'CS64');
+    assert.equal(result.exists, false);
+    assert.equal(result.missingFile, true);
+    assert.equal(result.readError, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: WORKBOARD.md missing => alreadyClosedOut no-op (fresh checkout legitimately no WORKBOARD)', () => {
+  // Copilot reviewer on PR #299 round 3: missing-file is acceptable in the
+  // idempotency branch. Read-error is not (covered by the next test).
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    // Intentionally do NOT create WORKBOARD.md.
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true, `expected no-op success; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

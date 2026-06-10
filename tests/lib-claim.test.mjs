@@ -973,8 +973,31 @@ test('runClaimFromDisk: alreadyClaimed message points to project/clickstops/plan
     assert.equal(result.alreadyClaimed, true);
     assert.match(result.message, /project\/clickstops\/planned\/planned_cs64_/,
       `message should reference the correct planned path; got: ${result.message}`);
-    assert.doesNotMatch(result.message, /^planned\/cs64_/m,
-      'message should not use the old (wrong) planned/cs64_<slug>.md hint');
+    assert.ok(!result.message.includes('planned/cs64_'),
+      `message must not use the old (wrong) planned/cs64_<slug>.md hint; got: ${result.message}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyActive + WORKBOARD.md missing => clean no-op (fresh checkout)', () => {
+  // Copilot reviewer on PR #299 round 3 (symmetric claim-side fix):
+  // missing-file is acceptable; readError is not (covered separately by the
+  // closeout-side regression test for the same activeWorkRowExists helper).
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Intentionally do NOT create WORKBOARD.md.
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true, `expected no-op success; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
