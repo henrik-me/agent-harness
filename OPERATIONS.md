@@ -2153,9 +2153,9 @@ is an F6 fact-claim. The canonical probes:
 
 ```bash
 # Published AND draft releases (covers stale duplicate drafts — LRN-159):
-gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<tag>"))'
+gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<x.y.z>"))'
 gh release list --repo <owner>/<repo> --limit 5
-git ls-remote origin refs/tags/v<tag>
+git ls-remote origin refs/tags/v<x.y.z>
 ```
 
 Stale duplicate drafts (e.g. an auto-draft from `release.yml` left behind by
