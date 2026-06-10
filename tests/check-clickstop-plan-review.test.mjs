@@ -183,7 +183,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('warn-only on missing section in standalone mode with --strict=false (explicit opt-out)', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--strict', 'false']);
     assert.equal(r.status, 0);
     assert.match(r.stdout, /WARN:.*missing required H2 section/);
@@ -191,7 +191,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors on missing section with default --strict (CS42-7 flipped default to true in v0.5.0)', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch);
     assert.equal(r.status, 1, `expected default-strict to error; stdout=\n${r.stdout}`);
     assert.match(r.stdout, /ERROR:.*missing required H2 section/);
@@ -199,7 +199,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors on missing section with --strict=true (explicit, same as default)', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--strict', 'true']);
     assert.equal(r.status, 1);
     assert.match(r.stdout, /ERROR:.*missing required H2 section/);
@@ -207,7 +207,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors on missing section in pr-evidence mode regardless of --strict=false', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--strict', 'false']);
     assert.equal(r.status, 1, `expected pr-evidence to force strict; stdout=\n${r.stdout}`);
     assert.match(r.stdout, /ERROR:.*missing required H2 section/);
@@ -215,7 +215,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors when latest row verdict is Needs-Fix (regardless of strict)', () => {
     clearScratch();
-    writeFile('planned', 'planned_cs99_needs_fix.md',
+    writeFile('planned', 'planned_cs99_needs-fix.md',
       compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Needs-Fix', 'still has blockers']])
     );
     const r = runLinter(scratch);
@@ -235,7 +235,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors when reviewer model overlaps a prior-row author (accumulated check)', () => {
     clearScratch();
-    writeFile('planned', 'planned_cs99_overlap_prior.md',
+    writeFile('planned', 'planned_cs99_overlap-prior.md',
       compose({}, [
         ['R1', 'claude-opus-4.7', 'gpt-5.5', 'agent-x', 'AUTOHASH', '2026-05-12T00:00:00Z', 'Needs-Fix', 'first round'],
         ['R2', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'second round — but R2 reviewer was R1 author'],
@@ -265,7 +265,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors on non-ISO timestamp', () => {
     clearScratch();
-    writeFile('planned', 'planned_cs99_bad_ts.md',
+    writeFile('planned', 'planned_cs99_bad-ts.md',
       compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13', 'Go', 'date only no time']])
     );
     const r = runLinter(scratch);
@@ -276,7 +276,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
   it('errors on findings recap > 200 chars', () => {
     clearScratch();
     const longRecap = 'x'.repeat(201);
-    writeFile('planned', 'planned_cs99_long_recap.md',
+    writeFile('planned', 'planned_cs99_long-recap.md',
       compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', longRecap]])
     );
     const r = runLinter(scratch);
@@ -286,7 +286,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('errors when latest row hash does not match current content', () => {
     clearScratch();
-    const file = path.join(scratch, 'planned', 'planned_cs99_stale_hash.md');
+    const file = path.join(scratch, 'planned', 'planned_cs99_stale-hash.md');
     // Compose with a known-bad hash (12 valid hex chars but unrelated to content).
     const body = planBody();
     const staleSection = planReviewSection([
@@ -300,7 +300,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('passes R1 + R2 happy path with current hash on the latest row', () => {
     clearScratch();
-    writeFile('active', 'active_cs99_two_rounds.md',
+    writeFile('active', 'active_cs99_two-rounds.md',
       compose({}, [
         ['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', '000000000001', '2026-05-12T00:00:00Z', 'Needs-Fix', 'first round had findings'],
         ['R2', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'second round resolved'],
@@ -318,7 +318,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
     // Now write the same file but with a different Background — the hash
     // doesn't change because Background is not in HASHED_SECTIONS.
     const bodyEdited = planBody({ background: 'COMPLETELY DIFFERENT BACKGROUND' });
-    const file = path.join(scratch, 'planned', 'planned_cs99_bg_edit.md');
+    const file = path.join(scratch, 'planned', 'planned_cs99_bg-edit.md');
     fs.writeFileSync(
       file,
       bodyEdited + planReviewSection([['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', hash, '2026-05-13T00:00:00Z', 'Go', 'still good']]),
@@ -333,7 +333,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
     // A done file with NO `## Plan review` and Needs-Fix would normally fail —
     // verify it's a no-op when in done/.
     fs.writeFileSync(
-      path.join(scratch, 'done', 'done_cs99_no_section.md'),
+      path.join(scratch, 'done', 'done_cs99_no-section.md'),
       planBody(),
       'utf8'
     );
@@ -343,15 +343,38 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('--skip-reasons workboard-only short-circuits in pr-evidence mode', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--skip-reasons', 'workboard-only']);
     assert.equal(r.status, 0, `expected skip; stdout=\n${r.stdout}`);
     assert.match(r.stdout, /skipped|workboard-only/);
   });
 
+  it('non-CS-named .md artifacts in stage dirs are silently skipped (CS64)', () => {
+    clearScratch();
+    // Real CS plan file — has the required ## Plan review section.
+    writeFile('active', 'active_cs64_test-slug.md',
+      compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'clean review']])
+    );
+    // Arbitrary .md file in the stage dir whose basename does NOT match the
+    // CS naming pattern (e.g. a research artifact or scratch note). Before
+    // CS64 the linter would error on it for missing ## Plan review;
+    // CS_FILENAME_RE now skips any non-canonical .md as out of scope.
+    fs.writeFileSync(
+      path.join(scratch, 'active', 'runtime-skill-spike.md'),
+      '# Spike — runtime skill wrappers\n\nNot a CS plan. No ## Plan review here.\n',
+      'utf8',
+    );
+    const r = runLinter(scratch, ['--strict', 'true']);
+    assert.equal(
+      r.status,
+      0,
+      `expected pass — runtime-skill-spike.md should be skipped as non-CS-named; stdout=\n${r.stdout}`,
+    );
+  });
+
   it('bot-author skip reason does NOT skip pr-evidence mode (still strict)', () => {
     clearScratch();
-    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');
+    fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no-section.md'), planBody(), 'utf8');
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--skip-reasons', 'bot-author']);
     assert.equal(r.status, 1, `expected fail — bot-author does not skip A6; stdout=\n${r.stdout}`);
   });
@@ -366,7 +389,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
       'utf8'
     );
     // The PR-changed file with valid attestation.
-    const changed = writeFile('planned', 'planned_cs99_in_pr.md',
+    const changed = writeFile('planned', 'planned_cs99_in-pr.md',
       compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'ok']])
     );
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--files', changed]);
@@ -386,7 +409,7 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
 
   it('--files still enforces strict pr-evidence when a listed in-scope file lacks ## Plan review', () => {
     clearScratch();
-    const target = path.join(scratch, 'planned', 'planned_cs99_no_section.md');
+    const target = path.join(scratch, 'planned', 'planned_cs99_no-section.md');
     fs.writeFileSync(target, planBody(), 'utf8');
     const r = runLinter(scratch, ['--mode', 'pr-evidence', '--files', target]);
     assert.equal(r.status, 1, `expected fail — listed file missing section is strict; stdout=\n${r.stdout}`);

@@ -155,6 +155,13 @@ files closed on or after CS15a's close-out enforcement date.
 
 ### Claim steps
 
+`harness claim CS<NN>` (CS64) mechanizes this entire sequence: it runs the
+preflight + harvest gate, renders the claim plan as a dry-run by default,
+and on `--apply` cuts the branch, performs the `git mv`, and edits
+`WORKBOARD.md`. It NEVER commits and NEVER pushes — you own the commit
+message and the PR. The manual procedure below is preserved for triage and
+for environments where the verb is not yet installed.
+
 1. `git pull origin main --rebase` — sync with upstream.
 2. `git checkout -b cs<NN>/claim` — create claim branch.
 3. Edit `WORKBOARD.md`: add a row to Active Work with CS-Task ID, branch,
@@ -171,9 +178,9 @@ files closed on or after CS15a's close-out enforcement date.
 
 ### Pre-claim harvest gate (CS04+)
 
-Run `harness harvest` before claiming (a future `harness claim` command will
-run it automatically — tracked in CS64). It surfaces stale `open` learnings
-tagged `process` or `architectural`, or learnings tagged with the
+Run `harness harvest` before claiming. `harness claim CS<NN>` (CS64) invokes
+it automatically as part of the preflight gate. It surfaces stale `open`
+learnings tagged `process` or `architectural`, or learnings tagged with the
 `claim_area` metadata for the current CS area. Resolve stale learnings
 before the workboard-claim PR lands.
 
@@ -205,6 +212,14 @@ the canonical `project/clickstops/{planned,active,done}/**` arc:
    labeled `harness-orchestrator` per cross-repo workstream.
 
 ### Plan-vs-implementation review (close-out gate)
+
+`harness close-out CS<NN>` (CS64) enforces this gate as Phase 1 of its
+preflight: it refuses to proceed unless the active CS file's
+`## Plan-vs-implementation review` section is populated with **Reviewer:**,
+**Date:**, and **Outcome:** GO. `--apply` then performs the `active → done`
+rename and the WORKBOARD row removal, and refuses to mark the close-out
+PR-ready until `CONTEXT.md` has also been updated (freshness gate). The
+verb NEVER commits — you own the commit message and the PR.
 
 This gate is **mandatory** before opening the close-out PR and before
 the `active → done` rename. Run it against the merged content HEAD (or the
@@ -521,12 +536,16 @@ for the full briefing and reporting model.
 
 If you need to leave a CS mid-flight:
 
-1. Update `WORKBOARD.md`: set `state = ⏸ Paused` (or `🔴 Blocked`) with a
+1. Run `harness status` (CS64) and capture its one-screen snapshot in the
+   handoff note — it lists the current active CS, the WORKBOARD Active Work
+   rows, and the in-flight `planned`/`active` arc, which is the exact context
+   another orchestrator (or a future you) needs to resume.
+2. Update `WORKBOARD.md`: set `state = ⏸ Paused` (or `🔴 Blocked`) with a
    brief reason and the `last-updated` timestamp.
-2. Commit on the content branch and push: "WIP: <brief reason>" (this commit
+3. Commit on the content branch and push: "WIP: <brief reason>" (this commit
    will be squash-merged later; it exists only to preserve work-in-progress
    state).
-3. Note the `reclaimable` threshold in the WORKBOARD row (default: 7 days
+4. Note the `reclaimable` threshold in the WORKBOARD row (default: 7 days
    with no update). After that threshold, another orchestrator may pick it up
    by updating the WORKBOARD row with the new agent ID.
 
@@ -823,6 +842,14 @@ sub-tasks per the parallelisation table in the active CS plan. Sub-agents
 must be **briefed with structured context** and must **report back with a
 structured report**. Both requirements are non-negotiable — without them the
 orchestrator loses observability and the work loses traceability.
+
+`harness dispatch` (CS64) emits the canonical sub-agent briefing preamble
+verbatim from this document's [§ Mandatory briefing preamble](#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)
+fence (the CRITICAL PREFLIGHT block + File ownership + Required reading +
+Conventions + Self-checks + Reporting independence + Mandatory report shape).
+Paste its output as the first thing in every sub-agent prompt to satisfy the
+"verbatim paste, not reference" discipline that LRN-068 captures. The verb is
+deterministic and read-only.
 
 ### Models
 
@@ -2004,8 +2031,8 @@ harness package is not published to npm. Always use
 
 - **Weekly:** Monday morning, run `harness harvest` (CS04+) and review
   `LEARNINGS.md`. Disposition any `open` entries.
-- **Before-claim (CS04+):** run `harness harvest` before claiming (a future
-  `harness claim` command will run it automatically — tracked in CS64). It
+- **Before-claim (CS04+):** run `harness harvest` before claiming
+  (`harness claim CS<NN>` runs it automatically per CS64). It
   surfaces stale `open` learnings tagged `process` or `architectural`, or
   tagged with `claim_area` metadata matching the current CS. Resolve before
   the workboard-claim PR lands.
