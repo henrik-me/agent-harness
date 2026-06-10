@@ -175,6 +175,8 @@ time. The audit-before-build doctrine in LRN-158 will surface them
 (`gh release list` shows drafts), but each one then requires a
 manual cleanup step that should be mechanical.
 
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** Of the three homes above, **CS59 is closed** (PR #285) without documenting the cleanup step, so the documentation-side path now requires either a separate small doc PR or rolls into CS67's `OPERATIONS.md` reference update at its close-out. Planned **CS67** (`harness release` verb) remains the primary home: its publish-phase (`harness release --publish`, decision C67-1) is the natural place to implement the idempotent `gh api -X DELETE` sibling-cleanup. Path 3 (`release.yml` annotation) deferred unless CS67 slips. Flip status to `applied` at CS67 close-out.
+
 ---
 
 ### LRN-157
@@ -222,6 +224,8 @@ string-path-never-deleted (provenance), and leading-dash-ref rejected.
 seams (fetchers, temp workspaces, clones). Candidate to fold into a
 CONVENTIONS/REVIEWS note when CS64 adds more lifecycle verbs that fetch/clone.
 
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS64 is now active** (`omni-ah`, branch `cs64/content`) and implements the foundational lifecycle verbs (`startup`, `claim`, `close-out`, `dispatch`, `status`). Any of those that allocate a temp dir / clone must apply the `{path, cleanup}` disposer pattern + leading-dash ref rejection from this LRN. Recommended: surface to the CS64 orchestrator; promote the rule to a CONVENTIONS/REVIEWS note at CS64 close-out.
+
 ### LRN-156
 
 ```yaml
@@ -241,6 +245,8 @@ claim_area: linters
 **Evidence:** CS63a PR #264 (bypass guard fixed with the files API + `previous_filename`); CS63b PR #267 (close-out gate fixed with `--no-renames`; +2 real-`git mv` integration regression tests). `workboard-auto-approve.yml` already used `git diff --name-status -M` for the same reason. Both were caught by GitHub Copilot review / the PVI gate, not by the original implementation's tests.
 
 **Disposition:** Open — candidate for a mechanical guard (e.g. a linter that flags `--name-only` in diff-based gate scripts where rename sources matter), or fold into CS58's fact-claim/scope-verification scope. The two in-tree gates are already fixed.
+
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS58 closed** (PR #281) without absorbing this; in-tree gates remain fixed (no new instances surfaced since). Three remaining options: (a) tiny new linter CS that flags bare `--name-only` in `scripts/check-*.mjs` and `.github/workflows/*.yml` where rename sources matter — likely low ROI without a fresh recurrence; (b) include the check in planned **CS66** (`review-doc`/`review-cs` verbs) as a checklist item for diff-consuming scripts; (c) bullet in CONVENTIONS during planned **CS65** (process-doc right-sizing). No new CS recommended yet; revisit if a third instance appears.
 
 ### LRN-155
 
@@ -262,6 +268,8 @@ claim_area: sync-engine
 
 **Disposition:** Open — folds into CS63c (guided update) / CS64 (lifecycle commands). Add a sync-time new-managed-file reconciliation (or guided-upgrade proposal), then update the `pr_check` schema/doc adoption note.
 
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS63c closed** (PR #270) without absorbing the reconciliation. **CS64 is now active** (`omni-ah`, branch `cs64/content`) — its `harness upgrade`-adjacent flow is the natural home for a sync-time new-managed-file reconciliation (or guided proposal). Recommended: surface to the CS64 orchestrator for inclusion in scope; if out-of-scope for CS64, file a small follow-up planned CS. Update the `pr_check` schema/doc adoption note at whichever ships first.
+
 ### LRN-154
 
 ```yaml
@@ -282,6 +290,8 @@ claim_area: harness-cli
 
 **Disposition:** Open — LRN-106 header restored in this change; the `check-learnings.mjs` header-presence rule remains to be implemented (file a planned CS). claim_area: harness-cli.
 
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** The planned CS exists: **CS69** (`planned_cs69_check-learnings-header-enforcement.md` — "Enforce `### LRN-NNN` header presence in check-learnings.mjs (apply LRN-154)"). Flip status to `applied` at CS69 close-out.
+
 ### LRN-152
 
 ```yaml
@@ -301,6 +311,8 @@ claim_area: review-loops
 **Evidence:** CS54b, 2026-06-07. `done_cs54b_*.md` C54b-1 / Deliverable 1 + `## Plan review` R1/R2 (both Go, gpt-5.5) named the orphan. Discovered pre-implementation: `grep -rn 'managed/.github/pull_request_template' lib scripts bin tests harness.config.json` → 0 hits; `harness.config.json` lists `.github/pull_request_template.md` under `composed.files` (override `_inherited_class:"managed"`), not `managed.files`; git shows the composed migration at CS38a (#163). Resolved in CS54b PR #258 (squash `b4d44d0`) by deleting the orphan + retargeting the test to the composed template (deviation per LRN-143). Related: LRN-139 (plan-side fact-claim gap), planned CS58 (the fix).
 
 **Disposition:** Open — folds into planned CS58. Adds the "deliverable target resolves to a live shipped/loaded surface" check to that scope.
+
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS58 closed** (PR #281) shipping REVIEWS.md § 2.6c (F1–F6 fact-claim verification on plan reviews) but did not extend the F-checks to "deliverable target resolves to a live shipped/loaded surface". The remaining gap belongs in planned **CS66** (`review-cs` verb checklist; see its C66-3 — local verify-only clickstop-readiness verb). Recommended: surface to the CS66 claimer to add as an F-check item. Flip status to `applied` at CS66 close-out.
 
 ### LRN-151
 
@@ -323,6 +335,8 @@ claim_area: orchestrator-loop
 **Implications carried forward:**
 - Candidate promotion home if this recurs: an OPERATIONS.md "session resume / crash recovery" troubleshooting note (none exists today). Left `open` for the next harvest to decide vs. keeping it as a searchable LRN.
 - General principle: a `fatal: bad object refs/remotes/...` on fetch after a crash is usually a corrupt *ref file*, not object-DB damage — check `git for-each-ref` for "ignoring broken ref" and confirm the remote with `git ls-remote` before any reclone.
+
+**Disposition (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** Open — promotion home options have firmed up since the original entry. (a) **CS64 is now active** (`omni-ah`, branch `cs64/content`) and implements the foundational lifecycle verbs incl. `startup`; a startup-time `harness doctor`-style probe could detect+repair the broken loose ref (no reclone) as part of that scope — recommended: surface to the CS64 orchestrator. (b) Failing (a), add the recipe to OPERATIONS.md as a "session resume / crash recovery" subsection during planned **CS65** (process-doc right-sizing). Mark `applied` once one of those ships.
 
 ### LRN-146
 
