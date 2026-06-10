@@ -224,7 +224,7 @@ string-path-never-deleted (provenance), and leading-dash-ref rejected.
 seams (fetchers, temp workspaces, clones). Candidate to fold into a
 CONVENTIONS/REVIEWS note when CS64 adds more lifecycle verbs that fetch/clone.
 
-**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-2 explicitly adopts this LRN's `{path, cleanup}` disposer pattern + `assertSafeRef` leading-dash ref rejection as a shared helper (`lib/disposers.mjs` or extension of `lib/git-util.mjs`) plus an audit retrofitting every `lib/*.mjs` verb that allocates a temp dir / clone (incl. the CS64 verbs once that PR lands). Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this — CS64b is the dedicated post-CS64 hardening home.
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-2 explicitly adopts this LRN's `{path, cleanup}` disposer pattern + `assertSafeRef` leading-dash ref rejection as a shared helper (`lib/disposers.mjs`, new) plus an audit retrofitting every `lib/*.mjs` verb that allocates a temp dir / clone (incl. the CS64 verbs once that PR lands). Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this — CS64b is the dedicated post-CS64 hardening home.
 
 ### LRN-156
 
