@@ -22,6 +22,7 @@ import {
   formatPreflightReport,
   formatApplyReport,
   runCloseoutFromDisk,
+  activeWorkRowExists,
 } from '../lib/closeout.mjs';
 import { parseActiveWorkRows } from '../lib/claim.mjs';
 
@@ -224,7 +225,13 @@ test('findDoneByCsId: directory form', () => {
   const r = findDoneByCsId({
     doneDir: DONE,
     csId: 'CS64',
-    ...fakeFs({ [DONE]: ['done_cs64_my-slug'] }, new Set([dirP])),
+    ...fakeFs(
+      {
+        [DONE]: ['done_cs64_my-slug'],
+        [dirP]: ['done_cs64_my-slug.md'], // canonical inner .md required (R1)
+      },
+      new Set([dirP]),
+    ),
   });
   assert.ok(r.ok);
   assert.equal(r.listing.directoryForm, true);
@@ -715,6 +722,129 @@ test('runCloseoutFromDisk: neither active nor done → returns the original "no 
     assert.equal(result.ok, false);
     assert.equal(result.alreadyClosedOut, undefined);
     assert.ok(result.errors.some((e) => /no active CS64/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: ambiguous active does NOT fall through to alreadyClosedOut', () => {
+  // R1 reviewer (gpt-5.5): only the "no active" error must trigger the
+  // done-idempotency probe. Ambiguous/malformed active must surface verbatim.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-ambig-'));
+  try {
+    const activeDir = path.join(root, 'project', 'clickstops', 'active');
+    const doneDir = path.join(root, 'project', 'clickstops', 'done');
+    mkdirSync(activeDir, { recursive: true });
+    mkdirSync(doneDir, { recursive: true });
+    // Two active matches → ambiguous error.
+    writeFileSync(path.join(activeDir, 'active_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(activeDir, 'active_cs64_two.md'), '# CS64\n');
+    // A matching done entry exists; the broken implementation would mask the
+    // ambiguous-active error with an alreadyClosedOut no-op. The fixed
+    // implementation must surface the ambiguous error.
+    writeFileSync(path.join(doneDir, 'done_cs64_demo.md'), '# CS64\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(
+      result.errors.some((e) => /ambiguous: 2 active CS64/.test(e)),
+      `expected ambiguous error; got: ${JSON.stringify(result.errors)}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: alreadyDone but WORKBOARD row remains → partial-state error', () => {
+  // R1 reviewer (gpt-5.5): done file present + Active row remaining must
+  // surface as a partial close-out state, not be masked as a no-op.
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const wbWithRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | Lifecycle | 🟢 Active | omni-ah | cs64/content | 2026-06-10 | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbWithRow);
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /partial close-out state/.test(e)));
+    assert.ok(result.errors.some((e) => new RegExp(filename).test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: alreadyDone succeeds when WORKBOARD row is absent (consistent)', () => {
+  // Positive-path counterpart: done file present + no Active row + clean
+  // WORKBOARD → idempotent no-op.
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const wbEmpty = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| — | no active CS | — | — | — | — | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbEmpty);
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('findDoneByCsId: directory form missing inner .md → malformed error', () => {
+  // R1 reviewer (gpt-5.5): mirror the planned/active malformed-dir guard.
+  const dirP = P(DONE, 'done_cs64_my-slug');
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [DONE]: ['done_cs64_my-slug'],
+        [dirP]: ['notes.md'], // missing canonical done_cs64_my-slug.md
+      },
+      new Set([dirP]),
+    ),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.error, /missing its main markdown file/);
+});
+
+test('activeWorkRowExists: missingFile flag when WORKBOARD.md absent', () => {
+  const r = activeWorkRowExists(P(tmpdir(), 'definitely-not-a-file-xxxx.md'), 'CS64');
+  assert.equal(r.exists, false);
+  assert.equal(r.missingFile, true);
+});
+
+test('activeWorkRowExists: detects row presence by CS-id prefix', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-row-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64 | t | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, true);
+    assert.equal(activeWorkRowExists(wbPath, 'CS99').exists, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

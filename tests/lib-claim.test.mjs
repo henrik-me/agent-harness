@@ -766,3 +766,87 @@ test('runClaimFromDisk: idempotent path supports directory-form active CS', () =
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('runClaimFromDisk: alreadyClaimed succeeds when WORKBOARD row is consistent', () => {
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Add a consistent WORKBOARD.md with the matching Active Work row.
+    const wb = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | Lifecycle | 🟢 Active | omni-ah | cs64/content | 2026-06-10 | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true, `expected ok=true; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyActive but WORKBOARD row missing → partial-state error', () => {
+  // R1 reviewer (gpt-5.5): active file present but row absent must surface,
+  // not be masked as a no-op.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const wbNoRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| — | no active CS | — | — | — | — | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbNoRow);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /partial claim state/.test(e)));
+    assert.ok(result.errors.some((e) => /no Active Work row/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('findActiveByCsId: directory form missing inner .md → malformed error (not silent accept)', () => {
+  // R1 reviewer (gpt-5.5): directory-form idempotency must guard against
+  // half-populated active_csNN_<slug>/ without its main markdown.
+  const dirPath = P(ACTIVE, 'active_cs64_my-slug');
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [ACTIVE]: ['active_cs64_my-slug'],
+        [dirPath]: ['notes.md'], // missing canonical active_cs64_my-slug.md
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.error, /missing its main markdown file/);
+  assert.match(r.error, /malformed/);
+});
