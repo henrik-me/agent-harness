@@ -1,9 +1,9 @@
 # CS59 — Document the release-cut process + fix dangling CHANGELOG link
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs59/content
+**Started:** 2026-06-10
 **Closed:** —
 **Filed by:** v0.7.0 release close-out (2026-06-03 by `yoga-ah`). Two documentation gaps surfaced while cutting v0.7.0 (the CS54 close-out release): the CHANGELOG links to a non-existent OPERATIONS.md section, and the only viable merge path for a solo-orchestrator content/release PR (`gh pr merge --admin`) is undocumented.
 **Depends on:** None hard. Pure docs CS. Builds on `OPERATIONS.md § SemVer policy` (version-bump triggers) and the cross-repo issue path (CS55/CS56). May claim independently.
@@ -71,7 +71,24 @@ Already-adequate doctrine (NOT in scope to rewrite): the re-engage-Copilot-then-
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1: Draft `OPERATIONS.md § Release process` (C59-1) — ordered cut: sanity check → file bumps (`package.json` + `package-lock.json`) → CHANGELOG promote → README pins → plan-vs-impl gate → Phase-2 review → Copilot engage → CI → squash-merge → `git tag` + `gh release create` on squash SHA → consumer notification via `harness cross-repo open-issue`; cross-ref `§ SemVer policy`. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T2: Mirror new section into `template/composed/OPERATIONS.md` (lockstep). | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T3: Add content-PR admin-merge subsection (C59-3) — scoped narrowly: solo orchestrator + both substantive reviews passed (GPT-5.5 `Go` + Copilot review attached at HEAD); contrast with workboard-only fallback. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T4: Fix dangling `CHANGELOG.md` link (C59-2) — point at `OPERATIONS.md#release-process`; verify GitHub anchor slug. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T5: Add `INSTRUCTIONS.md` quick-reference pointer to `§ Release process` (C59-5) + mirror in `template/managed/INSTRUCTIONS.md`. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T6: `CHANGELOG.md` `[Unreleased]` entry citing the new release-process docs. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS59 row), refresh `CONTEXT.md` if state changed, ensure managed/composed lockstep mirrors are byte-identical. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups — file any new learnings to `LEARNINGS.md`; surface any release-procedure gaps as planned CS follow-ups. | pending | omni-ah | agent-id=omni-ah \| role=implementer \| report-status=pending \| learnings=0 |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | Implementer + reviewer model independence per REVIEWS § 2.3 (claude-opus-4.7-1m-internal ≠ gpt-5.5). CS59 is pure docs — not on the high-risk CS list. |
 
 ## Notes / Learnings
 
