@@ -2112,6 +2112,257 @@ worked" from "this was never implemented". Exit codes:
 
 ---
 
+## Release process
+
+The mechanical procedure for cutting a harness release (tag + GitHub Release +
+consumer notification). Read [`§ SemVer policy`](#semver-policy) first to pick
+the bump size; this section assumes that decision is made. A release is its
+own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
+3-PR shape (claim → content → close-out).
+
+### Inputs
+
+- Current pinned version (`package.json` `version` field).
+- Target version chosen per `§ SemVer policy` (e.g. `0.8.0`).
+- A clean `main` (bootstrap sanity-check passes per `INSTRUCTIONS.md`).
+
+### Pre-release audit ([LRN-101](LEARNINGS.md#lrn-101))
+
+Before touching version files, audit that `CHANGELOG.md` `[Unreleased]`
+matches what actually shipped since the previous tag. The cheap form (per
+LRN-101's recommended fix) is a diff-check, not a rebuild:
+
+```bash
+git log v<prev>..main --oneline                  # commits since last tag
+gh pr list --state merged --base main --limit 30 # PR-level granularity
+```
+
+For every distributed-surface CS since `v<prev>` (anything that touched
+`lib/`, `bin/`, `schemas/`, `template/managed/`, or `template/composed/`),
+confirm a corresponding `[Unreleased]` bullet exists. If `[Unreleased]` is
+empty or stale, populate it from the close-out CS files before continuing.
+Per CS24, the convention is to add `[Unreleased]` bullets at each CS's
+close-out PR, not retroactively at release-cut time — anchor drift between
+audit-time HEAD and tag-time HEAD is the failure mode LRN-101 catches.
+
+### State-of-the-world probes ([REVIEWS.md § 2.6c F6](REVIEWS.md))
+
+Before the plan-review verdict on the release CS plan, **probe and record**
+the current release state — every plan claim about released/draft tag state
+is an F6 fact-claim. The canonical probes:
+
+```bash
+# Published AND draft releases (covers stale duplicate drafts — LRN-159):
+gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<x.y.z>"))'
+gh release list --repo <owner>/<repo> --limit 5
+git ls-remote origin refs/tags/v<x.y.z>
+```
+
+Stale duplicate drafts (e.g. an auto-draft from `release.yml` left behind by
+a prior partial cut) MUST be deleted **before** the cut starts:
+
+```bash
+gh api -X DELETE repos/<owner>/<repo>/releases/<draft-release-id>
+```
+
+Record the probes + their output verbatim in the release CS plan's
+`## Background` (or `## Constraints`) so the plan-review attestation has the
+F6 evidence subsequent reviewers can audit.
+
+### Cut (content PR)
+
+All file edits land on the `cs<NN>/content` branch:
+
+1. **Bump version files.** Use `npm version` (do **not** edit `package.json`
+   by hand — `package-lock.json` must stay in sync):
+
+   ```bash
+   npm version <x.y.z> --no-git-tag-version
+   ```
+
+   `--no-git-tag-version` is required — the tag is created post-merge on the
+   squash SHA (step 8 below), not on the pre-merge branch.
+
+2. **Promote the CHANGELOG.** In `CHANGELOG.md`:
+   - Rename `## [Unreleased]` → `## [<x.y.z>] — YYYY-MM-DD` (em-dash, not
+     hyphen — repo convention).
+   - Prepend a fresh `## [Unreleased]` block with the canonical
+     `### Added` / `### Changed` / `### Documentation` / `### Fixed`
+     skeleton (sections may be empty).
+   - Add the new link reference at the bottom:
+     `[<x.y.z>]: https://github.com/<owner>/<repo>/compare/v<prev>...v<x.y.z>`.
+   - Update the `[Unreleased]` link reference to compare from the new tag:
+     `[Unreleased]: https://github.com/<owner>/<repo>/compare/v<x.y.z>...HEAD`.
+
+3. **Sweep README pins.** In `README.md`, update every `v<prev>` install /
+   quickstart example pin to `v<x.y.z>` (the Status paragraph at the top,
+   install Option B examples, Quickstart block, and any `LRN-121`-style
+   notes that reference the current version). Historical narrative paragraphs
+   that document *prior* releases retrospectively are intentionally left at
+   their original versions.
+
+4. **Validate.** From the repo root:
+
+   ```bash
+   node bin/harness.mjs lint --quiet   # expect: 0 failed
+   node --test tests/*.test.mjs        # expect: 0 failed
+   ```
+
+5. **Local review.** GPT-5.5 rubber-duck mandatory per
+   [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)
+   and `INSTRUCTIONS.md § Every CS`. Record model + timestamp + verdict in
+   the PR body's `## Model audit` + `## Review log` sections.
+
+6. **Open the content PR.** Use the standard `pull_request_template.md`.
+
+7. **Engage Copilot + pass CI.** Run `harness copilot-engage <pr>` per
+   [§ Copilot engagement procedure](#copilot-engagement-procedure-cs35-c35-10-updated-cs37--cs41).
+   Wait for Copilot's review, address every Blocking finding, and re-engage
+   on any new HEAD per the A5 ordering doctrine. All required status checks
+   must be green before merge.
+
+8. **Squash-merge.** Solo-orchestrator content PRs typically need the
+   admin-merge path (next subsection) because the author cannot self-approve
+   and Copilot only ever submits `COMMENTED`, never `APPROVED`.
+
+### Post-merge
+
+After the content PR squash-merges to `main`:
+
+9. **Tag the squash SHA.** Capture the squash commit SHA from the merged
+   PR (`gh pr view <pr> --json mergeCommit -q .mergeCommit.oid`) and tag it:
+
+   ```bash
+   git fetch origin main
+   git tag -a v<x.y.z> <squash-sha> -m "Release v<x.y.z>"
+   git push origin v<x.y.z>
+   ```
+
+   Tag the **squash SHA**, not pre-merge branch HEAD — LRN-101's anchor-drift
+   case. The `v*.*.*` tag push triggers `.github/workflows/release.yml`.
+
+10. **Publish the draft Release.** `release.yml` creates a **draft** GitHub
+    Release with notes extracted from `CHANGELOG.md` `[<x.y.z>]`. The draft
+    is intentional ([LRN-121](LEARNINGS.md#lrn-121)) — you review then
+    publish, then re-probe for stale duplicate drafts that `release.yml`
+    may have left behind ([LRN-159](LEARNINGS.md#lrn-159)):
+
+    ```bash
+    gh release view v<x.y.z>                 # confirm notes match CHANGELOG
+    gh release edit v<x.y.z> --draft=false   # publish
+    gh release list --limit 5                # verify Latest = v<x.y.z>
+    gh api repos/<owner>/<repo>/releases \
+        --jq 'map(select(.tag_name=="v<x.y.z>"))'   # confirm exactly one release for this tag
+    ```
+
+    If the API returns more than one release for `v<x.y.z>` (typically a
+    stale auto-draft from an earlier partial cut), delete the duplicate per
+    `§ State-of-the-world probes` above.
+
+11. **Notify consumers.** Use the issue-only handoff per
+    [§ Cross-repo procedures](#cross-repo-procedures) and
+    [§ Cross-repo pin-bump PR body checklist (CS54)](#cross-repo-pin-bump-pr-body-checklist-cs54).
+    For each known consumer repo, file a tracking issue:
+
+    ```bash
+    harness cross-repo open-issue \
+        --repo <owner>/<consumer-repo> \
+        --title "[harness:cs<NN>] bump pinned harness to v<x.y.z>" \
+        --body-file <pin-bump-issue-body.md>
+    ```
+
+    The body MUST include the verbatim consumer-side PR body checklist from
+    `§ Cross-repo pin-bump PR body checklist`. The CLI is idempotent (matches
+    an existing open issue by exact title) and always applies the
+    `harness-orchestrator` label.
+
+### Content/release-PR admin-merge (solo-orchestrator reality)
+
+The `main` ruleset (CS15a, [LRN-080](LEARNINGS.md#lrn-080)) requires one
+approving review on every content PR. For a solo-orchestrator release the
+review-of-record paths are:
+
+- The PR author cannot self-approve.
+- The Copilot PR reviewer is engaged per the documented mechanics in
+  [ADR-0004](docs/adr/0004-copilot-graphql-spike.md) (accepted review states
+  `{APPROVED, COMMENTED, CHANGES_REQUESTED}` per the CS37 spike). In observed
+  harness-repo history, Copilot reviews on content/release PRs have
+  consistently landed as `COMMENTED` — not `APPROVED` — so the Copilot
+  review attached at HEAD does not satisfy the `required_approving_review_count`
+  on its own.
+
+The only merge path is therefore `gh pr merge --admin --squash <pr>`,
+exercising the admin-bypass actor configured in the ruleset. This is the
+content-PR analogue of the workboard-only admin-bypass fallback documented
+above — both rely on the same admin bypass but apply to different surfaces.
+
+**Scope (narrow, by design).** The admin merge on a content/release PR is
+permitted **only** when **all** of the following hold:
+
+1. The orchestrator is operating solo (no human co-maintainer is available
+   to submit an approving review).
+2. The mandatory GPT-5.5 rubber-duck review returned `Go` (or
+   `Conditional Go` with all conditions met) at the current HEAD, recorded
+   verbatim in the PR body's `## Review log`.
+3. The Copilot review is attached at the current HEAD per the A5 ordering
+   doctrine — every Blocking finding has been addressed, and the PR's
+   `copilot-review-attached` status check is green — but the Copilot review
+   did **not** itself produce an `APPROVED` verdict that would clear the
+   `required_approving_review_count` on its own.
+4. All other required status checks (`review-log-evidence`,
+   `independence-invariant`, `review-threads-resolved`, CI build/test) are
+   green.
+
+This is **not a general bypass license.** When a human reviewer is
+available, the approving review path is mandatory; the admin merge is the
+documented escape valve for the structural reality that the Copilot review
+attached at HEAD does not satisfy the `required_approving_review_count`
+ruleset requirement on its own.
+
+Contrast with the workboard-only admin-bypass fallback
+([§ Workboard-only PR admin-bypass fallback](#workboard-only-pr-admin-bypass-fallback)):
+that path is bot-automated against an exact path allowlist (CS63 C63-7);
+this path is manual and scoped to a single PR after both substantive
+reviews have passed.
+
+### Quick-reference cheat sheet
+
+```bash
+# 0. Audit (LRN-101 + REVIEWS.md § 2.6c F6)
+git log v<prev>..main --oneline
+gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<x.y.z>"))'
+gh release list --repo <owner>/<repo> --limit 5
+
+# 1-3. Bump (on cs<NN>/content branch)
+npm version <x.y.z> --no-git-tag-version
+#   then: edit CHANGELOG.md (promote [Unreleased] → [<x.y.z>], new [Unreleased] skeleton, link refs)
+#   then: sweep README pins v<prev> → v<x.y.z>
+
+# 4. Validate
+node bin/harness.mjs lint --quiet
+node --test tests/*.test.mjs
+
+# 5-7. Review + engage Copilot + merge
+gh pr create --base main --head cs<NN>/content --title ... --body-file ...
+harness copilot-engage <pr>
+gh pr merge --admin --squash <pr>          # solo-orchestrator path; see scope above
+
+# 8-10. Tag + publish
+SQUASH_SHA=$(gh pr view <pr> --json mergeCommit -q .mergeCommit.oid)
+git fetch origin main
+git tag -a v<x.y.z> "$SQUASH_SHA" -m "Release v<x.y.z>"
+git push origin v<x.y.z>
+gh release edit v<x.y.z> --draft=false
+
+# 11. Notify consumers
+harness cross-repo open-issue \
+    --repo <owner>/<consumer-repo> \
+    --title "[harness:cs<NN>] bump pinned harness to v<x.y.z>" \
+    --body-file <pin-bump-issue-body.md>
+```
+
+---
+
 ## Conventions
 
 These conventions apply to all harness scripts and CLI code. Quote the

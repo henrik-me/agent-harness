@@ -202,6 +202,17 @@ record.
   for entry shape and categories) and planned follow-up CSs for unresolved
   issues.
 
+### Cutting a release
+
+- A release is its own CS. Follow [OPERATIONS.md § Release process](OPERATIONS.md#release-process)
+  for the ordered cut (pre-release audit per LRN-101, state-of-the-world probes
+  per REVIEWS.md § 2.6c F6, `npm version` bump, CHANGELOG `[Unreleased]` → `[x.y.z]`
+  promotion, README pin sweep, plan-vs-impl + Phase-2 review, Copilot engage, CI,
+  squash-merge, post-merge `git tag` + `git push origin v<x.y.z>` to trigger
+  `release.yml` draft creation, `gh release edit --draft=false` to publish,
+  consumer notification via `harness cross-repo open-issue`) and the
+  solo-orchestrator content-PR admin-merge subsection.
+
 ### Every CS
 
 - **Implementation models:**
