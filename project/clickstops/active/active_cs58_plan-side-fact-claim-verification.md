@@ -72,14 +72,14 @@ The plan-review attestation procedure lives in `OPERATIONS.md § Plan review att
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1: extend REVIEWS.md § 2.6a with plan-side F1–F5 subsection (cite CS54 T1 + CS70 LRN-158 incidents); cover both `file:line` AND state-of-the-world claims (verifiable via `gh release list`, `gh api`, etc.) | pending | omni-ah | C58-1 + C58-2; broaden scope per LRN-158 |
-| T2: mirror REVIEWS.md edit into `template/composed/REVIEWS.md` (composed-blocks lockstep) | pending | omni-ah | C58-1 deliverable 1 |
-| T3: cross-reference from `OPERATIONS.md § Plan review attestation procedure (CS35b)` → new REVIEWS.md subsection; add the fact-claim verification expectation to plan-review reviewer-prompt requirements | pending | omni-ah | C58-1 + deliverable 2 |
-| T4: mirror OPERATIONS.md edit into `template/composed/OPERATIONS.md` (composed-blocks lockstep) | pending | omni-ah | C58-1 + deliverable 2 |
-| T5: transition LRN-139 `open` → `applied` with prose disposition citing CS58 | pending | omni-ah | C58-4 + deliverable 3 |
-| T6: (NEW per LRN-158 background extension) transition LRN-158 `open` → `applied` with prose disposition noting the plan-side doctrine ships in CS58; CS59/CS67 dispositions remain unchanged (release-process docs + verb still own their parts) | pending | omni-ah | LRN-158 plan-side ask only — content/tooling asks stay with CS59/CS67 |
-| T7: CHANGELOG.md `[Unreleased]` entry citing plan-side fact-claim verification doctrine | pending | omni-ah | deliverable 4 |
-| T8: (optional) reviewer-prompt scaffold update if a canonical plan-review dispatch template exists | pending | omni-ah | deliverable 5 |
+| T1: extend REVIEWS.md § 2.6a with plan-side F1–F5 subsection (cite CS54 T1 + CS70 LRN-158 incidents); cover both `file:line` AND state-of-the-world claims (verifiable via `gh release list`, `gh api`, etc.) | done | omni-ah | Shipped as new § 2.6c (sibling of 2.6a/2.6b) with F1–F5 + new F6 for state-of-the-world; scoped to all reviewer-consumed plan sections per C58-2 amendment. |
+| T2: mirror REVIEWS.md edit into `template/composed/REVIEWS.md` (composed-blocks lockstep) | done | omni-ah | Identical mirror; file-level byte-equal with root verified. |
+| T3: cross-reference from `OPERATIONS.md § Plan review attestation procedure (CS35b)` → new REVIEWS.md subsection; add the fact-claim verification expectation to plan-review reviewer-prompt requirements | done | omni-ah | Added "Required verifications" subsection between Inputs and Required outputs; added "Reviewer-prompt requirement" paragraph; canonical reviewer preamble `scope:` extended with F1–F6 plan-review clause. |
+| T4: mirror OPERATIONS.md edit into `template/composed/OPERATIONS.md` (composed-blocks lockstep) | done | omni-ah | Two pre-existing template-var diffs (`{{agent_suffix}}` / `{{repo_short}}`) preserved; otherwise byte-equal. |
+| T5: transition LRN-139 `open` → `applied` with prose disposition citing CS58 | done | omni-ah | Status + disposition addendum citing shipped § 2.6c. |
+| T6: (NEW per LRN-158 background extension) transition LRN-158 `open` → `applied` with prose disposition noting the plan-side doctrine ships in CS58; CS59/CS67 dispositions remain unchanged (release-process docs + verb still own their parts) | done | omni-ah | Plan-side ask shipped via F6; CS59 + CS67 asks remain open in those CSs as planned. |
+| T7: CHANGELOG.md `[Unreleased]` entry citing plan-side fact-claim verification doctrine | done | omni-ah | Added under § Documentation. |
+| T8: (optional) reviewer-prompt scaffold update if a canonical plan-review dispatch template exists | done | omni-ah | Verified via grep: no standalone plan-review dispatch template exists beyond the canonical reviewer preamble in OPERATIONS.md § Reviewer dispatch — canonical preamble. T3 already extended that preamble's `scope:` field with the F1–F6 plan-review clause, so the optional ask is satisfied by T3. No separate scaffold file to add. |
 | T9: harness lint --quiet — full suite incl. composed-blocks lockstep | pending | omni-ah | Exit criterion 4 |
 | T10: open content/release PR; pass A4 review-log currency + Copilot review | pending | omni-ah | Standard content-PR flow |
 | T11: Plan-vs-implementation review gate (GPT-5.5) | pending | rubber-duck (orchestrator: omni-ah) | Exit criterion 6 |
@@ -97,7 +97,29 @@ The plan-review attestation procedure lives in `OPERATIONS.md § Plan review att
 
 ## Notes / Learnings
 
-(filled during execution)
+- **2026-06-09 (omni-ah):** Decided to ship the plan-side doctrine as a new
+  H3 subsection **§ 2.6c** (sibling of § 2.6a / § 2.6b) rather than
+  extending § 2.6a in-place. Rationale: § 2.6a is the canonical "PR-side
+  fact-claim verification (PR #218 doctrine)" anchor; preserving its
+  numbering and PR-scope identity makes it easier to reason about the
+  symmetry (PR-side vs plan-side) at a glance, and avoids cascading the
+  § 2.6b / § 2.7 numbering. C58-1's "adjacent to (or cross-referenced from)
+  § 2.6a" wording explicitly allows this.
+- **2026-06-09 (omni-ah):** T8 (optional scaffold) is satisfied by the T3
+  canonical-reviewer-preamble extension. A repo-wide grep
+  (`plan-review.*dispatch`, `dispatch.*plan.review`, `plan.review.*prompt`)
+  finds no standalone plan-review dispatch template — the canonical
+  reviewer preamble in OPERATIONS.md § Reviewer dispatch — canonical
+  preamble is the single dispatch surface, and its `scope:` field now
+  enumerates F1–F6 inline. Adding a separate scaffold file would create a
+  drift surface (preamble vs scaffold) without adding leverage.
+- **2026-06-09 (omni-ah):** § 2.6c's F6 deliberately includes
+  `branch protection, ruleset config` in its scope (beyond release/tag/
+  PR/issue/label state). Rationale: LRN-158's failure shape generalises
+  to any state-of-the-world premise verifiable via a non-mutating CLI
+  probe; restricting F6 to release/tag would leave the same gap open
+  for the next CS that asserts "ruleset X requires N approvals" without
+  running `gh api repos/.../rulesets`.
 
 ## Plan-vs-implementation review
 

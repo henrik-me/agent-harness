@@ -281,6 +281,56 @@ the row's `Plan author model(s)` column or in any earlier row's
   Exit criteria, Risks + open questions.
 - Any cross-CS dependencies the plan declares.
 
+**Required verifications (per [REVIEWS.md § 2.6c](REVIEWS.md#26c-plan-review-scope--fact-claim-verification-lrn-139--lrn-158)):**
+
+Before recording a `Go` (or `Go-with-amendments`) verdict, the reviewer
+MUST have affirmatively verified every factual claim the plan makes about
+the repository at the analyzed HEAD — across **all** reviewer-consumed
+sections enumerated above (Background, Decisions, Deliverables,
+Sub-agent fan-out, Exit criteria, Risks + open questions, and any
+cross-CS dependencies), not only the hashed Decisions+Deliverables. The
+plan-review hash attests only that the reviewer saw a particular
+Decisions+Deliverables body; F1–F6 attest that the reviewer verified the
+plan's factual premises across the whole reviewer-consumed surface.
+Specifically:
+
+- **F1** every `--flag` named in the plan exists in the CLI surface (or
+  is explicitly described as not-yet-existing — for plans whose
+  deliverables include adding a new flag);
+- **F2** every `path:line` citation actually contains what the plan asserts
+  at the analyzed HEAD (line numbers drift across snapshots/syncs/edits);
+- **F3** doctrine-strength claims (`required`, `mandatory`, `enforces`,
+  `recommended`, `optional`) match the cited source verbatim or via a
+  documented synonym;
+- **F4** LRN/CS scope summaries stay within the source entry's
+  Problem/Finding scope;
+- **F5** cross-doc claims are mutually consistent;
+- **F6** every **state-of-the-world claim** (release/tag/PR/issue/label
+  state, branch protection, ruleset config, etc.) is verified at
+  plan-review time via a non-mutating CLI probe — `gh release list --repo <owner>/<repo> --limit N`,
+  `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
+  (both published AND draft), `git ls-remote origin refs/tags/<tag>`,
+  `gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
+  `gh label list --repo <owner>/<repo>`, etc. — and the probe is recorded in
+  the plan's Background or Constraints so subsequent reviewers can audit
+  the same premise.
+
+Inherited findings (line numbers from another snapshot, tag/release state
+assumed from prior CS plans, Copilot citations from a sibling-repo PR)
+MUST be re-verified against the current HEAD before being accepted as a
+plan premise. Returning `Go` on an unverified inherited citation is a
+process bug — see REVIEWS.md § 2.6c for the CS54-T1 and CS70 source
+incidents and the full F1–F6 table.
+
+**Reviewer-prompt requirement.** Every plan-review dispatch MUST include
+language equivalent to the F1–F6 verification clause carried in the
+canonical reviewer preamble below (`## Reviewer dispatch — canonical
+preamble`), which references § 2.6c. The orchestrator MUST NOT issue a
+plan-review dispatch that omits this clause; if a returned `Go` verdict
+shows no evidence the reviewer ran F1–F6 (no CLI-probe output for any
+state-of-the-world claim, no file-open for any `path:line` citation), the
+orchestrator MUST re-dispatch.
+
 **Required outputs the reviewer must produce:**
 
 - A verdict from the enum `Go` | `Go-with-amendments` | `Needs-Fix` (C35b-5).
@@ -1176,7 +1226,31 @@ schema reader, you MUST ALSO perform schema-conformance verification per
 REVIEWS.md § 2.6b: (S1) the reader requires no field the schema marks
 optional/defaulted; (S2) each default-when-absent matches the schema's
 declared `default` (or a documented divergence); (S3) present-but-malformed
-values fail closed against the schema's `type`/`pattern`/`enum`.
+values fail closed against the schema's `type`/`pattern`/`enum`. For
+**plan reviews** of planned/active CS files (per
+[Plan review attestation procedure (CS35b)](#plan-review-attestation-procedure-cs35b)),
+you MUST ALSO perform plan-side fact-claim verification per REVIEWS.md
+§ 2.6c across **all** reviewer-consumed plan sections (Background,
+Decisions, Deliverables, Sub-agent fan-out, Exit criteria, Risks +
+open questions, and any cross-CS dependencies the plan declares —
+not only the hashed Decisions+Deliverables): (F1) every named `--flag`
+exists (or is explicitly described as not-yet-existing — for plans
+whose deliverables include adding a new flag); (F2) every
+`path:line` citation actually contains what the plan asserts at the
+analyzed HEAD (open the file — line numbers drift across snapshots and
+syncs); (F3) doctrine-strength claims match the cited source verbatim;
+(F4) LRN/CS scope summaries stay within the source entry's scope;
+(F5) cross-doc claims are mutually consistent; (F6) every
+state-of-the-world claim (release/tag/PR/issue/label state) is verified
+via a non-mutating CLI probe (`gh release list --repo <owner>/<repo> --limit N`,
+`gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
+covering BOTH published and draft, `git ls-remote origin refs/tags/<tag>`,
+`gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
+`gh label list --repo <owner>/<repo>`) and the probe is recorded
+in the plan's Background or Constraints. Inherited findings (citations
+from other repos, prior snapshots, or earlier CS plans) MUST be
+re-verified against the current HEAD. Do NOT issue a Go verdict on a plan
+based on prose-internal coherence alone.
 
 **independence-invariant:** Your model MUST NOT appear in the active CS file's
 `## Model audit` `Implementer models` field. If it does, refuse the dispatch

@@ -19,7 +19,7 @@ id: LRN-158
 date: 2026-06-09
 category: process
 source_cs: CS70
-status: open
+status: applied
 tags: [release-cuts, release-management, planning, audit-before-build, lrn-101-extension]
 claim_area: orchestrator
 ```
@@ -59,13 +59,12 @@ verify the current state of both published AND draft releases.
   prep + R2 README pin sweep finding) before the discovery surfaced
   during Phase 1 ruleset inspection; the audit itself is ~10 seconds.
 
-**Disposition:** Pending. Folds into CS59 (release-process docs) and
-CS67 (`harness release` verb). Concrete asks for those CSs:
+**Disposition:** Partially applied — CS58 (2026-06-09) shipped the plan-side ask (REVIEWS.md § 2.6c F6); the content (CS59) and tooling (CS67) asks below remain pending and fold into those CSs. Concrete asks for the pending CSs:
 
 1. CS59 should document the audit-before-build precondition as a
    numbered step in OPERATIONS § Release process, with the three
-   verification commands inline: `gh release list --limit N`,
-   `git ls-remote --tags origin <tag>`, and
+   verification commands inline: `gh release list --repo <owner>/<repo> --limit N`,
+   `git ls-remote origin refs/tags/<tag>`, and
    `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'`
    (both published+draft).
 2. CS67's `harness release` verb should refuse to proceed when the
@@ -77,6 +76,22 @@ CS67 (`harness release` verb). Concrete asks for those CSs:
    state — recommended pattern: copy the verification output into the
    plan's Constraints section so plan reviewers can validate the
    premise.
+
+**Applied (CS58, 2026-06-09):** The plan-side ask is shipped. CS58
+extended REVIEWS.md with **§ 2.6c Plan-review scope — fact-claim
+verification (LRN-139 / LRN-158)**, whose **F6** check explicitly requires
+the plan-review reviewer to verify every state-of-the-world claim
+(release/tag/PR/issue/label state, branch protection, ruleset config) via
+a non-mutating CLI probe at plan-review time and to record the probe in
+the plan's Background or Constraints so subsequent reviewers can audit
+the same premise. CS70 is cited in § 2.6c's empirical-motivation section.
+OPERATIONS.md § Plan review attestation procedure (CS35b) gained a
+"Required verifications" subsection cross-referencing § 2.6c, and the
+canonical reviewer preamble (`## Reviewer dispatch — canonical preamble`)
+now enumerates F1–F6 inline so every plan-review dispatch that copies
+the preamble verbatim carries the state-of-the-world clause. The
+content (CS59) and tooling (CS67) asks above remain open in their
+respective CSs; CS58's shipped doctrine does not preempt them.
 
 **Implications:** This is the same class of finding as LRN-101's
 release-cuts content audit but extends to release-*state*. Without
@@ -2982,7 +2997,7 @@ id: LRN-139
 date: 2026-05-28
 category: process
 source_cs: CS54
-status: open
+status: applied
 tags: [plan-review, rubber-duck, fact-claim, false-positive, line-numbers, doctrine-gap]
 claim_area: review-loops
 ```
@@ -3001,7 +3016,31 @@ The rule is symmetric with PR-side F1-F5: any reviewer asked to bless an impleme
 
 **Evidence:** CS54 active plan (`active_cs54_v0.6.1-doc-cleanups-and-cross-repo-checklist.md`) Plan review table R1-R17 at hash `5c40242b24c7`, all GO. CS54 implementation discovered T1 was a false positive during commit a770134 (revert + Notes update). Lint regression caught via `node bin/harness.mjs lint` after the wrong fix landed locally. T2 (the other half of the same plan paragraph) was a real defect (prose vs label case mismatch) and shipped correctly — so the plan had mixed signal, not pure noise.
 
-**Disposition:** Open. Follow-up CS candidate (CS55+ or post-v0.6.1): extend `REVIEWS.md § 2.6a Rubber-duck scope — fact-claim verification` to explicitly cover plan reviews (currently scoped to "any review of a PR" / "shipped code"). Add a `### Plan-side fact-claim verification` H3 to the same § that states the rule, gives a worked example (this LRN), and updates the plan-review checklist. Optionally: add a `harness plan-review-checklist` CLI subcommand that, given a planned CS file path, emits a machine-readable list of factual claims (file:line citations) for the reviewer to verify. Cross-reference: REVIEWS.md § 2.6a (PR-side F1-F5); CS54 (this LRN's source); PR #218 (where F1-F5 was first codified).
+**Disposition:** Applied (CS58, 2026-06-09); see **Applied** paragraph below. Original follow-up plan (CS55+ or post-v0.6.1): extend `REVIEWS.md § 2.6a Rubber-duck scope — fact-claim verification` to explicitly cover plan reviews (currently scoped to "any review of a PR" / "shipped code"). Add a `### Plan-side fact-claim verification` H3 to the same § that states the rule, gives a worked example (this LRN), and updates the plan-review checklist. Optionally: add a `harness plan-review-checklist` CLI subcommand that, given a planned CS file path, emits a machine-readable list of factual claims (file:line citations) for the reviewer to verify. Cross-reference: REVIEWS.md § 2.6a (PR-side F1-F5); CS54 (this LRN's source); PR #218 (where F1-F5 was first codified).
+
+**Applied (CS58, 2026-06-09):** Shipped as **REVIEWS.md § 2.6c
+Plan-review scope — fact-claim verification (LRN-139 / LRN-158)**, an
+H3 sibling of § 2.6a and § 2.6b. The new section codifies F1–F5 for plan
+reviews (with F2 explicitly requiring the reviewer to open cited files
+at the analyzed HEAD because line numbers drift across snapshots and
+syncs) and adds **F6** for state-of-the-world claims (per LRN-158).
+Scope is broadened to all reviewer-consumed plan sections (Background,
+Decisions, Deliverables, Exit criteria, Risks) — not only the hashed
+Decisions+Deliverables surface — and the "inherited findings"
+discipline (the exact CS54-T1 failure mode: re-verify any citation
+inherited from another repo, snapshot, or prior plan against the
+current HEAD before accepting it as a premise) is called out
+explicitly. OPERATIONS.md § Plan review attestation procedure (CS35b)
+gained a "Required verifications" subsection cross-referencing § 2.6c,
+and the canonical reviewer preamble (`## Reviewer dispatch — canonical
+preamble`) now enumerates F1–F6 inline so every plan-review dispatch
+that copies the preamble verbatim carries the obligation. The optional
+`harness plan-review-checklist` CLI subcommand is **deferred** (no CS
+filed) — the reviewer-prompt + checklist approach in shipped doctrine
+covers the gap without taking on the maintenance cost of a brittle
+regex-based fact-extractor (per C58-3 in the CS58 plan). Cross-ref:
+LRN-158 (the symmetric state-of-the-world incident that shipped in the
+same doctrine).
 
 ### LRN-138
 
