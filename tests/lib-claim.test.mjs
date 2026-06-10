@@ -2,7 +2,11 @@
  * tests/lib-claim.test.mjs — unit tests for lib/claim.mjs (CS64 C64-4).
  *
  * Drives the pure logic (find / plan / format / insert / apply) against
- * in-memory fixtures. NO real git, NO REPO_ROOT writes (LRN-094).
+ * in-memory fixtures. The runClaimFromDisk idempotent-no-op tests use real
+ * filesystem fixtures under `os.tmpdir()` (the early-return path never
+ * invokes the git runner, so no git is required). NO real git, NO REPO_ROOT
+ * writes (LRN-094 — REPO_ROOT writes race with check-text-encoding's
+ * recursive walk under parallel `node --test`).
  */
 
 import { test } from 'node:test';
@@ -13,11 +17,13 @@ import {
   normalizeCsId,
   slugIsValid,
   findPlannedClickstop,
+  findActiveByCsId,
   parseActiveWorkRows,
   insertActiveWorkRow,
   planClaim,
   formatClaimPlan,
   applyClaimPlan,
+  runClaimFromDisk,
 } from '../lib/claim.mjs';
 
 // Use the real path separator so Windows + POSIX tests agree on string equality.
@@ -120,6 +126,64 @@ test('findPlannedClickstop: two matches → ambiguous error', () => {
   });
   assert.ok(!r.ok);
   assert.match(r.error, /ambiguous: 2 planned CS64/);
+});
+
+/* ---------- findActiveByCsId (C64-4 idempotency helper) ------------------ */
+
+const ACTIVE = P(ROOT, 'active');
+
+test('findActiveByCsId: flat form (active_csNN_<slug>.md)', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs({ [ACTIVE]: ['active_cs64_my-slug.md', 'active_cs02_other.md'] }),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.cs, 'CS64');
+  assert.equal(r.listing.slug, 'my-slug');
+  assert.equal(r.listing.directoryForm, false);
+  assert.match(r.listing.entryPath, /active_cs64_my-slug\.md$/);
+});
+
+test('findActiveByCsId: directory form', () => {
+  const dirPath = P(ACTIVE, 'active_cs64_my-slug');
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [ACTIVE]: ['active_cs64_my-slug'],
+        [dirPath]: ['active_cs64_my-slug.md'],
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, true);
+  assert.match(r.listing.directoryPath, /active_cs64_my-slug$/);
+});
+
+test('findActiveByCsId: zero matches → error', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs({ [ACTIVE]: [] }),
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /no active CS64/);
+});
+
+test('findActiveByCsId: missing dir → propagates error (not "no matches")', () => {
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    readdir: () => {
+      throw new Error('ENOENT');
+    },
+    isDirectory: () => false,
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /cannot read/);
 });
 
 /* ---------- parseActiveWorkRows + insertActiveWorkRow -------------------- */
@@ -630,4 +694,336 @@ test('findPlannedClickstop: directory-form with inner readdir failure surfaces t
   );
   // Must NOT mislead the user into thinking the .md is missing.
   assert.doesNotMatch(r.error, /missing its main markdown file/);
+});
+
+/* ---------- runClaimFromDisk idempotency (C64-4) ------------------------- */
+
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+/**
+ * Build a minimal tmpdir fixture with an active CS file already in place,
+ * mimicking a post-claim-merged tree. No .git, no WORKBOARD.md needed —
+ * runClaimFromDisk's idempotent early-return runs BEFORE the git/workboard
+ * preflights so a fresh checkout with only the active file is enough.
+ *
+ * tmpdir parent per LRN-094 — never write under REPO_ROOT (races with the
+ * recursive linters under parallel `node --test`).
+ */
+function mkAlreadyActiveTree(csId, slug) {
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-idemp-'));
+  const activeDir = path.join(root, 'project', 'clickstops', 'active');
+  mkdirSync(activeDir, { recursive: true });
+  const num = csId.replace(/^CS/i, '').toLowerCase();
+  const filename = `active_cs${num}_${slug}.md`;
+  writeFileSync(path.join(activeDir, filename), `# ${csId} — ${slug}\n\nplaceholder\n`);
+  return { root, filename };
+}
+
+test('runClaimFromDisk: idempotent when CS already active (post-claim-merge re-run)', () => {
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+    assert.match(result.message, /CS64 is already claimed/);
+    assert.ok(result.message.includes(filename));
+    // Must NOT include a plan or apply result for the idempotent path.
+    assert.equal(result.plan, undefined);
+    assert.equal(result.apply, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: idempotent path supports directory-form active CS', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-idemp-dir-'));
+  try {
+    const dirName = 'active_cs64_dir-form';
+    const dirPath = path.join(root, 'project', 'clickstops', 'active', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    writeFileSync(path.join(dirPath, `${dirName}.md`), '# CS64\n');
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.directoryForm, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyClaimed succeeds when WORKBOARD row is consistent', () => {
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Add a consistent WORKBOARD.md with the matching Active Work row.
+    const wb = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | Lifecycle | 🟢 Active | omni-ah | cs64/content | 2026-06-10 | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true, `expected ok=true; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyActive but WORKBOARD row missing → partial-state error', () => {
+  // R1 reviewer (gpt-5.5): active file present but row absent must surface,
+  // not be masked as a no-op.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const wbNoRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| — | no active CS | — | — | — | — | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbNoRow);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /partial claim state/.test(e)));
+    assert.ok(result.errors.some((e) => /no Active Work row/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyActive CS64 with only sibling CS64b row → partial-state (R2 boundary)', () => {
+  // R2 reviewer (gpt-5.5): startsWith match would have incorrectly accepted
+  // a CS64b row as satisfying the CS64 consistency check. Exact-or-subtask
+  // boundary keeps CS64 and CS64b cleanly distinct.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const wbWrongRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64b | verb reliability | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbWrongRow);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false, `expected partial-state error; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /partial claim state/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('findActiveByCsId: directory form missing inner .md → malformed error (not silent accept)', () => {
+  // R1 reviewer (gpt-5.5): directory-form idempotency must guard against
+  // half-populated active_csNN_<slug>/ without its main markdown.
+  const dirPath = P(ACTIVE, 'active_cs64_my-slug');
+  const r = findActiveByCsId({
+    activeDir: ACTIVE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [ACTIVE]: ['active_cs64_my-slug'],
+        [dirPath]: ['notes.md'], // missing canonical active_cs64_my-slug.md
+      },
+      new Set([dirPath]),
+    ),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.error, /missing its main markdown file/);
+  assert.match(r.error, /malformed/);
+});
+
+/* ---------- Copilot reviewer (PR #299 round 2) regression tests ---------- */
+
+test('runClaimFromDisk: ambiguous active CS surfaces verbatim (does NOT fall through to planned flow)', () => {
+  // Copilot reviewer on PR #299 round 2: when findActiveByCsId returns an
+  // ambiguous/malformed/I-O error, runClaimFromDisk must surface it rather
+  // than silently treating it as "not yet claimed" and erroring downstream
+  // with "no planned CS<NN>".
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-ambig-'));
+  try {
+    const activeDir = path.join(root, 'project', 'clickstops', 'active');
+    mkdirSync(activeDir, { recursive: true });
+    writeFileSync(path.join(activeDir, 'active_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(activeDir, 'active_cs64_two.md'), '# CS64 dup\n');
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /ambiguous/.test(e)),
+      `expected ambiguous error, got ${JSON.stringify(result.errors)}`);
+    // Critically: must NOT be the "no planned" error from the fall-through path.
+    assert.ok(!result.errors.some((e) => /no planned/.test(e)),
+      'must not mask ambiguous-active state with no-planned error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: malformed active directory surfaces verbatim (does NOT fall through)', () => {
+  // Copilot reviewer on PR #299 round 2: companion to the ambiguous test.
+  const root = mkdtempSync(path.join(tmpdir(), 'claim-malformed-'));
+  try {
+    const dirName = 'active_cs64_dirform';
+    const dirPath = path.join(root, 'project', 'clickstops', 'active', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    // Intentionally do NOT create the inner ${dirName}.md → malformed.
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /malformed/.test(e)),
+      `expected malformed error, got ${JSON.stringify(result.errors)}`);
+    assert.ok(!result.errors.some((e) => /no planned/.test(e)),
+      'must not mask malformed-active state with no-planned error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyClaimed message points to project/clickstops/planned/planned_csNN_ path', () => {
+  // Copilot reviewer on PR #299 round 2: the no-op message previously hinted
+  // at planned/${id}_<slug>.md which is the wrong path. Real planned CSs live
+  // under project/clickstops/planned/planned_csNN_<slug>.md.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Add a consistent WORKBOARD row so we land on the success path.
+    const wb = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | lifecycle | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.match(result.message, /project\/clickstops\/planned\/planned_cs64_/,
+      `message should reference the correct planned path; got: ${result.message}`);
+    assert.ok(!result.message.includes('planned/cs64_'),
+      `message must not use the old (wrong) planned/cs64_<slug>.md hint; got: ${result.message}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: alreadyActive + WORKBOARD.md missing => clean no-op (fresh checkout)', () => {
+  // Copilot reviewer on PR #299 round 3 (symmetric claim-side fix):
+  // missing-file is acceptable; readError is not (covered separately by the
+  // closeout-side regression test for the same activeWorkRowExists helper).
+  const { root, filename } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    // Intentionally do NOT create WORKBOARD.md.
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, true, `expected no-op success; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+test('runClaimFromDisk: alreadyActive + unreadable WORKBOARD (path is a directory) => hard error', () => {
+  // R7 rubber-duck (gpt-5.5): symmetric regression for Copilot R3 finding 1
+  // on the claim idempotency branch. Previously an unreadable WORKBOARD was
+  // silently treated as "row absent" via a bare try/catch that nulled
+  // workboardMd and fell through to the no-op path. Now must surface as a
+  // hard error citing the read failure.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    mkdirSync(path.join(root, 'WORKBOARD.md')); // unreadable
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false, `expected ok:false; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /cannot read WORKBOARD\.md/.test(e)),
+      `expected "cannot read WORKBOARD.md" error; got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

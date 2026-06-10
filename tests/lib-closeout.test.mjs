@@ -1,7 +1,10 @@
 /**
  * tests/lib-closeout.test.mjs — unit tests for lib/closeout.mjs (CS64 C64-5).
  *
- * In-memory fakes throughout — no git, no REPO_ROOT writes (LRN-094).
+ * In-memory fakes for the pure logic. The runCloseoutFromDisk
+ * idempotent-no-op tests use real filesystem fixtures under `os.tmpdir()`
+ * (the early-return path never invokes the git runner, so no git is
+ * required). NO real git, NO REPO_ROOT writes (LRN-094).
  */
 
 import { test } from 'node:test';
@@ -12,11 +15,14 @@ import {
   parsePviSection,
   removeActiveWorkRow,
   findActiveClickstop,
+  findDoneByCsId,
   planCloseout,
   preflightCloseout,
   applyCloseoutPlan,
   formatPreflightReport,
   formatApplyReport,
+  runCloseoutFromDisk,
+  activeWorkRowExists,
 } from '../lib/closeout.mjs';
 import { parseActiveWorkRows } from '../lib/claim.mjs';
 
@@ -198,6 +204,48 @@ test('findActiveClickstop: zero matches → error', () => {
   });
   assert.ok(!r.ok);
   assert.match(r.error, /no active CS64/);
+});
+
+/* ---------- findDoneByCsId (C64-5 idempotency helper) ------------------- */
+
+test('findDoneByCsId: flat form', () => {
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs({ [DONE]: ['done_cs64_my-slug.md', 'done_cs02_other.md'] }),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, false);
+  assert.equal(r.listing.slug, 'my-slug');
+  assert.match(r.listing.csFilePath, /done_cs64_my-slug\.md$/);
+});
+
+test('findDoneByCsId: directory form', () => {
+  const dirP = P(DONE, 'done_cs64_my-slug');
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [DONE]: ['done_cs64_my-slug'],
+        [dirP]: ['done_cs64_my-slug.md'], // canonical inner .md required (R1)
+      },
+      new Set([dirP]),
+    ),
+  });
+  assert.ok(r.ok);
+  assert.equal(r.listing.directoryForm, true);
+  assert.match(r.listing.directoryPath, /done_cs64_my-slug$/);
+});
+
+test('findDoneByCsId: zero matches → error', () => {
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs({ [DONE]: [] }),
+  });
+  assert.ok(!r.ok);
+  assert.match(r.error, /no done CS64/);
 });
 
 /* ---------- planCloseout, preflight, apply ------------------------------ */
@@ -607,4 +655,391 @@ test('formatApplyReport: not-ready run lists freshness reason', () => {
   });
   assert.match(out, /NOT ready to open close-out PR/);
   assert.match(out, /CONTEXT\.md was not modified/);
+});
+
+/* ---------- runCloseoutFromDisk idempotency (C64-5) ---------------------- */
+
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+/**
+ * Build a minimal tmpdir fixture with a done CS file already in place,
+ * mimicking a post-closeout-merged tree. tmpdir parent per LRN-094 — never
+ * write under REPO_ROOT.
+ */
+function mkAlreadyDoneTree(csId, slug) {
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-idemp-'));
+  const doneDir = path.join(root, 'project', 'clickstops', 'done');
+  mkdirSync(doneDir, { recursive: true });
+  const num = csId.replace(/^CS/i, '').toLowerCase();
+  const filename = `done_cs${num}_${slug}.md`;
+  writeFileSync(path.join(doneDir, filename), `# ${csId} — ${slug}\n\nplaceholder\n`);
+  return { root, filename };
+}
+
+test('runCloseoutFromDisk: idempotent when CS already done (post-closeout-merge re-run)', () => {
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
+    assert.match(result.message, /CS64 is already closed-out/);
+    assert.ok(result.message.includes(filename));
+    // Must NOT produce a preflight/plan/apply for the idempotent path.
+    assert.equal(result.plan, undefined);
+    assert.equal(result.preflight, undefined);
+    assert.equal(result.apply, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: idempotent path supports directory-form done CS', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-idemp-dir-'));
+  try {
+    const dirName = 'done_cs64_dir-form';
+    const dirPath = path.join(root, 'project', 'clickstops', 'done', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    writeFileSync(path.join(dirPath, `${dirName}.md`), '# CS64\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.directoryForm, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: neither active nor done → returns the original "no active" error', () => {
+  // Genuine missing-CS case must still produce the actionable error rather
+  // than being masked by the idempotent path.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-missing-'));
+  try {
+    mkdirSync(path.join(root, 'project', 'clickstops', 'active'), { recursive: true });
+    mkdirSync(path.join(root, 'project', 'clickstops', 'done'), { recursive: true });
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /no active CS64/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: ambiguous active does NOT fall through to alreadyClosedOut', () => {
+  // R1 reviewer (gpt-5.5): only the "no active" error must trigger the
+  // done-idempotency probe. Ambiguous/malformed active must surface verbatim.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-ambig-'));
+  try {
+    const activeDir = path.join(root, 'project', 'clickstops', 'active');
+    const doneDir = path.join(root, 'project', 'clickstops', 'done');
+    mkdirSync(activeDir, { recursive: true });
+    mkdirSync(doneDir, { recursive: true });
+    // Two active matches → ambiguous error.
+    writeFileSync(path.join(activeDir, 'active_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(activeDir, 'active_cs64_two.md'), '# CS64\n');
+    // A matching done entry exists; the broken implementation would mask the
+    // ambiguous-active error with an alreadyClosedOut no-op. The fixed
+    // implementation must surface the ambiguous error.
+    writeFileSync(path.join(doneDir, 'done_cs64_demo.md'), '# CS64\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(
+      result.errors.some((e) => /ambiguous: 2 active CS64/.test(e)),
+      `expected ambiguous error; got: ${JSON.stringify(result.errors)}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: alreadyDone but WORKBOARD row remains → partial-state error', () => {
+  // R1 reviewer (gpt-5.5): done file present + Active row remaining must
+  // surface as a partial close-out state, not be masked as a no-op.
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const wbWithRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64 | Lifecycle | 🟢 Active | omni-ah | cs64/content | 2026-06-10 | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbWithRow);
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /partial close-out state/.test(e)));
+    assert.ok(result.errors.some((e) => e.includes(filename)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: alreadyDone succeeds when WORKBOARD row is absent (consistent)', () => {
+  // Positive-path counterpart: done file present + no Active row + clean
+  // WORKBOARD → idempotent no-op.
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    const wbEmpty = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| — | no active CS | — | — | — | — | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbEmpty);
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('findDoneByCsId: directory form missing inner .md → malformed error', () => {
+  // R1 reviewer (gpt-5.5): mirror the planned/active malformed-dir guard.
+  const dirP = P(DONE, 'done_cs64_my-slug');
+  const r = findDoneByCsId({
+    doneDir: DONE,
+    csId: 'CS64',
+    ...fakeFs(
+      {
+        [DONE]: ['done_cs64_my-slug'],
+        [dirP]: ['notes.md'], // missing canonical done_cs64_my-slug.md
+      },
+      new Set([dirP]),
+    ),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.error, /missing its main markdown file/);
+});
+
+test('activeWorkRowExists: missingFile flag when WORKBOARD.md absent', () => {
+  // Copilot reviewer on PR #299 round 4: use a unique mkdtempSync directory
+  // so we can guarantee the path does not exist, rather than relying on a
+  // hard-coded filename under os.tmpdir() that could (rarely) collide with
+  // leftovers from prior runs or other processes.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-missing-unique-'));
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    // Sanity check: the file is guaranteed not to exist inside this fresh dir.
+    const r = activeWorkRowExists(wbPath, 'CS64');
+    assert.equal(r.exists, false);
+    assert.equal(r.missingFile, true);
+    assert.equal(r.readError, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: detects row presence by exact CS-id match', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-row-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64 | t | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, true);
+    assert.equal(activeWorkRowExists(wbPath, 'CS99').exists, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: CS64 does NOT match sibling CS64b row (R2 boundary regression)', () => {
+  // R2 reviewer (gpt-5.5) originally caught that startsWith('CS64') falsely
+  // matched 'CS64b'. The deployed predicate is now plain exact match
+  // (cell === target) — see the comment in lib/closeout.mjs cite of
+  // scripts/check-workboard.mjs:242 and the Copilot review on PR #299.
+  // Exact match is strictly stricter and still rejects the sibling form.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-boundary-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64b | verb reliability | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, false, 'CS64 must NOT match CS64b row');
+    assert.equal(activeWorkRowExists(wbPath, 'CS64b').exists, true, 'CS64b must match its own row');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: CS64 does NOT match malformed sub-task cell CS64-T1 (Copilot review on PR #299)', () => {
+  // Copilot reviewer on PR #299: scripts/check-workboard.mjs enforces
+  // `^CS\d{2,}[a-z]?$` on Active Work CS-Task IDs. Hyphenated forms like
+  // `CS64-T1` are rejected by the schema, so the idempotency predicate must
+  // never treat them as a match — exact match is the right semantics.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-subtask-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64-T1 | malformed sub-task | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(
+      activeWorkRowExists(wbPath, 'CS64').exists,
+      false,
+      'CS64 must NOT match a malformed CS64-T1 row (workboard schema rejects hyphens)'
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/* ---------- Copilot reviewer (PR #299 round 2) regression tests ---------- */
+
+test('runCloseoutFromDisk: ambiguous done state surfaces verbatim (does NOT mask with no-active error)', () => {
+  // Copilot reviewer on PR #299 round 2: when findActiveByCsId returns
+  // "no active <CS>" AND findDoneByCsId returns ambiguous/malformed/I-O
+  // error, the original implementation returned the "no active" error and
+  // hid the underlying done/ corruption. Only the genuine "no done" case
+  // should re-raise the active error.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-done-ambig-'));
+  try {
+    const doneDir = path.join(root, 'project', 'clickstops', 'done');
+    mkdirSync(doneDir, { recursive: true });
+    writeFileSync(path.join(doneDir, 'done_cs64_one.md'), '# CS64\n');
+    writeFileSync(path.join(doneDir, 'done_cs64_two.md'), '# CS64 dup\n');
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /ambiguous/.test(e) && /done/.test(e)),
+      `expected ambiguous done error, got ${JSON.stringify(result.errors)}`);
+    // Critically: must NOT be the "no active" error masking the real problem.
+    assert.ok(!result.errors.some((e) => /^no active /.test(e)),
+      'must not mask ambiguous-done state with no-active error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: malformed done directory surfaces verbatim (does NOT mask with no-active error)', () => {
+  // Copilot reviewer on PR #299 round 2: companion to the ambiguous test.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-done-malformed-'));
+  try {
+    const dirName = 'done_cs64_dirform';
+    const dirPath = path.join(root, 'project', 'clickstops', 'done', dirName);
+    mkdirSync(dirPath, { recursive: true });
+    // Intentionally do NOT create the inner ${dirName}.md → malformed.
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /malformed/.test(e)),
+      `expected malformed done error, got ${JSON.stringify(result.errors)}`);
+    assert.ok(!result.errors.some((e) => /^no active /.test(e)),
+      'must not mask malformed-done state with no-active error');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: genuine "not yet closed out" (no active + no done) preserves no-active error', () => {
+  // Copilot reviewer on PR #299 round 2: confirm the legitimate path —
+  // neither active nor done exists — still re-raises the "no active" error
+  // so the CLI sees a coherent "you have not started this CS" message.
+  const root = mkdtempSync(path.join(tmpdir(), 'closeout-neither-'));
+  try {
+    mkdirSync(path.join(root, 'project', 'clickstops', 'active'), { recursive: true });
+    mkdirSync(path.join(root, 'project', 'clickstops', 'done'), { recursive: true });
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS99', apply: false });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => /^no active CS99/.test(e)),
+      `expected "no active CS99" error, got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: missing WORKBOARD.md => exists:false + missingFile:true (fresh checkout OK)', () => {
+  // Copilot reviewer on PR #299 round 3: the missing-file case is the
+  // legitimate "fresh checkout" path and must remain distinguishable from
+  // the unreadable-file case so callers can decide whether to surface an
+  // error or allow a clean no-op.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-missing-'));
+  try {
+    const result = activeWorkRowExists(path.join(root, 'WORKBOARD.md'), 'CS64');
+    assert.equal(result.exists, false);
+    assert.equal(result.missingFile, true);
+    assert.equal(result.readError, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: WORKBOARD.md missing => alreadyClosedOut no-op (fresh checkout legitimately no WORKBOARD)', () => {
+  // Copilot reviewer on PR #299 round 3: missing-file is acceptable in the
+  // idempotency branch. Read-error is not (covered by the next test).
+  const { root, filename } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    // Intentionally do NOT create WORKBOARD.md.
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, true, `expected no-op success; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClosedOut, true);
+    assert.equal(result.doneListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+test('activeWorkRowExists: unreadable WORKBOARD (path is a directory) => readError (not missingFile)', () => {
+  // R7 rubber-duck (gpt-5.5): regression for Copilot R3 finding 1. The
+  // previous catch-all conflated missing-file with read-error; this asserts
+  // the distinction by making WORKBOARD.md a directory (readFileSync throws
+  // EISDIR-class error on every platform).
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-readerror-'));
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    mkdirSync(wbPath); // path EXISTS but readFileSync will throw
+    const r = activeWorkRowExists(wbPath, 'CS64');
+    assert.equal(r.exists, false);
+    assert.equal(r.missingFile, undefined,
+      `expected missingFile undefined for unreadable case; got ${JSON.stringify(r)}`);
+    assert.ok(r.readError, `expected readError set; got ${JSON.stringify(r)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: unreadable WORKBOARD (path is a directory) => hard error, NOT alreadyClosedOut', () => {
+  // R7 rubber-duck (gpt-5.5): regression for Copilot R3 finding 1 on the
+  // closeout idempotency branch. Previously an unreadable WORKBOARD was
+  // silently treated as "row absent" and produced a clean no-op claiming
+  // "already-closed-out". Now must surface as a hard error.
+  const { root } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    mkdirSync(path.join(root, 'WORKBOARD.md')); // unreadable
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false, `expected ok:false; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /cannot read WORKBOARD\.md/.test(e)),
+      `expected "cannot read WORKBOARD.md" error; got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
