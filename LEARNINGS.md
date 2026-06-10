@@ -175,7 +175,7 @@ time. The audit-before-build doctrine in LRN-158 will surface them
 (`gh release list` shows drafts), but each one then requires a
 manual cleanup step that should be mechanical.
 
-**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** Of the three homes above, **CS59 is closed** (PR #285) without documenting the cleanup step, so the documentation-side path now requires either a separate small doc PR or rolls into CS67's `OPERATIONS.md` reference update at its close-out. Planned **CS67** (`harness release` verb) remains the primary home: its publish-phase (`harness release --publish`, decision C67-1) is the natural place to implement the idempotent `gh api -X DELETE` sibling-cleanup. Path 3 (`release.yml` annotation) deferred unless CS67 slips. Flip status to `applied` at CS67 close-out.
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** The documentation-side path is **partially landed**: `OPERATIONS.md § State-of-the-world probes` (lines ~2161-2166, landed via CS59 PR #285) already documents the `gh api -X DELETE repos/<owner>/<repo>/releases/<draft-release-id>` step — but **as a pre-cut cleanup** (delete stale drafts before the next cut starts), not as a post-publish cleanup. This addresses the audit-friction symptom but still allows a stale draft to survive between cuts (the v0.7.0 case in Evidence, 6 days). Planned **CS67** (`harness release` verb) remains the primary home for automating the **post-publish** cleanup in `harness release --publish` (decision C67-1): scan for `tag_name==<version> && draft==true && id != <published-id>` siblings and delete idempotently. Path 3 (`release.yml` annotation) deferred unless CS67 slips. Flip status to `applied` at CS67 close-out.
 
 ---
 
