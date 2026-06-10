@@ -5,7 +5,7 @@
 **Branch:** cs27/lint-detector-tightening
 **Started:** 2026-06-04
 **Closed:** 2026-06-04
-**Filed by:** Pre-claim disposition of [Findings #7 + #8](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
+**Filed by:** Pre-claim disposition of [Findings #7 + #8](done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** None. May claim independently of CS25 / CS26 / CS16 (CS25 and CS16 both closed 2026-05-11; CS26 still planned — none block this CS). Small enough to ship in a single sitting.
 
 ## Goal
@@ -17,7 +17,7 @@ Two narrow tightening fixes for `harness lint` and `harness sync` UX surfaces:
 
 ## Background
 
-Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Documented in detail in [`sub-invaders-bootstrap-summary.md`](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md). Each is a small, low-risk UX fix that improves first-run consumer experience without changing any contract.
+Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Documented in detail in [`sub-invaders-bootstrap-summary.md`](done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md). Each is a small, low-risk UX fix that improves first-run consumer experience without changing any contract.
 
 ## Decisions
 
@@ -35,7 +35,7 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 3. **Finding #8 fix:** edit the `harness lint` aggregator in `bin/harness.mjs cmdLint` (or wherever per-check skip results are formatted — `grep -rn "skipped (target not found)" bin/ lib/`) to apply Decision C27-2 + C27-3 formatting for the 2 specific checks.
 4. **Finding #8 test:** extend `tests/aggregator-summary.test.mjs` (or add a new `tests/cs27-lint-recommendations.test.mjs` if cleaner) with a fixture asserting that running aggregator on a consumer without the prerequisite files produces the recommendation lines.
 5. **CHANGELOG.md:** add entry under the next patch version (e.g. `## [v0.2.3]` — sequencing depends on CS25/CS26 ordering; CS27 may piggyback on CS26's release if both close before a new tag is cut, OR ship in its own patch tag if it lands after CS26's release).
-6. **`sub-invaders-bootstrap-summary.md` update:** add resolution notes to Findings #7 and #8 pointing at CS27 close-out commit.
+6. **`sub-invaders-bootstrap-summary.md` update:** (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) add resolution notes to Findings #7 and #8 pointing at CS27 close-out commit.
 
 ## User-approval gates
 
@@ -51,7 +51,7 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 6. Running `harness lint` against the same fresh consumer shows the 2 recommendation lines per Decision C27-3.
 7. `harness lint --quiet` against agent-harness self-host passes (full suite, including the new `tests/cs27-*` tests).
 8. CHANGELOG.md entry present.
-9. CS16's `sub-invaders-bootstrap-summary.md` Findings #7 + #8 each have resolution notes pointing at CS27 close-out SHA.
+9. CS16's `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) Findings #7 + #8 each have resolution notes pointing at CS27 close-out SHA.
 10. Plan-vs-implementation review (GPT-5.5 gate) returns GO.
 
 ## Risks + open questions
@@ -76,7 +76,7 @@ Both findings observed during the CS16 sub-invaders bootstrap (2026-05-11). Docu
 | Finding #8: emit recommendation notes for `commit-trailers` + `pr-body` in `bin/harness.mjs cmdLint` per C27-2/C27-3 | done | yoga-ah | non-quiet only (R2); plain skipped row under `--quiet` |
 | Finding #8 test: assert recommendation lines present when prereqs absent, absent when present + under `--quiet` | done | yoga-ah | `tests/cs27-lint-recommendations.test.mjs` (3) per C27-4 / Exit criteria 4+6 |
 | CHANGELOG.md `[Unreleased]/Fixed` entry citing CS27 | done | yoga-ah | Deliverable #5 |
-| Update CS16 `sub-invaders-bootstrap-summary.md` Findings #7+#8 with resolution notes | done | yoga-ah | Deliverable #6 / Exit criteria 9 — in-repo `done_cs16` record updated; canonical sub-invaders copy routes via cross-repo issue (see Notes) |
+| Update CS16 `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) Findings #7+#8 with resolution notes | done | yoga-ah | Deliverable #6 / Exit criteria 9 — in-repo `done_cs16` record updated; canonical sub-invaders copy routes via cross-repo issue (see Notes) |
 | Fresh-consumer smoke probe (no active-row warning + recommendation lines) | done | yoga-ah | Exit criteria 5+6; transcript in Notes |
 | Self-checks: `node --test` + `harness lint --quiet` + `harness sync --mode=check` | done | yoga-ah | Exit criteria 7 — 1069 pass/1 skip; lint 30/30; no drift |
 | Plan-vs-implementation review (close-out gate) | done | yoga-ah | gpt-5.5 rubber-duck per OPERATIONS.md — see `## Plan-vs-implementation review` |
@@ -140,7 +140,7 @@ $ harness --cwd <tmp> lint
 
 ### Deliverable #6 / Exit criteria 9 — cross-repo note
 
-The canonical `sub-invaders-bootstrap-summary.md` lives in the
+The canonical `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) lives in the
 `henrik-me/sub-invaders` consumer repo (it was authored on the unmerged
 `cs16/content` branch and never reached agent-harness `main`). Per the
 orchestrator cross-repo constraint (OPERATIONS.md § Cross-repo procedures),
@@ -149,6 +149,8 @@ in-repo CS16 record (`done_cs16_bootstrap-sub-invaders.md` →
 Production-validation evidence) carries the resolution note instead, and the
 canonical-copy update is filed as sub-invaders issue
 [#91](https://github.com/henrik-me/sub-invaders/issues/91).
+
+_(Superseded by CS70: the "canonical copy lives in the `henrik-me/sub-invaders` consumer repo / never reached agent-harness `main`" framing above is obsolete and was factually inaccurate — the summary was authored in agent-harness at commit `e2b233a`, silently dropped during the CS16 close-out, and restored by CS70 as harness-internal close-out evidence at the archived path above. It is NOT a consumer artifact and there is no consumer-side canonical copy to update; see `agent-harness#290` and LRN-B.)_
 
 ## Model audit
 

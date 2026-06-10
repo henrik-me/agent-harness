@@ -5,7 +5,7 @@
 **Branch:** `cs25/hotfix-runtime-deps`
 **Started:** 2026-05-11
 **Closed:** 2026-05-11
-**Filed by:** Pre-claim disposition of [Finding #1](../../active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
+**Filed by:** Pre-claim disposition of [Finding #1](done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** None. CRITICAL — claimed without workboard-only-PR ceremony (single-orchestrator emergency hotfix, per user direction 2026-05-11).
 
 > **Deviation from C25-5 (release shape):** The CS28 BREAKING template change (PR #120, merged 2026-05-11 at `84bb4c5`) already shifted the trajectory from v0.2.x to v0.3.0. CS25's hotfix entries are therefore added to `[Unreleased]` (not a `## [v0.2.1]` section) and will roll into the v0.3.0 release-cut CS along with CS28. Exit criteria 7 (tag `v0.2.1`), 8 (Release `v0.2.1`), 10 (README `v0.2.1` install pin) are reframed accordingly: the release-cut CS owns the tag/release/README work; CS25 owns only the dep-move + regression test + CHANGELOG entry under `[Unreleased]`.
@@ -48,7 +48,7 @@ Self-host runs (executing directly from a cloned `agent-harness/` working tree w
 4. **`README.md`:** bump install-pin recommendation in `## Installation` to `v0.2.1`.
 5. **End-to-end smoke validation:** during the close-out, run a real fresh-install simulation per Decision C25-4 — create `C:\src\smoke-cs25\` (throwaway dir), `gh repo create` a throwaway repo, `git clone`, run `npx -y "github:henrik-me/agent-harness#<close-out-SHA>" init` and confirm zero `Cannot find package` warnings on stderr. Capture transcript in active CS file Notes section. Tear down throwaway repo + dir after.
 6. **Tag + release:** push `v0.2.1` tag on close-out commit; verify `release.yml` run; promote draft to published.
-7. **`sub-invaders-bootstrap-summary.md` update** (in the agent-harness CS16 active dir, IF CS16 is still active; otherwise update the done copy): cross-reference CS25 close-out commit + tag in Finding #1's resolution note.
+7. **`sub-invaders-bootstrap-summary.md` update** (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) (in the agent-harness CS16 active dir, IF CS16 is still active; otherwise update the done copy): cross-reference CS25 close-out commit + tag in Finding #1's resolution note. _(Superseded by CS70: CS16 is closed and the summary is canonically archived at the done-dir path above; the active-dir conditional no longer applies.)_
 
 ## User-approval gates
 
@@ -66,7 +66,7 @@ Self-host runs (executing directly from a cloned `agent-harness/` working tree w
 8. GitHub Release `v0.2.1` exists and is published (not draft).
 9. CHANGELOG.md `## [v0.2.1]` section is present with the Fixed entry.
 10. README's `## Installation` recommends `v0.2.1` or later.
-11. CS16's `sub-invaders-bootstrap-summary.md` Finding #1 has a resolution note pointing at the CS25 close-out SHA + tag.
+11. CS16's `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) Finding #1 has a resolution note pointing at the CS25 close-out SHA + tag.
 
 ## Risks + open questions
 
