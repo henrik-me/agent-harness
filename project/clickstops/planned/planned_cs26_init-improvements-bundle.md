@@ -5,7 +5,7 @@
 **Branch:** —
 **Started:** —
 **Closed:** —
-**Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
+**Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** [CS25](../done/done_cs25_hotfix-runtime-deps.md) (**closed 2026-05-11**; ajv/ajv-formats/js-yaml moved to runtime dependencies so the init flow has a working ajv — dependency satisfied; CS25 is on `main`). No remaining blocker. (Note: no `v0.2.1` tag was cut — the patch-release step was reframed; `v0.2.0` remains the latest `v0.2.x` tag.)
 
 ## Status update (2026-06-09, `omni-ah-c2`, disposition pass)
@@ -62,7 +62,7 @@
 >   `v0.8.1` or `v0.9.0` depending on the apply set's SemVer level.
 >
 > Plan body below is preserved verbatim for traceability against the
-> original CS16 sub-invaders-bootstrap-summary citations (Findings #2,
+> original CS16 sub-invaders-bootstrap-summary (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) citations (Findings #2,
 > #3, #4, #5, #6, #9).
 
 ## Goal
@@ -71,7 +71,7 @@ Fix six `harness init` defects observed during the first downstream-consumer ini
 
 ## Background
 
-The CS16 sub-invaders bootstrap was the first end-to-end exercise of `harness init` against a freshly-created public consumer repo (not self-host). The 6 findings dispositioned here are documented in detail in [`sub-invaders-bootstrap-summary.md`](../../clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md). Each is reproducible from any fresh public repo by running `npx -y "github:henrik-me/agent-harness#v0.2.0" init` (after CS25's ajv hotfix lands).
+The CS16 sub-invaders bootstrap was the first end-to-end exercise of `harness init` against a freshly-created public consumer repo (not self-host). The 6 findings dispositioned here are documented in detail in [`sub-invaders-bootstrap-summary.md`](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md). Each is reproducible from any fresh public repo by running `npx -y "github:henrik-me/agent-harness#v0.2.0" init` (after CS25's ajv hotfix lands).
 
 These are bundled into a single CS because (a) all six touch the init flow, (b) they share validation surface (the same end-to-end smoke probe verifies all of them), and (c) sub-agent fan-out across them is natural and parallelisable.
 
@@ -112,7 +112,7 @@ CS26 is sized for ≥4 parallel sub-agents to validate the harness's own dispatc
 | 2 | `cs26-config-placeholders-linter` | `scripts/check-config-placeholders.mjs` (new); wiring into `bin/harness.mjs` cmdLint aggregator (escalate to sub-agent #1 to coordinate cmdInit/cmdLint co-edits if conflict); test edits for Finding #3 |
 | 3 | `cs26-lock-file-resolved-ref` | `lib/sync.mjs` (or wherever lock-file is written; sub-agent must verify); test edits for Finding #4 |
 | 4 | `cs26-seeded-flags-and-gitattributes` | `template/seeded/flags/flags.json`, `template/seeded/.gitattributes` (new); cmdInit copy-loop wiring (coordinate with sub-agent #1); test edits for Findings #5 + #9 |
-| (orchestrator-owned) | — | active CS file Tasks population, end-to-end smoke probe (Deliverable #8), CHANGELOG.md, sub-invaders-bootstrap-summary cross-reference, `tests/cs09-init.test.mjs` end-to-end extension |
+| (orchestrator-owned) | — | active CS file Tasks population, end-to-end smoke probe (Deliverable #8), CHANGELOG.md, sub-invaders-bootstrap-summary (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) cross-reference, `tests/cs09-init.test.mjs` end-to-end extension |
 
 The 4 sub-agents have disjoint owned files except the cmdInit copy-loop. The orchestrator MUST resolve the cmdInit ownership choice up-front (recommend: sub-agent #1 owns all `bin/harness.mjs` cmdInit edits; sub-agents #2 and #4 hand patches to #1 if needed; OR: split cmdInit into smaller helpers that each sub-agent can extend independently).
 
@@ -128,7 +128,7 @@ The 4 sub-agents have disjoint owned files except the cmdInit copy-loop. The orc
 4. `harness lint --quiet` passes (full suite, including the new `check-config-placeholders`).
 5. End-to-end fresh-install smoke per Deliverable #8 passes all 6 assertions; transcript captured.
 6. `CHANGELOG.md` `## [v0.2.2]` (or successor) section present.
-7. CS16's `sub-invaders-bootstrap-summary.md` Findings #2, #3, #4, #5, #6, #9 each have resolution notes pointing at CS26 close-out SHA.
+7. CS16's `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) Findings #2, #3, #4, #5, #6, #9 each have resolution notes pointing at CS26 close-out SHA.
 8. All 4 sub-agent reports collected with STATUS: complete + correct PREFLIGHT/FINAL SHA invariants.
 9. Plan-vs-implementation review (GPT-5.5 gate) returns GO.
 

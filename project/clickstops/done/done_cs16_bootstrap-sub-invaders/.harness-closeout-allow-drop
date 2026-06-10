@@ -1,0 +1,19 @@
+# .harness-closeout-allow-drop (CS70 / C70-6a)
+# Basenames of files that existed under active_cs16_bootstrap-sub-invaders/ during the CS16
+# bootstrap but were intentionally NOT preserved into this done/ directory. The
+# directory-form-orphan check (scripts/check-clickstop.mjs, CS70) consults this list and only
+# fails on UNdeclared drops. Format: one basename per line; lines beginning with # are
+# comments; blank lines ignored.
+#
+# The six si-cs-plans/ files are audit-trail COPIES of the henrik-me/sub-invaders consumer
+# repo's OWN clickstop plans, authored here during bootstrap (commit b293815). Their canonical
+# home is the sub-invaders repo, not agent-harness; keeping consumer artifacts here would
+# repeat the harness-internal-vs-consumer confusion that agent-harness#290 resolves. (The
+# harness-internal close-out evidence, sub-invaders-bootstrap-summary.md, IS preserved
+# alongside this file.)
+planned_cs01_repo-hardening-and-first-deploy.md
+planned_cs02_engine-and-minimal-game.md
+planned_cs03_backend-and-leaderboard.md
+planned_cs04_daily-challenge-and-pin-bump.md
+planned_cs05_re-evaluate-persistence.md
+planned_cs06_re-evaluate-cloudflare-full-stack.md

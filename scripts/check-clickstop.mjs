@@ -32,6 +32,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { assertHeadings, extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
 
 // ---------------------------------------------------------------------------
@@ -316,6 +317,210 @@ function checkFile(filePath, subdir) {
 }
 
 // ---------------------------------------------------------------------------
+// Directory-form close-out orphan check (CS70 — C70-6 / C70-6a)
+// ---------------------------------------------------------------------------
+
+/**
+ * Run a read-only git command scoped to the repo containing `cwd`. Returns
+ * stdout on success, or null on any failure (non-git context, git not
+ * installed, unreadable history) so callers degrade to a no-op rather than
+ * producing a false positive.
+ *
+ * @param {string} cwd
+ * @param {string[]} args
+ * @returns {string|null}
+ */
+function gitTry(cwd, args) {
+  try {
+    return execFileSync('git', ['-C', cwd, ...args], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Convert an OS path to POSIX separators (for git pathspecs + comparisons). */
+function toPosix(p) {
+  return p.split(path.sep).join('/');
+}
+
+/**
+ * Files under `root` as POSIX-relative paths (recursive).
+ *
+ * @param {string} root
+ * @returns {{ files: Set<string>, hadError: boolean }} `files` is the set of
+ *   POSIX-relative paths discovered; `hadError` is true if any non-ENOENT I/O
+ *   error was hit mid-walk (the listing is then partial — callers should not
+ *   draw "missing file" conclusions from it).
+ */
+function listFilesRel(root) {
+  const out = new Set();
+  let hadError = false;
+  const walk = (cur, rel) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(cur, { withFileTypes: true });
+    } catch (err) {
+      // ENOENT mid-walk is benign (nothing to enumerate); any other I/O error
+      // (e.g. EACCES on a present-but-unreadable subtree) is surfaced so the
+      // operator sees the real cause rather than a misleading "file missing"
+      // orphan error derived from an incomplete listing.
+      if (err.code !== 'ENOENT') {
+        hadError = true;
+        logError(`cannot read ${cur} during directory-form orphan check: ${err.message}`);
+      }
+      return;
+    }
+    for (const e of entries) {
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) walk(path.join(cur, e.name), childRel);
+      else out.add(childRel);
+    }
+  };
+  walk(root, '');
+  return { files: out, hadError };
+}
+
+/**
+ * Parse a `.harness-closeout-allow-drop` allow-list into a Set of basenames
+ * (C70-6a). Format: one basename per line; lines beginning with `#` are
+ * comments; blank lines ignored. A missing file yields an empty Set
+ * (default-strict).
+ *
+ * @param {string} filePath
+ * @returns {{ allowed: Set<string>, hadError: boolean }} `allowed` is the set
+ *   of allow-listed basenames; `hadError` is true if the file exists but could
+ *   not be read (non-ENOENT). On `hadError` the set may be incomplete — callers
+ *   should not treat absent entries as "not allow-listed".
+ */
+function parseAllowDrop(filePath) {
+  const allowed = new Set();
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      logError(`cannot read allow-list ${filePath}: ${err.message}`);
+      return { allowed, hadError: true };
+    }
+    return { allowed, hadError: false }; // ENOENT → empty (default-strict)
+  }
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    allowed.add(trimmed);
+  }
+  return { allowed, hadError: false };
+}
+
+/**
+ * For every directory-form done CS (`done/done_csNN_<slug>/done_csNN_<slug>.md`),
+ * verify no file ever present under the corresponding
+ * `active/active_csNN_<slug>/` directory (in any commit, across all refs) is
+ * missing from the done directory — except the renamed plan file
+ * (`active_…​.md` → `done_…​.md`) and any basename declared in the CS's optional
+ * `.harness-closeout-allow-drop` allow-list. Catches the CS16 failure mode
+ * where a per-file close-out rename silently drops sibling artifacts
+ * (agent-harness#290). Node-builtins only (git via child_process). In a
+ * non-git checkout it is a no-op (returns early). In a **shallow clone** it
+ * still runs, best-effort, against whatever `active/` history is available and
+ * emits a non-failing NOTE: it may miss drops whose history was truncated but
+ * never false-positives (it can only flag files it actually sees in history).
+ * CI should run `harness lint` with full history (e.g. `actions/checkout`
+ * `fetch-depth: 0`) for complete coverage.
+ *
+ * @param {string} dir  the clickstops directory (contains active/ done/ planned/)
+ */
+function checkDirFormOrphans(dir) {
+  const doneDir = path.join(dir, 'done');
+
+  const top = gitTry(dir, ['rev-parse', '--show-toplevel']);
+  if (top == null) return;
+  const root = top.trim();
+
+  // A shallow clone may not see the full history of active/ directories, so the
+  // orphan check can only run best-effort and may miss truncated drops. Surface
+  // that as a non-failing NOTE so the gap is visible rather than silent.
+  const shallow = gitTry(dir, ['rev-parse', '--is-shallow-repository']);
+  if (shallow != null && shallow.trim() === 'true' && !quiet) {
+    process.stdout.write(
+      'NOTE: shallow git clone — the directory-form close-out orphan check (CS70) ' +
+      'is degraded and may miss dropped files; run with full history ' +
+      '(fetch-depth: 0) for complete coverage.\n'
+    );
+  }
+
+  // Read done/ directly rather than guarding with existsSync(): ENOENT means
+  // there are no done CSes to check (a legitimate skip), but any other I/O
+  // error (e.g. EACCES on a present-but-unreadable tree) must fail closed via
+  // logError instead of silently skipping orphan detection.
+  let doneEntries;
+  try {
+    doneEntries = fs.readdirSync(doneDir, { withFileTypes: true });
+  } catch (err) {
+    if (err.code === 'ENOENT') return;
+    logError(`cannot read done/ for directory-form orphan check: ${err.message}`);
+    return;
+  }
+
+  for (const entry of doneEntries) {
+    if (!entry.isDirectory()) continue;
+    if (!entry.name.startsWith('done_')) continue;
+    const slug = entry.name.slice('done_'.length); // csNN_<slug>
+    const doneCsDir = path.join(doneDir, entry.name);
+    // Directory-form requires the plan file inside. Distinguish ENOENT (not
+    // dir-form — skip) from other I/O errors (fail closed via logError).
+    let planStat;
+    try {
+      planStat = fs.statSync(path.join(doneCsDir, `done_${slug}.md`));
+    } catch (err) {
+      if (err.code === 'ENOENT') continue;
+      logError(`cannot stat done/${entry.name}/done_${slug}.md: ${err.message}`);
+      continue;
+    }
+    if (!planStat.isFile()) continue;
+
+    const activeRel = toPosix(path.relative(root, path.resolve(dir, 'active', `active_${slug}`)));
+    const log = gitTry(root, ['log', '--all', '--pretty=format:', '--name-only', '--', activeRel]);
+    if (log == null) continue;
+
+    const prefix = `${activeRel}/`;
+    const historicalActive = new Set();
+    for (const line of log.split('\n')) {
+      const p = line.trim();
+      if (p && p.startsWith(prefix)) historicalActive.add(p.slice(prefix.length));
+    }
+    if (historicalActive.size === 0) continue;
+
+    const { files: donePresent, hadError: doneReadError } = listFilesRel(doneCsDir);
+    const { allowed, hadError: allowReadError } = parseAllowDrop(
+      path.join(doneCsDir, '.harness-closeout-allow-drop')
+    );
+    // If the done tree or the allow-list could not be fully read (e.g. EACCES on
+    // a subtree/file), the listing is incomplete. Skip the orphan comparison for
+    // this CS to avoid emitting misleading "file missing" errors on top of the
+    // already-logged I/O failure — the linter still fails closed via that error.
+    if (doneReadError || allowReadError) continue;
+
+    for (const relPath of [...historicalActive].sort()) {
+      if (relPath === `active_${slug}.md`) continue; // plan file is renamed, not dropped
+      if (path.posix.basename(relPath) === '.gitkeep') continue; // empty-dir git placeholder, not a content artifact
+      if (donePresent.has(relPath)) continue;
+      if (allowed.has(relPath) || allowed.has(path.posix.basename(relPath))) continue;
+      logError(
+        `done/${entry.name}: file "${relPath}" was present under ` +
+        `active/active_${slug}/ in git history but is missing from done/${entry.name}/. ` +
+        'Directory-form CS close-out must `git mv` the whole directory ' +
+        '(OPERATIONS.md § Claim, CS70); if the drop was intentional, add ' +
+        `"${path.posix.basename(relPath)}" to done/${entry.name}/.harness-closeout-allow-drop.`
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Walk subdirectories
 // ---------------------------------------------------------------------------
 
@@ -344,6 +549,9 @@ for (const subdir of ['active', 'done', 'planned']) {
     filesChecked++;
   }
 }
+
+// Directory-form close-out orphan check (CS70 — C70-6 / C70-6a)
+checkDirFormOrphans(clickstopsDir);
 
 // ---------------------------------------------------------------------------
 // Summary

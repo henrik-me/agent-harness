@@ -153,6 +153,25 @@ Every active/done CS file must include explicit `## Tasks` rows for:
 `check-clickstop.mjs` enforces these rows for active CS files and for done CS
 files closed on or after CS15a's close-out enforcement date.
 
+**Directory-form CS close-out — `git mv` the whole directory (CS70 / LRN-A).** When a CS
+plan lives in **directory form** (`<state>/<state>_cs<NN>_<slug>/<state>_cs<NN>_<slug>.md` —
+the plan file sits inside a per-CS directory that may hold sibling artifacts), the
+`active → done` rename in the close-out PR MUST be a **directory-level** rename of the entire
+CS directory, never a per-file rename of just the plan file:
+
+```bash
+git mv project/clickstops/active/active_cs<NN>_<slug>/ \
+        project/clickstops/done/done_cs<NN>_<slug>/
+```
+
+A per-file rename silently drops every sibling file in the directory — the failure that lost
+`sub-invaders-bootstrap-summary.md` during the CS16 close-out
+([agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290)). This is
+mechanically guarded: `check-clickstop.mjs` fails if any file ever seen under
+`active_cs<NN>_<slug>/` is absent under `done_cs<NN>_<slug>/` once the CS reaches `done/`,
+unless its basename is declared in an optional `.harness-closeout-allow-drop` file inside the
+`done_cs<NN>_<slug>/` directory (one basename per line; `#` comments and blank lines ignored).
+
 ### Claim steps
 
 `harness claim CS<NN>` (CS64) mechanizes this entire sequence: it runs the
@@ -566,6 +585,20 @@ The orchestrator files a GitHub issue and lets the consumer-repo agent
 own the PR, validation, and merge. There is no escape hatch — even
 urgent cross-repo work routes through an issue. (The human user can
 still act directly outside the orchestrator at any time.)
+
+**Pre-flight — verify the target artifact exists before filing an "update file X"
+issue (CS70 / LRN-B).** Before filing a cross-repo issue whose deliverable is
+"update / annotate / add file `X` in consumer repo `Y`", the orchestrator MUST first
+verify **either** (a) that file `X` already exists in `Y` (e.g.
+`gh api repos/Y/contents/<path>`, `git ls-remote`, or a clone check), **or** (b) that a
+harness contract produces it in consumers (a `seeded` / `managed` / `composed` file under
+`template/**`, or a scaffold emitted by `harness init` / `harness sync`). If **neither**
+holds, `X` is a phantom target: the work does **not** belong in a cross-repo issue — it
+belongs in a **harness-side CS**. Filing a consumer issue to "update a file that does not
+exist and that no harness contract emits" routes work against a phantom artifact — exactly
+the `sub-invaders-bootstrap-summary.md` misrouting
+([sub-invaders#91](https://github.com/henrik-me/sub-invaders/issues/91) →
+[agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290); see LRN-B).
 
 **Status questions (e.g. "is SI updated to v0.6.0?"):**
 

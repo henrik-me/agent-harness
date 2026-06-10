@@ -539,7 +539,7 @@ CS16 close-out is permitted only when **all** the following are true and recorde
 | 6 | `cs16-si-cs03-planner` | `agent-harness:project/clickstops/active/active_cs16_*/si-cs-plans/planned_sics03_daily-challenge-with-sync.md` (must include the explicit `harness sync --mode=apply` prerequisite at task #1 and the pin-bump-first ordering) |
 | 7 | `cs16-re-eval-planners` | `agent-harness:project/clickstops/active/active_cs16_*/si-cs-plans/planned_sicsNN_re-evaluate-persistence.md` AND `planned_sicsNN_re-evaluate-cloudflare-full-stack.md` (small files, single agent owns the pair) |
 | 8 | `cs16-parity-spec-author` | `agent-harness:project/clickstops/active/active_cs16_*/parity-spec.md` (writes a **machine-checkable spec** of the C16-13 parity items: Ruleset JSON shape, App-install verification commands, Dependabot YAML, security-doc filenames + minimum sections, CI-workflow shape — used by the orchestrator at execution time as a checklist + by the close-out gate as evidence) |
-| (orchestrator-owned) | — | All sub-invaders-side execution: repo creation, `harness init` invocation, copying authored sources into the new repo, applying Ruleset + App + Dependabot + security settings via `gh api`, opening sub-invaders content PR, pushing the bootstrap commit. AND: `agent-harness:project/clickstops/active/active_cs16_*/sub-invaders-bootstrap-summary.md` written post-execution. |
+| (orchestrator-owned) | — | All sub-invaders-side execution: repo creation, `harness init` invocation, copying authored sources into the new repo, applying Ruleset + App + Dependabot + security settings via `gh api`, opening sub-invaders content PR, pushing the bootstrap commit. AND: `agent-harness:project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md` written post-execution. |
 
 **Dispatch order:**
 - **Wave A (parallel, 8-way):** sub-agents 1–8, all in agent-harness, all writing disjoint files.
@@ -626,7 +626,7 @@ by a formal review.
   (`OPERATIONS.md § Cross-repo procedures`) its Findings #7/#8 resolution
   annotation is tracked as sub-invaders issue
   [#91](https://github.com/henrik-me/sub-invaders/issues/91) rather than
-  committed here.
+  committed here. (Superseded by CS70: the bootstrap summary is harness-internal close-out evidence; the canonical copy now lives in this repo at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`, **not** in the consumer repo — see `agent-harness#290` and LRN-B.)
 - **Standards parity** (C16-13): Ruleset, App, security workflows all
   present in sub-invaders; verified by sub-agent A6 during CS01 in
   sub-invaders.
