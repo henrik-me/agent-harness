@@ -103,6 +103,11 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   node bin/harness.mjs startup --pull-ff-only
   ```
 
+  Once `startup` passes, `harness status` prints a one-screen resume snapshot
+  (the active CS, the WORKBOARD Active Work rows, and the in-flight
+  `planned`/`active` arc) — read-only and zero-network, so it is safe to run
+  any time you need a handoff context.
+
   The equivalent expanded sequence (kept for triage when the verb itself
   has not yet been installed in a fresh clone):
 

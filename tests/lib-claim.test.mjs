@@ -414,6 +414,44 @@ test('applyClaimPlan: R3 race-aware — uses fresh WORKBOARD content, not the pl
   );
 });
 
+test('applyClaimPlan: apply-time race re-check — refuses when this orchestrator gained an Active row between plan and apply', () => {
+  const { plan } = planClaim({
+    csId: 'CS64',
+    listing: fakeListing(),
+    workboardMd: WB_EMPTY,
+    workboardPath: '/p/WORKBOARD.md',
+    plannedDir: '/p/planned',
+    activeDir: '/p/active',
+    agentId: 'omni-ah',
+    title: 'My Title',
+    today: '2026-06-10',
+  });
+  const { files, runner } = fakeRunner();
+  // Simulate this same orchestrator's other CLI invocation winning the race
+  // and writing CS63 between our preflight and our apply.
+  const selfRace = insertActiveWorkRow({
+    workboardMd: WB_EMPTY,
+    row: {
+      cs: 'CS63',
+      title: 'Race winner',
+      state: '🟢 Active',
+      owner: 'omni-ah',
+      branch: 'cs63/content',
+      lastUpdated: '2026-06-10',
+      blocked: '—',
+    },
+  });
+  files.set('/p/WORKBOARD.md', selfRace.md);
+  assert.throws(
+    () => applyClaimPlan({ plan, runner }),
+    /apply-time race.*now owns Active row for CS63/,
+  );
+  // Nothing was mutated: source file still in place, dest absent, WORKBOARD unchanged.
+  assert.ok(files.has('/p/planned/planned_cs64_my-slug.md'));
+  assert.ok(!files.has(plan.destPath));
+  assert.equal(files.get('/p/WORKBOARD.md'), selfRace.md);
+});
+
 test('applyClaimPlan: throws when source is missing and dest is also missing', () => {
   const { plan } = planClaim({
     csId: 'CS64',
