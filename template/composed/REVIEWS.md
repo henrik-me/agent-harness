@@ -269,6 +269,91 @@ per round (`additionalProperties:false`, then empty-string `minLength`, then
 whitespace-only `pattern`) across several rounds; a single up-front author S1–S3
 sweep would have collapsed them into the first.
 
+### 2.6c Plan-review scope — fact-claim verification (LRN-139 / LRN-158)
+
+The PR-side F1–F5 doctrine in § 2.6a applies symmetrically to **plan reviews**
+of CS files under `project/clickstops/{planned,active}/` (per
+[OPERATIONS.md § Plan review attestation procedure (CS35b)](OPERATIONS.md#plan-review-attestation-procedure-cs35b)).
+A plan-review `Go` verdict is only valid when the reviewer has affirmatively
+verified that every factual claim the plan makes about the repository state
+matches the actual repository at the analyzed HEAD — and that every
+state-of-the-world premise (release/tag/PR/issue/label state) has been
+verified via a non-mutating CLI probe. Plan reviews were the surface where
+LRN-139 and LRN-158 surfaced this gap: a plan can assert a defect that does
+not exist (CS54 T1 — false positive that survived 17 rubber-duck rounds) or
+assume a state-of-the-world that is wrong (CS70 — premise wrong across
+3 plan-review rounds; the audit itself was ~10 seconds).
+
+**Scope — all reviewer-consumed plan sections.** Per OPERATIONS.md
+§ Plan review attestation procedure, the reviewer consumes Background,
+Decisions, Deliverables, Exit criteria, and Risks + open questions.
+Fact-claim verification applies to every factual claim in any of those
+sections, not only Decisions+Deliverables (the surface covered by the
+plan-review hash). The hash attests the reviewer saw a particular
+Decisions+Deliverables body; F1–F6 attest the reviewer verified the
+plan's factual premises across the whole reviewer-consumed surface.
+
+**Required checks for every plan-review `Go` verdict:**
+
+| # | Check | Source of truth |
+|---|---|---|
+| F1 | Every `--flag` named in the plan exists in the CLI surface (or is explicitly described as not-yet-existing). | `bin/harness.mjs` (`SUBCOMMAND_HELP` blocks and `cmdXxx` argument parsers); `lib/<module>.mjs`; `scripts/*.mjs` pass-throughs. |
+| F2 | Every file path named in the plan exists in the tree (or is explicitly flagged as to-be-created). For citations of the form `path/to/file:N`, the reviewer MUST open the file at the analyzed HEAD and confirm line N contains what the plan asserts. A "stray fence at L680" claim requires confirming the fence has no matching opener at the analyzed HEAD — line numbers drift across snapshots, across syncs, and across edits between plan draft and plan review. | Repo filesystem at the analyzed HEAD. |
+| F3 | Every doctrine-strength claim (`required`, `mandatory`, `enforces`, `recommended`, `optional`) attributed to another doc matches that doc's wording verbatim or via a documented synonym. | The cited doc (OPERATIONS.md, REVIEWS.md, INSTRUCTIONS.md, README.md, etc.). |
+| F4 | Every summary of a LEARNINGS.md or CS entry stays within the source entry's stated `Problem` / `Finding` / `Decision` scope. No generalisation beyond what the source asserts. | The LRN/CS entry itself. |
+| F5 | Cross-doc claims are mutually consistent across the surfaces named in the plan (CHANGELOG vs OPERATIONS vs REVIEWS vs LRN). | The other doc(s) and code referenced. |
+| F6 | Every **state-of-the-world claim** the plan relies on (e.g. "tag `v0.7.0` does not exist", "release X is in Draft", "PR Y is open", "label Z is present in the consumer repo", "the branch protection ruleset requires N approvals") is verified at plan-review time via a non-mutating CLI probe and the probe is recorded in the plan's Background or Constraints so subsequent reviewers can audit the same premise. For release/tag state: `gh release list --limit N`, `gh api repos/<owner>/<repo>/releases --jq '.[] \| select(.tag_name=="<tag>")'` (both published AND draft), `git ls-remote --tags origin <tag>`. For PR/issue/label state: `gh pr view <num>`, `gh issue view <num>`, `gh label list --repo <owner>/<repo>`. | GitHub API / git remote / live shell at plan-review time. |
+
+**Inherited findings discipline (LRN-139).** When a plan inherits a finding
+from another repo, from another snapshot, or from any prior Copilot /
+rubber-duck review whose anchor (file:line, SHA, tag, release id) was
+captured at a different HEAD, the plan author MUST re-verify the finding
+against the current harness repo state before claiming it as a defect or as
+a premise. An unverified inherited citation is not an acceptable plan
+premise; the reviewer MUST treat it as a `Needs-Fix` blocker even if the
+surrounding plan prose is internally coherent.
+
+**Reviewer prompt obligation.** When dispatching a plan-review rubber-duck,
+the orchestrator MUST include language equivalent to: *"verify F1–F6 above
+against the actual repository at HEAD `<sha>` and the live shell — do not
+accept the plan's factual claims on faith. For every state-of-the-world
+claim in Background or Constraints, list the CLI probe you ran (or are
+about to run) to verify it; if the plan does not include such a probe for
+a state-of-the-world premise, return `Needs-Fix`."* The canonical reviewer
+preamble in
+[OPERATIONS.md § Reviewer dispatch — canonical preamble](OPERATIONS.md#reviewer-dispatch--canonical-preamble)
+carries this expectation; the CS35b plan-review attestation procedure
+cross-references this section.
+
+**Empirical motivation.**
+
+- **CS54 T1 (LRN-139).** The plan asserted a "stray triple-backtick fence at
+  `template/composed/OPERATIONS.md:680` with no matching opener", inherited
+  from a Copilot inline finding on a sibling-repo PR. Seventeen GPT-5.5
+  rubber-duck rounds attested at hash `5c40242b24c7`, all `Go`. None opened
+  the file. Implementation discovered the triple-backtick at L809 (line
+  numbers had drifted since the inherited finding) was the legitimate close
+  of the canonical preamble fence opened at L684; applying the "fix" broke
+  the `composed-blocks:OPERATIONS.md` lint by orphaning the
+  `operations.project-deploy` local-block markers downstream. Reverted at
+  commit `a770134`. F2 + the inherited-findings clause above directly address
+  this failure mode.
+- **CS70 (LRN-158).** The plan asserted that `v0.7.0` had been bumped in
+  `package.json` + CHANGELOG at CS54's close-out (commit `53e1a09`,
+  2026-06-03) but never tagged or shipped. Three GPT-5.5 plan-review rounds
+  (R1 Needs-Fix → R2 Needs-Fix → R3 Go, all at hash `7ab92e2eb150`)
+  attested without anyone running `gh release list` or
+  `gh api repos/<owner>/<repo>/releases --jq '.[]'`. Execution discovered
+  the tag plus a published Release had existed at `53e1a09` for six days
+  (auto-created by `release.yml` LRN-121); the only Phase 1 action actually
+  needed was deleting a stale duplicate Draft sibling. F6 directly addresses
+  this failure mode.
+
+Both incidents share the same shape: the plan prose was internally coherent
+(diff-equivalent), but the factual premise about the repository state was
+wrong. § 2.6c closes that gap on the planning surface symmetrically to how
+§ 2.6a closed it for shipped-code PR reviews.
+
 ### 2.7 Finding disposition
 
 **Blocking findings:** must be addressed before merge via one of:
