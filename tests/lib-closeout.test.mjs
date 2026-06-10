@@ -1007,3 +1007,39 @@ test('runCloseoutFromDisk: WORKBOARD.md missing => alreadyClosedOut no-op (fresh
     rmSync(root, { recursive: true, force: true });
   }
 });
+test('activeWorkRowExists: unreadable WORKBOARD (path is a directory) => readError (not missingFile)', () => {
+  // R7 rubber-duck (gpt-5.5): regression for Copilot R3 finding 1. The
+  // previous catch-all conflated missing-file with read-error; this asserts
+  // the distinction by making WORKBOARD.md a directory (readFileSync throws
+  // EISDIR-class error on every platform).
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-readerror-'));
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    mkdirSync(wbPath); // path EXISTS but readFileSync will throw
+    const r = activeWorkRowExists(wbPath, 'CS64');
+    assert.equal(r.exists, false);
+    assert.equal(r.missingFile, undefined,
+      `expected missingFile undefined for unreadable case; got ${JSON.stringify(r)}`);
+    assert.ok(r.readError, `expected readError set; got ${JSON.stringify(r)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runCloseoutFromDisk: unreadable WORKBOARD (path is a directory) => hard error, NOT alreadyClosedOut', () => {
+  // R7 rubber-duck (gpt-5.5): regression for Copilot R3 finding 1 on the
+  // closeout idempotency branch. Previously an unreadable WORKBOARD was
+  // silently treated as "row absent" and produced a clean no-op claiming
+  // "already-closed-out". Now must surface as a hard error.
+  const { root } = mkAlreadyDoneTree('CS64', 'lifecycle');
+  try {
+    mkdirSync(path.join(root, 'WORKBOARD.md')); // unreadable
+    const result = runCloseoutFromDisk({ cwd: root, csId: 'CS64', apply: false });
+    assert.equal(result.ok, false, `expected ok:false; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClosedOut, undefined);
+    assert.ok(result.errors.some((e) => /cannot read WORKBOARD\.md/.test(e)),
+      `expected "cannot read WORKBOARD.md" error; got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

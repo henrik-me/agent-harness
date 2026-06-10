@@ -1002,3 +1002,28 @@ test('runClaimFromDisk: alreadyActive + WORKBOARD.md missing => clean no-op (fre
     rmSync(root, { recursive: true, force: true });
   }
 });
+test('runClaimFromDisk: alreadyActive + unreadable WORKBOARD (path is a directory) => hard error', () => {
+  // R7 rubber-duck (gpt-5.5): symmetric regression for Copilot R3 finding 1
+  // on the claim idempotency branch. Previously an unreadable WORKBOARD was
+  // silently treated as "row absent" via a bare try/catch that nulled
+  // workboardMd and fell through to the no-op path. Now must surface as a
+  // hard error citing the read failure.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    mkdirSync(path.join(root, 'WORKBOARD.md')); // unreadable
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false, `expected ok:false; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /cannot read WORKBOARD\.md/.test(e)),
+      `expected "cannot read WORKBOARD.md" error; got ${JSON.stringify(result.errors)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
