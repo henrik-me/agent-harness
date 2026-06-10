@@ -349,12 +349,6 @@ function extractPlanReviewTable(content) {
 // File checking
 // ---------------------------------------------------------------------------
 
-/**
- * Validate one clickstop file's `## Plan review` section.
- *
- * @param {string} filePath
- * @param {string} subdir
- */
 /*
  * CS file naming pattern: `<planned|active|done>_cs<digits>[suffix]_<slug>.md`.
  *
@@ -364,12 +358,19 @@ function extractPlanReviewTable(content) {
  * scoped to the CS. The CS's main file (matching this pattern) carries the
  * canonical `## Plan review` attestation.
  *
- * Uses a regular block comment opener (not `/**`) so JSDoc-aware tooling
- * does not mis-associate this commentary with the next symbol (`checkFile`),
- * which already has its own docblock immediately above (Copilot R7 finding).
+ * NOTE on comment opener: this block uses `/*` (not `/**`) AND sits *above*
+ * the JSDoc for `checkFile()` rather than between it and the function. Both
+ * choices defend against JSDoc-aware tooling mis-associating this prose with
+ * the next symbol (Copilot R7 + R15 findings).
  */
 const CS_FILENAME_RE = /^(planned|active|done)_cs\d+[a-z]?_[a-z0-9][a-z0-9.-]*\.md$/;
 
+/**
+ * Validate one clickstop file's `## Plan review` section.
+ *
+ * @param {string} filePath
+ * @param {string} subdir
+ */
 function checkFile(filePath, subdir) {
   const basename = path.basename(filePath);
   const label = `${subdir}/${basename}`;
