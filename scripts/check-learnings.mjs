@@ -281,7 +281,7 @@ for (const h of existingH2Headings) {
 // ---------------------------------------------------------------------------
 // Check 7 — H3 header presence and id↔header match (LRN-154, CS69)
 //   Every entry with `id: LRN-<n>` must be preceded by a matching
-//   `### LRN-<n>` H3 header. Per C69-1, the header sits on the line(s)
+//   `### LRN-<n>` H3 header. Per CS69-1, the header sits on the line(s)
 //   immediately above the opening ```yaml fence, separated from it by only
 //   blank lines — NOT by intervening prose. The strict adjacency rule
 //   (skip blanks, require the next nonblank line above the fence to be the
