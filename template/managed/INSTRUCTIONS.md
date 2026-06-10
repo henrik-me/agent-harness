@@ -80,8 +80,8 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 
 - **Pull:** `git pull` to fetch the latest state before doing anything else.
 - **Derive your agent ID** per [TRACKING.md § Agent Identification](TRACKING.md#agent-identification):
-  format `<machine-short>-{{agent_suffix}}[-c<N>]`. Override the machine segment via the
-  `HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE` environment variable if needed
+  format `<machine-short>-ah[-c<N>]`. Override the machine segment via the
+  `HARNESS_AGENT_AH_MACHINE` environment variable if needed
   (per Decision #20c).
 - **State your identity:** in your **first response** write your derived agent ID and
   "INSTRUCTIONS.md re-read complete @ \<SHA\>". Treat session resume as session start
@@ -93,10 +93,18 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   git worktree) starts with none. Triage: if `node --test` floods with
   `ERR_MODULE_NOT_FOUND`, run `npm ci` — `main` is **not** broken. (Use
   `npm install` only when the lockfile is intentionally stale.)
-- **Bootstrap sanity check:** before claiming any CS, run the following from
-  the repo root and confirm each command exits clean. The repo's invariant is
-  "main is always green" — if any of these fail, **stop and investigate**
-  before claiming new work.
+- **Bootstrap sanity check:** before claiming any CS, run `harness startup`
+  from the repo root. It mechanizes the sequence below and exits non-zero
+  only on a genuinely broken tree (tests / lint / sync drift). The repo's
+  invariant is "main is always green" — if `harness startup` reports a
+  broken-tree failure, **stop and investigate** before claiming new work.
+
+  ```bash
+  node bin/harness.mjs startup --pull-ff-only
+  ```
+
+  The equivalent expanded sequence (kept for triage when the verb itself
+  has not yet been installed in a fresh clone):
 
   ```bash
   git pull --ff-only origin main
@@ -134,8 +142,9 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - **Pre-claim gate:** before claiming, review `LEARNINGS.md` for stale `open` items
   tagged `process` or `architectural`, or items whose `claim_area` matches the area
   you are about to claim. Disposition all relevant items before proceeding.
-  `harness harvest` runs this pre-claim scan — run it before claiming. (A future
-  `harness claim` command will invoke it automatically; tracked in CS64.)
+  `harness harvest` runs this pre-claim scan — run it before claiming.
+  `harness claim CS<NN>` (CS64) invokes it automatically as part of the
+  preflight gate.
 
 ### Re-evaluating private-tier disposition
 
@@ -286,11 +295,13 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
    items whose `claim_area` matches the area you are claiming. Disposition before
    proceeding. See [Harvest Cadence](#harvest-cadence) for disposition options.
 
-2. **Claim.** Rename `planned_cs<NN>_*.md` → `active_cs<NN>_*.md`. Update
-   `WORKBOARD.md` with your row: CS-Task ID, agent ID, branch, state, last-updated.
-   Commit via a `workboard/cs<NN>-claim` PR. In the public protected phase,
-   eligible workboard-only PRs are bot-approved and auto-merged after the
-   workflow validation gate passes. WORKBOARD task states:
+2. **Claim.** Run `harness claim CS<NN>` (CS64) to preflight, run the
+   harvest gate, and render the claim plan; re-run with `--apply` to cut
+   the `cs<NN>/claim` branch + `git mv` planned→active + edit `WORKBOARD.md`.
+   The verb NEVER commits — you own the commit message and PR. Commit via a
+   `workboard/cs<NN>-claim` PR; in the public protected phase, eligible
+   workboard-only PRs are bot-approved and auto-merged after the workflow
+   validation gate passes. WORKBOARD task states:
    - `planned` — filed, not yet started
    - `active` — claimed and in flight (you own it; no other orchestrator may claim it)
    - `blocked` — cannot proceed; document the blocker and set a `reclaimable` threshold
@@ -304,6 +315,8 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 4. **Plan-internal.** Identify parallelisable sub-tasks. Record each in the CS file's
    `## Tasks` table with the canonical Notes format before dispatching any sub-agent:
    `agent-id=<id> | role=<role> | report-status=pending | learnings=0`.
+   Use `harness dispatch` (CS64) to emit the canonical sub-agent briefing
+   preamble verbatim — never re-derive it from memory (LRN-068).
    Follow [OPERATIONS.md § Sub-agent dispatch](OPERATIONS.md#sub-agent-dispatch) for
    briefing structure, file-ownership declarations, no-commit preflight, and the
    mandatory report shape. Brief sub-agents with test **minimums**, never exact counts
@@ -347,9 +360,14 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
     Record the review in the active CS file's `## Plan-vs-implementation review`
     section. NEEDS-FIX outcome blocks close-out.
 
-12. **Post-merge closeout.** Rename `active_cs<NN>_*.md` → `done_cs<NN>_*.md`. Update
-    `WORKBOARD.md` (remove row or mark done). Update `CONTEXT.md` if the codebase
-    state changed. File new learnings in `LEARNINGS.md`.
+12. **Post-merge closeout.** Run `harness close-out CS<NN>` (CS64): Phase 1
+    preflights (correct branch, clean worktree, populated `## Plan-vs-implementation
+    review` section with **Outcome:** GO). Phase 2 (`--apply`) renames
+    `active_cs<NN>_*.md` → `done_cs<NN>_*.md`, removes the WORKBOARD row,
+    and refuses to mark the close-out PR-ready until `CONTEXT.md` has been
+    updated (freshness gate). Then update `LEARNINGS.md` with new findings
+    before opening the close-out PR. The verb NEVER commits — you own the
+    commit message and PR.
 
 13. **Harvest** if the cadence triggers — see [Harvest Cadence](#harvest-cadence).
 
@@ -380,9 +398,10 @@ For each `open` learning, choose one disposition:
 
 #### Before-Claim (bounded)
 
-Run `harness harvest` before claiming a CS (a future `harness claim` command
-will run it automatically — tracked in CS64). **Silent if no stale relevant
-learning exists.** Fires only when at least one of the following is true:
+Run `harness harvest` before claiming a CS (`harness claim CS<NN>` runs it
+automatically as part of the preflight gate per CS64). **Silent if no stale
+relevant learning exists.** Fires only when at least one of the following is
+true:
 
 - a stale `open` learning is tagged `process` or `architectural`;
 - a stale `open` learning has a `claim_area` matching the area being claimed.
@@ -584,14 +603,14 @@ When in doubt, file a CS. Small, focused CSs are cheaper than scope-inflated PRs
 | Accumulated project knowledge (LRN entries) | [LEARNINGS.md](LEARNINGS.md) |
 | The CS plan that drives this project | [project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) |
 
-### {{project_name}} — Project-Specific Pointers
+### agent-harness — Project-Specific Pointers
 
 The following pointers are specific to this deployment of the harness in
-**{{project_name}}** (repo slug: `{{repo_slug}}`). They are filled in by `harness sync`
+**agent-harness** (repo slug: `henrik-me/agent-harness`). They are filled in by `harness sync`
 from `harness.config.json` at sync time.
 
-- Agent ID suffix for this repo: `{{agent_suffix}}`
-- Agent ID env-var override: `HARNESS_AGENT_{{agent_suffix_upper}}_MACHINE`
+- Agent ID suffix for this repo: `ah`
+- Agent ID env-var override: `HARNESS_AGENT_AH_MACHINE`
 - Project deploy procedures: see `OPERATIONS.md` local block `id=operations.project-deploy`
 - Project review gates: see `REVIEWS.md` local block `id=reviews.project-gates`
 - Project conventions: see `CONVENTIONS.md` local block `id=conventions.project`
