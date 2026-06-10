@@ -127,19 +127,19 @@ The complete target surface. **Status:** EXISTS (shipped) · CS63 · **CS64** (t
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1: Implement `lib/startup.mjs` + `tests/lib-startup.test.mjs` (D2, C64-3) — read-only session-bootstrap verb running INSTRUCTIONS § Session Start sanity sequence (`git pull --ff-only` probe, clean-worktree check, `node --test`, `harness lint --quiet`, `sync --mode=check`); list in-flight planned/active CS files; print agent ID + HEAD SHA. Injectable git/fs seams; tests use `os.tmpdir()` only (R6 / LRN-094); never mutates. | pending | omni-ah | agent-id=cs64-startup \| role=implementer \| report-status=pending \| learnings=0 |
-| T2: Implement `lib/claim.mjs` + `tests/lib-claim.test.mjs` (D3, C64-4, C64-10) — workboard-claim-step mechanics with preflights (clean worktree, exactly-one `planned_cs<NN>_*` match, `main` up-to-date, deterministic slug, `cs<NN>/claim` branch absent), `lib/harvest` blocking wiring (non-zero refuses claim; `--skip-harvest` is the explicit bypass), branch create + WORKBOARD row + `git mv planned→active`; `--dry-run` preview; idempotent on already-active CS; never auto-commit; prints PR instructions. Injectable git/fs seams; R3 race-aware WORKBOARD re-read before write. | pending | omni-ah | agent-id=cs64-claim \| role=implementer \| report-status=pending \| learnings=0 |
-| T3: Implement `lib/closeout.mjs` + `tests/lib-closeout.test.mjs` (D4, C64-5, C64-10) — Phase 1 read-only PVI + branch + clean-worktree gates (fail-closed on absent/NEEDS-FIX PVI); Phase 2 `git mv active→done`, remove WORKBOARD row, prompt for CONTEXT/LEARNINGS updates; final freshness re-validation using CS63's `check-closeout-freshness` logic refusing PR-ready output until `CONTEXT.md` changed. `--dry-run` preview; idempotent; never auto-commit. Injectable freshness-check seam. | pending | omni-ah | agent-id=cs64-closeout \| role=implementer \| report-status=pending \| learnings=0 |
-| T4: Implement `lib/dispatch.mjs` + `tests/lib-dispatch.test.mjs` (D5, C64-6) — output-only emitter of canonical sub-agent briefing preamble (verbatim from OPERATIONS § Mandatory briefing preamble source) + required report shape, with slots for role / owned-files / required-reading. Mechanizes LRN-073 verbatim-paste discipline. No mutation. | pending | omni-ah | agent-id=cs64-dispatch \| role=implementer \| report-status=pending \| learnings=0 |
-| T5: Implement `lib/status.mjs` + `tests/lib-status.test.mjs` (D6, C64-7) — read-only resume/handoff snapshot: prints active CS, WORKBOARD Active Work rows, in-flight planned/active arc. Output-only; exits 0 in normal states. Injectable seams. | pending | omni-ah | agent-id=cs64-status \| role=implementer \| report-status=pending \| learnings=0 |
-| T6: Wire CLI in `bin/harness.mjs` (D7) — register `startup`, `claim`, `close-out`, `dispatch`, `status` in `COMMAND_REGISTRY` + `TOP_HELP` + `SUBCOMMAND_HELP`; forward `--help`; `requireValue()` for flag parsing (LRN-040); thin delegation only (C64-10). Depends on T1–T5. | pending | omni-ah | agent-id=cs64-cli \| role=implementer \| report-status=pending \| learnings=0 |
-| T7: Wire leverage refs in `INSTRUCTIONS.md` + `OPERATIONS.md` + `template/managed/INSTRUCTIONS.md` + `template/composed/OPERATIONS.md` (D8, C64-2) — Session Start references `harness startup` + `harness status`; Per-CS Loop steps name `harvest`/`claim`/`dispatch`/`review`/`close-out`/`status` at their lifecycle moments; OPERATIONS § Claim references the verbs as canonical executable path. Lockstep mirrors byte-equal. Reference, not duplicate (CS65 thins prose later). Depends on T6. | pending | omni-ah | agent-id=cs64-docs \| role=implementer \| report-status=pending \| learnings=0 |
-| T8: Produce runtime-skill spike + go/no-go proposal artifact (D9, C64-9) in this CS's `active_cs64_lifecycle-command-skill-surface/` directory — proposal MUST include a "Silent-skip mitigation" section (G-skill amendment 2026-06-09); absent mitigation defaults to no-go with the gap recorded. If go, include sample wrapper for at least `harness startup` and proposed doc↔skill bidirectional reference shape. Independent of T1–T7. | pending | omni-ah | agent-id=cs64-skill-spike \| role=implementer \| report-status=pending \| learnings=0 |
-| T9: File CS66 + CS67 stub plans (D10) — `planned_cs66_review-family-verbs.md` (review-doc/review-cs/perf-review/security-review per C64-8) and `planned_cs67_release-verb.md` (depends on CS59 release docs). Stubs only; brief plan-review per OPERATIONS § Filing. **Note:** stub files already exist on disk (`planned_cs66_review-family-verbs.md`, `planned_cs67_release-verb.md`) — verify content matches D10's intent and amend if needed rather than re-filing. | pending | omni-ah | agent-id=cs64-stubs \| role=implementer \| report-status=pending \| learnings=0 |
-| T10: `CHANGELOG.md` `[Unreleased]` entries (D11) — one bullet per new subcommand (`startup`, `claim`, `close-out`, `dispatch`, `status`); cite CS64 + C64-11 (minor bump → v0.9.0 per G-release). Depends on T6. | pending | omni-ah | agent-id=cs64-changelog \| role=implementer \| report-status=pending \| learnings=0 |
-| T11: Resolve G-skill gate per T8 outcome — record go/no-go in active CS file; if go, file follow-up CS for wrapper shipment; if no-go, record silent-skip mitigation gap as rationale. Depends on T8. | pending | omni-ah | agent-id=cs64-g-skill \| role=implementer \| report-status=pending \| learnings=0 |
-| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS64 row, bump banner); refresh `CONTEXT.md` (5 new verbs available + status command for resume); ensure managed/composed lockstep mirrors byte-equal; run `harness sync --mode=check` (no drift). | pending | omni-ah | agent-id=cs64-closeout-docs \| role=implementer \| report-status=pending \| learnings=0 |
-| Close-out: learnings + follow-ups — file any new learnings in `LEARNINGS.md`; surface any extraction-time gaps as planned CS follow-ups; ensure CS66/CS67 stubs are filed (D10) and the v0.9.0 minor-bump trigger is noted for the next release-cut CS. | pending | omni-ah | agent-id=cs64-closeout-lrn \| role=implementer \| report-status=pending \| learnings=0 |
+| T1: Implement `lib/startup.mjs` + `tests/lib-startup.test.mjs` (D2, C64-3) — read-only session-bootstrap verb running INSTRUCTIONS § Session Start sanity sequence (`git pull --ff-only` probe, clean-worktree check, `node --test`, `harness lint --quiet`, `sync --mode=check`); list in-flight planned/active CS files; print agent ID + HEAD SHA. Injectable git/fs seams; tests use `os.tmpdir()` only (R6 / LRN-094); never mutates. | done | omni-ah | agent-id=cs64-startup \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) |
+| T2: Implement `lib/claim.mjs` + `tests/lib-claim.test.mjs` (D3, C64-4, C64-10) — workboard-claim-step mechanics with preflights (clean worktree, exactly-one `planned_cs<NN>_*` match, `main` up-to-date, deterministic slug, `cs<NN>/claim` branch absent), `lib/harvest` blocking wiring (non-zero refuses claim; `--skip-harvest` is the explicit bypass), branch create + WORKBOARD row + `git mv planned→active`; `--dry-run` preview; idempotent on already-active CS; never auto-commit; prints PR instructions. Injectable git/fs seams; R3 race-aware WORKBOARD re-read before write. | done | omni-ah | agent-id=cs64-claim \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) + PR #299 (`86edd44`) post-r2 idempotency contract |
+| T3: Implement `lib/closeout.mjs` + `tests/lib-closeout.test.mjs` (D4, C64-5, C64-10) — Phase 1 read-only PVI + branch + clean-worktree gates (fail-closed on absent/NEEDS-FIX PVI); Phase 2 `git mv active→done`, remove WORKBOARD row, prompt for CONTEXT/LEARNINGS updates; final freshness re-validation using CS63's `check-closeout-freshness` logic refusing PR-ready output until `CONTEXT.md` changed. `--dry-run` preview; idempotent; never auto-commit. Injectable freshness-check seam. | done | omni-ah | agent-id=cs64-closeout \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) + PR #299 (`86edd44`) post-r2 idempotency contract |
+| T4: Implement `lib/dispatch.mjs` + `tests/lib-dispatch.test.mjs` (D5, C64-6) — output-only emitter of canonical sub-agent briefing preamble (verbatim from OPERATIONS § Mandatory briefing preamble source) + required report shape, with slots for role / owned-files / required-reading. Mechanizes LRN-073 verbatim-paste discipline. No mutation. | done | omni-ah | agent-id=cs64-dispatch \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) |
+| T5: Implement `lib/status.mjs` + `tests/lib-status.test.mjs` (D6, C64-7) — read-only resume/handoff snapshot: prints active CS, WORKBOARD Active Work rows, in-flight planned/active arc. Output-only; exits 0 in normal states. Injectable seams. | done | omni-ah | agent-id=cs64-status \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) |
+| T6: Wire CLI in `bin/harness.mjs` (D7) — register `startup`, `claim`, `close-out`, `dispatch`, `status` in `COMMAND_REGISTRY` + `TOP_HELP` + `SUBCOMMAND_HELP`; forward `--help`; `requireValue()` for flag parsing (LRN-040); thin delegation only (C64-10). Depends on T1–T5. | done | omni-ah | agent-id=cs64-cli \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) |
+| T7: Wire leverage refs in `INSTRUCTIONS.md` + `OPERATIONS.md` + `template/managed/INSTRUCTIONS.md` + `template/composed/OPERATIONS.md` (D8, C64-2) — Session Start references `harness startup` + `harness status`; Per-CS Loop steps name `harvest`/`claim`/`dispatch`/`review`/`close-out`/`status` at their lifecycle moments; OPERATIONS § Claim references the verbs as canonical executable path. Lockstep mirrors byte-equal. Reference, not duplicate (CS65 thins prose later). Depends on T6. | done | omni-ah | agent-id=cs64-docs \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) |
+| T8: Produce runtime-skill spike + go/no-go proposal artifact (D9, C64-9) in this CS's `active_cs64_lifecycle-command-skill-surface/` directory — proposal MUST include a "Silent-skip mitigation" section (G-skill amendment 2026-06-09); absent mitigation defaults to no-go with the gap recorded. If go, include sample wrapper for at least `harness startup` and proposed doc↔skill bidirectional reference shape. Independent of T1–T7. | done | omni-ah | agent-id=cs64-skill-spike \| role=implementer \| report-status=delivered \| learnings=0 \| `runtime-skill-spike.md` (NO-GO + silent-skip mitigation) shipped via PR #289 |
+| T9: File CS66 + CS67 stub plans (D10) — `planned_cs66_review-family-verbs.md` (review-doc/review-cs/perf-review/security-review per C64-8) and `planned_cs67_release-verb.md` (depends on CS59 release docs). Stubs only; brief plan-review per OPERATIONS § Filing. **Note:** stub files already exist on disk (`planned_cs66_review-family-verbs.md`, `planned_cs67_release-verb.md`) — verify content matches D10's intent and amend if needed rather than re-filing. | done | omni-ah | agent-id=cs64-stubs \| role=implementer \| report-status=delivered \| learnings=0 \| CS66/CS67 stubs verified in `project/clickstops/planned/` |
+| T10: `CHANGELOG.md` `[Unreleased]` entries (D11) — one bullet per new subcommand (`startup`, `claim`, `close-out`, `dispatch`, `status`); cite CS64 + C64-11 (minor bump → v0.9.0 per G-release). Depends on T6. | done | omni-ah | agent-id=cs64-changelog \| role=implementer \| report-status=delivered \| learnings=0 \| PR #289 (`51953da`) shipped one consolidated CS64 bullet covering all 5 verbs per PVI nit; post-r2 idempotency bullet added in PR #299 (`86edd44`) |
+| T11: Resolve G-skill gate per T8 outcome — record go/no-go in active CS file; if go, file follow-up CS for wrapper shipment; if no-go, record silent-skip mitigation gap as rationale. Depends on T8. | done | omni-ah | agent-id=cs64-g-skill \| role=implementer \| report-status=delivered \| learnings=0 \| NO-GO recorded in `runtime-skill-spike.md` with silent-skip mitigation rationale |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS64 row, bump banner); refresh `CONTEXT.md` (5 new verbs available + status command for resume); ensure managed/composed lockstep mirrors byte-equal; run `harness sync --mode=check` (no drift). | done | omni-ah | agent-id=cs64-closeout-docs \| role=implementer \| report-status=delivered \| learnings=0 \| this close-out PR — CONTEXT.md updated, WORKBOARD row removed via `harness close-out CS64 --apply`, lockstep verified by `harness lint --quiet` |
+| Close-out: learnings + follow-ups — file any new learnings in `LEARNINGS.md`; surface any extraction-time gaps as planned CS follow-ups; ensure CS66/CS67 stubs are filed (D10) and the v0.9.0 minor-bump trigger is noted for the next release-cut CS. | done | omni-ah | agent-id=cs64-closeout-lrn \| role=implementer \| report-status=delivered \| learnings=2 \| LRN-162 (existsSync masks EACCES — read-then-discriminate-ENOENT) + LRN-163 (alternating gpt-5.5 rubber-duck + claude-sonnet Copilot reliably surfaces blind spots; budget many rounds on idempotency/error-classification PRs) filed via this PR |
 
 ## Model audit
 
@@ -157,4 +157,64 @@ The complete target surface. **Status:** EXISTS (shipped) · CS63 · **CS64** (t
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck)
+**Date:** 2026-06-10T19:58:54Z
+**Outcome:** GO
+
+### Verdict
+**GO**
+
+### Deliverables status
+- D1 catalog: ✅ present — active CS file has `## Command/skill surface catalog` with the CS64/deferred lifecycle verb inventory.
+- D2 startup: ✅ — `lib/startup.mjs` + `tests/lib-startup.test.mjs` exist; `harness startup --help` matches the read-only sanity-sequence contract.
+- D3 claim: ✅ — `lib/claim.mjs` + tests exist; post-r2 already-active path returns `alreadyClaimed`, `message`, `activeListing`, and hard-errors partial/I/O states.
+- D4 closeout: ✅ — `lib/closeout.mjs` + tests exist; post-r2 already-done path returns `alreadyClosedOut`, `message`, `doneListing`, and only falls through from genuine "no active".
+- D5 dispatch: ✅ — `lib/dispatch.mjs` + tests exist; emits canonical OPERATIONS preamble + task sections.
+- D6 status: ✅ — `lib/status.mjs` + tests exist; live smoke printed Active Work rows and planned/active inventories.
+- D7 bin registration: ✅ — `COMMAND_REGISTRY` registers `startup`, `status`, `claim`, `close-out`, `dispatch`; handlers delegate to `lib/`.
+- D8 doc wiring (INSTRUCTIONS+OPERATIONS+templates): ✅ — verb references present in root docs and lockstep mirrors; lint confirms composed/managed lockstep.
+- D9 spike + go/no-go (NO-GO recorded; mitigation section present): ✅ — `runtime-skill-spike.md` exists with `## Silent-skip mitigation` and NO-GO resolution.
+- D10 CS66+CS67 planned stubs: ✅ — `planned_cs66_review-family-verbs.md` and `planned_cs67_release-verb.md` exist.
+- D11 CHANGELOG [Unreleased]: ✅ — CS64 `[Unreleased]` bullet covers all five subcommands; post-r2 idempotency fix is also recorded.
+
+### Exit criteria status
+- EC1 startup: ✅ — help and `lib/startup.mjs` show read-only sanity checks, in-flight listing via status, agent ID + HEAD, nonzero only for broken checks.
+- EC1a status: ✅ — live `harness status` printed Active Work, on-disk active CSs, and planned queue; implementation is read-only/no git.
+- EC2 claim: ✅ — workboard-claim only, dry-run/apply split, harvest gate, preflights, no auto-commit/push; post-r2 idempotency contract verified in code/tests.
+- EC3 close-out: ✅ — PVI pre-gate, active→done + WORKBOARD removal only on apply, freshness gate for `CONTEXT.md`; post-r2 idempotency contract verified in code/tests.
+- EC4 dispatch: ✅ — canonical preamble extracted from OPERATIONS source and emitted with required report shape/task sections.
+- EC5 mechanics-in-lib: ✅ — mechanics live in `lib/*.mjs`; `bin/` is thin delegation; mutating tests use `os.tmpdir()`, startup/dispatch tests are pure/read-only.
+- EC6 doc-wiring: ✅ — docs invoke implemented verbs at lifecycle points; `harness lint --quiet` passes.
+- EC7 spike artifact: ✅ — NO-GO plus Silent-skip mitigation section present; CS66/CS67 stubs filed.
+- EC8 self-host green: ✅ — lint and tests pass; sync check skipped per CI-only instruction.
+- EC9 PVI returns GO: ✅ — this review returns GO.
+- EC10 CHANGELOG: ✅ — `[Unreleased]` entries present.
+
+### Decisions adherence
+- C64-1 catalog canonicity: ✅
+- C64-2 leverage / docs reference verbs: ✅
+- C64-3 startup: ✅
+- C64-4 claim idempotency (incl. post-r2 contract): ✅
+- C64-5 close-out idempotency (incl. post-r2 contract): ✅
+- C64-6 dispatch: ✅
+- C64-7 status: ✅
+- C64-8 review-family + release deferred: ✅ (CS66/CS67 stubs present)
+- C64-9 skills NO-GO recorded: ✅
+- C64-10 lib/-first + tmpdir tests: ✅
+- C64-11 SemVer minor: ✅ (planned v0.9.0)
+
+### Empirical evidence
+- `harness lint --quiet`: pass — 30 passed / 0 failed / 3 skipped
+- `npm test`: pass — 1328 tests / 1327 passed / 0 failed / 1 skipped
+
+### Tasks / Model audit / Plan review tables
+- Tasks "Done?" cells: needs in-band update — table still shows implementation rows as `pending` despite delivered PRs #289/#299.
+- Plan review table: 8 columns, latest Verdict `Go`, 5 rounds.
+- Model audit table: implementer vs reviewer model independence: ✅ (`claude-opus-4.7-1m-internal` ≠ `gpt-5.5`)
+
+### Notes / nits (non-blocking)
+- Refresh the CS64 Tasks table in the close-out commit: mark delivered tasks complete and reference PR #289 (`51953da`) / PR #299 (`86edd44`) where appropriate.
+- CHANGELOG uses one consolidated CS64 bullet covering all five verbs rather than one bullet per subcommand; acceptable, but T10 can be marked complete with that rationale or split if desired.
+
+### Conclusion
+The implementation honors the CS64 plan, including the post-r2 idempotency fixes for `claim` and `close-out`; all deliverables are present, lint/tests are green, decisions are honored, and the deferred skill/review/release surfaces are recorded. The only remaining work is close-out documentation housekeeping in the active CS Tasks table, which is safe to handle in-band during the close-out commit and does not block GO.

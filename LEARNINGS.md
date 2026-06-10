@@ -100,6 +100,144 @@ plan-then-discover round-trip.
 
 ---
 
+### LRN-162
+
+```yaml
+id: LRN-162
+date: 2026-06-10
+category: anti-pattern
+source_cs: CS64
+status: open
+tags: [fs, error-handling, existsSync, ENOENT, idempotency, lib]
+claim_area: harness-cli
+```
+
+**Problem:** `fs.existsSync()` returns `false` not only when a path does
+not exist (`ENOENT`) but also on **any** other access error — `EACCES`,
+`EPERM`, `EISDIR` against a file-expected path, etc. Gating a subsequent
+`readFileSync` / `readdirSync` behind `existsSync` silently reclassifies
+unreadable-but-present files/dirs as "missing", and idempotency contracts
+that rely on the missing-vs-present distinction (e.g. `harness claim`'s
+"WORKBOARD has no Active Work row → safe to claim" branch) misfire by
+*masking* I/O errors that should surface and fail closed.
+
+**Finding:** Never `existsSync(path) → readFileSync(path)` (or
+`readdirSync`). Attempt the read directly and discriminate in `catch`:
+```js
+let data;
+try { data = readFileSync(p, 'utf8'); }
+catch (e) {
+  if (e && e.code === 'ENOENT') return { missing: true };
+  throw e;          // EACCES, EPERM, EISDIR, ... propagate
+}
+```
+Same shape for `readdirSync`:
+```js
+function readdirSafe(p) {
+  try { return readdirSync(p); }
+  catch (e) {
+    if (e && e.code === 'ENOENT') return [];
+    throw e;
+  }
+}
+```
+Caller's outer `try/catch` then converts any non-ENOENT error to a
+hard `cannot read <path>: <msg>` error rather than a false "missing"
+signal. CS64's post-r2 idempotency rewrites of `runClaimFromDisk` /
+`runCloseoutFromDisk` / `activeWorkRowExists` adopted this pattern at
+all four sites.
+
+**Evidence:** PR #299 (CS64 post-r2 idempotency fixes, 2026-06-10,
+squash merge `86edd44`).
+- Copilot R8 inline finding @ `ea15fd1`: "fs.existsSync() returns false
+  on access errors (including permission errors), so an unreadable
+  WORKBOARD can be misclassified as missingFile:true" — flagged at the
+  two `existsSync(WORKBOARD.md) → readFileSync` sites in
+  `lib/closeout.mjs:activeWorkRowExists` and
+  `lib/claim.mjs:runClaimFromDisk`. Fixed in `ecdea10` by replacing
+  with direct `readFileSync` + ENOENT discriminator.
+- Copilot R9 inline finding @ `ecdea10`: same antipattern on
+  `readdirSafe` (`existsSync(dir) → readdirSync(dir)`) at both sites
+  (`lib/claim.mjs` and `lib/closeout.mjs`). Fixed in `4fec8a6` by
+  rewriting `readdirSafe` to `try { readdirSync } catch (e) { if
+  e.code==='ENOENT' return []; throw e; }`; re-thrown errors caught
+  by the outer `find*` try/catch as `cannot read <dir>: <msg>`.
+- Round-2 regression tests use `mkdirSync(path.join(root, 'WORKBOARD.md'))`
+  to make the path exist as a directory, then `readFileSync` throws
+  `EISDIR` — cross-platform deterministic and preserved through the
+  ENOENT discriminator switch (EISDIR ≠ ENOENT).
+
+**Disposition:** Open — candidate work: write a `scripts/checks/check-existsSync-antipattern.mjs`
+linter that flags `existsSync(p) ... readFileSync(p) | readdirSync(p)`
+within the same function in `lib/**/*.mjs` and `scripts/**/*.mjs`,
+since the pattern is silently wrong in exactly the cases idempotency
+contracts care about. Already-adopted form in CS64 lib/claim.mjs /
+lib/closeout.mjs is the canonical reference. claim_area: harness-cli.
+
+---
+
+### LRN-163
+
+```yaml
+id: LRN-163
+date: 2026-06-10
+category: process
+source_cs: CS64
+status: open
+tags: [reviews, dual-reviewer, gpt-5.5, claude-sonnet, copilot, convergence, idempotency]
+claim_area: orchestrator
+```
+
+**Problem:** On content PRs that mutate harness mechanics with
+idempotency / error-classification contracts (e.g. CS64 PR #289 and the
+post-merge PVI fix PR #299), single-reviewer review-of-record loops
+miss substantive issues that a different model catches. Each reviewer
+model has a distinct blind spot: `gpt-5.5` rubber-duck reliably catches
+contract/JSDoc/typedef drift and plan-vs-implementation mismatches but
+under-weights fs/IO error semantics; `claude-sonnet` Copilot reliably
+catches IO/error-classification antipatterns and regex-metachar bugs
+in tests but under-weights typedef/contract drift; either reviewer
+alone declared "no further findings" at a HEAD where the other still
+had substantive blockers.
+
+**Finding:** For content PRs touching harness mechanics with
+idempotency / error-classification surfaces, alternate `gpt-5.5`
+rubber-duck rounds with `claude-sonnet` Copilot rounds and budget
+**4–10 cycles** of each before expecting both to converge. Don't
+shortcut to "Copilot found nothing once → merge" — frequently the
+previous rubber-duck round was the one that caught what Copilot
+missed. The orchestrator's heuristic is: re-engage the *other* model
+after every push, and only declare review-of-record complete when
+**both** independently return no-new-findings at the **same** HEAD.
+
+**Evidence:** PR #299 (CS64 post-r2, 2026-06-10, squash `86edd44`)
+spanned 11 gpt-5.5 rubber-duck rounds + 10 claude-sonnet Copilot
+rounds before convergence. Each model genuinely caught issues the
+other missed:
+- Copilot R1 caught schema-invalid CS64-T1 row form that gpt-5.5 R2
+  had explicitly recommended.
+- gpt-5.5 R8 caught a `runClaimFromDisk` JSDoc referencing
+  `ActiveListing` that did not yet exist as a `@typedef` in
+  `lib/claim.mjs` — Copilot had passed the same diff cleanly.
+- Copilot R8 caught the `existsSync`-masks-permission-errors
+  antipattern (see LRN-162) at two WORKBOARD-read sites; no
+  rubber-duck round across R1-R10 had flagged it.
+- Copilot R9 caught the same antipattern at `readdirSafe`, after
+  rubber-duck R10 had flagged it as a learning candidate but
+  declared the PR Go anyway.
+- Convergence finally landed at R11 (gpt-5.5 Go) + R10 (Copilot
+  No-Findings) at the same HEAD `4fec8a6`.
+
+**Disposition:** Open — candidate work: codify the
+"alternate-reviewer convergence" expectation in
+`REVIEWS.md § Review-of-record` for content PRs in `lib/`,
+specifically that "no-new-findings" from one model does not
+substitute for re-engaging the other; possibly thread the
+`harness review` orchestration to auto-alternate based on prior-round
+reviewer-model field. claim_area: orchestrator.
+
+---
+
 ### LRN-160
 
 ```yaml
