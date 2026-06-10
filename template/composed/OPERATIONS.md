@@ -307,7 +307,7 @@ Specifically:
 - **F5** cross-doc claims are mutually consistent;
 - **F6** every **state-of-the-world claim** (release/tag/PR/issue/label
   state, branch protection, ruleset config, etc.) is verified at
-  plan-review time via a non-mutating CLI probe — `gh release list --repo <owner>/<repo>`,
+  plan-review time via a non-mutating CLI probe — `gh release list --repo <owner>/<repo> --limit N`,
   `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
   (both published AND draft), `git ls-remote origin refs/tags/<tag>`,
   `gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
@@ -1242,7 +1242,7 @@ syncs); (F3) doctrine-strength claims match the cited source verbatim;
 (F4) LRN/CS scope summaries stay within the source entry's scope;
 (F5) cross-doc claims are mutually consistent; (F6) every
 state-of-the-world claim (release/tag/PR/issue/label state) is verified
-via a non-mutating CLI probe (`gh release list --repo <owner>/<repo>`,
+via a non-mutating CLI probe (`gh release list --repo <owner>/<repo> --limit N`,
 `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
 covering BOTH published and draft, `git ls-remote origin refs/tags/<tag>`,
 `gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
