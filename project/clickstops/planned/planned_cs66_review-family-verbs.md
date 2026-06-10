@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the review-family verbs cataloged in CS64's command/skill surface are spun out here because each is its own review-workflow design and bundling them would re-create the CS63 mega-PR risk.
-**Depends on:** **CS52** (the `harness review` content-PR orchestrator these extend) and **CS40** (`harness review-output` validation) — hard, they are the reuse base. `review-cs` also builds on `lib/plan-review-hash.mjs` + `scripts/check-clickstop-plan-review.mjs`. Independent of CS65; may claim after CS64's `harness review` reuse seams are understood.
+**Depends on:** **CS52** (the `harness review` content-PR orchestrator these extend) and **CS40** (`harness review-output` validation) — hard, they are the reuse base. `review-cs` also builds on `lib/plan-review-hash.mjs` + `scripts/check-clickstop-plan-review.mjs`. Independent of CS65; may claim after CS64's `harness review` reuse seams are understood. **CS64b** (hard, added 2026-06-10) — the review-family verbs allocate temp dirs / clones for diff inspection and need the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) before adopting them as a CONVENTIONS-required pattern.
 
 ## Goal
 
