@@ -1,9 +1,9 @@
 # CS69 — Enforce `### LRN-NNN` header presence in check-learnings.mjs (apply LRN-154)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs69/content
+**Started:** 2026-06-10
 **Closed:** —
 **Filed by:** CS61b close-out (2026-06-07 by `yoga-ah`). Applies **LRN-154** (`LEARNINGS.md` § LRN-154, status `open`), surfaced during CS61b when `LEARNINGS.md` entry LRN-106 shipped with valid frontmatter but no `### LRN-106` H3 header and `scripts/check-learnings.mjs` still reported 0 errors.
 **Depends on:** None hard. Pure linter/tooling CS on `scripts/check-learnings.mjs` + `tests/check-learnings.test.mjs` + fixtures. May claim independently. Coordinate only to avoid landing concurrently with a CS that restructures `LEARNINGS.md` entry parsing.
@@ -66,7 +66,28 @@ LRN-154 documents that `check-learnings.mjs` validates each entry's YAML frontma
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — Extend `scripts/check-learnings.mjs` with header-presence + header↔id-match rule per C69-1/C69-2 | pending | omni-ah-c2 | Mirror existing per-entry walk; honour `--file` / `--quiet` flags + exit-code contract |
+| T2 — Add valid fixture (header-present-matches) under `tests/fixtures/cs69/` | pending | omni-ah-c2 | Follow `tests/fixtures/cs05/` pattern |
+| T3 — Add invalid fixture (header-missing) | pending | omni-ah-c2 | Must exit 1 with precise message |
+| T4 — Add invalid fixture (header-present-but-mismatched) | pending | omni-ah-c2 | Distinct error message naming both ids |
+| T5 — Extend `tests/check-learnings.test.mjs` with ≥3 new fixture-based cases | pending | omni-ah-c2 | Use `os.tmpdir()` if any scratch space needed (LRN-094) |
+| T6 — Verify `node scripts/check-learnings.mjs --file LEARNINGS.md` exits 0 on real file | pending | omni-ah-c2 | Exit criterion 2 |
+| T7 — Flip `LEARNINGS.md` LRN-154 frontmatter `status: open` → `applied`; append Disposition with merge SHA | pending | omni-ah-c2 | At close-out (post-merge SHA needed) |
+| T8 — Add CHANGELOG `[Unreleased]` `### Added` (or `Changed`) bullet for the new linter rule | pending | omni-ah-c2 | Per LRN-101 distributed-surface CHANGELOG-touch convention |
+| T9 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c2 | Independence-invariant: reviewer ≠ implementer |
+| T10 — Open PR, dispatch PR-level R1 rubber-duck + `harness copilot-engage`, address review threads, merge | pending | omni-ah-c2 | Standard close-out flow |
+| T11 — Close-out docs/restart-state: rename `active_cs69_*.md` → `done_cs69_*.md`; update WORKBOARD + CONTEXT handoff; file any new LEARNINGS | pending | omni-ah-c2 | Per OPERATIONS.md § Close-out |
+| T12 — Close-out learnings sweep: scan execution for follow-ups; file as new LRN entries or follow-up planned CSs as warranted | pending | omni-ah-c2 | Per OPERATIONS.md § Close-out |
+
+## Model audit
+
+| Field | Value |
+| --- | --- |
+| Implementer agent | omni-ah-c2 |
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer agent | (TBD: PR-level rubber-duck) |
+| Reviewer model | gpt-5.5 |
+| Fallback rationale | n/a |
 
 ## Notes / Learnings
 
