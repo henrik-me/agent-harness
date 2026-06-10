@@ -64,7 +64,7 @@ verify the current state of both published AND draft releases.
 1. CS59 should document the audit-before-build precondition as a
    numbered step in OPERATIONS § Release process, with the three
    verification commands inline: `gh release list --limit N`,
-   `git ls-remote --tags origin <tag>`, and
+   `git ls-remote origin refs/tags/<tag>`, and
    `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="<tag>")'`
    (both published+draft).
 2. CS67's `harness release` verb should refuse to proceed when the
