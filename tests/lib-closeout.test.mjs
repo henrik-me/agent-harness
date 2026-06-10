@@ -849,3 +849,44 @@ test('activeWorkRowExists: detects row presence by CS-id prefix', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('activeWorkRowExists: CS64 does NOT match sibling CS64b row (R2 boundary fix)', () => {
+  // R2 reviewer (gpt-5.5): startsWith('CS64') would falsely match 'CS64b'.
+  // Exact id OR sub-task cell form `<id>-T<n>` is the right predicate.
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-boundary-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64b | verb reliability | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, false, 'CS64 must NOT match CS64b row');
+    assert.equal(activeWorkRowExists(wbPath, 'CS64b').exists, true, 'CS64b must match its own row');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('activeWorkRowExists: CS64 matches sub-task cell CS64-T1 (boundary-aware)', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'wb-subtask-'));
+  try {
+    const wb = [
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|---|---|---|---|---|---|---|',
+      '| CS64-T1 | sub-task | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, wb);
+    assert.equal(activeWorkRowExists(wbPath, 'CS64').exists, true, 'CS64 must match CS64-T1 sub-task cell');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -831,6 +831,39 @@ test('runClaimFromDisk: alreadyActive but WORKBOARD row missing → partial-stat
   }
 });
 
+test('runClaimFromDisk: alreadyActive CS64 with only sibling CS64b row → partial-state (R2 boundary)', () => {
+  // R2 reviewer (gpt-5.5): startsWith match would have incorrectly accepted
+  // a CS64b row as satisfying the CS64 consistency check. Exact-or-subtask
+  // boundary keeps CS64 and CS64b cleanly distinct.
+  const { root } = mkAlreadyActiveTree('CS64', 'lifecycle');
+  try {
+    const wbWrongRow = [
+      '# Work Board',
+      '',
+      '## Active Work',
+      '',
+      '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+      '|------------|-------|-------|-------|--------|--------------|----------------|',
+      '| CS64b | verb reliability | 🟢 Active | a | b | c | — |',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(root, 'WORKBOARD.md'), wbWrongRow);
+    const result = runClaimFromDisk({
+      cwd: root,
+      csId: 'CS64',
+      agentId: 'test-agent',
+      harnessBin: 'unused',
+      apply: false,
+      skipHarvest: true,
+    });
+    assert.equal(result.ok, false, `expected partial-state error; got ${JSON.stringify(result)}`);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /partial claim state/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('findActiveByCsId: directory form missing inner .md → malformed error (not silent accept)', () => {
   // R1 reviewer (gpt-5.5): directory-form idempotency must guard against
   // half-populated active_csNN_<slug>/ without its main markdown.
