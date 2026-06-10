@@ -1,9 +1,9 @@
 # CS64 — Lifecycle command/skill surface: extract & leverage harness verbs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs64/content
+**Started:** 2026-06-10
 **Closed:** —
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) as the deferred follow-up for decision **C63-8** (skills / procedure-locality), expanded per user direction to capture the **complete** lifecycle command/skill surface — not just `claim`/`close-out`. CS63 resolved the skills evaluation to "CLI-commands-first, runtime-skills-second" and shipped `harvest` as the first verb; CS64 catalogs the full surface, implements the foundational lifecycle verbs, and wires the process docs to invoke them at the right moment.
 **Depends on:** **CS63** (soft) — `claim`'s pre-claim step calls `lib/harvest.mjs` (C63-4) and `close-out`'s context check pairs with `scripts/check-closeout-freshness.mjs` (C63-5); CS64 coding may begin against injectable stubs, but the harvest/freshness wiring + those exit criteria are gated on the CS63 deliverables merging. The review-family + release verbs (C64-8) defer to **CS66**/**CS67**. **CS70** (soft, ships ahead) — establishes the v0.8.0 baseline so CS64 ships as v0.9.0 (per amended C64-11 / G-release).
@@ -125,7 +125,29 @@ The complete target surface. **Status:** EXISTS (shipped) · CS63 · **CS64** (t
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1: Implement `lib/startup.mjs` + `tests/lib-startup.test.mjs` (D2, C64-3) — read-only session-bootstrap verb running INSTRUCTIONS § Session Start sanity sequence (`git pull --ff-only` probe, clean-worktree check, `node --test`, `harness lint --quiet`, `sync --mode=check`); list in-flight planned/active CS files; print agent ID + HEAD SHA. Injectable git/fs seams; tests use `os.tmpdir()` only (R6 / LRN-094); never mutates. | pending | omni-ah | agent-id=cs64-startup \| role=implementer \| report-status=pending \| learnings=0 |
+| T2: Implement `lib/claim.mjs` + `tests/lib-claim.test.mjs` (D3, C64-4, C64-10) — workboard-claim-step mechanics with preflights (clean worktree, exactly-one `planned_cs<NN>_*` match, `main` up-to-date, deterministic slug, `cs<NN>/claim` branch absent), `lib/harvest` advisory wiring, branch create + WORKBOARD row + `git mv planned→active`; `--dry-run` preview; idempotent on already-active CS; never auto-commit; prints PR instructions. Injectable git/fs seams; R3 race-aware WORKBOARD re-read before write. | pending | omni-ah | agent-id=cs64-claim \| role=implementer \| report-status=pending \| learnings=0 |
+| T3: Implement `lib/closeout.mjs` + `tests/lib-closeout.test.mjs` (D4, C64-5, C64-10) — Phase 1 read-only PVI + branch + clean-worktree gates (fail-closed on absent/NEEDS-FIX PVI); Phase 2 `git mv active→done`, remove WORKBOARD row, prompt for CONTEXT/LEARNINGS updates; final freshness re-validation using CS63's `check-closeout-freshness` logic refusing PR-ready output until `CONTEXT.md` changed. `--dry-run` preview; idempotent; never auto-commit. Injectable freshness-check seam. | pending | omni-ah | agent-id=cs64-closeout \| role=implementer \| report-status=pending \| learnings=0 |
+| T4: Implement `lib/dispatch.mjs` + `tests/lib-dispatch.test.mjs` (D5, C64-6) — output-only emitter of canonical sub-agent briefing preamble (verbatim from OPERATIONS § Mandatory briefing preamble source) + required report shape, with slots for role / owned-files / required-reading. Mechanizes LRN-073 verbatim-paste discipline. No mutation. | pending | omni-ah | agent-id=cs64-dispatch \| role=implementer \| report-status=pending \| learnings=0 |
+| T5: Implement `lib/status.mjs` + `tests/lib-status.test.mjs` (D6, C64-7) — read-only resume/handoff snapshot: prints active CS, WORKBOARD Active Work rows, in-flight planned/active arc. Output-only; exits 0 in normal states. Injectable seams. | pending | omni-ah | agent-id=cs64-status \| role=implementer \| report-status=pending \| learnings=0 |
+| T6: Wire CLI in `bin/harness.mjs` (D7) — register `startup`, `claim`, `close-out`, `dispatch`, `status` in `COMMAND_REGISTRY` + `TOP_HELP` + `SUBCOMMAND_HELP`; forward `--help`; `requireValue()` for flag parsing (LRN-040); thin delegation only (C64-10). Depends on T1–T5. | pending | omni-ah | agent-id=cs64-cli \| role=implementer \| report-status=pending \| learnings=0 |
+| T7: Wire leverage refs in `INSTRUCTIONS.md` + `OPERATIONS.md` + `template/managed/INSTRUCTIONS.md` + `template/composed/OPERATIONS.md` (D8, C64-2) — Session Start references `harness startup` + `harness status`; Per-CS Loop steps name `harvest`/`claim`/`dispatch`/`review`/`close-out`/`status` at their lifecycle moments; OPERATIONS § Claim references the verbs as canonical executable path. Lockstep mirrors byte-equal. Reference, not duplicate (CS65 thins prose later). Depends on T6. | pending | omni-ah | agent-id=cs64-docs \| role=implementer \| report-status=pending \| learnings=0 |
+| T8: Produce runtime-skill spike + go/no-go proposal artifact (D9, C64-9) in this CS's `active_cs64_lifecycle-command-skill-surface/` directory — proposal MUST include a "Silent-skip mitigation" section (G-skill amendment 2026-06-09); absent mitigation defaults to no-go with the gap recorded. If go, include sample wrapper for at least `harness startup` and proposed doc↔skill bidirectional reference shape. Independent of T1–T7. | pending | omni-ah | agent-id=cs64-skill-spike \| role=implementer \| report-status=pending \| learnings=0 |
+| T9: File CS66 + CS67 stub plans (D10) — `planned_cs66_review-family-verbs.md` (review-doc/review-cs/perf-review/security-review per C64-8) and `planned_cs67_release-verb.md` (depends on CS59 release docs). Stubs only; brief plan-review per OPERATIONS § Filing. **Note:** stub files already exist on disk (`planned_cs66_review-family-verbs.md`, `planned_cs67_release-verb.md`) — verify content matches D10's intent and amend if needed rather than re-filing. | pending | omni-ah | agent-id=cs64-stubs \| role=implementer \| report-status=pending \| learnings=0 |
+| T10: `CHANGELOG.md` `[Unreleased]` entries (D11) — one bullet per new subcommand (`startup`, `claim`, `close-out`, `dispatch`, `status`); cite CS64 + C64-11 (minor bump → v0.9.0 per G-release). Depends on T6. | pending | omni-ah | agent-id=cs64-changelog \| role=implementer \| report-status=pending \| learnings=0 |
+| T11: Resolve G-skill gate per T8 outcome — record go/no-go in active CS file; if go, file follow-up CS for wrapper shipment; if no-go, record silent-skip mitigation gap as rationale. Depends on T8. | pending | omni-ah | agent-id=cs64-g-skill \| role=implementer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS64 row, bump banner); refresh `CONTEXT.md` (5 new verbs available + status command for resume); ensure managed/composed lockstep mirrors byte-equal; run `harness sync --mode=check` (no drift). | pending | omni-ah | agent-id=cs64-closeout-docs \| role=implementer \| report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups — file any new learnings in `LEARNINGS.md`; surface any extraction-time gaps as planned CS follow-ups; ensure CS66/CS67 stubs are filed (D10) and the v0.9.0 minor-bump trigger is noted for the next release-cut CS. | pending | omni-ah | agent-id=cs64-closeout-lrn \| role=implementer \| report-status=pending \| learnings=0 |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.7-1m-internal |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | Implementer + reviewer model independence per REVIEWS § 2.3 (`claude-opus-4.7-1m-internal` ≠ `gpt-5.5`). CS64 is NOT on the `reviews.high_risk_clickstops` list (CS03/CS11/CS15a/CS18b/CS19); fallback `claude-sonnet-4.6` is permitted if `gpt-5.5` unavailable. Sub-agent rows may add additional implementer model entries here as they dispatch. |
 
 ## Notes / Learnings
 
