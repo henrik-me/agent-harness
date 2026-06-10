@@ -421,6 +421,58 @@ test('applyCloseoutPlan: freshness gate ignores nested CONTEXT.md (template/seed
   assert.ok(applied.freshness.some((f) => /CONTEXT\.md was not modified/.test(f)));
 });
 
+// Regression: some `changedFiles()` producers (e.g. linters running against
+// an absolute working tree) emit absolute paths. The freshness gate must
+// normalize absolute entries to the same repo-relative form as the contextRel
+// derived from plan.workboardPath, otherwise an absolute root-CONTEXT.md
+// change is falsely rejected.
+test('applyCloseoutPlan: freshness gate accepts an absolute changedFiles entry for the root CONTEXT.md', () => {
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(false),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  const { runner } = fakeRunner(
+    {
+      changedFiles: () => [
+        'WORKBOARD.md',
+        P(ROOT, 'CONTEXT.md'),
+        'project/clickstops/done/done_cs64_my-slug.md',
+      ],
+    },
+    { [plan.sourcePath]: GOOD_PVI }
+  );
+  const applied = applyCloseoutPlan({ plan, runner });
+  assert.equal(applied.contextChanged, true);
+});
+
+// Companion: absolute path to a NESTED CONTEXT.md must still be rejected.
+test('applyCloseoutPlan: freshness gate rejects an absolute changedFiles entry for a nested CONTEXT.md', () => {
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(false),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  const { runner } = fakeRunner(
+    {
+      changedFiles: () => [
+        'WORKBOARD.md',
+        P(ROOT, 'template', 'seeded', 'CONTEXT.md'),
+        'project/clickstops/done/done_cs64_my-slug.md',
+      ],
+    },
+    { [plan.sourcePath]: GOOD_PVI }
+  );
+  const applied = applyCloseoutPlan({ plan, runner });
+  assert.equal(applied.contextChanged, false);
+});
+
 test('applyCloseoutPlan: idempotent — re-running after partial completion only does the remainder', () => {
   const { plan } = planCloseout({
     csId: 'CS64',
