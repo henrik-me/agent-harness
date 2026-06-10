@@ -41,7 +41,13 @@ test('slugIsValid: lower-kebab, no leading hyphens or uppercase', () => {
   assert.ok(slugIsValid('lifecycle-command-skill-surface'));
   assert.ok(slugIsValid('cs64'));
   assert.ok(slugIsValid('a'));
+  // dots are valid (real CS names embed semver segments, e.g.
+  // done_cs70_cut-v0.7.0-and-v0.8.0-releases). Rejecting dots would block
+  // `harness claim` from ever finding such planned CSs.
+  assert.ok(slugIsValid('cut-v0.7.0-and-v0.8.0-releases'));
+  assert.ok(slugIsValid('cut-harness-v0.2.0'));
   assert.ok(!slugIsValid('-leading-hyphen'));
+  assert.ok(!slugIsValid('.leading-dot'));
   assert.ok(!slugIsValid('UPPER'));
   assert.ok(!slugIsValid('snake_case'));
   assert.ok(!slugIsValid(''));
@@ -269,6 +275,41 @@ test('planClaim: blocked when another orchestrator already owns an Active row', 
   });
   assert.ok(!r.ok);
   assert.ok(r.errors.some((e) => /another CS is already Active/.test(e)));
+});
+
+// Regression: when the same orchestrator owns multiple WORKBOARD rows
+// (e.g. a non-Active row from a prior CS plus an in-progress Active row),
+// the ownership-conflict error must point at the *Active* row — not the
+// first matching row, which can be the wrong CS.
+test('planClaim: ownership-conflict error names the Active row, not any owned row', () => {
+  const wb = [
+    '# Work Board',
+    '',
+    '## Active Work',
+    '',
+    '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+    '|------------|-------|-------|-------|--------|--------------|----------------|',
+    '| CS60 | Older | 🟡 Blocked | omni-ah | cs60/content | 2026-06-09 | x |',
+    '| CS63 | Current | 🟢 Active | omni-ah | cs63/content | 2026-06-10 | — |',
+    '',
+    '## Other Section',
+    '',
+  ].join('\n');
+  const r = planClaim({
+    csId: 'CS64',
+    listing: fakeListing(),
+    workboardMd: wb,
+    workboardPath: '/p/WORKBOARD.md',
+    plannedDir: '/p/planned',
+    activeDir: '/p/active',
+    agentId: 'omni-ah',
+    title: 'X',
+    today: '2026-06-10',
+  });
+  assert.ok(!r.ok);
+  const msg = r.errors.join('\n');
+  assert.match(msg, /already owns an Active CS row in WORKBOARD \(CS63\)/);
+  assert.doesNotMatch(msg, /already owns an Active CS row in WORKBOARD \(CS60\)/);
 });
 
 test('planClaim: rejects invalid slug', () => {
