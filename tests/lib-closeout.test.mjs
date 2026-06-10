@@ -685,7 +685,7 @@ test('runCloseoutFromDisk: idempotent when CS already done (post-closeout-merge 
     assert.equal(result.alreadyClosedOut, true);
     assert.equal(result.doneListing.filename, filename);
     assert.match(result.message, /CS64 is already closed-out/);
-    assert.match(result.message, new RegExp(filename));
+    assert.ok(result.message.includes(filename));
     // Must NOT produce a preflight/plan/apply for the idempotent path.
     assert.equal(result.plan, undefined);
     assert.equal(result.preflight, undefined);
@@ -775,7 +775,7 @@ test('runCloseoutFromDisk: alreadyDone but WORKBOARD row remains → partial-sta
     assert.equal(result.ok, false);
     assert.equal(result.alreadyClosedOut, undefined);
     assert.ok(result.errors.some((e) => /partial close-out state/.test(e)));
-    assert.ok(result.errors.some((e) => new RegExp(filename).test(e)));
+    assert.ok(result.errors.some((e) => e.includes(filename)));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

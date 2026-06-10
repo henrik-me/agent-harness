@@ -735,7 +735,7 @@ test('runClaimFromDisk: idempotent when CS already active (post-claim-merge re-r
     assert.equal(result.alreadyClaimed, true);
     assert.equal(result.activeListing.filename, filename);
     assert.match(result.message, /CS64 is already claimed/);
-    assert.match(result.message, new RegExp(filename));
+    assert.ok(result.message.includes(filename));
     // Must NOT include a plan or apply result for the idempotent path.
     assert.equal(result.plan, undefined);
     assert.equal(result.apply, undefined);
