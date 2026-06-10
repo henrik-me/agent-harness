@@ -557,6 +557,33 @@ test('formatPreflightReport: passing run mentions --apply', () => {
   assert.match(out, /PVI: GO by gpt-5\.5/);
 });
 
+test('formatPreflightReport: apply:true says proceeding to Phase 2, not --apply', () => {
+  // Regression: previously always told the user to "Re-run with --apply" even
+  // in --apply mode, where Phase 2 is about to run unconditionally (Copilot
+  // R7 finding on PR #289).
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(false),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  const out = formatPreflightReport({
+    plan,
+    preflight: {
+      ok: true,
+      errors: [],
+      warnings: [],
+      pvi: { present: true, filled: true, reviewer: 'gpt-5.5', date: '2026-06-10', outcome: 'GO', issues: [] },
+    },
+    apply: true,
+  });
+  assert.match(out, /preflight checks passed/);
+  assert.match(out, /proceeding to Phase 2/);
+  assert.doesNotMatch(out, /Re-run with --apply/);
+});
+
 test('formatApplyReport: not-ready run lists freshness reason', () => {
   const { plan } = planCloseout({
     csId: 'CS64',

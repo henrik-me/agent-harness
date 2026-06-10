@@ -355,7 +355,7 @@ function extractPlanReviewTable(content) {
  * @param {string} filePath
  * @param {string} subdir
  */
-/**
+/*
  * CS file naming pattern: `<planned|active|done>_cs<digits>[suffix]_<slug>.md`.
  *
  * Sibling .md artifacts in directory-form CSs (e.g.
@@ -363,6 +363,10 @@ function extractPlanReviewTable(content) {
  * MUST NOT be plan-review linted — they are arbitrary research artifacts
  * scoped to the CS. The CS's main file (matching this pattern) carries the
  * canonical `## Plan review` attestation.
+ *
+ * Uses a regular block comment opener (not `/**`) so JSDoc-aware tooling
+ * does not mis-associate this commentary with the next symbol (`checkFile`),
+ * which already has its own docblock immediately above (Copilot R7 finding).
  */
 const CS_FILENAME_RE = /^(planned|active|done)_cs\d+[a-z]?_[a-z0-9][a-z0-9.-]*\.md$/;
 

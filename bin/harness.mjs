@@ -4028,7 +4028,7 @@ async function cmdCloseOut(args, global) {
   );
   const result = runCloseoutFromDisk({ cwd, csId, apply });
   if (result.preflight) {
-    process.stdout.write(formatPreflightReport({ plan: result.plan, preflight: result.preflight }));
+    process.stdout.write(formatPreflightReport({ plan: result.plan, preflight: result.preflight, apply }));
   } else if (result.errors && result.errors.length) {
     process.stderr.write(`harness close-out: ${result.errors.join('; ')}\n`);
     process.exit(1);
