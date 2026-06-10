@@ -19,7 +19,7 @@ tags: [test]
 
 **Disposition:** Applied — all good.
 
-### LRN-002 — descriptive trailing text is fine
+### LRN-002
 
 ```yaml
 id: LRN-002
@@ -32,4 +32,4 @@ tags: [test]
 
 **Problem:** Another test.
 
-**Disposition:** Applied — also fine; the header trailer after the LRN-NNN token does not affect matching.
+**Disposition:** Applied — also fine; the canonical bare-header form matches.

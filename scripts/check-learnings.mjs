@@ -289,43 +289,55 @@ for (const h of existingH2Headings) {
 //   inside a previous entry's body (prose or otherwise) cannot be
 //   misclassified as the current entry's header.
 //
-//   - Missing header (the nonblank line above the fence is not `### LRN-<n>`)
-//     → error "missing `### LRN-<n>` H3 header".
-//   - Present but numerically mismatched (e.g. `### LRN-105` precedes
-//     `id: LRN-106`) → distinct error naming both ids.
+//   The canonical header form is `### LRN-<digits>` with no trailing text
+//   after the digit token. This matches the actual LEARNINGS.md convention
+//   (every header is bare) and the assumption baked into
+//   `lib/doc-schema.mjs assertHeadings()` and other linters that resolve
+//   `LEARNINGS.md#lrn-<digits>` anchors by exact heading text. Headers
+//   with trailing descriptive text would break those anchors silently, so
+//   they are treated as missing.
+//
+//   Digit-string comparison (not parseInt): the frontmatter `id` is the
+//   canonical zero-padded form (e.g. `LRN-001`). A header `### LRN-1`
+//   that drops leading zeros is NOT a match — it would create a broken
+//   `#lrn-1` anchor instead of `#lrn-001`. So the captured header digits
+//   must equal `parsed.id.slice(4)` as an exact string match.
+//
+//   - Missing or non-canonical header → error "missing `### LRN-<n>` H3 header".
+//   - Present-but-mismatched digit string (e.g. `### LRN-105` precedes
+//     `id: LRN-106`, or `### LRN-1` precedes `id: LRN-001`) → distinct
+//     error naming both ids.
 // ---------------------------------------------------------------------------
 
 for (const block of validBlocks) {
   const { parsed, lineNumber } = block;
   if (!/^LRN-\d+$/.test(parsed.id ?? '')) continue;
 
-  const expectedNum = parseInt(parsed.id.slice(4), 10);
+  const expectedDigits = parsed.id.slice(4); // canonical zero-padded form
   const openIdx = lineNumber - 1; // convert to 0-indexed
 
   // Skip blank lines walking backwards from immediately above the fence.
   let k = openIdx - 1;
   while (k >= 0 && /^\s*$/.test(normalizedLines[k])) k--;
 
-  // The next nonblank line above the fence must be the H3 header.
-  // Match `### LRN-<n>` optionally followed by descriptive trailer text
-  // (e.g. `### LRN-001 — title`).
+  // The next nonblank line above the fence must be the canonical H3 header.
+  // Match `### LRN-<digits>` with NO trailing text — bare-header convention.
   const candidateLine = k >= 0 ? normalizedLines[k] : null;
   const h3Match = candidateLine
-    ? candidateLine.match(/^###\s+LRN-(\d+)(?:[\s—\-:.,].*)?\s*$/)
+    ? candidateLine.match(/^###\s+LRN-(\d+)\s*$/)
     : null;
 
   if (!h3Match) {
     logError(
-      `${parsed.id} (line ${lineNumber}): missing \`### LRN-${String(expectedNum).padStart(3, '0')}\` H3 header on the line immediately above the entry's YAML frontmatter block (LRN-154)`
+      `${parsed.id} (line ${lineNumber}): missing \`### ${parsed.id}\` H3 header on the line immediately above the entry's YAML frontmatter block (LRN-154)`
     );
     continue;
   }
 
-  const candidateHeaderNum = parseInt(h3Match[1], 10);
-  if (candidateHeaderNum !== expectedNum) {
-    const headerStr = `LRN-${String(candidateHeaderNum).padStart(3, '0')}`;
+  const candidateDigits = h3Match[1];
+  if (candidateDigits !== expectedDigits) {
     logError(
-      `${parsed.id} (line ${lineNumber}): H3 header "### ${headerStr}" (line ${k + 1}) does not match frontmatter id "${parsed.id}" (LRN-154)`
+      `${parsed.id} (line ${lineNumber}): H3 header "### LRN-${candidateDigits}" (line ${k + 1}) does not match frontmatter id "${parsed.id}" — digit strings differ (anchors must use the canonical zero-padded form, LRN-154)`
     );
   }
 }

@@ -408,7 +408,7 @@ describe('check-learnings linter', () => {
 
   // 21. CS69 / LRN-154 — `### LRN-X` line in prior entry's body must NOT be
   //   accepted as the next entry's header (strict adjacency rule).
-  //   Regression for R1 finding F1.
+  //   Regression for local R1 finding F1.
   it('21. invalid: prior-body `### LRN-X` does not shadow a headerless next entry', () => {
     const r = runLinter(['--file', cs69Fixture('invalid-header-shadowed-by-prior-body.md')]);
     assert.equal(
@@ -426,6 +426,41 @@ describe('check-learnings linter', () => {
     assert.ok(
       !/does not match/i.test(r.stdout),
       `Expected NO mismatch wording for the shadowed-prior-body case; got:\n${r.stdout}`
+    );
+  });
+
+  // 22. CS69 / LRN-154 — header with trailing descriptive text breaks canonical
+  //   form and is treated as missing (Copilot R1 F2 / F3 regression).
+  //   `### LRN-001 — title` doesn't match `assertHeadings()` exact-text
+  //   resolution that other linters use, so it must NOT be accepted.
+  it('22. invalid: header with trailing descriptive text is treated as missing', () => {
+    const r = runLinter(['--file', cs69Fixture('invalid-header-decorated-with-trailer.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 (decorated header breaks canonical anchor form); got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      /missing\s+`?### LRN-001`?/i.test(r.stdout),
+      `Expected "missing \`### LRN-001\` H3 header" error wording (decorated form rejected); got:\n${r.stdout}`
+    );
+  });
+
+  // 23. CS69 / LRN-154 — `### LRN-1` for `id: LRN-001` is a digit-string
+  //   mismatch (leading-zero canonicalization is required for anchor
+  //   stability). Copilot R1 F1 regression.
+  it('23. invalid: `### LRN-1` for `id: LRN-001` is a digit-string mismatch', () => {
+    const r = runLinter(['--file', cs69Fixture('invalid-header-leading-zero-mismatch.md')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 (digit-string mismatch); got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      /does not match/i.test(r.stdout),
+      `Expected "does not match" mismatch wording (not a missing-header error); got:\n${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('LRN-1') && r.stdout.includes('LRN-001'),
+      `Expected both "LRN-1" (header) and "LRN-001" (id) mentioned; got:\n${r.stdout}`
     );
   });
 });
