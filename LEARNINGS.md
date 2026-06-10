@@ -113,13 +113,21 @@ claim_area: harness-cli
 ```
 
 **Problem:** `fs.existsSync()` returns `false` not only when a path does
-not exist (`ENOENT`) but also on **any** other access error — `EACCES`,
-`EPERM`, `EISDIR` against a file-expected path, etc. Gating a subsequent
-`readFileSync` / `readdirSync` behind `existsSync` silently reclassifies
-unreadable-but-present files/dirs as "missing", and idempotency contracts
+not exist (`ENOENT`) but also on **access errors** the caller cannot
+distinguish from absence — `EACCES`, `EPERM`, etc. (`EISDIR` is a
+*read*-side error from `readFileSync` against a directory path, not
+something `existsSync` masks; `existsSync` returns `true` for both
+files and directories.) Gating a subsequent `readFileSync` /
+`readdirSync` behind `existsSync` silently reclassifies
+unreadable-but-present files as "missing", and idempotency contracts
 that rely on the missing-vs-present distinction (e.g. `harness claim`'s
 "WORKBOARD has no Active Work row → safe to claim" branch) misfire by
-*masking* I/O errors that should surface and fail closed.
+*masking* I/O errors that should surface and fail closed. The same
+read-then-discriminate-ENOENT pattern *also* correctly converts the
+adjacent "path exists as wrong type" failure (`EISDIR` from
+`readFileSync` against a directory path) into a hard error rather
+than the same false-missing classification existsSync produces, even
+though that case isn't strictly an existsSync-masking bug.
 
 **Finding:** Never `existsSync(path) → readFileSync(path)` (or
 `readdirSync`). Attempt the read directly and discriminate in `catch`:
