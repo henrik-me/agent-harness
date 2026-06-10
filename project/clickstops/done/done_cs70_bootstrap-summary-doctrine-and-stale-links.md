@@ -1,10 +1,10 @@
 # CS70 — Bootstrap-summary doctrine + stale-link cleanup
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c3
-**Branch:** cs70/bootstrap-summary-doctrine
+**Branch:** cs70/bootstrap-summary-doctrine (content, merged #303); workboard/cs70-close (close-out)
 **Started:** 2026-06-10
-**Closed:** —
+**Closed:** 2026-06-10
 **Filed by:** Investigation of [agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290) on 2026-06-10 by `omni-ah-c3` (claude-opus-4.7). The issue surfaced two coupled bugs from `henrik-me/sub-invaders#91`: (a) the orchestrator-authored `sub-invaders-bootstrap-summary.md` was dropped during CS16's directory-form close-out rename and now 404s from four CS files, and (b) cross-repo doctrine fired against the same filename in `sub-invaders` even though it has never existed there and is not produced by any harness contract.
 **Depends on:** None. May claim independently of CS64 (in flight) and the CS64b / CS65–CS68 planned queue. _(Filing-time note, rebased onto `main` `51953da`: since the authoring probe at `fa7a9fb`, CS69 has closed to `done/` and CS64b was filed; CS70 remains independent of all of them and collision-free. See the Background § filing-time refresh for the full delta.)_
 
@@ -114,15 +114,15 @@ State-of-the-world probes (per REVIEWS.md § 2.6c F6, recorded for the plan revi
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| D1: Restore `sub-invaders-bootstrap-summary.md` to `done_cs16_bootstrap-sub-invaders/` verbatim from `e2b233a` + Archive-note banner (C70-1). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D2/D3: Stale-reference fixes — Type-A repoints + Type-B parentheticals across `done_cs25`/`done_cs27`/`done_cs30`, `planned_cs26` (L103 carved out), `done_cs16` (L542 + L623) (C70-2/C70-4). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D4: Close-out doctrine bullet in `OPERATIONS.md § Claim` + `template/composed/OPERATIONS.md` mirror (C70-5). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D5: Cross-repo target-verification doctrine in `OPERATIONS.md` + composed mirror + INSTRUCTIONS cross-link (C70-7). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D6: Extend `scripts/check-clickstop.mjs` with dir-form orphan detection + `.harness-closeout-allow-drop` allow-list + ≥4 tests (C70-6/C70-6a). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D7: File LRN-A (process) + LRN-B (architectural) in `LEARNINGS.md` (C70-8). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| D8: `CHANGELOG.md` `[Unreleased]` entry summarising C70-1/C70-5/C70-6/C70-7. | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| Close-out: docs + restart state — rename `active_cs70_*` → `done_cs70_*`, remove the CS70 WORKBOARD row, refresh `CONTEXT.md` if codebase state changed, run `harness sync --mode=check` (no drift). | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
-| Close-out: learnings + follow-ups — confirm LRN-A / LRN-B filed in `LEARNINGS.md`; disposition issue #290 per Hard Rule C35-13; run `harness harvest` if the cadence triggers. | pending | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=pending \| learnings=0 |
+| D1: Restore `sub-invaders-bootstrap-summary.md` to `done_cs16_bootstrap-sub-invaders/` verbatim from `e2b233a` + Archive-note banner (C70-1). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| D2/D3: Stale-reference fixes — Type-A repoints + Type-B parentheticals across `done_cs25`/`done_cs27`/`done_cs30`, `planned_cs26` (L103 carved out), `done_cs16` (L542 + L623) (C70-2/C70-4). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| D4: Close-out doctrine bullet in `OPERATIONS.md § Claim` + `template/composed/OPERATIONS.md` mirror (C70-5). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| D5: Cross-repo target-verification doctrine in `OPERATIONS.md` + composed mirror + INSTRUCTIONS cross-link (C70-7). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| D6: Extend `scripts/check-clickstop.mjs` with dir-form orphan detection + `.harness-closeout-allow-drop` allow-list + ≥4 tests (C70-6/C70-6a). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| D7: File LRN-164 (process) + LRN-165 (architectural) in `LEARNINGS.md` (C70-8). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=2 |
+| D8: `CHANGELOG.md` `[Unreleased]` entry summarising C70-1/C70-5/C70-6/C70-7. | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| Close-out: docs + restart state — rename `active_cs70_*` → `done_cs70_*`, remove the CS70 WORKBOARD row, refresh `CONTEXT.md` if codebase state changed, run `harness sync --mode=check` (no drift). | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=0 |
+| Close-out: learnings + follow-ups — confirm LRN-164 / LRN-165 filed in `LEARNINGS.md`; disposition issue #290 per Hard Rule C35-13; run `harness harvest` if the cadence triggers. | done | omni-ah-c3 | agent-id=omni-ah-c3 \| role=orchestrator-implementer \| report-status=complete \| learnings=2 |
 
 ## Model audit
 
@@ -141,4 +141,19 @@ State-of-the-world probes (per REVIEWS.md § 2.6c F6, recorded for the plan revi
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, dispatched by orchestrator `omni-ah-c3`; independent of implementer `claude-opus-4.8` per REVIEWS § 2.3)
+**Date:** 2026-06-10 (UTC)
+**Reviewed at HEAD:** `a5031d5` (squash-merged content PR #303)
+**Outcome:** GO
+
+Per-deliverable verification (commands run against merged `main@a5031d5`):
+- **D1** PASS — restored summary byte-identical to `git show e2b233a:project/clickstops/active/active_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md` below the Archive-note banner; no BOM, LF only.
+- **D2** PASS — `git grep -nE "active_cs16_[^/]*/sub-invaders-bootstrap-summary" project/clickstops/` returns only the CS70 plan file; `planned_cs26` L103 carve-out intact (does not match the active-path regex); Type-A links repointed to the done-dir path, Type-B mentions carry the "(now archived at …)" parenthetical.
+- **D3** PASS — `done_cs16_bootstrap-sub-invaders.md` shows exactly 2 modified lines (L542 in-place repoint, L623 append-only); no deletions.
+- **D4** PASS — `OPERATIONS.md` + `template/composed/OPERATIONS.md` carry the directory-form close-out doctrine bullet in lockstep; `harness sync --mode=check` = no drift.
+- **D5** PASS — `OPERATIONS.md` + composed mirror carry the cross-repo target-existence pre-flight bullet; no `INSTRUCTIONS.md` restatement needed (it only points to OPERATIONS).
+- **D6** PASS — `scripts/check-clickstop.mjs` extended (no new sibling script, no `bin/` edit); 6 orphan tests pass incl. cases (a)–(d); `harness lint --quiet` 30/0/3; node-builtins only (no AJV/js-yaml).
+- **D8** PASS — `CHANGELOG.md` `[Unreleased]` covers C70-1/C70-5/C70-6/C70-7.
+- **Scope** OK — no changes under `lib/`, `schemas/`, `bin/`, `template/seeded/`.
+
+**Findings:** none. D7 (LRN-164 process + LRN-165 architectural) and D9 (#290 disposition) are close-out actions completed in this close-out PR.
