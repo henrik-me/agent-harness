@@ -120,6 +120,11 @@ Subcommands:
                     Decisions+Deliverables (used to fill plan review rows)
   cross-repo        Issue-only handoff helpers for non-harness repos
                     (CS56 — supports only 'open-issue'; no 'open-pr' action)
+  startup           Session-start sanity check + in-flight CS listing (CS64)
+  status            Compact resume/handoff snapshot (read-only; CS64)
+  claim             Claim a planned CS — preflight + harvest + plan (CS64)
+  close-out         Two-phase close-out (preflight + apply; CS64)
+  dispatch          Emit the canonical sub-agent briefing preamble (CS64)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -591,6 +596,119 @@ Exit codes:
   1  operation failure (gh missing, gh failed, parse failure, body-file missing,
      label preflight could not provision a label)
   2  usage error (bad/missing flags, unknown action, self-loop repo)
+`.trimStart(),
+
+  startup: `
+Usage: harness startup [options]
+
+Session-start sanity check + in-flight CS listing (CS64 C64-3). Read-only.
+Mechanizes the INSTRUCTIONS.md § Session Start ritual. Exit code is binary:
+non-zero ONLY on a genuinely broken tree (tests, lint, or sync drift).
+Advisory failures (dirty worktree, pull-blocked) print as ⚠ but exit 0.
+
+Checks (in order):
+  1. git fast-forward probe (opt-in via --pull-ff-only)              advisory
+  2. clean-worktree check                                            advisory
+  3. node --test tests/*.test.mjs                                    broken
+  4. harness lint --quiet                                            broken
+  5. harness sync --mode=check                                       broken
+
+Options:
+  --pull-ff-only   Also run 'git pull --ff-only origin main' first (advisory)
+  --cwd <path>     Consumer repo path (default: cwd)
+  --help           Print this help
+`.trimStart(),
+
+  status: `
+Usage: harness status [options]
+
+Compact resume/handoff snapshot (CS64 C64-7). Read-only; never spawns git,
+never touches the network. Lists the WORKBOARD ## Active Work rows plus
+planned/active CS file inventories.
+
+Options:
+  --cwd <path>   Consumer repo path (default: cwd)
+  --help         Print this help
+`.trimStart(),
+
+  claim: `
+Usage: harness claim <CS-ID> [options]
+
+Claim a planned CS — preflight + harvest gate + plan (CS64 C64-4). Dry-run
+by default; --apply executes the rename + WORKBOARD edit. NEVER commits
+and NEVER pushes (LRN-073 + C64-4: claim mechanics own filesystem state;
+the orchestrator owns the commit message and the PR).
+
+Preflights:
+  - Worktree must be clean.
+  - Branch cs<NN>/claim must not already exist.
+  - Exactly one matching planned_cs<NN>_*.md (or directory form).
+  - No other CS is Active in WORKBOARD (one-CS-at-a-time rule).
+  - 'harness harvest --claim-area cs<NN>' must pass (unless --skip-harvest).
+
+On --apply: cuts cs<NN>/claim branch, git mv planned→active, edits
+WORKBOARD.md Active Work row. R3 race-aware (re-reads WORKBOARD just
+before write to preserve a sibling clone's intervening edit).
+
+Options:
+  --apply              Execute the plan (default is dry-run)
+  --skip-harvest       Skip the pre-claim harvest gate (escape hatch for re-runs)
+  --agent-id <id>      Override the derived agent ID (default: 'harness whoami')
+  --cwd <path>         Consumer repo path (default: cwd)
+  --help               Print this help
+
+Exit codes:
+  0  preflight pass + plan composed (or --apply succeeded)
+  1  preflight failure / apply failure
+  2  usage error
+`.trimStart(),
+
+  'close-out': `
+Usage: harness close-out <CS-ID> [options]
+
+Two-phase close-out mechanics (CS64 C64-5). Phase 1 is read-only and
+fail-closed. Phase 2 mutates only on --apply. NEVER commits, NEVER pushes.
+
+Phase 1 (preflight, read-only):
+  - Current branch must be cs<NN>/close-out.
+  - Worktree must be clean.
+  - Active CS file must carry a populated ## Plan-vs-implementation review
+    section: **Reviewer:**, **Date:**, **Outcome:** GO. NEEDS-FIX / BLOCK
+    / unfilled placeholder / missing fields → refuse.
+
+Phase 2 (--apply only):
+  - git mv active/<file> done/<file>  (flat OR directory form).
+  - Remove CS row from WORKBOARD ## Active Work; restore em-dash
+    placeholder if table empties. R3 race-aware.
+  - Detect whether CONTEXT.md was changed in this branch's diff vs main;
+    if not, refuse to mark the close-out PR-ready (freshness gate).
+
+Options:
+  --apply         Execute Phase 2 (default is preflight-only)
+  --cwd <path>    Consumer repo path (default: cwd)
+  --help          Print this help
+
+Exit codes:
+  0  preflight pass (or --apply produced a PR-ready close-out)
+  1  preflight failure / apply failure / freshness gate failure
+  2  usage error
+`.trimStart(),
+
+  dispatch: `
+Usage: harness dispatch [options]
+
+Emit the canonical sub-agent briefing preamble (CS64 C64-6). Surfaces the
+verbatim block from OPERATIONS.md § Mandatory briefing preamble so the
+orchestrator can paste it into every sub-agent prompt without copy/paste
+drift (LRN-068 / Hard Rule § 5). Pure stdout — no IO side effects.
+
+Options:
+  --task-file <path>    Read the task description from a YAML/JSON file and
+                        render the per-task sections (owned files, deliverables,
+                        report shape) below the preamble.
+  --no-fence            Omit the surrounding triple-backtick text fence in the output.
+  --cwd <path>          Consumer repo path (default: cwd)
+  --help                Print this help
 `.trimStart(),
 };
 
@@ -3673,6 +3791,51 @@ async function cmdCrossRepo(args, global) {
 // Subcommand: whoami
 // ---------------------------------------------------------------------------
 
+/**
+ * Derive the agent ID for the current machine + config + cwd. Returns
+ * `{ agentId, machineShort, agentSuffix, cloneSuffix, hostname, agentEnvVarName, envVarValue, machineShortDerived }`
+ * or throws if the config is missing or has no project.agent_suffix.
+ * Extracted from cmdWhoami so CS64 verbs (claim/status/startup) can reuse
+ * the same derivation logic without re-implementing it.
+ */
+function deriveAgentId({ cwd, configOverride = null }) {
+  if (configOverride !== null) {
+    if (!existsSync(configOverride)) {
+      throw new Error(`--config path does not exist: ${configOverride}`);
+    }
+    const s = statSync(configOverride);
+    if (!s.isFile()) {
+      throw new Error(`--config must be a file: ${configOverride}`);
+    }
+  }
+  const cfg = loadConfig(cwd, configOverride);
+  const agentSuffix = cfg?.project?.agent_suffix ?? null;
+  if (!agentSuffix) {
+    throw new Error(
+      'cannot resolve agent ID — missing harness.config.json or project.agent_suffix'
+    );
+  }
+  const agentEnvVarName =
+    cfg?.project?.agent_env_var ?? `HARNESS_AGENT_${agentSuffix.toUpperCase()}_MACHINE`;
+  const hostname = os.hostname();
+  const machineShortDerived = machineShortFromHostname(hostname);
+  const envVarValue = process.env[agentEnvVarName] ?? null;
+  const machineShort = envVarValue ?? machineShortDerived;
+  const cloneSuffix = cloneSuffixFromDir(cwd);
+  let agentId = `${machineShort}-${agentSuffix}`;
+  if (cloneSuffix) agentId += `-${cloneSuffix}`;
+  return {
+    agentId,
+    machineShort,
+    agentSuffix,
+    cloneSuffix,
+    hostname,
+    agentEnvVarName,
+    envVarValue,
+    machineShortDerived,
+  };
+}
+
 async function cmdWhoami(args, global) {
   const { cwd, config: configOverride } = global;
 
@@ -3689,54 +3852,235 @@ async function cmdWhoami(args, global) {
     }
   }
 
-  // Validate --config path if explicitly provided
-  if (configOverride !== null) {
-    if (!existsSync(configOverride)) {
-      die(`--config path does not exist: ${configOverride}`, 2);
-    }
-    const s = statSync(configOverride);
-    if (!s.isFile()) {
-      die(`--config must be a file: ${configOverride}`, 2);
-    }
+  let derived;
+  try {
+    derived = deriveAgentId({ cwd, configOverride });
+  } catch (e) {
+    die(`harness whoami: ${e.message}`, 2);
   }
-
-  // Load config for agent_suffix
-  const cfg = loadConfig(cwd, configOverride);
-  const agentSuffix = cfg?.project?.agent_suffix ?? null;
-
-  if (!agentSuffix) {
-    die('harness whoami: cannot resolve agent ID — missing harness.config.json or project.agent_suffix', 2);
-  }
-
-  const agentEnvVarName = cfg?.project?.agent_env_var
-    ?? `HARNESS_AGENT_${agentSuffix.toUpperCase()}_MACHINE`;
-
-  // Derive machine-short
-  const hostname = os.hostname();
-  const machineShortDerived = machineShortFromHostname(hostname);
-  const envVarValue = process.env[agentEnvVarName] ?? null;
-  const machineShort = envVarValue ?? machineShortDerived;
-
-  // Derive clone index from consumer cwd (Decision #20)
-  const cloneSuffix = cloneSuffixFromDir(cwd);
-
-  // Build agent ID
-  let agentId = `${machineShort}-${agentSuffix}`;
-  if (cloneSuffix) agentId += `-${cloneSuffix}`;
 
   if (explain) {
-    process.stdout.write(`hostname:       ${hostname}\n`);
-    process.stdout.write(`machine-short:  ${machineShortDerived} (derived from hostname)\n`);
-    process.stdout.write(`env-var-name:   ${agentEnvVarName}\n`);
-    process.stdout.write(`env-var-value:  ${envVarValue ?? '(not set)'}\n`);
-    process.stdout.write(`effective-machine-short: ${machineShort}\n`);
-    process.stdout.write(`config-suffix:  ${agentSuffix}\n`);
+    process.stdout.write(`hostname:       ${derived.hostname}\n`);
+    process.stdout.write(`machine-short:  ${derived.machineShortDerived} (derived from hostname)\n`);
+    process.stdout.write(`env-var-name:   ${derived.agentEnvVarName}\n`);
+    process.stdout.write(`env-var-value:  ${derived.envVarValue ?? '(not set)'}\n`);
+    process.stdout.write(`effective-machine-short: ${derived.machineShort}\n`);
+    process.stdout.write(`config-suffix:  ${derived.agentSuffix}\n`);
     process.stdout.write(`consumer-cwd:   ${cwd}\n`);
-    process.stdout.write(`clone-suffix:   ${cloneSuffix ?? '(none)'}\n`);
-    process.stdout.write(`agent-id:       ${agentId}\n`);
+    process.stdout.write(`clone-suffix:   ${derived.cloneSuffix ?? '(none)'}\n`);
+    process.stdout.write(`agent-id:       ${derived.agentId}\n`);
   } else {
-    process.stdout.write(`${agentId}\n`);
+    process.stdout.write(`${derived.agentId}\n`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Subcommands: startup / status / claim / close-out / dispatch (CS64)
+// ---------------------------------------------------------------------------
+
+function flagValue(args, i, flag) {
+  if (!args[i + 1] || args[i + 1].startsWith('-')) {
+    die(`harness: missing value for ${flag}`, 2);
+  }
+  return args[i + 1];
+}
+
+async function cmdStartup(args, global) {
+  let pullFfOnly = false;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['startup']);
+      process.exit(0);
+    } else if (a === '--pull-ff-only') {
+      pullFfOnly = true;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['startup']}`, 2);
+    }
+  }
+  const cwd = global?.cwd || process.cwd();
+  let agentId = 'unknown';
+  try {
+    agentId = deriveAgentId({ cwd, configOverride: global?.config }).agentId;
+  } catch {
+    // Startup runs without a harness.config.json (e.g. fresh checkout) —
+    // surface the ID as 'unknown' rather than refusing the bootstrap report.
+  }
+  const { runStartupFromDisk, formatStartupReport } = await import('../lib/startup.mjs');
+  const result = runStartupFromDisk({
+    cwd,
+    harnessBin: __filename,
+    agentId,
+    opts: { pullFfOnly },
+  });
+  process.stdout.write(formatStartupReport(result));
+  process.exit(result.exitCode);
+}
+
+async function cmdStatus(args, global) {
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['status']);
+      process.exit(0);
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['status']}`, 2);
+    }
+  }
+  const cwd = global?.cwd || process.cwd();
+  let agentId = 'unknown';
+  try {
+    agentId = deriveAgentId({ cwd, configOverride: global?.config }).agentId;
+  } catch {
+    // status is read-only and informational; no agent ID is acceptable.
+  }
+  const { getStatusSnapshotFromDisk, formatStatusReport } = await import('../lib/status.mjs');
+  const snapshot = getStatusSnapshotFromDisk({ cwd, agentId });
+  process.stdout.write(formatStatusReport(snapshot));
+  process.exit(0);
+}
+
+async function cmdClaim(args, global) {
+  let csId = null;
+  let apply = false;
+  let skipHarvest = false;
+  let agentIdOverride = null;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['claim']);
+      process.exit(0);
+    } else if (a === '--apply') {
+      apply = true;
+    } else if (a === '--skip-harvest') {
+      skipHarvest = true;
+    } else if (a === '--agent-id') {
+      agentIdOverride = flagValue(args, i, '--agent-id');
+      i++;
+    } else if (a.startsWith('--agent-id=')) {
+      agentIdOverride = a.slice('--agent-id='.length);
+    } else if (!a.startsWith('-') && !csId) {
+      csId = a;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['claim']}`, 2);
+    }
+  }
+  if (!csId) {
+    die(`harness claim: missing CS-ID argument\n\n${SUBCOMMAND_HELP['claim']}`, 2);
+  }
+  const cwd = global?.cwd || process.cwd();
+  let agentId = agentIdOverride;
+  if (!agentId) {
+    try {
+      agentId = deriveAgentId({ cwd, configOverride: global?.config }).agentId;
+    } catch (e) {
+      die(`harness claim: ${e.message} — pass --agent-id to override`, 2);
+    }
+  }
+  const { runClaimFromDisk, formatClaimPlan } = await import('../lib/claim.mjs');
+  const result = runClaimFromDisk({
+    cwd,
+    csId,
+    agentId,
+    harnessBin: __filename,
+    apply,
+    skipHarvest,
+  });
+  if (!result.ok) {
+    process.stderr.write(`harness claim: preflight failed\n`);
+    for (const err of result.errors || []) process.stderr.write(`  ✖ ${err}\n`);
+    if (result.harvest && !result.harvest.ok) {
+      process.stderr.write('\nharvest output:\n');
+      process.stderr.write(result.harvest.output);
+    }
+    process.exit(1);
+  }
+  if (result.plan) process.stdout.write(formatClaimPlan(result.plan));
+  if (result.apply) {
+    process.stdout.write('\nApplied:\n');
+    for (const a of result.apply.actions) process.stdout.write(`  ✓ ${a}\n`);
+    for (const s of result.apply.skipped) process.stdout.write(`  – ${s}\n`);
+  }
+  process.exit(0);
+}
+
+async function cmdCloseOut(args, global) {
+  let csId = null;
+  let apply = false;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['close-out']);
+      process.exit(0);
+    } else if (a === '--apply') {
+      apply = true;
+    } else if (!a.startsWith('-') && !csId) {
+      csId = a;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['close-out']}`, 2);
+    }
+  }
+  if (!csId) {
+    die(`harness close-out: missing CS-ID argument\n\n${SUBCOMMAND_HELP['close-out']}`, 2);
+  }
+  const cwd = global?.cwd || process.cwd();
+  const { runCloseoutFromDisk, formatPreflightReport, formatApplyReport } = await import(
+    '../lib/closeout.mjs'
+  );
+  const result = runCloseoutFromDisk({ cwd, csId, apply });
+  if (result.preflight) {
+    process.stdout.write(formatPreflightReport({ plan: result.plan, preflight: result.preflight }));
+  } else if (result.errors && result.errors.length) {
+    process.stderr.write(`harness close-out: ${result.errors.join('; ')}\n`);
+    process.exit(1);
+  }
+  if (result.apply) {
+    process.stdout.write(formatApplyReport({ plan: result.plan, applied: result.apply }));
+  }
+  if (!result.ok) process.exit(1);
+  process.exit(0);
+}
+
+async function cmdDispatch(args, global) {
+  let taskFile = null;
+  let includeFence = true;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['dispatch']);
+      process.exit(0);
+    } else if (a === '--task-file') {
+      taskFile = flagValue(args, i, '--task-file');
+      i++;
+    } else if (a.startsWith('--task-file=')) {
+      taskFile = a.slice('--task-file='.length);
+    } else if (a === '--no-fence') {
+      includeFence = false;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['dispatch']}`, 2);
+    }
+  }
+  const cwd = global?.cwd || process.cwd();
+  const operationsPath = path.join(cwd, 'OPERATIONS.md');
+  if (!existsSync(operationsPath)) {
+    die(`harness dispatch: OPERATIONS.md not found at ${operationsPath}`, 1);
+  }
+  let task = null;
+  if (taskFile) {
+    const txt = readFileSync(path.resolve(taskFile), 'utf8');
+    try {
+      task = JSON.parse(txt);
+    } catch {
+      die(
+        `harness dispatch: --task-file must be valid JSON (YAML support deferred; use a JSON file for now)`,
+        2
+      );
+    }
+  }
+  const { emitBriefingFromFile } = await import('../lib/dispatch.mjs');
+  const out = emitBriefingFromFile({ operationsPath, task, includeFence });
+  process.stdout.write(out);
+  if (!out.endsWith('\n')) process.stdout.write('\n');
+  process.exit(0);
 }
 
 // ---------------------------------------------------------------------------
@@ -3768,6 +4112,11 @@ export const COMMAND_REGISTRY = {
   review: cmdReview,
   'copilot-engage': cmdCopilotEngage,
   'plan-review-hash': cmdPlanReviewHash,
+  startup: cmdStartup,
+  status: cmdStatus,
+  claim: cmdClaim,
+  'close-out': cmdCloseOut,
+  dispatch: cmdDispatch,
   version: cmdVersion,
   whoami: cmdWhoami,
 };

@@ -232,6 +232,29 @@ const SUBCOMMAND_PLAN = {
     skip: 'Clones the harness at a target ref + runs a dry-run sync to preview an upgrade; ' +
       'network-dependent and performs no HEAD-moving git operation in this repo (lib/upgrade.mjs).',
   },
+  startup: {
+    skip: 'CS64 read-only bootstrap report; spawns child `node --test` + `harness lint` + ' +
+      '`harness sync --mode=check` for diagnostics (heavy/slow). Performs no HEAD-moving git op ' +
+      'in this repo — opt-in `--pull-ff-only` is the only git mutation, advisory-only (lib/startup.mjs).',
+  },
+  status: {
+    skip: 'CS64 read-only snapshot of WORKBOARD + planned/active CS files; spawns no processes ' +
+      'and performs no git operations at all (lib/status.mjs).',
+  },
+  claim: {
+    skip: 'CS64 claim mechanics; dry-run by default. Without `--apply` only reads filesystem + ' +
+      '`git status` / `git rev-parse`. `--apply` cuts a branch + `git mv` but never commits/pushes; ' +
+      'exercising it would need a fresh consumer clone with a planned CS fixture (lib/claim.mjs).',
+  },
+  'close-out': {
+    skip: 'CS64 two-phase close-out; preflight-only by default (read-only git branch/status + ' +
+      'file read). `--apply` runs `git mv` + diff but never commits/pushes; exercising it would ' +
+      'need a fresh consumer clone with an active CS + GO PVI fixture (lib/closeout.mjs).',
+  },
+  dispatch: {
+    skip: 'CS64 stdout-only preamble emitter; reads OPERATIONS.md and prints the canonical ' +
+      'briefing block. No git operations and no filesystem writes (lib/dispatch.mjs).',
+  },
 };
 
 function git(cwd, args, env) {
