@@ -349,6 +349,28 @@ describe('scripts/check-clickstop-plan-review.mjs', () => {
     assert.match(r.stdout, /skipped|workboard-only/);
   });
 
+  it('sibling artifacts in directory-form CSs (non-CS-named .md) are silently skipped (CS64)', () => {
+    clearScratch();
+    // Real CS plan file — has the required ## Plan review section.
+    writeFile('active', 'active_cs64_test-slug.md',
+      compose({}, [['R1', 'gpt-5.5', 'claude-opus-4.7', 'agent-x', 'AUTOHASH', '2026-05-13T00:00:00Z', 'Go', 'clean review']])
+    );
+    // Sibling artifact whose basename does NOT match the CS naming pattern.
+    // Before CS64 the linter would error on it for missing ## Plan review;
+    // CS_FILENAME_RE now skips it as an arbitrary directory-form artifact.
+    fs.writeFileSync(
+      path.join(scratch, 'active', 'runtime-skill-spike.md'),
+      '# Spike — runtime skill wrappers\n\nNot a CS plan. No ## Plan review here.\n',
+      'utf8',
+    );
+    const r = runLinter(scratch, ['--strict', 'true']);
+    assert.equal(
+      r.status,
+      0,
+      `expected pass — runtime-skill-spike.md should be skipped as a sibling artifact; stdout=\n${r.stdout}`,
+    );
+  });
+
   it('bot-author skip reason does NOT skip pr-evidence mode (still strict)', () => {
     clearScratch();
     fs.writeFileSync(path.join(scratch, 'planned', 'planned_cs99_no_section.md'), planBody(), 'utf8');

@@ -120,6 +120,7 @@ The complete target surface. **Status:** EXISTS (shipped) · CS63 · **CS64** (t
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | f267c30c28d2 | 2026-06-06T23:34:30Z | Go-with-amendments | Catalog labels + claim/close-out three-PR shape verified (OPERATIONS:21-68); applied C64-5 two-phase close-out (PVI pre-gate; freshness validates staged diff). Chain acyclic. |
 | R2 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah) | 31b4c4298ba6 | 2026-06-09T17:00:00Z | Go-with-amendments | Hash fresh; G-status/G-skill amendments coherent; no R1 regression. Amend C64-10 status module list and tighten LRN-068→LRN-073/tmpdir citations. |
 | R3 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah) | bf7dc0c2e6db | 2026-06-09T17:15:02Z | Go | All R2 amendments folded cleanly (status module list; LRN-073 verbatim-paste citation; LRN-094 tmpdir constraint). No new blocking findings. Plan ready to file. |
+| R4 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah) | defc6997f807 | 2026-06-10T14:22:39Z | Go | Re-attestation after mid-CS Decisions cleanup: stale `OPERATIONS.md:21-68` → stable `OPERATIONS.md § Claim — Three-PR shape` anchor in two cells. No decision/deliverable drift. |
 
 ## Tasks
 

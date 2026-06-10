@@ -355,9 +355,26 @@ function extractPlanReviewTable(content) {
  * @param {string} filePath
  * @param {string} subdir
  */
+/**
+ * CS file naming pattern: `<planned|active|done>_cs<digits>[suffix]_<slug>.md`.
+ *
+ * Sibling .md artifacts in directory-form CSs (e.g.
+ * `active_cs64_<slug>/runtime-skill-spike.md`) are NOT CS planning files and
+ * MUST NOT be plan-review linted — they are arbitrary research artifacts
+ * scoped to the CS. The CS's main file (matching this pattern) carries the
+ * canonical `## Plan review` attestation.
+ */
+const CS_FILENAME_RE = /^(planned|active|done)_cs\d+[a-z]?_[a-z0-9][a-z0-9_-]*\.md$/;
+
 function checkFile(filePath, subdir) {
   const basename = path.basename(filePath);
   const label = `${subdir}/${basename}`;
+
+  // Skip sibling artifacts in directory-form CSs (CS64+). Only files whose
+  // basename matches the canonical CS naming pattern carry plan-review state.
+  if (!CS_FILENAME_RE.test(basename)) {
+    return;
+  }
 
   let raw;
   try {
