@@ -6,7 +6,7 @@
 **Started:** —
 **Closed:** —
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the `release` verb cataloged in CS64's command/skill surface is spun out here because it depends on the release-process documentation that CS59 produces.
-**Depends on:** **CS59** (hard) — `harness release` mechanizes the procedure CS59 documents as `OPERATIONS.md § Release process`; that section is the spec. Also reuses `lib/cross-repo.mjs` (CS56) for consumer notification. Do not claim before CS59 closes.
+**Depends on:** **CS59** (hard) — `harness release` mechanizes the procedure CS59 documents as `OPERATIONS.md § Release process`; that section is the spec. Also reuses `lib/cross-repo.mjs` (CS56) for consumer notification. Do not claim before CS59 closes. **CS64b** (hard, added 2026-06-10) — `harness release` allocates a temp clone for tag/release SHA verification and consumer-notification staging; it must adopt the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) from the outset rather than retrofit them. C64b-3's `harness sync` new-managed-file reconciliation is also referenced by the consumer-notification path.
 
 ## Goal
 

@@ -224,7 +224,7 @@ string-path-never-deleted (provenance), and leading-dash-ref rejected.
 seams (fetchers, temp workspaces, clones). Candidate to fold into a
 CONVENTIONS/REVIEWS note when CS64 adds more lifecycle verbs that fetch/clone.
 
-**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS64 is now active** (`omni-ah`, branch `cs64/content`) and implements the foundational lifecycle verbs (`startup`, `claim`, `close-out`, `dispatch`, `status`). Any of those that allocate a temp dir / clone must apply the `{path, cleanup}` disposer pattern + leading-dash ref rejection from this LRN. Recommended: surface to the CS64 orchestrator; promote the rule to a CONVENTIONS/REVIEWS note at CS64 close-out.
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-2 explicitly adopts this LRN's `{path, cleanup}` disposer pattern + `assertSafeRef` leading-dash ref rejection as a shared helper (`lib/disposers.mjs` or extension of `lib/git-util.mjs`) plus an audit retrofitting every `lib/*.mjs` verb that allocates a temp dir / clone (incl. the CS64 verbs once that PR lands). Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this — CS64b is the dedicated post-CS64 hardening home.
 
 ### LRN-156
 
@@ -268,7 +268,7 @@ claim_area: sync-engine
 
 **Disposition:** Open — folds into CS63c (guided update) / CS64 (lifecycle commands). Add a sync-time new-managed-file reconciliation (or guided-upgrade proposal), then update the `pr_check` schema/doc adoption note.
 
-**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS63c closed** (PR #270) without absorbing the reconciliation. **CS64 is now active** (`omni-ah`, branch `cs64/content`) — its `harness upgrade`-adjacent flow is the natural home for a sync-time new-managed-file reconciliation (or guided proposal). Recommended: surface to the CS64 orchestrator for inclusion in scope; if out-of-scope for CS64, file a small follow-up planned CS. Update the `pr_check` schema/doc adoption note at whichever ships first.
+**Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-3 adopts this LRN as the sync-time new-managed-file reconciliation: extend `harness sync --mode=check` (and the default sync path) to surface every file present in `template/managed/` but absent from the consumer's tree; `--apply-new` adopts with per-file confirmation. The `pr_check` schema/doc adoption note is updated as part of that deliverable. Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this.
 
 ### LRN-154
 
@@ -336,7 +336,7 @@ claim_area: orchestrator-loop
 - Candidate promotion home if this recurs: an OPERATIONS.md "session resume / crash recovery" troubleshooting note (none exists today). Left `open` for the next harvest to decide vs. keeping it as a searchable LRN.
 - General principle: a `fatal: bad object refs/remotes/...` on fetch after a crash is usually a corrupt *ref file*, not object-DB damage — check `git for-each-ref` for "ignoring broken ref" and confirm the remote with `git ls-remote` before any reclone.
 
-**Disposition (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** Open — promotion home options have firmed up since the original entry. (a) **CS64 is now active** (`omni-ah`, branch `cs64/content`) and implements the foundational lifecycle verbs incl. `startup`; a startup-time `harness doctor`-style probe could detect+repair the broken loose ref (no reclone) as part of that scope — recommended: surface to the CS64 orchestrator. (b) Failing (a), add the recipe to OPERATIONS.md as a "session resume / crash recovery" subsection during planned **CS65** (process-doc right-sizing). Mark `applied` once one of those ships.
+**Disposition (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-1 adopts this LRN as the `harness doctor` probe: a read-only `lib/doctor.mjs` walks `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only files, cross-checks `git for-each-ref ... ignoring broken ref`, and prints the LRN-151 repair recipe; `--repair` applies the deletion + `fetch` with explicit confirmation. Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. (Earlier option (b) — OPERATIONS.md "session resume / crash recovery" prose — remains a fallback if CS64b slips, but the verb is now the primary home.)
 
 ### LRN-146
 
