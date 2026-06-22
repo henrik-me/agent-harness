@@ -1889,7 +1889,7 @@ every consumer-deliverable `template/managed/` file absent from the consumer's
 sync noticed *changed* managed files but never *new* ones. Two tiers:
 
 - **Report-only advisory** for non-core new managed files — informational; does
-  not change `driftDetected` or the exit code. `--apply-new` adopts them.
+  not change `driftDetected` or the exit code. `sync --mode=apply --apply-new` adopts them.
 - **Required core managed-doc WARN** for any file in the core governance set
   (`INSTRUCTIONS.md`, `.github/copilot-instructions.md`, `TRACKING.md`,
   `RETROSPECTIVES.md`, `READMEGUIDE.md` — single-sourced in
@@ -1897,7 +1897,7 @@ sync noticed *changed* managed files but never *new* ones. Two tiers:
   this minor**; escalation to a hard **error** is deferred to a future bump (a
   deliberate consumer-compatibility choice — an immediate error would break
   existing green consumers on upgrade), mirroring the `review_gates` v0.4 warn →
-  v0.5 error migration. `--apply-new` is the adoption path; `--quiet` suppresses
+  v0.5 error migration. `sync --mode=apply --apply-new` is the adoption path; `--quiet` suppresses
   the WARN.
 
 ### File-class behaviour
