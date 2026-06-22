@@ -1,9 +1,9 @@
 # CS64b — Harness verb reliability + consumer-delivery primitives (post-CS64 hardening)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs64b/content
+**Started:** 2026-06-22
 **Closed:** —
 **Filed by:** Follow-up to active **CS64** (2026-06-10 by `omni-ah-c2`) to absorb three open LRNs that surfaced reliability gaps in the harness lifecycle/verb surface and were tagged as "CS64 scope candidates" during the 2026-06-10 LRN disposition refresh (PR #288). Rather than expand CS64 mid-flight, the items are spun out here as the dedicated post-CS64 hardening CS, gating the downstream planned CS65–CS68 stream so the reliability primitives land before further work on top of the verb surface.
 **Depends on:** **CS64** (hard) — the doctor / disposer / sync-reconciliation strands harden or extend verbs and flows that CS64 introduces (`startup`/`status`, the cross-clone temp-dir/clone patterns shared by the lifecycle verbs, and the `harness upgrade` preview — which runs a dry-run sync and so surfaces the same C64b-3 new-managed-file reconciliation), so CS64 must close first. The governance-doc strand is **CS64-independent**: C64b-7 (seed/init delivery) can split into an earlier wave alone, but C64b-8 couples to C64b-3 (it reuses `--apply-new` and edits the same `lib/sync.mjs` surface), so C64b-8 should carry `--apply-new` with it or land after C64b-3.
@@ -91,11 +91,32 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 | R4 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | fa17cbf78259 | 2026-06-16T15:10:00Z | Needs-Fix | F1(block): seed lacks repo_slug→unresolved {{}}; F2: sync --quiet not real; F3: key managed.files not disk; F4: exclude .gitkeep; F5: add schema deliverable; F7: reword precedent. |
 | R5 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | 2c7824e8e77f | 2026-06-16T15:21:01Z | Go | All R4 findings resolved; hash verified; no new blockers. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | Planned implementation roles per INSTRUCTIONS.md § Every CS; model independence per REVIEWS § 2.3 (`claude-opus-4.8` ≠ `gpt-5.5`). CS64b is NOT on `reviews.high_risk_clickstops`; fallback `claude-sonnet-4.6` permitted if `gpt-5.5` is unavailable. Refresh at PR open if the materially-used implementer model differs. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — `harness doctor` probe: `lib/doctor.mjs` + `tests/lib-doctor.test.mjs` (read-only broken-loose-ref detect per LRN-151; `--repair` applies delete + fetch) + register `doctor` in `bin/harness.mjs` | pending | omni-ah | C64b-1, C64b-4; Deliverables 1, 5. Injectable fs/git seams; tests under `os.tmpdir()` only (LRN-094). |
+| T2 — Disposer pattern: `lib/disposers.mjs` + `tests/lib-disposers.test.mjs` (`{path, cleanup}` + `assertSafeRef` leading-dash rejection) | pending | omni-ah | C64b-2, C64b-4; Deliverable 2. Land helper first, then retrofit (T3). |
+| T3 — Audit + retrofit existing temp-dir/clone verbs to disposer + `assertSafeRef`; add CONVENTIONS/REVIEWS bullet | pending | omni-ah | C64b-2; Deliverables 3, 6. Scope confirmed at impl time (expected `lib/cross-repo.mjs`, `lib/review.mjs`, CS64 verbs). |
+| T4 — Sync new-managed-file reconciliation: `lib/sync.mjs` + `bin/harness.mjs` (`sync --apply-new`) + `schemas/harness.config.schema.json` note + `tests/lib-sync.test.mjs`; report-only default; `.gitkeep` excluded | pending | omni-ah | C64b-3, C64b-4; Deliverable 4. Membership (`managed.files`) not disk presence. |
+| T5 — Core managed-doc set + seed/init delivery: `lib/core-managed-files.mjs` + `tests/lib-core-managed-files.test.mjs`; `template/seeded/harness.config.json` managed block + `templating.repo_slug`; `bin/harness.mjs` init copy/addUnique | pending | omni-ah | C64b-7; Deliverables 9, 10, 11. Assert rendered docs have no unresolved `{{…}}` (strict templating); keep init→sync-check green (LRN-057). |
+| T6 — Required-managed-file sync WARN gate + net-new `sync --quiet`: `lib/sync.mjs` + `bin/harness.mjs` + `tests/lib-sync.test.mjs`; document WARN→ERROR + correct `--quiet` claim in `OPERATIONS.md § Sync` | pending | omni-ah | C64b-8; Deliverable 12. Warn-only this minor; membership check. |
+| T7 — CHANGELOG `[Unreleased]` entries: `harness doctor`, sync new-managed-file behaviour, init core-doc installs, core-doc WARN gate | pending | omni-ah | Deliverable 8; LRN-101 distributed-surface CHANGELOG-touch convention. |
+| T8 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah | Independence invariant: reviewer model ≠ implementer model. |
+| T9 — Open content PR (`cs64b/content`); PR-level rubber-duck + `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah | Per OPERATIONS.md § Three-PR shape (content PR). |
+| T10 — Flip `LEARNINGS.md` LRN-151 / LRN-155 / LRN-157 → `applied` with merge SHA; file new `applied` governance-doc-propagation LRN (category `architectural`, claim_area `sync-engine`) | pending | omni-ah | C64b-6; Deliverable 7. At close-out with merge SHA. |
+| T11 — Close-out docs/restart-state: rename `active_cs64b_*.md` → `done_cs64b_*.md`; update WORKBOARD + CONTEXT handoff; file new LEARNINGS | pending | omni-ah | Close-out PR (`cs64b/close-out`). |
+| T12 — Close-out learnings sweep: scan execution for follow-ups; file as new LRN entries or follow-up planned CSs | pending | omni-ah | Per RETROSPECTIVES.md. |
 
 ## Notes / Learnings
 
