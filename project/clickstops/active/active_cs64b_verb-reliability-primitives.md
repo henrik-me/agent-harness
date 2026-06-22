@@ -95,11 +95,11 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 | Field | Value |
 |---|---|
-| Implementer models | claude-opus-4.8 |
+| Implementer models | claude-opus-4.8, claude-opus-4.6, claude-opus-4.5 |
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah) |
-| Notes | Planned implementation roles per INSTRUCTIONS.md § Every CS; model independence per REVIEWS § 2.3 (`claude-opus-4.8` ≠ `gpt-5.5`). CS64b is NOT on `reviews.high_risk_clickstops`; fallback `claude-sonnet-4.6` permitted if `gpt-5.5` is unavailable. Refresh at PR open if the materially-used implementer model differs. |
+| Notes | Sub-agent ledger (materially-used models): orchestrator omni-ah `claude-opus-4.8` (core-managed-files constant, seeded config, bin init/doctor/sync-flag wiring, instructions self-host gating, upgrade.mjs disposer retrofit, docs, CHANGELOG); cs64b-doctor `claude-opus-4.6` (`lib/doctor.mjs` + tests); cs64b-disposers + cs64b-sync `claude-opus-4.5` (`lib/disposers.mjs`, `lib/sync.mjs` C64b-3/8 + tests + schema note). Model independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. CS64b is NOT on `reviews.high_risk_clickstops`; fallback `claude-sonnet-4.6` permitted if `gpt-5.5` is unavailable. |
 
 ## Tasks
 

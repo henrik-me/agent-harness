@@ -103,6 +103,7 @@ Subcommands:
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
   upgrade           Preview upgrading the pinned harness ref (dry-run diff)
+  doctor            Diagnose + (with --repair) recover broken git remote refs (CS64b)
   lint              Run all harness structural + policy linters (14 linters)
   harvest           Scan LEARNINGS.md for stale open learnings (pre-claim/weekly)
   check-migration   Detect migration issues from an existing harness (STUB)
@@ -185,6 +186,10 @@ Options:
   --dry-run                     Alias for --mode=dry-run
   --accept-major                Allow major version bumps
   --report                      Print planned changes per file
+  --apply-new                   (apply mode) Adopt managed templates absent from
+                                managed.files — add the entry + materialize the file
+  --quiet                       Suppress the new-managed-file advisory + required
+                                core-doc WARN (errors still print to stderr)
   --resolved-sha <40hex>        Pin the recorded lock resolved_sha to <40hex>
                                  (apply-mode only; see CS11b/LRN-070 for the
                                  post-commit-regenerate ordering trap this fixes).
@@ -709,6 +714,23 @@ Options:
   --no-fence            Omit the surrounding triple-backtick text fence in the output.
   --cwd <path>          Consumer repo path (default: cwd)
   --help                Print this help
+`.trimStart(),
+
+  doctor: `
+Usage: harness doctor [options]
+
+Diagnose (and, with --repair, fix) the LRN-151 broken git remote-tracking ref
+state — a crash mid-fetch can leave a loose ref file under
+.git/refs/remotes/origin/<branch> holding only whitespace/NUL bytes, which makes
+every subsequent 'git fetch' abort. Read-only by default (safe to run anytime,
+including from 'harness startup'); --repair deletes the broken loose ref files +
+matching packed-refs lines and re-runs 'git fetch origin --prune'.
+
+Options:
+  --repair        Apply the repair (delete broken loose refs + git fetch --prune)
+  --quiet         Suppress advisory output (errors still print to stderr)
+  --cwd <path>    Repo path (default: cwd)
+  --help          Print this help
 `.trimStart(),
 };
 
@@ -1375,6 +1397,34 @@ async function cmdInit(args, global) {
     }
   }
 
+  // CS64b / C64b-7: fresh init delivers the core (required) managed-doc set —
+  // the governance/onboarding docs every consumer MUST receive (INSTRUCTIONS.md,
+  // .github/copilot-instructions.md, TRACKING.md, RETROSPECTIVES.md, READMEGUIDE.md).
+  // Mirror the workflow installs: register each in managed.files so the
+  // unconditional init -> `sync --apply` finalize below RENDERS + materializes
+  // them (a raw copy would leave {{templating}} placeholders unresolved).
+  // Registering here also covers the scaffold-fallback config path, which does
+  // not inherit the seeded template's managed block.
+  if (!configExists) {
+    try {
+      const { CORE_MANAGED_FILES } = await import('../lib/core-managed-files.mjs');
+      const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      const managed = ensureFileClassBlock(cfg, 'managed');
+      let changed = false;
+      for (const target of CORE_MANAGED_FILES) {
+        if (addUnique(managed.files, target)) changed = true;
+      }
+      if (changed) {
+        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+        process.stdout.write(
+          `Registered core managed docs in managed.files (${CORE_MANAGED_FILES.length} files)\n`
+        );
+      }
+    } catch (err) {
+      process.stderr.write(`Warning: could not register core managed docs: ${err.message}\n`);
+    }
+  }
+
   // Copy seeded template files that are missing
   const seededDir = path.join(REPO_ROOT, 'template', 'seeded');
   if (existsSync(seededDir)) {
@@ -1656,6 +1706,8 @@ async function cmdSync(args, global, defaultMode = 'check') {
   let acceptMajor = false;
   let report = false;
   let resolvedShaOverride = null;
+  let applyNew = false;
+  let quiet = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -1670,6 +1722,10 @@ async function cmdSync(args, global, defaultMode = 'check') {
       acceptMajor = true;
     } else if (a === '--report') {
       report = true;
+    } else if (a === '--apply-new') {
+      applyNew = true;
+    } else if (a === '--quiet') {
+      quiet = true;
     } else if (a === '--resolved-sha') {
       // CS11b: pin the recorded resolved_sha in the lock to a specific commit
       // (avoids the LRN-070 post-commit-regenerate ordering trap).
@@ -1748,6 +1804,8 @@ async function cmdSync(args, global, defaultMode = 'check') {
       mode,
       acceptMajor,
       resolvedShaOverride,
+      applyNew,
+      quiet,
       // CS15c (CS04b, LRN-027 closed): wire --config through to the sync engine.
       // When set, the override replaces <cwd>/harness.config.json entirely.
       configPath: configOverride ?? null,
@@ -2331,12 +2389,30 @@ async function cmdLint(args, _global) {
       args: ['--dir', path.join(cwd, 'project', 'clickstops')],
       target: path.join(cwd, 'project', 'clickstops'),
     },
-    {
-      name: 'instructions',
-      script: 'check-instructions.mjs',
-      args: ['--file', path.join(cwd, 'INSTRUCTIONS.md')],
-      target: path.join(cwd, 'INSTRUCTIONS.md'),
-    },
+    // CS64b (C64b-7): check-instructions validates INSTRUCTIONS.md's harness-internal
+    // LRN/ADR cross-anchors against the local LEARNINGS.md / docs/adr/. Now that C64b-7
+    // delivers INSTRUCTIONS.md to consumers as a managed file, those anchors point at
+    // harness institutional LRNs absent from a consumer's own LEARNINGS.md (dead in the
+    // consumer). Anchor-integrity is a harness-authoring concern, so gate the linter to
+    // the harness self-host (mirrors the pack / scaffold-readme self-host guards); the
+    // harness validates the template self-host before it ships, and consumers get a
+    // stable skipped row. See OPERATIONS.md § Sync and the CS64b plan.
+    (() => {
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft */ }
+      return {
+        name: 'instructions',
+        script: 'check-instructions.mjs',
+        args: isSelfHost ? ['--file', path.join(cwd, 'INSTRUCTIONS.md')] : null,
+        target: isSelfHost ? path.join(cwd, 'INSTRUCTIONS.md') : null,
+      };
+    })(),
     {
       name: 'readme',
       script: 'check-readme.mjs',
@@ -3939,6 +4015,22 @@ async function cmdStatus(args, global) {
   process.exit(0);
 }
 
+async function cmdDoctor(args, global) {
+  // --help is handled here (consistent with the other verbs) before delegating.
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['doctor']);
+      process.exit(0);
+    }
+  }
+  // --cwd is consumed by the global parser; thread the resolved value through
+  // via deps.cwd so `harness --cwd X doctor` targets X (lib/doctor.mjs also
+  // accepts an args-level --cwd, which still overrides when present).
+  const cwd = global?.cwd || process.cwd();
+  const { doctor } = await import('../lib/doctor.mjs');
+  process.exit(await doctor(args, { cwd }));
+}
+
 async function cmdClaim(args, global) {
   let csId = null;
   let apply = false;
@@ -4129,6 +4221,7 @@ export const COMMAND_REGISTRY = {
   claim: cmdClaim,
   'close-out': cmdCloseOut,
   dispatch: cmdDispatch,
+  doctor: cmdDoctor,
   version: cmdVersion,
   whoami: cmdWhoami,
 };

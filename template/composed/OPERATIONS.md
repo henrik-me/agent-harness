@@ -1871,6 +1871,34 @@ with a previewable upgrade.
   the actual content commit. The override is rejected (exit 2) in
   `--mode=check` / `--mode=dry-run` (only apply writes the lock) and
   rejected if the value is not 40-char lowercase hex.
+- **`--apply-new`** (CS64b C64b-3) — in apply mode, adopt every harness
+  `template/managed/` file absent from the consumer's `managed.files`
+  (membership, not disk presence; sentinels such as `.gitkeep` are excluded):
+  add the `managed.files` entry and materialize the rendered file. In
+  `--mode=check` / `--mode=dry-run` it is detection-only (never mutates, never
+  changes the exit code).
+- **`--quiet`** (CS64b C64b-8) — suppress the new-managed-file advisory and the
+  required core-doc WARN (below); errors still go to stderr. (Net-new on `sync`
+  in CS64b — before then `harness sync --quiet` errored.)
+
+### New-managed-file reconciliation + required core-doc gate (CS64b)
+
+`harness sync` (check and default paths) surfaces, alongside drift detection,
+every consumer-deliverable `template/managed/` file absent from the consumer's
+`managed.files` — closing the [LRN-155](LEARNINGS.md#lrn-155) asymmetry where
+sync noticed *changed* managed files but never *new* ones. Two tiers:
+
+- **Report-only advisory** for non-core new managed files — informational; does
+  not change `driftDetected` or the exit code. `--apply-new` adopts them.
+- **Required core managed-doc WARN** for any file in the core governance set
+  (`INSTRUCTIONS.md`, `.github/copilot-instructions.md`, `TRACKING.md`,
+  `RETROSPECTIVES.md`, `READMEGUIDE.md` — single-sourced in
+  `lib/core-managed-files.mjs`) missing from `managed.files`. **Warn-only in
+  this minor**; escalation to a hard **error** is deferred to a future bump (a
+  deliberate consumer-compatibility choice — an immediate error would break
+  existing green consumers on upgrade), mirroring the `review_gates` v0.4 warn →
+  v0.5 error migration. `--apply-new` is the adoption path; `--quiet` suppresses
+  the WARN.
 
 ### File-class behaviour
 
@@ -2595,6 +2623,20 @@ the **substance** of the requirement, not just its surface presence. A flag
 named `--redact-required` must verify that the applicable redaction rule
 exists and is non-empty — not merely that some config object was loaded. Check
 the deepest invariant the flag implies.
+
+### Temp-dir/clone disposer pattern ([LRN-157](LEARNINGS.md#lrn-157), CS64b)
+
+Any new verb (or `lib/` module) that allocates a temp directory or a `git clone`
+MUST do so through the shared `lib/disposers.mjs` primitives — `makeTempDir()` /
+`withTempDir()` for the provenance-safe paired allocation + idempotent cleanup
+(remove only the path you allocated; never path-prefix-guess), and
+`assertSafeRef(ref)` for any `--ref` / branch / tag argument before it reaches
+`git` (rejects empty, leading-dash, and out-of-allowlist refs — an
+argv-injection guard). Never hand-roll an inline `fs.mkdtempSync` + best-effort
+`rmSync`. The `tests/cs64b-disposer-pattern.test.mjs` guard fails the build if a
+`lib/` module allocates a raw temp dir outside `lib/disposers.mjs`. Reviewers:
+flag any new temp-dir/clone allocation or unguarded `git` ref argument that
+bypasses these helpers.
 
 ---
 
