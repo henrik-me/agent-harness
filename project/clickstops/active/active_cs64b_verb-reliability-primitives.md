@@ -120,7 +120,32 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 ## Notes / Learnings
 
-(filled during execution)
+**G-apply-new resolved to "adopt-all" (non-interactive).** The plan left the
+`harness sync --apply-new` confirmation model to a user-approval gate (G-apply-new;
+default "per-file", referenced in C64b-3, Exit criterion 3, and Risk R3). It is
+implemented as **adopt-all without prompting**, because CS64b was executed
+autonomously with no user available to confirm and interactive per-file prompts
+would hang in CI / non-interactive contexts. `--apply-new` only adopts in
+`--mode=apply` (detection-only in check/dry-run), so it is never a silent surprise.
+Per-file confirmation remains a possible follow-up; this note supersedes the plan's
+"explicit/per-file confirmation" language **without re-attesting** the hashed
+Decisions section.
+
+**check-instructions self-host gating (design escalation).** Delivering
+INSTRUCTIONS.md to consumers (C64b-7) surfaced that the managed template references
+harness-internal LRN anchors (`LEARNINGS.md#lrn-NNN`) absent from a consumer's seeded
+LEARNINGS.md — dead links in the consumer. Interim fix: the `instructions` linter is
+gated to the harness self-host (mirrors the existing `pack` / `scaffold-readme`
+self-host guards); the consumer receives the managed doc already validated upstream.
+The deeper question — whether consumer-delivered INSTRUCTIONS.md should carry harness
+LRN links at all, or rewrite them as absolute URLs — was **not anticipated by the
+plan** and is left for maintainer review (candidate follow-up CS).
+
+**Review trail.** gpt-5.5 rubber-duck R1 (pre-PR) = Go with 4 non-blocking findings;
+all addressed in the fix commit. R2 verified the fixes (findings 2/4 fully resolved;
+1/3 logic correct, doc-wording nits + this G-apply-new plan-vs-impl note remained) →
+addressed here. Implementer models: claude-opus-4.8 (orchestrator) + claude-opus-4.6
+(doctor) + claude-opus-4.5 (disposers, sync); reviewer gpt-5.5 (independent).
 
 ## Plan-vs-implementation review
 

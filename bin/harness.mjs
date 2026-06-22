@@ -1414,7 +1414,7 @@ async function cmdInit(args, global) {
         process.stderr.write(
           `Notice: skipping core managed-doc registration — config has no 'templating' block, ` +
           `so the docs would render with unresolved {{...}} placeholders. ` +
-          `Add a 'templating' block (or init from the seeded template) and re-run.\n`
+          `Add a 'templating' block, then run 'harness sync --mode=apply --apply-new' to adopt the core docs.\n`
         );
       } else {
         const { CORE_MANAGED_FILES } = await import('../lib/core-managed-files.mjs');
