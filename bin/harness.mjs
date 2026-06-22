@@ -229,7 +229,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-architecture.mjs (ARCHITECTURE.md)
   - check-clickstop.mjs   (project/clickstops/)
   - check-clickstop-plan-review.mjs (planned/active CS files; CS35b)
-  - check-instructions.mjs (INSTRUCTIONS.md)
+  - check-instructions.mjs (INSTRUCTIONS.md; harness self-host only — CS64b)
   - check-readme.mjs      (README.md)
   - check-composed-blocks.mjs (each composed_files[].path from config; skipped if none)
   - check-workflow-pins.mjs (.github/workflows/)
@@ -1400,25 +1400,35 @@ async function cmdInit(args, global) {
   // CS64b / C64b-7: fresh init delivers the core (required) managed-doc set —
   // the governance/onboarding docs every consumer MUST receive (INSTRUCTIONS.md,
   // .github/copilot-instructions.md, TRACKING.md, RETROSPECTIVES.md, READMEGUIDE.md).
-  // Mirror the workflow installs: register each in managed.files so the
-  // unconditional init -> `sync --apply` finalize below RENDERS + materializes
-  // them (a raw copy would leave {{templating}} placeholders unresolved).
-  // Registering here also covers the scaffold-fallback config path, which does
-  // not inherit the seeded template's managed block.
+  // Register each in managed.files so the unconditional init -> `sync --apply`
+  // finalize below RENDERS + materializes them (a raw copy would leave
+  // {{templating}} placeholders unresolved). Gate on a populated `templating`
+  // block: the seeded-template config has one, but the scaffold-fallback config
+  // does not — and delivering core docs with unresolved {{repo_slug}} etc. is
+  // worse than not delivering them on that already-degraded path (CS64b review).
   if (!configExists) {
     try {
-      const { CORE_MANAGED_FILES } = await import('../lib/core-managed-files.mjs');
       const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
-      const managed = ensureFileClassBlock(cfg, 'managed');
-      let changed = false;
-      for (const target of CORE_MANAGED_FILES) {
-        if (addUnique(managed.files, target)) changed = true;
-      }
-      if (changed) {
-        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
-        process.stdout.write(
-          `Registered core managed docs in managed.files (${CORE_MANAGED_FILES.length} files)\n`
+      const hasTemplating = isPlainObject(cfg.templating) && Object.keys(cfg.templating).length > 0;
+      if (!hasTemplating) {
+        process.stderr.write(
+          `Notice: skipping core managed-doc registration — config has no 'templating' block, ` +
+          `so the docs would render with unresolved {{...}} placeholders. ` +
+          `Add a 'templating' block (or init from the seeded template) and re-run.\n`
         );
+      } else {
+        const { CORE_MANAGED_FILES } = await import('../lib/core-managed-files.mjs');
+        const managed = ensureFileClassBlock(cfg, 'managed');
+        let changed = false;
+        for (const target of CORE_MANAGED_FILES) {
+          if (addUnique(managed.files, target)) changed = true;
+        }
+        if (changed) {
+          writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+          process.stdout.write(
+            `Registered core managed docs in managed.files (${CORE_MANAGED_FILES.length} files)\n`
+          );
+        }
       }
     } catch (err) {
       process.stderr.write(`Warning: could not register core managed docs: ${err.message}\n`);
@@ -2120,6 +2130,11 @@ and false-greens accumulate undetected.
   instructions: `
 **Linter:** check-instructions (scripts/check-instructions.mjs)
 **Target:** INSTRUCTIONS.md.
+**Scope:** harness self-host only (CS64b). INSTRUCTIONS.md is a managed file the
+harness authors and validates here; its harness-internal LRN/ADR cross-anchors
+point at the harness's own LEARNINGS.md / docs/adr/, so the check is skipped in
+consumer repos (a stable skipped row) — the consumer receives the doc already
+validated upstream.
 **Rules:**
   - Required top-level (H2) headings are present.
   - Anchor links ([text](#anchor)) resolve to existing headings.
