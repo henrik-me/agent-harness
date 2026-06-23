@@ -21,7 +21,7 @@ import {
   doctor,
 } from '../lib/doctor.mjs';
 
-const HEALTHY_SHA = '2e7973c0123456789abcdef0123456789abcdef';
+const HEALTHY_SHA = '2e7973c0123456789abcdef0123456789abcdef0';
 
 /**
  * Build a throwaway `<tmp>/.git` fixture. Returns { gitDir, root, cleanup }.
