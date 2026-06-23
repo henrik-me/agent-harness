@@ -25,10 +25,21 @@ function libModules() {
     .map((e) => e.name);
 }
 
+// Strip block + line comments before scanning so a documentation MENTION of the
+// forbidden primitive (e.g. a lib/ module stating this very rule) does not
+// register as a call site — the guard targets actual allocation calls, not prose
+// (Copilot review). Heuristic but sufficient: lib/ source never embeds
+// "mkdtempSync(" inside a string literal.
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')        // block comments
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');   // line comments (preserve scheme-relative ://)
+}
+
 test('no lib/ module allocates a raw temp dir outside lib/disposers.mjs', () => {
   const offenders = [];
   for (const name of libModules()) {
-    const src = readFileSync(path.join(LIB_DIR, name), 'utf8');
+    const src = stripComments(readFileSync(path.join(LIB_DIR, name), 'utf8'));
     if (/\bmkdtemp(Sync)?\s*\(/.test(src)) {
       offenders.push(name);
     }
@@ -39,6 +50,15 @@ test('no lib/ module allocates a raw temp dir outside lib/disposers.mjs', () => 
     `These lib/ modules call mkdtemp directly; route temp-dir allocation through ` +
       `lib/disposers.mjs makeTempDir()/withTempDir() instead: ${offenders.join(', ')}`
   );
+});
+
+test('the raw-temp-dir guard ignores mkdtempSync named only in a comment', () => {
+  // A documentation comment that names the forbidden primitive must NOT trip the
+  // guard; a real call site still must.
+  const commented = '// Always use makeTempDir, never mkdtempSync().\nexport const x = 1;\n';
+  assert.equal(/\bmkdtemp(Sync)?\s*\(/.test(stripComments(commented)), false, 'comment mention must not match');
+  const realCall = "const d = mkdtempSync(path.join(os.tmpdir(), 'x'));\n";
+  assert.equal(/\bmkdtemp(Sync)?\s*\(/.test(stripComments(realCall)), true, 'real call must still match');
 });
 
 test('lib/disposers.mjs itself provides the disposer primitives', () => {
