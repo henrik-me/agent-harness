@@ -1877,28 +1877,20 @@ with a previewable upgrade.
   add the `managed.files` entry and materialize the rendered file. In
   `--mode=check` / `--mode=dry-run` it is detection-only (never mutates, never
   changes the exit code).
-- **`--quiet`** (CS64b C64b-8) — suppress the new-managed-file advisory and the
-  required core-doc WARN (below); errors still go to stderr. (Net-new on `sync`
-  in CS64b — before then `harness sync --quiet` errored.)
+- **`--quiet`** (CS64b C64b-3) — suppress the new-managed-file advisory (below);
+  errors still go to stderr. (Net-new on `sync` in CS64b — before then
+  `harness sync --quiet` errored.)
 
-### New-managed-file reconciliation + required core-doc gate (CS64b)
+### New-managed-file reconciliation (CS64b)
 
 `harness sync` (check and default paths) surfaces, alongside drift detection,
 every consumer-deliverable `template/managed/` file absent from the consumer's
 `managed.files` — closing the [LRN-155](LEARNINGS.md#lrn-155) asymmetry where
-sync noticed *changed* managed files but never *new* ones. Two tiers:
-
-- **Report-only advisory** for non-core new managed files — informational; does
-  not change `driftDetected` or the exit code. `sync --mode=apply --apply-new` adopts them.
-- **Required core managed-doc WARN** for any file in the core governance set
-  (`INSTRUCTIONS.md`, `.github/copilot-instructions.md`, `TRACKING.md`,
-  `RETROSPECTIVES.md`, `READMEGUIDE.md` — single-sourced in
-  `lib/core-managed-files.mjs`) missing from `managed.files`. **Warn-only in
-  this minor**; escalation to a hard **error** is deferred to a future bump (a
-  deliberate consumer-compatibility choice — an immediate error would break
-  existing green consumers on upgrade), mirroring the `review_gates` v0.4 warn →
-  v0.5 error migration. `sync --mode=apply --apply-new` is the adoption path; `--quiet` suppresses
-  the WARN.
+sync noticed *changed* managed files but never *new* ones. The advisory is
+report-only: it does not change `driftDetected` or the exit code.
+`sync --mode=apply --apply-new` adopts the surfaced files (adds each
+`managed.files` entry + materializes the rendered file); `--quiet` suppresses the
+advisory.
 
 ### File-class behaviour
 
