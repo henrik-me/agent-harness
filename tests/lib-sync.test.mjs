@@ -97,14 +97,14 @@ function buildHarnessRepo(dir) {
  * tracked managed file is also written to disk with its rendered content so the
  * baseline has no real drift.
  */
-function buildConsumerRepo(dir, trackedManaged = []) {
+function buildConsumerRepo(dir, trackedManaged = [], excluded = []) {
   const config = {
     version: 'v0.1.0',
     project: { name: 'test-project', agent_suffix: 'test' },
     managed: { files: [...trackedManaged] },
     composed: { files: [] },
     seeded: { files: [] },
-    excluded: [],
+    excluded: [...excluded],
     templating: {},
   };
   writeJSON(path.join(dir, 'harness.config.json'), config);
@@ -195,6 +195,26 @@ describe('sync() — new-managed advisory (C64b-3)', () => {
     assert.ok(!result.warnings.some(w => w.includes('New managed files')), 'quiet must suppress advisory');
     // Structured field remains populated for programmatic callers.
     assert.ok(result.newManagedFiles.includes('.github/CODEOWNERS'));
+  });
+
+  it('respects config.excluded: an excluded target is neither surfaced nor adopted', async () => {
+    // Consumer tracks INSTRUCTIONS.md and explicitly excludes TRACKING.md.
+    buildConsumerRepo(consumerDir, ['INSTRUCTIONS.md'], ['TRACKING.md']);
+    const result = await sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'check' });
+
+    assert.ok(!result.newManagedFiles.includes('TRACKING.md'), 'excluded target must not appear in the advisory');
+    assert.ok(result.newManagedFiles.includes('.github/CODEOWNERS'), 'non-excluded new files still surface');
+  });
+
+  it('--apply-new does not adopt or materialize an excluded target', async () => {
+    buildConsumerRepo(consumerDir, ['INSTRUCTIONS.md'], ['TRACKING.md']);
+    await sync({ consumerRepoPath: consumerDir, harnessRepoPath: harnessDir, mode: 'apply', applyNew: true });
+
+    const config = readConsumerConfig(consumerDir);
+    assert.ok(!config.managed.files.includes('TRACKING.md'), 'excluded target must not be adopted into managed.files');
+    assert.ok(!existsSync(path.join(consumerDir, 'TRACKING.md')), 'excluded target must not be materialized');
+    // Non-excluded new files ARE still adopted.
+    assert.ok(config.managed.files.includes('.github/CODEOWNERS'));
   });
 });
 
