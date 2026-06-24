@@ -30,6 +30,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS66 | CS66 — Review-family verbs: review-doc, review-cs, perf-review, security-review | 🟢 Active | omni-ah-c2 | cs66/content | 2026-06-24 | — |
 | CS72 | CS72 — Genericize consumer-shipped governance docs + guard linter | 🟢 Active | omni-ah | cs72/content | 2026-06-24 | — |
-| CS73 | CS73 — Per-orchestrator claim lock | 🟢 Active | omni-ah-c3 | cs73/content | 2026-06-24 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

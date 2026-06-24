@@ -1,10 +1,10 @@
 # CS73 — Per-orchestrator claim lock: stop the global one-CS-at-a-time block
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c3
 **Branch:** cs73/content
 **Started:** 2026-06-24
-**Closed:** —
+**Closed:** 2026-06-24
 **Filed by:** omni-ah-c3 (2026-06-24) — filed **and** claimed together per a direct maintainer instruction ("this rule is per orchestrator, update the rule to avoid future confusion"; "each orchestrator can pick up a cs"). Surfaced when a CS67 claim lost the global one-CS-at-a-time race to a sibling clone's CS72 even though the two claims belong to different orchestrators (`omni-ah` vs `omni-ah-c3`).
 **Depends on:** none (hard). Touches the claim machinery owned by CS64 (`harness claim`) but no in-flight CS.
 
