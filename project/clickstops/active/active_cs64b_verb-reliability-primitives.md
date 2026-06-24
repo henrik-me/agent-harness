@@ -28,7 +28,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 |---|---|---|---|
 | C64b-1 | `harness doctor` probe | Add a read-only `harness doctor` subcommand (backed by `lib/doctor.mjs`) that detects the LRN-151 broken-loose-ref state by walking `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only files, cross-checking with `git for-each-ref ... 2>&1 \| grep "ignoring broken ref"`, and printing the exact repair recipe (`rm .git/refs/remotes/<…>` + `packed-refs` line removal + `git fetch origin --prune`). Default **report-only**; `--repair` applies the deletion + `fetch` with explicit confirmation. Idempotent. | A read-only probe is safe to run anytime (including from `harness startup`); `--repair` keeps the destructive step explicit. Encodes the LRN-151 recipe so an agent does not have to rediscover it after a crash. |
 | C64b-2 | Temp-dir / clone disposer pattern | Audit every `lib/*.mjs` verb that allocates a temp dir or clone and apply the `{path, cleanup}` disposer pattern from LRN-157 (paired allocation + idempotent `cleanup()` registered before any use), plus a shared `assertSafeRef(ref)` helper that rejects refs matching `^-` (or `--`) before they are passed to `git`. Land as a small new `lib/disposers.mjs` + unit tests. Add a CONVENTIONS bullet stating the pattern is required for any new verb. | Encodes the LRN-157 finding as a reusable helper rather than three copies; making it a CONVENTIONS rule means CS66/CS67's later verbs adopt it by default. Leading-dash ref rejection is a tiny but real argv-injection mitigation for verbs that take `--ref`/`--branch`. |
-| C64b-3 | Sync-time new-managed-file reconciliation | Extend `harness sync --mode=check` (and the default sync path) to surface every consumer-deliverable file in the harness's `template/managed/` manifest (excluding sentinels such as `.gitkeep`) that is **absent from the consumer's `managed.files`** — membership, not mere disk presence, since an untracked-on-disk file is still skipped by sync — alongside the existing drift detection. Default: report-only (a "new managed files" section in the sync report). `--apply-new` adopts them (adds the `managed.files` entry + copies the file) after explicit confirmation. Update the `pr_check` schema/doc note (LRN-155 evidence; `schemas/harness.config.schema.json`) to reference the new flow. | Closes the LRN-155 gap symmetrically with the existing drift checks: today sync notices *changed* managed files but not *new* ones; the asymmetry is exactly the failure mode. Report-only default keeps consumers from getting unexpected file additions on a `sync`. |
+| C64b-3 | Sync-time new-managed-file reconciliation | Extend `harness sync --mode=check` (and the default sync path) to surface every consumer-deliverable file in the harness's `template/managed/` manifest (excluding sentinels such as `.gitkeep`) that is **absent from the consumer's `managed.files`** — membership, not mere disk presence, since an untracked-on-disk file is still skipped by sync — alongside the existing drift detection. Default: report-only (a "new managed files" section in the sync report). `--apply-new` adopts them (adds the `managed.files` entry + copies the file) non-interactively in apply mode (adopt-all; see the G-apply-new resolution). Update the `pr_check` schema/doc note (LRN-155 evidence; `schemas/harness.config.schema.json`) to reference the new flow. | Closes the LRN-155 gap symmetrically with the existing drift checks: today sync notices *changed* managed files but not *new* ones; the asymmetry is exactly the failure mode. Report-only default keeps consumers from getting unexpected file additions on a `sync`. |
 | C64b-4 | Logic in `lib/`, thin `bin/` | All mechanics in `lib/doctor.mjs` + `lib/disposers.mjs` + `lib/sync.mjs` edits, with **injectable fs/git seams** so tests run without real git/network. `bin/harness.mjs` only parses flags + delegates. Tests write only under `os.tmpdir()`, never REPO_ROOT (per the test-hygiene memory / LRN-094). | Matches the C64-10 pattern; keeps the surface unit-testable and consistent with the rest of the verb library. |
 | C64b-5 | SemVer | One new CLI subcommand (`doctor`) + new behaviour on `sync` ⇒ **minor** bump per `OPERATIONS.md § SemVer policy`. | New consumer-visible CLI surface + new sync behaviour. |
 | C64b-6 | Apply-LRN gate | LRN-151, LRN-155, and LRN-157 all flip `open → applied` at close-out, with the merge SHA recorded in each Disposition prose. CS65/CS66/CS67/CS68 update their `**Depends on:**` line (preamble — outside the plan-review hash surface, per `lib/plan-review-hash.mjs:41-77`) to add CS64b as a hard dependency; no plan-review re-attestation required. | The LRN flips are the primary close-out signal; the downstream-CS dep line is updated as part of *this* CS's filing PR (current PR), not at close-out, so the dependency information is visible to whoever claims CS65–CS68 next. |
@@ -47,13 +47,13 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 ## User-approval gates
 
 - **G-doctor-repair** — confirm whether `harness doctor --repair` should require interactive confirmation or accept `--yes` (default: interactive).
-- **G-apply-new** — confirm whether `harness sync --apply-new` should require per-file confirmation or take all (default: per-file).
+- **G-apply-new** — **resolved: adopt-all (non-interactive).** `harness sync --apply-new` adopts every detected new managed file in apply mode without prompting (per-file interactive confirmation would hang in CI / autonomous contexts). Per-file confirmation remains a possible follow-up.
 
 ## Exit criteria
 
 1. `harness doctor` detects + (with `--repair`) recovers the LRN-151 broken-loose-ref state in a synthetic test fixture (C64b-1).
 2. Every `lib/*.mjs` verb allocating a temp dir or clone uses the disposer pattern and `assertSafeRef` for any ref arg; a new lint or test enforces this (C64b-2).
-3. `harness sync --mode=check` reports new managed files absent from a consumer fixture; `--apply-new` adopts them with confirmation (C64b-3).
+3. `harness sync --mode=check` reports new managed files absent from a consumer fixture; `--apply-new` adopts them non-interactively (adopt-all) in apply mode (C64b-3).
 4. `harness lint --quiet` passes; `node --test tests/*.test.mjs` green; `sync --mode=check` no drift on self-host.
 5. LRN-151, LRN-155, LRN-157 flipped to `applied` with merge SHA in each Disposition.
 6. CHANGELOG `[Unreleased]` entries present.
@@ -65,7 +65,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 |---|---|---|
 | R1 | `harness doctor --repair` deletes a ref the user wanted (false positive on a legitimate zero-byte ref). | Default report-only; `--repair` is explicit + interactive (G-doctor-repair); the heuristic is precise (zero-byte / whitespace-only / NUL-only + `git for-each-ref` flags it as `ignoring broken ref`). |
 | R2 | Disposer-pattern audit touches every verb in `lib/` and creates a sprawling diff. | Scope the audit to verbs that *actually* allocate temp dirs/clones (likely 2–3 today + CS64's new verbs); land the helper first, then per-verb adoption commits. |
-| R3 | `harness sync --apply-new` adopts a file a consumer deliberately omitted. | Report-only default; `--apply-new` is per-file confirmation (G-apply-new). |
+| R3 | `harness sync --apply-new` adopts a file a consumer deliberately omitted. | Report-only default; `--apply-new` only adopts in apply mode (never check/dry-run), is opt-in, and skips `config.excluded` targets, so adoption is never a silent surprise; per-file confirmation is a possible follow-up (G-apply-new). |
 | R4 | CS64 ships verbs that themselves should have used the disposer pattern — needs retrofit. | C64b-2 explicitly includes "any CS64 verbs once that PR lands" in the audit scope; retrofit lands as part of *this* CS, not a separate follow-up. |
 | Q1 | Should `harness startup` auto-invoke `harness doctor` (advisory)? | Default: no (doctor is a separate explicit verb); revisit at claim time if `startup`'s authors prefer integration. |
 
@@ -77,6 +77,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 | R2 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah-c2) | a8cd5bd7af63 | 2026-06-10T14:46:01Z | Needs-Fix | F2 still present in C64b-4 (`or extension of lib/git-util.mjs`); hash + numbering OK; F5 deferral acceptable. |
 | R3 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah-c2) | 4ab5755f0df1 | 2026-06-10T14:47:06Z | Go | Hash verified; `git-util` absent; deliverables 1-8 contiguous; independence holds. |
 | R4 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | 245219717720 | 2026-06-23T05:18:24Z | Go | Re-attest after split: C64b-3 + Deliverable 4 corrected to membership wording (absent from `managed.files`, not disk presence) to match the implementation; hash verified; independence holds. |
+| R5 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | aa0314e427e4 | 2026-06-23T15:12:20Z | Go | Re-attest after resolving G-apply-new to adopt-all: C64b-3 + gate + Exit-3 + R3 + Notes now consistently describe non-interactive adopt-all (apply-mode-only, skips `config.excluded`); hash verified. |
 
 ## Model audit
 
@@ -105,16 +106,15 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 ## Notes / Learnings
 
-**G-apply-new resolved to "adopt-all" (non-interactive).** The plan left the
-`harness sync --apply-new` confirmation model to a user-approval gate (G-apply-new;
-default "per-file", referenced in C64b-3, Exit criterion 3, and Risk R3). It is
-implemented as **adopt-all without prompting**, because CS64b was executed
-autonomously with no user available to confirm and interactive per-file prompts
-would hang in CI / non-interactive contexts. `--apply-new` only adopts in
-`--mode=apply` (detection-only in check/dry-run), so it is never a silent surprise.
-Per-file confirmation remains a possible follow-up; this note supersedes the plan's
-"explicit/per-file confirmation" language **without re-attesting** the hashed
-Decisions section.
+**G-apply-new resolved to "adopt-all" (non-interactive).** The G-apply-new
+user-approval gate is resolved to **adopt-all without prompting**: CS64b was
+executed autonomously with no user available to confirm, and interactive
+per-file prompts would hang in CI / non-interactive contexts. `--apply-new` only
+adopts in `--mode=apply` (detection-only in check/dry-run) and skips
+`config.excluded` targets, so it is never a silent surprise. Per-file
+confirmation remains a possible follow-up. The plan text (C64b-3, the G-apply-new
+gate, Exit criterion 3, Risk R3) was updated to reflect this resolution and
+re-attested (see the Plan review R5 row).
 
 **Review trail.** gpt-5.5 rubber-duck R1 (pre-PR) = Go with 4 non-blocking findings;
 all addressed in the fix commit. R2 verified the fixes (findings 2/4 fully resolved;

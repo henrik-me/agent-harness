@@ -28,12 +28,16 @@ function libModules() {
 // Strip block + line comments before scanning so a documentation MENTION of the
 // forbidden primitive (e.g. a lib/ module stating this very rule) does not
 // register as a call site — the guard targets actual allocation calls, not prose
-// (Copilot review). Heuristic but sufficient: lib/ source never embeds
-// "mkdtempSync(" inside a string literal.
+// (Copilot review). A line comment is recognised only when "//" starts the line
+// or follows whitespace, so URL content like "https://" (where "//" follows ":")
+// is not stripped. Pragmatic heuristic for the current lib/ source, not a full JS
+// tokenizer (a "//" inside a string literal after whitespace would be treated as
+// a comment) — an accepted limitation for a defence-in-depth build guard whose
+// primary enforcement is the convention + code review.
 function stripComments(src) {
   return src
-    .replace(/\/\*[\s\S]*?\*\//g, '')        // block comments
-    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');   // line comments (preserve scheme-relative ://)
+    .replace(/\/\*[\s\S]*?\*\//g, '')      // block comments
+    .replace(/(^|\s)\/\/.*$/gm, '$1');     // line comments ("//" at line-start or after whitespace)
 }
 
 test('no lib/ module allocates a raw temp dir outside lib/disposers.mjs', () => {
@@ -59,6 +63,10 @@ test('the raw-temp-dir guard ignores mkdtempSync named only in a comment', () =>
   assert.equal(/\bmkdtemp(Sync)?\s*\(/.test(stripComments(commented)), false, 'comment mention must not match');
   const realCall = "const d = mkdtempSync(path.join(os.tmpdir(), 'x'));\n";
   assert.equal(/\bmkdtemp(Sync)?\s*\(/.test(stripComments(realCall)), true, 'real call must still match');
+  // A URL on the same line as a real call must NOT be treated as a comment and
+  // hide the call ("//" in "https://" follows ":", not whitespace).
+  const urlLine = "const u = 'https://x.example'; const d = mkdtempSync();\n";
+  assert.equal(/\bmkdtemp(Sync)?\s*\(/.test(stripComments(urlLine)), true, 'URL must not hide a real call');
 });
 
 test('lib/disposers.mjs itself provides the disposer primitives', () => {
