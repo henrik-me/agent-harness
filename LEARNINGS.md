@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-167
+
+```yaml
+id: LRN-167
+date: 2026-06-24
+category: process
+source_cs: CS66
+status: open
+tags: [check-clickstop, directory-form-cs, pvi-gate, fenced-code, lint, validation-gap]
+claim_area: orchestrator
+```
+
+**Problem:** While building `harness review-cs` (CS66 C66-3), two pre-existing gaps surfaced in `scripts/check-clickstop.mjs`: (1) its main validation loop iterates only direct `.md` *file* entries of each `{planned,active,done}` dir (`if (!entry.isFile()) continue;` at :544), so **directory-form** CS plans (`<state>_csNN_<slug>/<state>_csNN_<slug>.md`) are never passed to `checkFile()` and escape required-field + close-out-task + `## Plan-vs-implementation review` (PVI) validation; (2) the PVI gate's heading detection (`hasMarkdownHeading` + a `/m` regex) is **not fence-aware**, so a `## Plan-vs-implementation review` line inside a fenced code block (or a 4-backtick fence containing inner triple-backticks) satisfies the gate even when no real H2 exists. A directory-form done CS missing its PVI section, or one whose only PVI heading lives in a code fence, would pass `check-clickstop` silently.
+
+**Finding:** `review-cs` worked around both in its own code — a direct PVI backstop that reads the located file, plus a builtins-only fence-aware `findPviHeadingIndex` (tracking fence char AND opening run length per CommonMark) — so the verb is correct regardless of the linter. But `check-clickstop.mjs` itself remains the authoritative gate and should be aligned: (a) recurse into directory-form CS dirs to validate the inner plan `.md`, and (b) make the PVI heading check fence-aware (mirror the `findPviHeadingIndex` run-length logic). Until then, `review-cs` is *stricter* than the linter it backstops.
+
+**Evidence:** `scripts/check-clickstop.mjs:543-545` (the `entry.isFile()` skip); `:284-312` (PVI gate via `hasMarkdownHeading` + `GATE_H2_RE`, no fence tracking) vs `lib/doc-schema.mjs` `assertHeadings` (scans all `^#{1,6}\s+` with no fence state); CS66 surfaced both — Copilot review on PR #320 flagged the fence-naive regex in `review-cs` `directPviProblems` and the rubber-duck R6 caught the fence-length edge case; fixed in `lib/review-cs.mjs` (`findPviHeadingIndex`, `extractPviSectionBody`, `directPviProblems`) + `tests/lib-review-cs.test.mjs`.
+
+**Disposition:** Open. Recommend a follow-up CS to (a) make `check-clickstop.mjs`'s main loop validate directory-form CS plan files and (b) make its PVI heading gate fence-aware, mirroring `review-cs`'s `findPviHeadingIndex`. Until then the `review-cs` backstops cover the verb's own correctness.
+
+---
+
 ### LRN-164
 
 ```yaml
