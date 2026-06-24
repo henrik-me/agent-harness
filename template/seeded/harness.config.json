@@ -7,6 +7,13 @@
     "agent_suffix": "mp",
     "repo": "REPLACE_ME/REPLACE_ME"
   },
+  "managed": {
+    "files": [
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md"
+    ]
+  },
   "composed": {
     "files": [
       "INSTRUCTIONS.md",
@@ -38,6 +45,7 @@
     "agent_suffix": "mp",
     "agent_suffix_upper": "MP",
     "repo_owner": "REPLACE_ME",
+    "repo_slug": "REPLACE_ME/REPLACE_ME",
     "default_codeowner": "REPLACE_ME",
     "lib_codeowner": "REPLACE_ME",
     "repo_short": "REPLACE_ME"

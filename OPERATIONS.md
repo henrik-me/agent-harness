@@ -1937,6 +1937,22 @@ nothing (fail-closed per ADR 0001 § Legacy-content fail-closed invariant).
 Use `harness composed-audit --from-existing-harness` to generate the initial
 mapping when migrating an existing file onto the harness.
 
+### Consumer-template genericity invariant
+
+The core onboarding docs shipped to consumers — `INSTRUCTIONS.md`,
+`.github/copilot-instructions.md`, `TRACKING.md`, `RETROSPECTIVES.md`,
+`READMEGUIDE.md` — must be **repo-agnostic**. Their generic locations
+(`template/composed/<doc>` bases and `template/managed/<doc>`) must NOT
+contain a harness-internal reference: a bare `LRN-NNN` or `CSNN` token, a
+`LEARNINGS.md#lrn-` anchor link, or the literal `henrik-me/agent-harness`
+slug. A repo that adopts the harness receives basic, generic instructions —
+not references that dangle back into the harness's own institutional memory.
+The harness self-host keeps its own institutional cross-anchors inside each
+composed file's `harness:local-*` block (excluded from the scan). The
+`check-consumer-template-genericity` linter (registered in `harness lint`)
+enforces this invariant so the genericity cannot silently regress, as it did
+when those docs first reached consumers carrying dead harness anchors.
+
 ### Integration testing for templated outputs (LRN-057)
 
 Any change to seeded skeletons or composed templates must be validated with the

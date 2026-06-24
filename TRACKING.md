@@ -259,7 +259,7 @@ env-var-name:   HARNESS_AGENT_AH_MACHINE
 env-var-value:  (not set)
 effective-machine-short: yoga
 config-suffix:  ah
-consumer-cwd:   C:\src{{repo_short}}
+consumer-cwd:   C:\src\<repo>
 clone-suffix:   (none)
 agent-id:       yoga-ah
 ```
@@ -268,10 +268,10 @@ agent-id:       yoga-ah
 
 | Clone path | Hostname | Env var | Agent ID |
 |------------|----------|---------|----------|
-| `C:\src{{repo_short}}` | `HENRIKM-YOGA` | _(not set)_ | `yoga-ah` |
-| `C:\src{{repo_short}}_copilot2` | `HENRIKM-OMNI` | _(not set)_ | `omni-ah-c2` |
-| `C:\src{{repo_short}}3` | `HENRIKM-YOGA` | _(not set)_ | `yoga-ah-c3` |
-| `C:\src{{repo_short}}` | `HENRIKM-YOGA` | `HARNESS_AGENT_AH_MACHINE=ci` | `ci-ah` |
+| `C:\src\<repo>` | `HENRIKM-YOGA` | _(not set)_ | `yoga-ah` |
+| `C:\src\<repo>_copilot2` | `HENRIKM-OMNI` | _(not set)_ | `omni-ah-c2` |
+| `C:\src\<repo>3` | `HENRIKM-YOGA` | _(not set)_ | `yoga-ah-c3` |
+| `C:\src\<repo>` | `HENRIKM-YOGA` | `HARNESS_AGENT_AH_MACHINE=ci` | `ci-ah` |
 
 ### WORKBOARD Orchestrators table
 

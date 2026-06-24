@@ -126,7 +126,7 @@ describe('CS15d scaffold aggregator integration', () => {
     assert.equal(result.status, 0, `expected lint exit 0; stderr:\n${result.stderr}\nstdout:\n${result.stdout}`);
     const rows = summaryRows(result.stdout);
     assert.equal(rows.filter((row) => /migration.*policy|feature.*flag.*policy|feature-flags.*policy/.test(row.name)).length, 0);
-    assert.equal(rows.length, beta9AggregatorLanded() ? 22 : 15, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
+    assert.equal(rows.length, beta9AggregatorLanded() ? 23 : 16, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
   });
 
   it('self-host scaffold-readme walk does not run for non-self-host consumers', (t) => {

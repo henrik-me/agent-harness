@@ -240,6 +240,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-text-encoding.mjs (BOM + line endings; walks --cwd recursively)
   - check-fixtures.mjs    (tests/fixtures/ — gitignored fixture paths; LRN-076)
   - check-templates.mjs   (template/ subtree — LRN-049/050/051 template-authoring rules)
+  - check-consumer-template-genericity.mjs (consumer-onboarding doc set — genericity guard; self-host only)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
@@ -2322,6 +2323,26 @@ as the SAML-safe fallback (see OPERATIONS.md § Reusable CI workflow).
 **Why:** REVIEWS.md is only mechanically enforced when both the workflow and
 branch ruleset contexts are installed; this catches partial sync/init states.
 `.trim(),
+  'consumer-template-genericity': `
+**Linter:** check-consumer-template-genericity (scripts/check-consumer-template-genericity.mjs)
+**Target:** the consumer-onboarding doc set, each at its generic location —
+          template/composed/INSTRUCTIONS.md,
+          template/composed/.github/copilot-instructions.md,
+          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md,
+          template/managed/READMEGUIDE.md. Harness-self-host only (skipped where
+          the template/ subtree is absent, e.g. a consumer repo).
+**Rules:**
+  - No harness-internal reference may appear in a consumer-shipped onboarding
+    doc: a LEARNINGS.md#lrn- anchor link, a bare LRN-NNN or CSNN token, or the
+    literal henrik-me/agent-harness slug.
+  - Composed bases are parsed via lib/composed.mjs; content inside allowlisted
+    harness:local-* blocks is exempt. A malformed/unclosed marker is
+    fail-closed: the whole raw file is scanned so a broken marker hides nothing.
+**Why:** A repo that adopts the harness must receive basic, generic
+instructions — not references that dangle back into the harness's own
+institutional memory. The guard makes the genericity invariant permanent so
+the dead-anchor regression cannot recur silently.
+`.trim(),
 };
 
 async function cmdLint(args, _global) {
@@ -2515,6 +2536,19 @@ async function cmdLint(args, _global) {
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
       ],
       target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
+    },
+    {
+      // CS72 (C72-3/C72-4): consumer-template genericity guard. Scans the
+      // consumer-onboarding doc set (template/composed bases + template/managed)
+      // and fails on any harness-internal reference (a bare LRN-NNN / CSNN
+      // token, a LEARNINGS.md#lrn- anchor, or the henrik-me/agent-harness slug)
+      // outside allowlisted harness:local-* blocks. Harness-self-host only: the
+      // target is the template/ subtree, which exists in the harness repo but
+      // not in a consumer, so the aggregator skips it there.
+      name: 'consumer-template-genericity',
+      script: 'check-consumer-template-genericity.mjs',
+      args: ['--cwd', cwd],
+      target: path.join(cwd, 'template'),
     },
     {
       // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd
