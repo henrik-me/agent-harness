@@ -1,10 +1,10 @@
 # CS66 — Review-family verbs: review-doc, review-cs, perf-review, security-review
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs66/content
 **Started:** 2026-06-24
-**Closed:** —
+**Closed:** 2026-06-24
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the review-family verbs cataloged in CS64's command/skill surface are spun out here because each is its own review-workflow design and bundling them would re-create the CS63 mega-PR risk.
 **Depends on:** **CS52** (the `harness review` content-PR orchestrator these extend) and **CS40** (`harness review-output` validation) — hard, they are the reuse base. `review-cs` also builds on `lib/plan-review-hash.mjs` + `scripts/check-clickstop-plan-review.mjs`. Independent of CS65; may claim after CS64's `harness review` reuse seams are understood. **CS64b** (hard, added 2026-06-10) — the review-family verbs allocate temp dirs / clones for diff inspection and need the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) before adopting them as a CONVENTIONS-required pattern.
 
@@ -104,4 +104,16 @@ Scope phasing (C66-1): `review-doc` + `review-cs` map directly onto existing har
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, orchestrator omni-ah-c2)
+**Date:** 2026-06-24
+**Outcome:** GO
+
+Reviewed the merged implementation at squash commit `4fcd535` against the CS66 plan
+(Decisions C66-1..C66-7, Deliverables 1-6, Exit criteria 1-8). All Decisions,
+Deliverables, and Exit criteria are satisfied with no divergences. The wave-2 verbs
+(`perf-review` / `security-review`) shipped in-CS — over-delivery relative to G-wave2,
+not under. Risk Q1 resolved verify-only: `review-cs` is local with no model / `gh` / PR
+path. Verified green: `harness lint --quiet` → 30 passed / 0 failed / 3 skipped;
+`node --test tests/*.test.mjs` → 1460 pass / 0 fail / 1 skipped; `harness sync
+--mode=check` → no drift. Reviewer model gpt-5.5 differs from every implementer model
+(claude-opus-4.8 / claude-opus-4.6) per REVIEWS.md § 2.3.
