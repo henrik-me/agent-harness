@@ -2,9 +2,10 @@
 /**
  * probe-active.mjs — CS readiness probe: active clickstop front-matter.
  *
- * Checks project/clickstops/active/ for an in-flight CS and validates that its
- * front-matter fields are populated. Passes when zero or exactly one active CS
- * exists and that file's Status, Owner, Branch, and Started fields are all set.
+ * Checks project/clickstops/active/ for in-flight CSs and validates each one's
+ * front-matter fields (Status, Owner, Branch, Started) are populated, AND that
+ * no single Owner has more than one active CS (per-orchestrator lock; different
+ * owners may hold concurrent active CSs).
  *
  * Usage: node scripts/cs-probes/probe-active.mjs [--cwd <path>] [--quiet]
  * Exit codes: 0 = pass, 1 = fail, 2 = usage error
@@ -47,7 +48,7 @@ for (let i = 0; i < argv.length; i++) {
     case '-h':
       process.stdout.write(
         'Usage: probe-active.mjs [--cwd <path>] [--quiet]\n\n' +
-        'Validates project/clickstops/active/ for a single, well-formed active CS.\n\n' +
+        'Validates project/clickstops/active/ front-matter and at most one active CS per Owner.\n\n' +
         'Exit codes: 0 = pass, 1 = fail, 2 = usage error\n',
       );
       process.exit(0);
@@ -107,21 +108,35 @@ function checkFile(filePath) {
   return issues;
 }
 
+const OWNER_RE = /\*\*Owner:\*\*\s*(\S+)/;
+function ownerOf(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8')
+      .replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const m = raw.match(OWNER_RE);
+    return m && m[1] !== EMPTY_PLACEHOLDER ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Probe logic
 // ---------------------------------------------------------------------------
 
 const activeDir = path.join(cwd, 'project', 'clickstops', 'active');
 
-if (!fs.existsSync(activeDir)) {
-  if (!quiet) process.stdout.write('probe-active: PASS — no active/ directory found\n');
-  process.exit(0);
-}
-
+// Read active/ directly and discriminate ENOENT — a permission/other error
+// must FAIL CLOSED, not be silently treated as "no active CS" (existsSync also
+// returns false on EACCES, which would mask a real failure).
 let entries;
 try {
   entries = fs.readdirSync(activeDir, { withFileTypes: true });
 } catch (err) {
+  if (err.code === 'ENOENT') {
+    if (!quiet) process.stdout.write('probe-active: PASS — no active/ directory found\n');
+    process.exit(0);
+  }
   process.stderr.write(`probe-active: cannot read active/: ${err.message}\n`);
   process.exit(1);
 }
@@ -137,11 +152,23 @@ if (mdFiles.length === 0) {
 
 let failed = false;
 
-if (mdFiles.length > 1) {
-  process.stdout.write(
-    `probe-active: FAIL — ${mdFiles.length} active CS files found; expected at most 1\n`,
-  );
-  failed = true;
+// Per-orchestrator lock: at most one active CS per Owner. Files with a
+// missing/placeholder Owner are skipped here — checkFile already flags them.
+const activeByOwner = new Map();
+for (const filePath of mdFiles) {
+  const owner = ownerOf(filePath);
+  if (owner === null) continue;
+  if (!activeByOwner.has(owner)) activeByOwner.set(owner, []);
+  activeByOwner.get(owner).push(path.basename(filePath));
+}
+for (const [owner, basenames] of activeByOwner) {
+  if (basenames.length > 1) {
+    process.stdout.write(
+      `probe-active: FAIL — owner "${owner}" has ${basenames.length} active CS files ` +
+      `(${basenames.join(', ')}); expected at most 1 per orchestrator\n`,
+    );
+    failed = true;
+  }
 }
 
 for (const filePath of mdFiles) {

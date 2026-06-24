@@ -2,10 +2,10 @@
 /**
  * probe-tasks-resolved.mjs — CS readiness probe: task row resolution gate.
  *
- * Reads the active CS file (when exactly one exists) and inspects every row in
- * its ## Tasks table. A row is resolved when its report-status key (embedded in
- * the Notes column as `report-status=<value>`) is a member of RESOLVED_STATUSES.
- * Fails if any row carries a report-status in UNRESOLVED_STATUSES.
+ * Reads every active CS file and inspects every row in each one's ## Tasks
+ * table. A row is resolved when its report-status key (embedded in the Notes
+ * column as `report-status=<value>`) is a member of RESOLVED_STATUSES. Fails if
+ * any row in any active CS carries a report-status in UNRESOLVED_STATUSES.
  *
  * This is the canonical pre-close-out gate: run it before opening a close-out
  * PR to confirm that no sub-agent task is still pending or in-flight.
@@ -51,7 +51,7 @@ for (let i = 0; i < argv.length; i++) {
     case '-h':
       process.stdout.write(
         'Usage: probe-tasks-resolved.mjs [--cwd <path>] [--quiet]\n\n' +
-        'Checks that all ## Tasks rows in the active CS have a resolved report-status.\n\n' +
+        'Checks that all ## Tasks rows in every active CS have a resolved report-status.\n\n' +
         'Exit codes: 0 = pass, 1 = fail, 2 = usage error\n',
       );
       process.exit(0);
@@ -78,31 +78,41 @@ const UNRESOLVED_STATUSES = new Set(['pending', 'dispatched']);
 // Helpers
 // ---------------------------------------------------------------------------
 
-function readActiveFile(activeDir) {
-  if (!fs.existsSync(activeDir)) return null;
-
+function readActiveFiles(activeDir) {
   let entries;
   try {
     entries = fs.readdirSync(activeDir, { withFileTypes: true });
-  } catch {
-    return null;
+  } catch (err) {
+    // ENOENT → no active/ dir → no active CS (legit PASS). Any other error
+    // (e.g. EACCES) must FAIL CLOSED, not be silently treated as "no active
+    // CS" — existsSync would also return false on EACCES and mask the failure.
+    if (err.code === 'ENOENT') return [];
+    process.stderr.write(`probe-tasks-resolved: cannot read active/: ${err.message}\n`);
+    process.exit(1);
   }
 
   const mdFiles = entries.filter(
     e => e.isFile() && e.name.endsWith('.md') && e.name !== '.gitkeep',
   );
-  if (mdFiles.length !== 1) return null;
 
-  const filePath = path.join(activeDir, mdFiles[0].name);
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8')
-      .replace(/^\uFEFF/, '')
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n');
-    return { filePath, basename: mdFiles[0].name, raw };
-  } catch {
-    return null;
+  const out = [];
+  for (const entry of mdFiles) {
+    const filePath = path.join(activeDir, entry.name);
+    let raw;
+    try {
+      raw = fs.readFileSync(filePath, 'utf8')
+        .replace(/^\uFEFF/, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n');
+    } catch (err) {
+      // Fail closed: an unreadable active CS could hide unresolved tasks under
+      // the "validate every active CS" contract, so never silently skip it.
+      process.stderr.write(`probe-tasks-resolved: cannot read ${entry.name}: ${err.message}\n`);
+      process.exit(1);
+    }
+    out.push({ filePath, basename: entry.name, raw });
   }
+  return out;
 }
 
 function extractTasksSection(raw) {
@@ -146,82 +156,86 @@ function extractReportStatus(notesCell) {
 // ---------------------------------------------------------------------------
 
 const activeDir = path.join(cwd, 'project', 'clickstops', 'active');
-const activeFile = readActiveFile(activeDir);
+const activeFiles = readActiveFiles(activeDir);
 
-if (!activeFile) {
-  if (!quiet) process.stdout.write('probe-tasks-resolved: PASS — no single active CS found\n');
+if (activeFiles.length === 0) {
+  if (!quiet) process.stdout.write('probe-tasks-resolved: PASS — no active CS found\n');
   process.exit(0);
 }
-
-const { basename, raw } = activeFile;
-const tasksSection = extractTasksSection(raw);
-
-if (!tasksSection.trim()) {
-  if (!quiet) {
-    process.stdout.write(
-      `probe-tasks-resolved: PASS — ${basename}: no ## Tasks section found\n`,
-    );
-  }
-  process.exit(0);
-}
-
-const tableLines = tasksSection.split('\n').filter(l => l.trimStart().startsWith('|'));
-const isSeparator = l => /^\s*\|[-| :]+\|\s*$/.test(l);
-const dataRows = tableLines.filter(l => !isSeparator(l));
-
-if (dataRows.length <= 1) {
-  if (!quiet) {
-    process.stdout.write(`probe-tasks-resolved: PASS — ${basename}: no task data rows\n`);
-  }
-  process.exit(0);
-}
-
-// dataRows[0] is the header row; slice it off
-const rows = dataRows.slice(1);
 
 let failed = false;
-let resolvedCount = 0;
-let unresolvedCount = 0;
 
-for (const row of rows) {
-  const cells = parseTableRow(row);
-  if (cells.length < 2) continue;
+for (const { basename, raw } of activeFiles) {
+  const tasksSection = extractTasksSection(raw);
 
-  // TODO: customize — adjust the Notes column index if your Tasks table layout differs
-  // Default: 4-column table, Notes is the last (index 3)
-  const notesCell = cells[cells.length - 1];
-  const reportStatus = extractReportStatus(notesCell);
-
-  if (reportStatus === null) {
-    // Row does not carry a report-status key — skip
-    // TODO: customize — treat rows without report-status as unresolved if desired
+  if (!tasksSection.trim()) {
+    if (!quiet) {
+      process.stdout.write(
+        `probe-tasks-resolved: PASS — ${basename}: no ## Tasks section found\n`,
+      );
+    }
     continue;
   }
 
-  const taskName = cells[0];
+  const tableLines = tasksSection.split('\n').filter(l => l.trimStart().startsWith('|'));
+  const isSeparator = l => /^\s*\|[-| :]+\|\s*$/.test(l);
+  const dataRows = tableLines.filter(l => !isSeparator(l));
 
-  if (UNRESOLVED_STATUSES.has(reportStatus)) {
+  if (dataRows.length <= 1) {
+    if (!quiet) {
+      process.stdout.write(`probe-tasks-resolved: PASS — ${basename}: no task data rows\n`);
+    }
+    continue;
+  }
+
+  // dataRows[0] is the header row; slice it off
+  const rows = dataRows.slice(1);
+
+  let fileFailed = false;
+  let resolvedCount = 0;
+  let unresolvedCount = 0;
+
+  for (const row of rows) {
+    const cells = parseTableRow(row);
+    if (cells.length < 2) continue;
+
+    // TODO: customize — adjust the Notes column index if your Tasks table layout differs
+    // Default: 4-column table, Notes is the last (index 3)
+    const notesCell = cells[cells.length - 1];
+    const reportStatus = extractReportStatus(notesCell);
+
+    if (reportStatus === null) {
+      // Row does not carry a report-status key — skip
+      // TODO: customize — treat rows without report-status as unresolved if desired
+      continue;
+    }
+
+    const taskName = cells[0];
+
+    if (UNRESOLVED_STATUSES.has(reportStatus)) {
+      process.stdout.write(
+        `probe-tasks-resolved: FAIL — ${basename}: ` +
+        `task ${taskName} has report-status=${reportStatus}\n`,
+      );
+      unresolvedCount++;
+      fileFailed = true;
+      failed = true;
+    } else if (RESOLVED_STATUSES.has(reportStatus)) {
+      resolvedCount++;
+    } else {
+      process.stdout.write(
+        `probe-tasks-resolved: WARN — ${basename}: ` +
+        `task ${taskName} has unknown report-status=${reportStatus}\n`,
+      );
+    }
+  }
+
+  if (!fileFailed && !quiet) {
     process.stdout.write(
-      `probe-tasks-resolved: FAIL — ${basename}: ` +
-      `task ${taskName} has report-status=${reportStatus}\n`,
-    );
-    unresolvedCount++;
-    failed = true;
-  } else if (RESOLVED_STATUSES.has(reportStatus)) {
-    resolvedCount++;
-  } else {
-    process.stdout.write(
-      `probe-tasks-resolved: WARN — ${basename}: ` +
-      `task ${taskName} has unknown report-status=${reportStatus}\n`,
+      `probe-tasks-resolved: PASS — ${basename}: ` +
+      `${resolvedCount} resolved, ${unresolvedCount} unresolved\n`,
     );
   }
-}
-
-if (!failed && !quiet) {
-  process.stdout.write(
-    `probe-tasks-resolved: PASS — ${basename}: ` +
-    `${resolvedCount} resolved, ${unresolvedCount} unresolved\n`,
-  );
 }
 
 // TODO: customize — integrate into pre-PR git hook to enforce the close-out gate:

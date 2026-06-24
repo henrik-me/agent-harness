@@ -116,9 +116,10 @@ computed over their bodies.
 ## Claim
 
 The claim workflow moves a planned Clickstop (CS) into flight and establishes
-a content PR on the repo. **One CS active at a time** — the WORKBOARD's
-Active Work table is the live lock. No new CS may be claimed while an
-existing CS has `state = Active`.
+a content PR on the repo. **One CS active per orchestrator** — the WORKBOARD's
+Active Work table is the live lock, keyed on the Owner. An orchestrator may not
+claim a second CS while it already owns an Active row, but different
+orchestrators run concurrently and may each hold their own Active CS.
 
 ### Three-PR shape
 

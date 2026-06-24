@@ -334,7 +334,7 @@ test('planClaim: directory-form listing produces directory dest', () => {
   assert.doesNotMatch(r.plan.destPath, /\.md$/);
 });
 
-test('planClaim: blocked when another orchestrator already owns an Active row', () => {
+test('planClaim: ALLOWED when a DIFFERENT orchestrator owns an Active row (per-orchestrator lock)', () => {
   const wb = WB_WITH_ROW.replace('cs64/content', 'cs63/content').replace('CS64', 'CS63');
   const r = planClaim({
     csId: 'CS64',
@@ -347,8 +347,8 @@ test('planClaim: blocked when another orchestrator already owns an Active row', 
     title: 'X',
     today: '2026-06-10',
   });
-  assert.ok(!r.ok);
-  assert.ok(r.errors.some((e) => /another CS is already Active/.test(e)));
+  assert.ok(r.ok);
+  assert.ok(!(r.errors || []).some((e) => /another CS is already Active/.test(e)));
 });
 
 // Regression: when the same orchestrator owns multiple WORKBOARD rows
@@ -570,11 +570,10 @@ test('applyClaimPlan: apply-time race re-check — refuses when this orchestrato
   assert.equal(files.get('/p/WORKBOARD.md'), selfRace.md);
 });
 
-// Companion to the self-race regression above: enforce the *global*
-// one-CS-at-a-time invariant at apply time. A different orchestrator
-// claiming a different CS between plan and apply must still block us;
-// otherwise a second Active row slips into WORKBOARD silently.
-test('applyClaimPlan: apply-time race re-check — refuses when a DIFFERENT orchestrator gained any Active row between plan and apply', () => {
+// Companion to the self-race regression above: a DIFFERENT orchestrator
+// claiming a different CS between plan and apply must NOT block us — the
+// lock is per-orchestrator, so the apply inserts our row beside theirs.
+test('applyClaimPlan: ALLOWS apply when a DIFFERENT orchestrator gained an Active row between plan and apply (per-orchestrator lock)', () => {
   const { plan } = planClaim({
     csId: 'CS64',
     listing: fakeListing(),
@@ -600,13 +599,21 @@ test('applyClaimPlan: apply-time race re-check — refuses when a DIFFERENT orch
     },
   });
   files.set('/p/WORKBOARD.md', otherRace.md);
-  assert.throws(
-    () => applyClaimPlan({ plan, runner }),
-    /apply-time race: another CS is already Active.*CS63.*owner yoga-ah/,
+  const res = applyClaimPlan({ plan, runner });
+  // Apply succeeds: our CS64 row is inserted beside the different owner's CS63 row.
+  assert.equal(res.renamed, true);
+  assert.equal(res.workboardEdited, true);
+  const finalWb = files.get('/p/WORKBOARD.md');
+  assert.match(finalWb, /CS64/);
+  assert.match(finalWb, /CS63/);
+  const rows = parseActiveWorkRows(finalWb);
+  assert.deepEqual(
+    rows.map((r) => r.cs).sort(),
+    ['CS63', 'CS64'],
   );
-  assert.ok(files.has('/p/planned/planned_cs64_my-slug.md'));
-  assert.ok(!files.has(plan.destPath));
-  assert.equal(files.get('/p/WORKBOARD.md'), otherRace.md);
+  // Rename happened: dest present, source gone (per fakeRunner gitMv semantics).
+  assert.ok(files.has(plan.destPath));
+  assert.ok(!files.has(plan.sourcePath));
 });
 
 test('applyClaimPlan: throws when source is missing and dest is also missing', () => {

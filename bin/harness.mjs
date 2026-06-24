@@ -648,7 +648,7 @@ Preflights:
   - Worktree must be clean.
   - Branch cs<NN>/claim must not already exist.
   - Exactly one matching planned_cs<NN>_*.md (or directory form).
-  - No other CS is Active in WORKBOARD (one-CS-at-a-time rule).
+  - This orchestrator has no existing Active CS row in WORKBOARD (per-orchestrator lock).
   - 'harness harvest --claim-area cs<NN>' must pass (unless --skip-harvest).
 
 On --apply: cuts cs<NN>/claim branch, git mv planned→active, edits

@@ -6,8 +6,8 @@ Lightweight scripts that verify CS lifecycle readiness gates before and during c
 
 Add this scaffold when you want mechanical checks that complement `harness lint`:
 
-- Exactly one active clickstop is in-flight and its front-matter is valid.
-- All sub-agent task rows in the active CS have a resolved `report-status` value
+- At most one active clickstop **per orchestrator** (keyed on Owner) and each active CS's front-matter is valid.
+- All sub-agent task rows in every active CS have a resolved `report-status` value
   (none `pending` or `dispatched`) before you open the close-out PR.
 
 These are gentle, consumer-specific assertions targeting the CS process itself,
