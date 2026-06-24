@@ -1847,9 +1847,9 @@ with a previewable upgrade.
 
 | Invocation | Behaviour |
 |---|---|
-| `harness sync` | Apply mode (default): writes updates to disk. |
-| `harness sync --check` | Check mode: exits non-zero if any file is out of sync; writes nothing. Suitable for CI. |
-| `harness sync --dry-run` | Dry-run mode: prints what would change; writes nothing. |
+| `harness sync` (or `harness check`) | Check mode (**default**): reports drift and exits non-zero if any file is out of sync; writes nothing. Suitable for CI. |
+| `harness sync --mode=apply` | Apply mode: writes updates to disk. |
+| `harness sync --mode=dry-run` | Dry-run mode: prints what would change; writes nothing. |
 
 ### Flags
 
