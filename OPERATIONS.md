@@ -1943,12 +1943,16 @@ The core onboarding docs shipped to consumers — `INSTRUCTIONS.md`,
 `.github/copilot-instructions.md`, `TRACKING.md`, `RETROSPECTIVES.md`,
 `READMEGUIDE.md` — must be **repo-agnostic**. Their generic locations
 (`template/composed/<doc>` bases and `template/managed/<doc>`) must NOT
-contain a harness-internal reference: a bare `LRN-NNN` or `CSNN` token, a
-`LEARNINGS.md#lrn-` anchor link, or the literal `henrik-me/agent-harness`
-slug. A repo that adopts the harness receives basic, generic instructions —
-not references that dangle back into the harness's own institutional memory.
-The harness self-host keeps its own institutional cross-anchors inside each
-composed file's `harness:local-*` block (excluded from the scan). The
+contain a harness-internal reference: a bare `LRN-<digits>` or `CS<digits>`
+token, a `LEARNINGS.md#lrn-` anchor link, or the (case-insensitive)
+`henrik-me/agent-harness` slug. A repo that adopts the harness receives basic,
+generic instructions — not references that dangle back into the harness's own
+institutional memory. The composed bases are scanned **in full**, including the
+default `harness:local-*` block bodies (those ship to consumers verbatim on
+first init). The harness self-host keeps its own institutional cross-anchors in
+the **rendered repo-root** docs (`INSTRUCTIONS.md`,
+`.github/copilot-instructions.md`), which the linter does not target — it scans
+only the `template/**` generic sources and is package-name self-host gated. The
 `check-consumer-template-genericity` linter (registered in `harness lint`)
 enforces this invariant so the genericity cannot silently regress, as it did
 when those docs first reached consumers carrying dead harness anchors.
