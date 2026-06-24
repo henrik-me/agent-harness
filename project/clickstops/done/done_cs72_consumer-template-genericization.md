@@ -1,10 +1,10 @@
 # CS72 — Genericize consumer-shipped governance docs + guard linter
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
 **Branch:** cs72/content
 **Started:** 2026-06-24
-**Closed:** —
+**Closed:** 2026-06-24
 **Filed by:** omni-ah (Claude Opus 4.8), 2026-06-23 — surfaced during CS64b execution when @henrik-me rejected shipping the harness's own governance/onboarding docs (which carry harness-internal LRN/ADR/CS cross-references) verbatim to consumers. User directive: *"there should be no lrn's in a repo that adopts the harness that refers back to lrn's in the agent-harness repo … it has to be clean with basic/generic instructions, not specific to another repo."* The CS64b consumer-delivery strand (C64b-7 seed/init core-doc delivery + C64b-8 core-doc sync WARN gate) was **split out** of PR #310 and is re-planned here, done correctly: genericize first, then deliver.
 **Depends on:** **CS64b** (soft) — CS64b's C64b-3 `harness sync` new-managed-file reconciliation is the delivery mechanism the now-generic core docs flow through; this CS restores the delivery (descoped from CS64b) on top of generic templates.
 
