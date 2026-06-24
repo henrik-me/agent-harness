@@ -213,6 +213,11 @@ const SUBCOMMAND_PLAN = {
     skip: 'Requires gh auth + GitHub API polling for a Copilot review; only read-only ' +
       '`git rev-parse HEAD` locally (bin/harness.mjs).',
   },
+  doctor: {
+    skip: 'Report-only default runs only read-only `git rev-parse --git-dir` + a refs/remotes ' +
+      'file walk; --repair runs `git fetch origin --prune` (updates remote-tracking refs, never ' +
+      'moves HEAD). No HEAD-moving git op (bin/harness.mjs cmdDoctor -> lib/doctor.mjs).',
+  },
   review: {
     skip: 'Requires gh auth + GitHub PR fetch to compose/post a review; git usage is read-only ' +
       'diff (lib/review.mjs).',

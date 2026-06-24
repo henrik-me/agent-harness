@@ -1847,9 +1847,9 @@ with a previewable upgrade.
 
 | Invocation | Behaviour |
 |---|---|
-| `harness sync` | Apply mode (default): writes updates to disk. |
-| `harness sync --check` | Check mode: exits non-zero if any file is out of sync; writes nothing. Suitable for CI. |
-| `harness sync --dry-run` | Dry-run mode: prints what would change; writes nothing. |
+| `harness sync` (or `harness check`) | Check mode (**default**): reports drift and exits non-zero if any file is out of sync; writes nothing. Suitable for CI. |
+| `harness sync --mode=apply` | Apply mode: writes updates to disk. |
+| `harness sync --mode=dry-run` | Dry-run mode: prints what would change; writes nothing. |
 
 ### Flags
 
@@ -1871,6 +1871,26 @@ with a previewable upgrade.
   the actual content commit. The override is rejected (exit 2) in
   `--mode=check` / `--mode=dry-run` (only apply writes the lock) and
   rejected if the value is not 40-char lowercase hex.
+- **`--apply-new`** (CS64b C64b-3) — in apply mode, adopt every harness
+  `template/managed/` file absent from the consumer's `managed.files`
+  (membership, not disk presence; sentinels such as `.gitkeep` are excluded):
+  add the `managed.files` entry and materialize the rendered file. In
+  `--mode=check` / `--mode=dry-run` it is detection-only (never mutates, never
+  changes the exit code).
+- **`--quiet`** (CS64b C64b-3) — suppress the new-managed-file advisory (below);
+  errors still go to stderr. (Net-new on `sync` in CS64b — before then
+  `harness sync --quiet` errored.)
+
+### New-managed-file reconciliation (CS64b)
+
+`harness sync` (check and default paths) surfaces, alongside drift detection,
+every consumer-deliverable `template/managed/` file absent from the consumer's
+`managed.files` — closing the [LRN-155](LEARNINGS.md#lrn-155) asymmetry where
+sync noticed *changed* managed files but never *new* ones. The advisory is
+report-only: it does not change `driftDetected` or the exit code.
+`sync --mode=apply --apply-new` adopts the surfaced files (adds each
+`managed.files` entry + materializes the rendered file); `--quiet` suppresses the
+advisory.
 
 ### File-class behaviour
 
@@ -2595,6 +2615,20 @@ the **substance** of the requirement, not just its surface presence. A flag
 named `--redact-required` must verify that the applicable redaction rule
 exists and is non-empty — not merely that some config object was loaded. Check
 the deepest invariant the flag implies.
+
+### Temp-dir/clone disposer pattern ([LRN-157](LEARNINGS.md#lrn-157), CS64b)
+
+Any new verb (or `lib/` module) that allocates a temp directory or a `git clone`
+MUST do so through the shared `lib/disposers.mjs` primitives — `makeTempDir()` /
+`withTempDir()` for the provenance-safe paired allocation + idempotent cleanup
+(remove only the path you allocated; never path-prefix-guess), and
+`assertSafeRef(ref)` for any `--ref` / branch / tag argument before it reaches
+`git` (rejects empty, leading-dash, and out-of-allowlist refs — an
+argv-injection guard). Never hand-roll an inline `fs.mkdtempSync` + best-effort
+`rmSync`. The `tests/cs64b-disposer-pattern.test.mjs` guard fails the build if a
+`lib/` module allocates a raw temp dir outside `lib/disposers.mjs`. Reviewers:
+flag any new temp-dir/clone allocation or unguarded `git` ref argument that
+bypasses these helpers.
 
 ---
 
