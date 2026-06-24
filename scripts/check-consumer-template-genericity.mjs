@@ -96,8 +96,11 @@ const PATTERNS = [
   { name: 'lrn-token', re: /\bLRN-\d+\b/g },
   // A bare CS<digits>[suffix] token (does NOT match the CSNN / CS<NN> placeholders).
   { name: 'cs-token', re: /\bCS\d+[a-z]?\b/g },
-  // The literal harness repo slug.
-  { name: 'slug', re: /henrik-me\/agent-harness/g },
+  // The harness repo slug. Case-INSENSITIVE: GitHub repo slugs are
+  // case-insensitive, so a case-variant (e.g. Henrik-Me/agent-harness) must
+  // not slip the guard (Copilot review #322; matches how the slug is treated
+  // elsewhere in the codebase).
+  { name: 'slug', re: /henrik-me\/agent-harness/gi },
 ];
 
 // ---------------------------------------------------------------------------

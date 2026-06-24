@@ -126,6 +126,13 @@ describe('check-consumer-template-genericity', () => {
     assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: henrik-me\/agent-harness/);
   });
 
+  it('(b4b) fails (exit 1) on a case-variant slug (GitHub slugs are case-insensitive)', () => {
+    const dir = buildCwd({ instructions: path.join(VARIANTS, 'INSTRUCTIONS-slug-mixedcase.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: Henrik-Me\/agent-harness/);
+  });
+
   it('(c) FAILS (exit 1) on a banned ref inside a local-block body — the default body ships to consumers', () => {
     const dir = buildCwd({ instructions: path.join(VARIANTS, 'INSTRUCTIONS-ref-in-localblock.md') });
     const { status, stderr } = runLinter(['--cwd', dir]);
