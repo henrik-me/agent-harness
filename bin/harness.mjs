@@ -27,7 +27,7 @@ import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
 import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
-import { runReview, ReviewError } from '../lib/review.mjs';
+import { runReview, ReviewError, parseImplementerModels } from '../lib/review.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
 import { openIssue as crossRepoOpenIssue, CrossRepoError } from '../lib/cross-repo.mjs';
 
@@ -112,7 +112,11 @@ Subcommands:
                     (CS41 — pairs with A16)
   review           Orchestrate rubber-duck + Copilot review and update PR body
                     (CS52 — canonical content-PR review command)
-  pack              Run npm pack --dry-run and verify file whitelist
+  review-doc       Doc/prose fact-claim review pass (CS66 — REVIEWS § 2.6a F1–F5)
+  review-cs        Local clickstop-readiness check (CS66 — plan-review + PVI gates)
+  perf-review      Performance review pass — diff-scoped checklist (CS66)
+  security-review  Security review pass — diff-scoped checklist (CS66)
+  pack             Run npm pack --dry-run and verify file whitelist
   pr-evidence       Run PR-state evidence gates (B1, A3, A4, A5+A16, A6) against
                     a PR's commit graph + body markdown (CS36 + CS37)
   review-output     Validate reviewer-output markdown shape (CS40): Analyzed-HEAD,
@@ -622,6 +626,109 @@ Options:
   --pull-ff-only   Also run 'git pull --ff-only origin main' first (advisory)
   --cwd <path>     Consumer repo path (default: cwd)
   --help           Print this help
+`.trimStart(),
+
+  'review-doc': `
+Usage: harness review-doc <pr> [options]
+
+Doc/prose-PR fact-claim review (CS66 C66-2). Dispatches an independent reviewer
+with the REVIEWS.md § 2.6a F1–F5 fact-claim checklist, scoped to the PR diff,
+and emits the canonical reviewer-output shape. Advisory by default (exit 0);
+--strict fails on a non-Go verdict. No model is invoked unless a completed
+reviewer output is supplied via --reviewer-output (the default run just composes
+and prints the dispatch prompt + plan).
+
+Reviewer independence is enforced (REVIEWS § 2.3): the reviewer model must differ
+from every implementer model. Pass implementer models via --implementer-models
+and the CS id via --cs for the high-risk guard.
+
+Options:
+  --repo <owner/name>          Target repository (default: inferred from the diff)
+  --base <ref>                 Base ref for the diff (default: main)
+  --head <ref>                 Head ref for the diff (default: HEAD)
+  --model <id>                 Reviewer model (default: reviews.rubber_duck_model)
+  --cs <NN>                    Clickstop id for the independence high-risk guard
+  --round <R1|Rn>              Review round for CS40 output validation (default: R1)
+  --implementer-models <csv>   Comma-separated implementer models to exclude
+  --reviewer-output <file|->   Parse a completed reviewer output (- = stdin) → verdict
+  --strict                     Exit 1 on a non-Go verdict (default: advisory exit 0)
+  --dry-run                    Compose the plan even if the diff is unavailable
+  --quiet                      Suppress the prompt/verdict on stdout
+  --cwd <path>                 Consumer repo path (default: cwd)
+  --help                       Print this help
+`.trimStart(),
+
+  'review-cs': `
+Usage: harness review-cs <NN> [options]
+
+Local, verify-only clickstop-readiness check (CS66 C66-3). Locates the single
+planned/active/done file for CS<NN> and aggregates the plan-review attestation
+gate (check-clickstop-plan-review.mjs) and the Plan-vs-implementation review
+(PVI) close-out gate (check-clickstop.mjs) into one actionable "is this CS
+review-complete? what's missing?" report. NOT a model-dispatch reviewer: no
+model, no gh, no network, no PR.
+
+Advisory by default (exit 0); --strict exits 1 on a failing/missing plan-review
+or PVI gate. Fail-closed on an unknown/ambiguous CS or a linter error.
+
+Options:
+  --strict       Exit 1 on a failing plan-review/PVI gate (default: advisory exit 0)
+  --quiet        Suppress the readiness report on stdout
+  --cwd <path>   Consumer repo path (default: cwd)
+  --help         Print this help
+`.trimStart(),
+
+  'perf-review': `
+Usage: harness perf-review <pr> [options]
+
+Performance review pass (CS66 C66-4). Dispatches an independent reviewer with a
+concrete, diff-scoped perf checklist (hot-path allocations, algorithmic
+complexity, N+1 / repeated IO, sync-in-async, unbounded growth) and emits the
+canonical reviewer-output shape. Advisory by default (exit 0); --strict fails on
+a non-Go verdict. No model is invoked unless a reviewer output is supplied via
+--reviewer-output. Same options as 'review-doc'.
+
+Options:
+  --repo <owner/name>          Target repository (default: inferred from the diff)
+  --base <ref>                 Base ref for the diff (default: main)
+  --head <ref>                 Head ref for the diff (default: HEAD)
+  --model <id>                 Reviewer model (default: reviews.rubber_duck_model)
+  --cs <NN>                    Clickstop id for the independence high-risk guard
+  --round <R1|Rn>              Review round for CS40 output validation (default: R1)
+  --implementer-models <csv>   Comma-separated implementer models to exclude
+  --reviewer-output <file|->   Parse a completed reviewer output (- = stdin) → verdict
+  --strict                     Exit 1 on a non-Go verdict (default: advisory exit 0)
+  --dry-run                    Compose the plan even if the diff is unavailable
+  --quiet                      Suppress the prompt/verdict on stdout
+  --cwd <path>                 Consumer repo path (default: cwd)
+  --help                       Print this help
+`.trimStart(),
+
+  'security-review': `
+Usage: harness security-review <pr> [options]
+
+Security review pass (CS66 C66-5). Dispatches an independent reviewer with a
+concrete, diff-scoped security checklist (hard-coded secrets, command/path
+injection, unsafe deserialization, workflow permissions least-privilege,
+ref/--body-file containment, supply-chain pin drift) and emits the canonical
+reviewer-output shape. Advisory by default (exit 0); --strict fails on a non-Go
+verdict. No model is invoked unless a reviewer output is supplied via
+--reviewer-output. Same options as 'review-doc'.
+
+Options:
+  --repo <owner/name>          Target repository (default: inferred from the diff)
+  --base <ref>                 Base ref for the diff (default: main)
+  --head <ref>                 Head ref for the diff (default: HEAD)
+  --model <id>                 Reviewer model (default: reviews.rubber_duck_model)
+  --cs <NN>                    Clickstop id for the independence high-risk guard
+  --round <R1|Rn>              Review round for CS40 output validation (default: R1)
+  --implementer-models <csv>   Comma-separated implementer models to exclude
+  --reviewer-output <file|->   Parse a completed reviewer output (- = stdin) → verdict
+  --strict                     Exit 1 on a non-Go verdict (default: advisory exit 0)
+  --dry-run                    Compose the plan even if the diff is unavailable
+  --quiet                      Suppress the prompt/verdict on stdout
+  --cwd <path>                 Consumer repo path (default: cwd)
+  --help                       Print this help
 `.trimStart(),
 
   status: `
@@ -3149,6 +3256,251 @@ function reviewExitCode(err) {
   return 2;
 }
 
+// ---------------------------------------------------------------------------
+// Subcommands: review-doc / perf-review / security-review (CS66 — C66-2/4/5)
+// ---------------------------------------------------------------------------
+// Model-dispatch checklist review verbs. Thin wrappers over the lib cores
+// (lib/review-{doc,perf-review,security-review}.mjs → lib/review-checklist.mjs):
+// advisory-exit by default, --strict to fail, and NO model is invoked unless
+// --reviewer-output supplies a completed reviewer output to parse (plan C66-6).
+
+function splitCsvModels(csv) {
+  return String(csv)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Best-effort fetch of a PR body via `gh` so implementer models can be parsed
+ * for the independence guard (B3). Never throws: a missing/failing `gh`, an
+ * absent PR, or any other error returns '' and the caller falls back to the
+ * explicit --implementer-models set (and the core fails closed if a verdict is
+ * being recorded with no models at all).
+ */
+function fetchPrBodyBestEffort(repo, prNumber, cwd) {
+  try {
+    const res = spawnSync(
+      'gh',
+      ['pr', 'view', String(prNumber), '--repo', repo, '--json', 'body', '--jq', '.body'],
+      { cwd, encoding: 'utf8' },
+    );
+    if (res.error || (typeof res.status === 'number' && res.status !== 0)) return '';
+    return res.stdout || '';
+  } catch {
+    return '';
+  }
+}
+
+function parseChecklistReviewArgs(verb, args) {
+  const help = SUBCOMMAND_HELP[verb];
+  let prRaw = null;
+  let repo = null;
+  let base = 'main';
+  let head = 'HEAD';
+  let model = null;
+  let csId = null;
+  let round = 'R1';
+  let implementerModels = [];
+  let reviewerOutputArg = null;
+  let strict = false;
+  let dryRun = false;
+  let quiet = false;
+
+  // B5 — inline `--flag=` value guard: reject an empty value for a flag that
+  // requires one (e.g. `--repo=`). The reviewer-output stdin sentinel `-` is
+  // handled separately and must remain acceptable as `--reviewer-output=-`.
+  const inlineValue = (token, prefix) => {
+    const v = token.slice(prefix.length);
+    if (v === '') die(`${prefix.slice(0, -1)} requires a value`, 2);
+    return v;
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(help);
+      process.exit(0);
+    } else if (a === '--repo') {
+      repo = flagValue(args, i, '--repo'); i++;
+    } else if (a.startsWith('--repo=')) {
+      repo = inlineValue(a, '--repo=');
+    } else if (a === '--base') {
+      base = flagValue(args, i, '--base'); i++;
+    } else if (a.startsWith('--base=')) {
+      base = inlineValue(a, '--base=');
+    } else if (a === '--head') {
+      head = flagValue(args, i, '--head'); i++;
+    } else if (a.startsWith('--head=')) {
+      head = inlineValue(a, '--head=');
+    } else if (a === '--model') {
+      model = flagValue(args, i, '--model'); i++;
+    } else if (a.startsWith('--model=')) {
+      model = inlineValue(a, '--model=');
+    } else if (a === '--cs') {
+      csId = flagValue(args, i, '--cs'); i++;
+    } else if (a.startsWith('--cs=')) {
+      csId = inlineValue(a, '--cs=');
+    } else if (a === '--round') {
+      round = flagValue(args, i, '--round'); i++;
+    } else if (a.startsWith('--round=')) {
+      round = inlineValue(a, '--round=');
+    } else if (a === '--implementer-models') {
+      implementerModels = splitCsvModels(flagValue(args, i, '--implementer-models')); i++;
+    } else if (a.startsWith('--implementer-models=')) {
+      implementerModels = splitCsvModels(inlineValue(a, '--implementer-models='));
+    } else if (a === '--reviewer-output') {
+      // B5 — `--reviewer-output -` (stdin sentinel, advertised in help) must be
+      // accepted. flagValue rejects any `-`-prefixed token, so read directly and
+      // accept exactly `-` or any non-flag token; reject only an absent value or
+      // a different `-`-prefixed flag.
+      const next = args[i + 1];
+      if (next === undefined || (next.startsWith('-') && next !== '-')) {
+        die('--reviewer-output requires a value (a file path or - for stdin)', 2);
+      }
+      reviewerOutputArg = next; i++;
+    } else if (a.startsWith('--reviewer-output=')) {
+      // `--reviewer-output=-` is the stdin sentinel; only an empty value is bad.
+      const v = a.slice('--reviewer-output='.length);
+      if (v === '') die('--reviewer-output requires a value (a file path or - for stdin)', 2);
+      reviewerOutputArg = v;
+    } else if (a === '--strict') {
+      strict = true;
+    } else if (a === '--dry-run') {
+      dryRun = true;
+    } else if (a === '--quiet') {
+      quiet = true;
+    } else if (!a.startsWith('-') && prRaw === null) {
+      prRaw = a;
+    } else {
+      die(`Unknown flag: ${a}\n\n${help}`, 2);
+    }
+  }
+
+  if (prRaw === null) {
+    die(`${verb}: missing required <pr> argument\n\n${help}`, 2);
+  }
+  const prNumber = Number(prRaw);
+  if (!Number.isInteger(prNumber) || prNumber <= 0) {
+    die(`${verb}: <pr> must be a positive integer (got '${prRaw}')`, 2);
+  }
+  return { prNumber, repo, base, head, model, csId, round, implementerModels, reviewerOutputArg, strict, dryRun, quiet };
+}
+
+async function runChecklistReviewVerb(verb, runFn, args, global) {
+  const p = parseChecklistReviewArgs(verb, args);
+  const cwd = global?.cwd || process.cwd();
+  let reviewerOutput = null;
+  if (p.reviewerOutputArg !== null) {
+    if (p.reviewerOutputArg === '-') {
+      reviewerOutput = await readAllStdin();
+    } else {
+      const outPath = path.resolve(cwd, p.reviewerOutputArg);
+      if (!existsSync(outPath)) {
+        die(`${verb}: --reviewer-output file not found: ${p.reviewerOutputArg}`, 2);
+      }
+      reviewerOutput = readFileSync(outPath, 'utf8');
+    }
+  }
+  let actor = 'harness-review';
+  try {
+    actor = deriveReviewActor(cwd, global?.config);
+  } catch {
+    // actor is plan metadata only; fall back to the lib default on failure.
+  }
+
+  // B3 — best-effort parse implementer models from the PR body so independence
+  // can be verified against the authoritative ## Model audit, then union with any
+  // explicit --implementer-models (deduped). Always attempt the fetch when a
+  // repo + PR are available — not only when the explicit list is empty — so a
+  // partial explicit list cannot hide a reviewer/implementer collision recorded
+  // in the PR body (R2 finding). Entirely best-effort: the core fails closed if a
+  // verdict is being recorded with an empty set.
+  let implementerModels = p.implementerModels;
+  if (p.repo && p.prNumber) {
+    const body = fetchPrBodyBestEffort(p.repo, p.prNumber, cwd);
+    if (body) {
+      implementerModels = [...new Set([...implementerModels, ...parseImplementerModels(body)])];
+    }
+  }
+
+  try {
+    const result = await runFn({
+      cwd,
+      configPath: global?.config,
+      repo: p.repo,
+      prNumber: p.prNumber,
+      base: p.base,
+      head: p.head,
+      reviewerModel: p.model,
+      reviewerAgent: actor,
+      actor,
+      csId: p.csId,
+      round: p.round,
+      implementerModels,
+      dryRun: p.dryRun,
+      strict: p.strict,
+      quiet: p.quiet,
+      reviewerOutput,
+    });
+    process.exit(result.exitCode ?? 0);
+  } catch (err) {
+    if (err instanceof ReviewError) {
+      process.stderr.write(`${verb}: ${err.message}\n`);
+      process.exit(2);
+    }
+    throw err;
+  }
+}
+
+async function cmdReviewDoc(args, global) {
+  const { runReviewDoc } = await import('../lib/review-doc.mjs');
+  return runChecklistReviewVerb('review-doc', runReviewDoc, args, global);
+}
+
+async function cmdPerfReview(args, global) {
+  const { runPerfReview } = await import('../lib/perf-review.mjs');
+  return runChecklistReviewVerb('perf-review', runPerfReview, args, global);
+}
+
+async function cmdSecurityReview(args, global) {
+  const { runSecurityReview } = await import('../lib/security-review.mjs');
+  return runChecklistReviewVerb('security-review', runSecurityReview, args, global);
+}
+
+// ---------------------------------------------------------------------------
+// Subcommand: review-cs (CS66 — C66-3) — local, verify-only readiness check.
+// ---------------------------------------------------------------------------
+
+async function cmdReviewCs(args, global) {
+  const help = SUBCOMMAND_HELP['review-cs'];
+  let csId = null;
+  let strict = false;
+  let quiet = false;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(help);
+      process.exit(0);
+    } else if (a === '--strict') {
+      strict = true;
+    } else if (a === '--quiet') {
+      quiet = true;
+    } else if (!a.startsWith('-') && csId === null) {
+      csId = a;
+    } else {
+      die(`Unknown flag: ${a}\n\n${help}`, 2);
+    }
+  }
+  if (csId === null) {
+    die(`review-cs: missing required <NN> argument\n\n${help}`, 2);
+  }
+  const cwd = global?.cwd || process.cwd();
+  const { runReviewCs } = await import('../lib/review-cs.mjs');
+  const result = await runReviewCs({ cwd, csId, strict, quiet });
+  process.exit(result.exitCode ?? 0);
+}
+
 async function cmdCopilotEngage(args, global) {
   if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(SUBCOMMAND_HELP['copilot-engage']);
@@ -4168,6 +4520,10 @@ export const COMMAND_REGISTRY = {
   'pr-evidence': cmdPrEvidence,
   'review-output': cmdReviewOutput,
   review: cmdReview,
+  'review-doc': cmdReviewDoc,
+  'review-cs': cmdReviewCs,
+  'perf-review': cmdPerfReview,
+  'security-review': cmdSecurityReview,
   'copilot-engage': cmdCopilotEngage,
   'plan-review-hash': cmdPlanReviewHash,
   startup: cmdStartup,
