@@ -122,3 +122,25 @@ test('probe-tasks-resolved: two active CSs, one with a pending task row → exit
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+/* ---------- ENOENT discrimination: missing active/ dir → PASS ----------- */
+
+test('probe-active: no active/ directory → exit 0 (ENOENT is not a failure)', () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'cs73-probe-'));
+  try {
+    const r = runProbe(PROBE_ACTIVE, root); // no project/clickstops/active created
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('probe-tasks-resolved: no active/ directory → exit 0 (ENOENT is not a failure)', () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'cs73-probe-'));
+  try {
+    const r = runProbe(PROBE_TASKS, root); // no project/clickstops/active created
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

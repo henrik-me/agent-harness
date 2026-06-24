@@ -79,13 +79,16 @@ const UNRESOLVED_STATUSES = new Set(['pending', 'dispatched']);
 // ---------------------------------------------------------------------------
 
 function readActiveFiles(activeDir) {
-  if (!fs.existsSync(activeDir)) return [];
-
   let entries;
   try {
     entries = fs.readdirSync(activeDir, { withFileTypes: true });
-  } catch {
-    return [];
+  } catch (err) {
+    // ENOENT → no active/ dir → no active CS (legit PASS). Any other error
+    // (e.g. EACCES) must FAIL CLOSED, not be silently treated as "no active
+    // CS" — existsSync would also return false on EACCES and mask the failure.
+    if (err.code === 'ENOENT') return [];
+    process.stderr.write(`probe-tasks-resolved: cannot read active/: ${err.message}\n`);
+    process.exit(1);
   }
 
   const mdFiles = entries.filter(
@@ -95,15 +98,19 @@ function readActiveFiles(activeDir) {
   const out = [];
   for (const entry of mdFiles) {
     const filePath = path.join(activeDir, entry.name);
+    let raw;
     try {
-      const raw = fs.readFileSync(filePath, 'utf8')
+      raw = fs.readFileSync(filePath, 'utf8')
         .replace(/^\uFEFF/, '')
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n');
-      out.push({ filePath, basename: entry.name, raw });
-    } catch {
-      // Unreadable file — skip (was a null/no-op in the single-file form).
+    } catch (err) {
+      // Fail closed: an unreadable active CS could hide unresolved tasks under
+      // the "validate every active CS" contract, so never silently skip it.
+      process.stderr.write(`probe-tasks-resolved: cannot read ${entry.name}: ${err.message}\n`);
+      process.exit(1);
     }
+    out.push({ filePath, basename: entry.name, raw });
   }
   return out;
 }

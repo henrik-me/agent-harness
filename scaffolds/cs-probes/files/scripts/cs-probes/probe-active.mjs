@@ -126,15 +126,17 @@ function ownerOf(filePath) {
 
 const activeDir = path.join(cwd, 'project', 'clickstops', 'active');
 
-if (!fs.existsSync(activeDir)) {
-  if (!quiet) process.stdout.write('probe-active: PASS — no active/ directory found\n');
-  process.exit(0);
-}
-
+// Read active/ directly and discriminate ENOENT — a permission/other error
+// must FAIL CLOSED, not be silently treated as "no active CS" (existsSync also
+// returns false on EACCES, which would mask a real failure).
 let entries;
 try {
   entries = fs.readdirSync(activeDir, { withFileTypes: true });
 } catch (err) {
+  if (err.code === 'ENOENT') {
+    if (!quiet) process.stdout.write('probe-active: PASS — no active/ directory found\n');
+    process.exit(0);
+  }
   process.stderr.write(`probe-active: cannot read active/: ${err.message}\n`);
   process.exit(1);
 }
