@@ -126,11 +126,13 @@ describe('check-consumer-template-genericity', () => {
     assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: henrik-me\/agent-harness/);
   });
 
-  it('(c) exempts a banned ref inside an allowlisted local-block region (exit 0)', () => {
+  it('(c) FAILS (exit 1) on a banned ref inside a local-block body — the default body ships to consumers', () => {
     const dir = buildCwd({ instructions: path.join(VARIANTS, 'INSTRUCTIONS-ref-in-localblock.md') });
-    const { status, stdout } = runLinter(['--cwd', dir]);
-    assert.equal(status, 0);
-    assert.match(stdout, /✅ Linter passed/);
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: LRN-068/);
+    assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: CS54/);
+    assert.match(stderr, /❌ Linter FAILED/);
   });
 
   it('(d) fail-closed: still catches refs around a malformed/unclosed marker (exit 1)', () => {

@@ -240,7 +240,6 @@ Run all harness linters against the repo. Aggregates results from:
   - check-text-encoding.mjs (BOM + line endings; walks --cwd recursively)
   - check-fixtures.mjs    (tests/fixtures/ — gitignored fixture paths; LRN-076)
   - check-templates.mjs   (template/ subtree — LRN-049/050/051 template-authoring rules)
-  - check-consumer-template-genericity.mjs (consumer-onboarding doc set — genericity guard; self-host only)
   - check-public-artifact.mjs (skipped unless --public-artifact-dir or config provides one)
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
@@ -249,6 +248,7 @@ Run all harness linters against the repo. Aggregates results from:
 Self-host-only (when package.json.name === '@henrik-me/agent-harness'):
   - check-pack.mjs        (package whitelist)
   - check-scaffold-readme.mjs (one invocation per scaffolds/<name>/README.md; LRN-077)
+  - check-consumer-template-genericity.mjs (consumer-onboarding doc set — genericity guard)
 
 Auto-dispatched scaffold policy linters (when harness.config.json declares
 the scaffold AND the consumer ships the corresponding script in scripts/):
@@ -2329,14 +2329,18 @@ branch ruleset contexts are installed; this catches partial sync/init states.
           template/composed/INSTRUCTIONS.md,
           template/composed/.github/copilot-instructions.md,
           template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md,
-          template/managed/READMEGUIDE.md. Harness-self-host only (skipped where
-          the template/ subtree is absent, e.g. a consumer repo).
+          template/managed/READMEGUIDE.md. Self-host-only, gated by package
+          name (skipped unless package.json \`name\` is
+          \`@henrik-me/agent-harness\`), so a consumer that merely has its own
+          template/ dir does not run it.
 **Rules:**
   - No harness-internal reference may appear in a consumer-shipped onboarding
     doc: a LEARNINGS.md#lrn- anchor link, a bare LRN-NNN or CSNN token, or the
     literal henrik-me/agent-harness slug.
-  - Composed bases are parsed via lib/composed.mjs; content inside allowlisted
-    harness:local-* blocks is exempt. A malformed/unclosed marker is
+  - Composed bases are scanned IN FULL, including the default body of
+    harness:local-* blocks (that body is rendered verbatim into a fresh
+    consumer's file on first init, so it ships to consumers and must be generic
+    too). lib/composed.mjs validates the markers; a malformed/unclosed marker is
     fail-closed: the whole raw file is scanned so a broken marker hides nothing.
 **Why:** A repo that adopts the harness must receive basic, generic
 instructions — not references that dangle back into the harness's own
@@ -2537,19 +2541,32 @@ async function cmdLint(args, _global) {
       ],
       target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
     },
-    {
+    (() => {
       // CS72 (C72-3/C72-4): consumer-template genericity guard. Scans the
       // consumer-onboarding doc set (template/composed bases + template/managed)
       // and fails on any harness-internal reference (a bare LRN-NNN / CSNN
-      // token, a LEARNINGS.md#lrn- anchor, or the henrik-me/agent-harness slug)
-      // outside allowlisted harness:local-* blocks. Harness-self-host only: the
-      // target is the template/ subtree, which exists in the harness repo but
-      // not in a consumer, so the aggregator skips it there.
-      name: 'consumer-template-genericity',
-      script: 'check-consumer-template-genericity.mjs',
-      args: ['--cwd', cwd],
-      target: path.join(cwd, 'template'),
-    },
+      // token, a LEARNINGS.md#lrn- anchor, or the henrik-me/agent-harness slug),
+      // including default harness:local-* block bodies (they ship to consumers).
+      // Self-host-guarded by package name (LRN-077, like `pack`): only runs when
+      // the consumer's package.json `name` is `@henrik-me/agent-harness`. A
+      // consumer that merely happens to have its own template/ dir must NOT run
+      // this linter (it would fail on absent harness paths); target=null emits a
+      // clean "skipped (target not found)" row there.
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft: skip genericity linter on parse error */ }
+      return {
+        name: 'consumer-template-genericity',
+        script: 'check-consumer-template-genericity.mjs',
+        args: isSelfHost ? ['--cwd', cwd] : null,
+        target: isSelfHost ? path.join(cwd, 'template') : null,
+      };
+    })(),
     {
       // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd
       // recursively. Always enabled; can be skipped via --skip text-encoding.

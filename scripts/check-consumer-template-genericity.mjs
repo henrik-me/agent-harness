@@ -14,17 +14,20 @@
  *   - template/managed/RETROSPECTIVES.md              (scrubbed managed)
  *   - template/managed/READMEGUIDE.md                 (managed, already clean)
  *
- * Banned references (each is a FAIL outside allowlisted local-block regions):
+ * Banned references (each is a FAIL anywhere in a consumer-shipped doc):
  *   - a `LEARNINGS.md#lrn-` link
  *   - a bare `\bLRN-\d+\b` token
  *   - a bare `\bCS\d+[a-z]?\b` token
  *   - the literal `henrik-me/agent-harness` slug
  *
- * For composed bases, allowlisted `<!-- harness:local-start id=... -->`
- * regions are EXCLUDED from the scan via the composed marker parser
- * (lib/composed.mjs) — NOT ad-hoc regex slicing. A malformed/unclosed/nested
- * marker is fail-closed: the parse error is surfaced AND the entire raw file
- * is scanned (so a broken marker cannot silently hide a ref).
+ * For composed bases, the ENTIRE base is scanned — including the default body
+ * of `<!-- harness:local-start id=... -->` local blocks. That default body is
+ * rendered verbatim into a fresh consumer's file on first init (lib/composed.mjs
+ * § renderInitialComposed), so it is consumer-shipped and MUST be generic too.
+ * lib/composed.mjs `parseComposed` is still used to validate the markers are
+ * well-formed: a malformed/unclosed/nested marker is fail-closed — the parse
+ * error is surfaced AND the entire raw file is scanned (so a broken marker
+ * cannot silently hide a ref).
  *
  * Usage:
  *   node scripts/check-consumer-template-genericity.mjs [--cwd <dir>] [--allow <token>]... [--quiet]
@@ -45,8 +48,9 @@ const LINTER_NAME = 'check-consumer-template-genericity';
 
 // ---------------------------------------------------------------------------
 // Scope set — the consumer-onboarding docs, each at its generic location.
-//   kind: 'composed' bases are parsed; content inside allowlisted local-block
-//   regions (allowBlocks) is excluded. 'managed' docs are scanned whole.
+//   kind: 'composed' bases are marker-validated then scanned IN FULL (the
+//   default local-block body ships to consumers, so it must be generic too).
+//   'managed' docs are scanned whole.
 // ---------------------------------------------------------------------------
 
 const SCOPE_SET = [
@@ -54,13 +58,11 @@ const SCOPE_SET = [
     display: 'template/composed/INSTRUCTIONS.md',
     segments: ['template', 'composed', 'INSTRUCTIONS.md'],
     kind: 'composed',
-    allowBlocks: ['instructions.harness'],
   },
   {
     display: 'template/composed/.github/copilot-instructions.md',
     segments: ['template', 'composed', '.github', 'copilot-instructions.md'],
     kind: 'composed',
-    allowBlocks: ['copilot-instructions.harness'],
   },
   {
     display: 'template/managed/TRACKING.md',
@@ -131,8 +133,9 @@ for (let i = 0; i < argv.length; i++) {
       'Usage: check-consumer-template-genericity.mjs [--cwd <dir>] [--allow <token>]... [--quiet]\n\n' +
       'Fail if any consumer-onboarding doc in the scope set contains a\n' +
       'harness-internal reference (LRN-NNN / CSNN / LEARNINGS.md#lrn- / the\n' +
-      'henrik-me/agent-harness slug). Local-block regions of composed bases are\n' +
-      'excluded via the composed marker parser.\n\n' +
+      'henrik-me/agent-harness slug). Composed bases are scanned in full,\n' +
+      'including default local-block bodies (they ship to consumers); the\n' +
+      'composed marker parser only fail-closes on malformed markers.\n\n' +
       'Options:\n' +
       '  --cwd <dir>     Repo root the scope-set paths resolve against (default: cwd)\n' +
       '  --allow <token> Exempt an exact token from the scan (repeatable)\n' +
@@ -190,15 +193,16 @@ function scanWhole(display, content) {
 }
 
 /**
- * Scan a composed base, excluding the body of allowlisted local-block regions.
- * Non-allowlisted block bodies ARE scanned. A parse error is fail-closed:
- * surface it and scan the whole raw file so a broken marker hides nothing.
+ * Scan a composed base. The ENTIRE base — template regions AND every
+ * local-block body — is scanned, because the default block body is rendered
+ * verbatim into a fresh consumer file on first init and is therefore
+ * consumer-shipped (lib/composed.mjs). parseComposed is used to validate the
+ * markers are well-formed; a parse error is fail-closed: surface it and scan
+ * the whole raw file so a broken marker hides nothing.
  */
-function scanComposed(display, content, allowBlocks) {
-  const allowed = new Set(allowBlocks ?? []);
-  let parsed;
+function scanComposed(display, content) {
   try {
-    parsed = parseComposed(content, { filename: display });
+    parseComposed(content, { filename: display });
   } catch (err) {
     if (err instanceof ComposedParseError) {
       logError(`${display}: composed parse error (${err.code}): ${err.message}`);
@@ -209,21 +213,9 @@ function scanComposed(display, content, allowBlocks) {
     throw err;
   }
 
-  for (const section of parsed.sections) {
-    if (section.type === 'template') {
-      section.lines.forEach((line, idx) => {
-        scanLine(display, section.startLine + idx, line);
-      });
-    } else if (section.type === 'block') {
-      // Allowlisted local block — the harness self-host may legitimately keep
-      // anchors here, so its body is excluded from the scan.
-      if (allowed.has(section.id)) continue;
-      // Non-allowlisted block: scan its body (start marker is at startLine).
-      section.body.forEach((line, idx) => {
-        scanLine(display, section.startLine + 1 + idx, line);
-      });
-    }
-  }
+  // Markers validated — scan the whole file. Local-block bodies are NOT exempt:
+  // their default content ships to consumers and must be generic too.
+  scanWhole(display, content);
 }
 
 // ---------------------------------------------------------------------------
@@ -242,7 +234,7 @@ for (const doc of SCOPE_SET) {
   }
 
   if (doc.kind === 'composed') {
-    scanComposed(doc.display, content, doc.allowBlocks);
+    scanComposed(doc.display, content);
   } else {
     scanWhole(doc.display, content);
   }

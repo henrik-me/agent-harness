@@ -10,8 +10,9 @@ that must never be flagged.
 - No-commit preflight when running as a sub-agent.
 
 <!-- harness:local-start id=instructions.harness -->
-Harness self-host content may legitimately keep institutional anchors here:
-see LRN-068 and CS54 for the briefing-preamble doctrine.
+_(Project-local orchestration notes — repository-specific claiming phases,
+model choices, cross-repo procedures, and institutional citations. Empty by
+default.)_
 <!-- harness:local-end id=instructions.harness -->
 
 ## Per-CS loop
