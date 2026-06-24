@@ -1,9 +1,9 @@
 # CS66 — Review-family verbs: review-doc, review-cs, perf-review, security-review
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs66/content
+**Started:** 2026-06-24
 **Closed:** —
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the review-family verbs cataloged in CS64's command/skill surface are spun out here because each is its own review-workflow design and bundling them would re-create the CS63 mega-PR risk.
 **Depends on:** **CS52** (the `harness review` content-PR orchestrator these extend) and **CS40** (`harness review-output` validation) — hard, they are the reuse base. `review-cs` also builds on `lib/plan-review-hash.mjs` + `scripts/check-clickstop-plan-review.mjs`. Independent of CS65; may claim after CS64's `harness review` reuse seams are understood. **CS64b** (hard, added 2026-06-10) — the review-family verbs allocate temp dirs / clones for diff inspection and need the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) before adopting them as a CONVENTIONS-required pattern.
@@ -73,11 +73,30 @@ Scope phasing (C66-1): `review-doc` + `review-cs` map directly onto existing har
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | f339d30a8691 | 2026-06-06T23:50:00Z | Go-with-amendments | Facts verified (review/review-output/F1-F5/independence/plan-review-hash exist). Applied: review-cs scoped to local verify-only (not model dispatch), added value over the linter stated. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Sub-agent ledger (materially-used models) finalized at close-out. Planned: orchestrator omni-ah-c2 `claude-opus-4.8` (claim, bin/REVIEWS/CHANGELOG integration, PRs); implementation sub-agents dispatched at `claude-opus-4.8` (cs66-verbs-a → review-doc/perf-review/security-review + shared dispatch helper + tests; cs66-verbs-b → review-cs local verify-only + tests). Model independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — Recon: map review-infra reuse seams (lib/review.mjs, review-output, clickstop linters, bin COMMAND_REGISTRY, REVIEWS § 2.6a) | done | omni-ah-c2 | agent-id=review-infra-recon \| role=explore \| report-status=complete \| learnings=0 |
+| T2 — Model-dispatch verbs: `lib/review-doc.mjs` + `lib/perf-review.mjs` + `lib/security-review.mjs` + shared dispatch helper + tests | pending | omni-ah-c2 | C66-2/4/5/6; Deliv. 1,3. agent-id=cs66-verbs-a \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY those lib files + their tests; not bin/REVIEWS/CHANGELOG. Tests under os.tmpdir(). |
+| T3 — Local verify-only verb: `lib/review-cs.mjs` (plan-review + PVI) + tests | pending | omni-ah-c2 | C66-3; Deliv. 2. agent-id=cs66-verbs-b \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY lib/review-cs.mjs + tests. |
+| T4 — Integrate (orchestrator): register 4 verbs in `bin/harness.mjs` (COMMAND_REGISTRY/TOP_HELP/SUBCOMMAND_HELP); thin delegation | pending | omni-ah-c2 | Deliv. 4. Shared file — orchestrator-owned. |
+| T5 — `REVIEWS.md` + `template/composed/REVIEWS.md` mirror: reference each verb as canonical executable path | pending | omni-ah-c2 | Deliv. 5; C64-2 leverage; lockstep. |
+| T6 — `CHANGELOG.md` `[Unreleased]` entries (4 verbs) | pending | omni-ah-c2 | Deliv. 6; LRN-101. |
+| T7 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c2 | Independence: reviewer ≠ implementer. |
+| T8 — Content PR (`cs66/content`); `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c2 | OPERATIONS § Three-PR shape. |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; managed/composed mirrors green | pending | omni-ah-c2 | Mandatory close-out row (OPERATIONS § Claim). |
+| Close-out: learnings + follow-ups — file LEARNINGS (incl. claim global-lock vs multi-orchestrator parallelism tension); planned follow-ups for any deferred scope | pending | omni-ah-c2 | Mandatory close-out row. |
 
 ## Notes / Learnings
 
