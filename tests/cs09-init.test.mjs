@@ -171,18 +171,33 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
 
       // composed.files matches seeded template + the PR template migrated by
       // the default-on review-gates flow (CS41 C41-7: review_gates is opt-out
-      // by default in v0.5.0, and a fresh init runs the migration).
+      // by default in v0.5.0, and a fresh init runs the migration). CS72
+      // reclassified INSTRUCTIONS.md + .github/copilot-instructions.md
+      // managed->composed so fresh consumers receive generic bases.
       assert.deepEqual(
         cfg.composed.files,
-        ['CONVENTIONS.md', 'OPERATIONS.md', 'REVIEWS.md', '.github/pull_request_template.md'],
+        [
+          'INSTRUCTIONS.md',
+          'CONVENTIONS.md',
+          'OPERATIONS.md',
+          'REVIEWS.md',
+          '.github/copilot-instructions.md',
+          '.github/pull_request_template.md',
+        ],
       );
 
-      // composed.overrides has the 3 expected per-file allowlists (LRN-009 / CS02b)
-      // plus the PR-template override added by enableReviewGatesForInit.
-      assert.equal(Object.keys(cfg.composed.overrides).length, 4);
+      // composed.overrides has the 3 original per-file allowlists (LRN-009 / CS02b)
+      // plus the PR-template override added by enableReviewGatesForInit, plus the
+      // 2 CS72 reclassifications (INSTRUCTIONS.md + .github/copilot-instructions.md).
+      assert.equal(Object.keys(cfg.composed.overrides).length, 6);
+      assert.deepEqual(cfg.composed.overrides['INSTRUCTIONS.md'].local_blocks, ['instructions.harness']);
       assert.deepEqual(cfg.composed.overrides['CONVENTIONS.md'].local_blocks, ['conventions.project']);
       assert.deepEqual(cfg.composed.overrides['OPERATIONS.md'].local_blocks, ['operations.project-deploy']);
       assert.deepEqual(cfg.composed.overrides['REVIEWS.md'].local_blocks, ['reviews.project-gates']);
+      assert.deepEqual(
+        cfg.composed.overrides['.github/copilot-instructions.md'].local_blocks,
+        ['copilot-instructions.harness'],
+      );
       assert.deepEqual(
         cfg.composed.overrides['.github/pull_request_template.md'].local_blocks,
         ['pull-request.review-evidence'],

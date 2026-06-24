@@ -86,7 +86,7 @@ the presence of a `**Disposition:**` paragraph for this status.
 
 Typical dispositions:
 - "Applied to `CONVENTIONS.md` § Migrations; see commit `abc1234`."
-- "Filed as planned CS37 (`project/clickstops/planned/planned_cs37_*.md`)."
+- "Filed as planned `CS<NN>` (`project/clickstops/planned/planned_cs<NN>_*.md`)."
 - "Backfilled into `OPERATIONS.md` § Claim checklist."
 
 ### `obsolete`
@@ -158,19 +158,19 @@ Adding a learning entry is a six-step operation:
 ### Step 1 — Pick the next ID
 
 Open `LEARNINGS.md` and find the highest existing `LRN-NNN` number. The new
-entry gets the next integer, zero-padded to three digits minimum (e.g., if
-the last is `LRN-048`, the next is `LRN-049`). Do not recycle IDs.
-`check-learnings.mjs` will warn on sequence gaps and error on duplicates.
+entry gets the next integer, zero-padded to three digits minimum. Do not
+recycle IDs. `check-learnings.mjs` will warn on sequence gaps and error on
+duplicates.
 
 ### Step 2 — Write the YAML frontmatter
 
 Author the frontmatter block with all required fields:
 
 ```yaml
-id: LRN-049
+id: LRN-<NNN>
 date: 2026-06-10          # today's date, ISO 8601
 category: process         # one of the five canonical values
-source_cs: CS09           # the CS or task that surfaced it
+source_cs: CS<NN>         # the CS or task that surfaced it
 status: open              # always start as open
 tags: [harvest, checklist]
 claim_area: orchestrator-loop   # optional; omit if not relevant to a CS area
@@ -207,7 +207,7 @@ intentional deviation in the entry body.
 ### Step 6 — Commit and open a PR
 
 Commit `LEARNINGS.md` with a descriptive message. Include the LRN ID in the
-commit subject (e.g., `learnings: add LRN-049 — deferred-until enforcement`).
+commit subject (e.g., `learnings: add LRN-<NNN> — deferred-until enforcement`).
 Open a PR against `main` following the standard CS PR procedure in
 `OPERATIONS.md`.
 
@@ -216,7 +216,7 @@ Open a PR against `main` following the standard CS PR procedure in
 ## Cadences
 
 The harvest runs on two distinct cadences. Both are driven by `harness harvest`
-(available from CS04 onward) but differ in scope and trigger.
+but differ in scope and trigger.
 
 ### Weekly — orchestrator-triggered retro
 
@@ -389,4 +389,4 @@ affect the exit code.
 
 ---
 
-*Template version: CS08. Replaces the proto in the repo root `RETROSPECTIVES.md`.*
+*This reference is maintained as a harness-managed template.*

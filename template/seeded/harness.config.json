@@ -7,13 +7,25 @@
     "agent_suffix": "mp",
     "repo": "REPLACE_ME/REPLACE_ME"
   },
+  "managed": {
+    "files": [
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md"
+    ]
+  },
   "composed": {
     "files": [
+      "INSTRUCTIONS.md",
       "CONVENTIONS.md",
       "OPERATIONS.md",
-      "REVIEWS.md"
+      "REVIEWS.md",
+      ".github/copilot-instructions.md"
     ],
     "overrides": {
+      "INSTRUCTIONS.md": {
+        "local_blocks": ["instructions.harness"]
+      },
       "CONVENTIONS.md": {
         "local_blocks": ["conventions.project"]
       },
@@ -22,6 +34,9 @@
       },
       "REVIEWS.md": {
         "local_blocks": ["reviews.project-gates"]
+      },
+      ".github/copilot-instructions.md": {
+        "local_blocks": ["copilot-instructions.harness"]
       }
     }
   },
@@ -30,6 +45,7 @@
     "agent_suffix": "mp",
     "agent_suffix_upper": "MP",
     "repo_owner": "REPLACE_ME",
+    "repo_slug": "REPLACE_ME/REPLACE_ME",
     "default_codeowner": "REPLACE_ME",
     "lib_codeowner": "REPLACE_ME",
     "repo_short": "REPLACE_ME"
