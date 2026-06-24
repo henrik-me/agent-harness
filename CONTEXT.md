@@ -139,7 +139,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Sub-agents within ONE orchestrator session.** Proven up to 9-way ([CS06](project/clickstops/done/done_cs06_structural-linters.md)) and 8-way ([CS08](project/clickstops/done/done_cs08_managed-composed-process-docs.md)) with zero file races. Safety mechanism: file ownership per [LRN-016](LEARNINGS.md#lrn-016).
 
 **What is serialized (by design, today):**
-- **CSs themselves.** WORKBOARD's `## Active Work` table is single-row by orchestrator discipline. Only one CS is in-flight at a time on the mainline plan.
+- **CSs themselves.** WORKBOARD's `## Active Work` table holds at most one in-flight CS **per orchestrator** (keyed on Owner). Different orchestrators run concurrently, so multiple Active rows can coexist; CS73 made the claim lock per-orchestrator.
 - **LEARNINGS.md ID numbering.** LRN-NNN entries are appended sequentially — concurrent close-outs from different orchestrators would race on the next ID.
 
 **Could multiple orchestrators run in parallel?** Yes, but only with discipline (no enforcement infrastructure yet). Today this works with care via:

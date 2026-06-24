@@ -88,19 +88,25 @@ The agent ID is derived per machine + repo-folder (`<machine-short>-ah[-c<N>]`),
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `lib/claim.mjs`: remove the two global one-active checks (preflight + apply-time), retain per-orchestrator; update header comment | pending | cs73-impl | C73-1; Deliverable 1. agent-id=cs73-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 — `tests/lib-claim.test.mjs`: flip the two cross-orchestrator block tests to assert allowed; retain same-orchestrator block tests; net count not reduced | pending | cs73-impl | C73-3; Deliverable 2. agent-id=cs73-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T3 — `bin/harness.mjs` claim help + `OPERATIONS.md` + `template/composed/OPERATIONS.md` mirror + `CONTEXT.md`: re-word to per-orchestrator (lockstep) | pending | cs73-impl | C73-2; Deliverables 3,4,5. agent-id=cs73-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T4 — `CHANGELOG.md`: add `[Unreleased]` Fixed entry + reword the existing unreleased CS64 "one-CS-at-a-time" claim-preflight phrasing | pending | cs73-impl | C73-5, C73-2; Deliverable 6. agent-id=cs73-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T4b — `cs-probes` scaffold: `probe-active.mjs` per-owner, `probe-tasks-resolved.mjs` all-active, README wording + `tests/cs73-probe-active.test.mjs` | pending | cs73-impl | C73-6; Deliverables 7,8. agent-id=cs73-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T1 — `lib/claim.mjs`: remove the two global one-active checks (preflight + apply-time), retain per-orchestrator; update header comment | done | cs73-impl | C73-1; Deliverable 1. agent-id=cs73-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| T2 — `tests/lib-claim.test.mjs`: flip the two cross-orchestrator block tests to assert allowed; retain same-orchestrator block tests; net count not reduced | done | cs73-impl | C73-3; Deliverable 2. agent-id=cs73-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| T3 — `bin/harness.mjs` claim help + `OPERATIONS.md` + `template/composed/OPERATIONS.md` mirror + `CONTEXT.md`: re-word to per-orchestrator (lockstep) | done | cs73-impl | C73-2; Deliverables 3,4,5. agent-id=cs73-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| T4 — `CHANGELOG.md`: add `[Unreleased]` Fixed entry + reword the existing unreleased CS64 "one-CS-at-a-time" claim-preflight phrasing | done | cs73-impl | C73-5, C73-2; Deliverable 6. agent-id=cs73-impl \| role=implementer \| report-status=complete \| learnings=2 |
+| T4b — `cs-probes` scaffold: `probe-active.mjs` per-owner, `probe-tasks-resolved.mjs` all-active, README wording + `tests/cs73-probe-active.test.mjs` | done | cs73-impl | C73-6; Deliverables 7,8. agent-id=cs73-impl \| role=implementer \| report-status=complete \| learnings=0 |
 | T5 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before content PR | pending | omni-ah-c3 | Independence invariant: reviewer model ≠ implementer model. |
-| T6 — Open content PR (`cs73/content`); PR-level rubber-duck + `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c3 | Per OPERATIONS.md § Three-PR shape (content PR). |
+| T6 — Open content PR (`cs73/content`); PR-level rubber-duck + `harness copilot-engage`; resolve threads; squash-merge | in_progress | omni-ah-c3 | Per OPERATIONS.md § Three-PR shape (content PR). |
 | T7 — Close-out: docs + restart state — rename `active_cs73_*.md` → `done_cs73_*.md`; update WORKBOARD + CONTEXT handoff | pending | omni-ah-c3 | Close-out PR (`cs73/close-out`). |
 | T8 — Close-out: learnings + follow-ups — file new LEARNINGS; create planned follow-up CSs for unresolved items | pending | omni-ah-c3 | Per RETROSPECTIVES.md. |
 
 ## Notes / Learnings
 
-(filled during execution)
+**Sub-agent ledger.** `cs73-impl` (`claude-opus-4.8`, background) implemented all of T1–T4b on `cs73/content` (11 files: `lib/claim.mjs`, `tests/lib-claim.test.mjs`, `bin/harness.mjs`, `OPERATIONS.md` + `template/composed/OPERATIONS.md` lockstep, `CONTEXT.md`, `CHANGELOG.md`, the two `cs-probes` probes + README, and new `tests/cs73-probe-active.test.mjs`). No rogue commit (PREFLIGHT == FINAL SHA `51e75a3`). Orchestrator verified the full diff; tests 1395/1394 pass/0 fail/1 skip (+5), `harness lint --quiet` 30/0/3.
+
+**Implementer judgment call (accepted).** A `### Fixed` subsection already existed under `[Unreleased]` (the CS64 post-merge PVI entry, placed after `### Documentation`). The briefing's "add `### Fixed` before `### Documentation`" would have produced a duplicate header; the implementer correctly added the CS73 entry to the existing `### Fixed` section instead. Single, well-formed section; lint passes.
+
+**Learning candidates (file at close-out, T8):**
+- _tooling_ — the `create` file path emits CRLF on Windows; newly-created files must be LF-normalized before `check-text-encoding` (the `edit` path preserves LF). Evidence: `tests/cs73-probe-active.test.mjs` flagged CRLF until normalized.
+- _process_ — a verbatim "add section X before section Y" briefing instruction can collide with pre-existing structure (a `### Fixed` already present), risking a malformed duplicate; briefings for CHANGELOG/structured-doc edits should say "add to the existing section if present, else create".
 
 ## Plan-vs-implementation review
 
