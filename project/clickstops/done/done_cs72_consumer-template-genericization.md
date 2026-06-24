@@ -1,10 +1,10 @@
 # CS72 — Genericize consumer-shipped governance docs + guard linter
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
 **Branch:** cs72/content
 **Started:** 2026-06-24
-**Closed:** —
+**Closed:** 2026-06-24
 **Filed by:** omni-ah (Claude Opus 4.8), 2026-06-23 — surfaced during CS64b execution when @henrik-me rejected shipping the harness's own governance/onboarding docs (which carry harness-internal LRN/ADR/CS cross-references) verbatim to consumers. User directive: *"there should be no lrn's in a repo that adopts the harness that refers back to lrn's in the agent-harness repo … it has to be clean with basic/generic instructions, not specific to another repo."* The CS64b consumer-delivery strand (C64b-7 seed/init core-doc delivery + C64b-8 core-doc sync WARN gate) was **split out** of PR #310 and is re-planned here, done correctly: genericize first, then deliver.
 **Depends on:** **CS64b** (soft) — CS64b's C64b-3 `harness sync` new-managed-file reconciliation is the delivery mechanism the now-generic core docs flow through; this CS restores the delivery (descoped from CS64b) on top of generic templates.
 
@@ -79,14 +79,14 @@ The harness already has the right primitive for "generic base shipped to all + r
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Reclassify `INSTRUCTIONS.md` → composed: author generic `template/composed/INSTRUCTIONS.md` base + harness self-host local block in root `INSTRUCTIONS.md`; move to `composed.files` in `harness.config.json` + `template/seeded/harness.config.json` (C72-1, D1) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 — Genericize `.github/copilot-instructions.md`, `TRACKING.md`, `RETROSPECTIVES.md` per Gate A; confirm `READMEGUIDE.md` clean (C72-2, D2) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T3 — Add `scripts/check-consumer-template-genericity.mjs` + `harness lint` registration + fixtures/tests; parser-based local-block exclusion via `lib/composed.mjs` (C72-3, D3) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T4 — Fresh-init wiring in `template/seeded/harness.config.json`; revert CS64b `check-instructions` self-host gating in `bin/harness.mjs` (C72-4, D4) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T5 — `CHANGELOG.md` `[Unreleased]` entry + `OPERATIONS.md` (+ composed mirror) genericity-invariant note (D5) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
-| T6 — Local review (GPT-5.5 rubber-duck) + self-checks (`harness lint`, `node --test`, `sync --mode=check`) + open content PR (D6) | pending | — | agent-id=TBD \| role=reviewer \| report-status=pending \| learnings=0 |
-| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS72 row); refresh `CONTEXT.md`; run `harness sync --mode=check` (no drift) | pending | omni-ah | close-out |
-| Close-out: learnings + follow-ups — file any new LRNs; file the OPERATIONS/REVIEWS cross-ref genericization follow-up CS (covers issue #229); run `harness harvest` if cadence triggers | pending | omni-ah | close-out |
+| T1 — Reclassify `INSTRUCTIONS.md` → composed: author generic `template/composed/INSTRUCTIONS.md` base + harness self-host local block in root `INSTRUCTIONS.md`; move to `composed.files` in `harness.config.json` + `template/seeded/harness.config.json` (C72-1, D1) | done | cs72-w1 | agent-id=cs72-w1-instructions-composed \| role=implementer \| report-status=delivered \| learnings=0 |
+| T2 — Genericize `.github/copilot-instructions.md`, `TRACKING.md`, `RETROSPECTIVES.md` per Gate A; confirm `READMEGUIDE.md` clean (C72-2, D2) | done | cs72-w2 | agent-id=cs72-w2-copilot-tracking-retro \| role=implementer \| report-status=delivered \| learnings=0 |
+| T3 — Add `scripts/check-consumer-template-genericity.mjs` + `harness lint` registration + fixtures/tests; full-base scan via `lib/composed.mjs` (C72-3, D3) | done | cs72-w3 | agent-id=cs72-w3-genericity-linter \| role=implementer \| report-status=delivered \| learnings=0 (+ cs72-fix-linter-findings review-fix) |
+| T4 — Fresh-init wiring in `template/seeded/harness.config.json`; CS64b `check-instructions` self-host gating revert was a no-op (split out, never merged) (C72-4, D4) | done | cs72-w4 | agent-id=cs72-w4-wiring-changelog-ops \| role=implementer \| report-status=delivered \| learnings=0 |
+| T5 — `CHANGELOG.md` `[Unreleased]` entry + `OPERATIONS.md` (+ composed mirror) genericity-invariant note (D5) | done | cs72-w4 | agent-id=cs72-w4-wiring-changelog-ops \| role=implementer \| report-status=delivered \| learnings=0 |
+| T6 — Local review (gpt-5.5 rubber-duck) + self-checks (`harness lint`, `node --test`, `sync --mode=check`) + content PR (D6) | done | omni-ah | role=reviewer \| 8 gpt-5.5 GO rounds + Copilot \| content PR #322 squash-merged `1fc9b7a` \| learnings=0 |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS72 row); refresh `CONTEXT.md`; run `harness sync --mode=check` (no drift) | done | omni-ah | close-out (this PR) |
+| Close-out: learnings + follow-ups — file any new LRNs; file the OPERATIONS/REVIEWS cross-ref genericization follow-up CS (covers issue #229); run `harness harvest` if cadence triggers | done | omni-ah | close-out (this PR) — LRN-168/169/170 filed; the #229 / OPERATIONS-REVIEWS cross-ref follow-up is recommended in **LRN-170** (a distinct cross-ref-resolvability invariant, not the anchor-genericity guard) for a future attested CS |
 
 ## Notes / Learnings
 
@@ -100,8 +100,25 @@ The harness already has the right primitive for "generic base shipped to all + r
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah) |
-| Notes | Forward-looking at claim time; materially-used implementer models + the sub-agent ledger are confirmed at close-out. Independence per REVIEWS § 2.3 — reviewer gpt-5.5 ≠ implementer claude-opus-4.8. CS72 is NOT on reviews.high_risk_clickstops; fallback claude-sonnet-4.6 permitted if gpt-5.5 is unavailable. |
+| Notes | Sub-agent ledger (all claude-opus-4.8): cs72-w1-instructions-composed (C72-1), cs72-w2-copilot-tracking-retro (C72-2), cs72-w3-genericity-linter (C72-3), cs72-w4-wiring-changelog-ops (C72-4/5), cs72-fix-linter-findings (review-fix), + orchestrator omni-ah (slug/doc/wording/file-class/citation review fixes). Independent review: 8 gpt-5.5 rubber-duck rounds + Copilot; PVI by gpt-5.5. Reviewer gpt-5.5 ≠ every implementer model (independence per REVIEWS § 2.3). CS72 is NOT on reviews.high_risk_clickstops. Content PR #322 squash-merged at `1fc9b7a`. |
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, cs72-pvi-gpt55)
+**Date:** 2026-06-24T10:17:19Z
+**Outcome:** GO
+
+Run against the merged content HEAD (squash `1fc9b7a`, PR #322). Reviewer model `gpt-5.5` differs from every implementer model `claude-opus-4.8` (independence invariant, REVIEWS § 2.3). `harness lint` 33/0/3, `node --test tests/*.test.mjs` 0 fail, `sync --mode=check` no drift; a no-write fresh-init render resolves the core onboarding templates with no unresolved `{{…}}`.
+
+Per-deliverable / decision outcome:
+
+| Item | Outcome | Rationale (non-match only) |
+|---|---|---|
+| C72-1 INSTRUCTIONS.md → composed (D1) | match | — |
+| C72-2 copilot-instructions composed + TRACKING/RETROSPECTIVES scrub; READMEGUIDE clean (D2) | match | — |
+| C72-3 guard linter + tests + registration (D3) | diverged (acceptable) | The linter scans composed bases **in full** including default local-block bodies (those ship to consumers on first init), instead of the plan's literal "local-block regions excluded" — a deliberate correctness improvement that better serves the genericity goal (caught + fixed during review). |
+| C72-4 fresh-init wiring + CS64b `check-instructions` revert (D4) | match | The CS64b gating revert was a no-op (the strand was split out, never merged); the self-host gate is by `package.json` name, not `template/` existence; seeded `managed.files` + a missing `repo_slug` templating key were added. |
+| C72-5 SemVer / CHANGELOG (D5) | match | minor bump; `[Unreleased]` entry + OPERATIONS note (composed mirror byte-equal). |
+| C72-6 independence (D6) | match | reviewer `gpt-5.5` ≠ every implementer `claude-opus-4.8`. |
+
+Intentional divergences, all confirmed acceptable: the full-base local-block scan (C72-3); the package-name self-host gate; the added `repo_slug` seeded key + the `TRACKING.md` `\{{repo_short}}` templating-escape fix (both required to satisfy exit criterion 3 "no unresolved `{{…}}`").
