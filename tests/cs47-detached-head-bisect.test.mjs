@@ -233,6 +233,26 @@ const SUBCOMMAND_PLAN = {
     skip: 'Reads a reviewer-output file + read-only `git diff` (scripts/check-review-output.mjs); ' +
       'a post-review capture tool, not exercised here.',
   },
+  'review-doc': {
+    skip: 'CS66 doc fact-claim review; advisory default composes a reviewer prompt with read-only ' +
+      '`git diff base..head` and invokes no model without --reviewer-output. No HEAD-moving git op ' +
+      '(lib/review-doc.mjs -> lib/review-checklist.mjs).',
+  },
+  'perf-review': {
+    skip: 'CS66 performance review; advisory default composes a reviewer prompt with read-only ' +
+      '`git diff base..head` and invokes no model without --reviewer-output. No HEAD-moving git op ' +
+      '(lib/perf-review.mjs -> lib/review-checklist.mjs).',
+  },
+  'security-review': {
+    skip: 'CS66 security review; advisory default composes a reviewer prompt with read-only ' +
+      '`git diff base..head` and invokes no model without --reviewer-output. No HEAD-moving git op ' +
+      '(lib/security-review.mjs -> lib/review-checklist.mjs).',
+  },
+  'review-cs': {
+    skip: 'CS66 local verify-only clickstop-readiness check; spawns the read-only check-clickstop ' +
+      'linters (their git usage is read-only log/rev-parse). No model, no network, no HEAD-moving ' +
+      'git op (lib/review-cs.mjs).',
+  },
   upgrade: {
     skip: 'Clones the harness at a target ref + runs a dry-run sync to preview an upgrade; ' +
       'network-dependent and performs no HEAD-moving git operation in this repo (lib/upgrade.mjs).',
