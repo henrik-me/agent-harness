@@ -34,6 +34,28 @@ claim_area: orchestrator
 
 ---
 
+### LRN-166
+
+```yaml
+id: LRN-166
+date: 2026-06-24
+category: process
+source_cs: CS73
+status: open
+tags: [sub-agent-dispatch, briefing, changelog, structured-docs, idempotency]
+claim_area: orchestrator
+```
+
+**Problem:** A CS73 sub-agent briefing instructed "add a new `### Fixed` subsection immediately before `### Documentation`" in `CHANGELOG.md`. A `### Fixed` subsection already existed under `[Unreleased]` (the CS64 post-merge PVI entry, placed after `### Documentation`). Following the positional instruction verbatim would have produced two `### Fixed` headers under one release — a malformed CHANGELOG. The implementer used good judgment and added the entry to the existing section instead and flagged the collision in DECISIONS-MADE, but a less careful agent would have created the duplicate.
+
+**Finding:** When briefing a sub-agent to add content to a *structured, append-once* section of a doc (CHANGELOG `### Added/Changed/Fixed`, a named `##` block, a config stanza), phrase the instruction **idempotently** — "add to the existing `### Fixed` subsection under `[Unreleased]` if present, else create it (Keep-a-Changelog order)" — rather than a positional "add X before Y". Positional instructions assume a structure that may already differ, and verbatim compliance can yield duplicate headers or misordered sections. Pairs with the implementer-self-review-is-not-review-of-record rule (CS48): the orchestrator's own diff review confirmed the deviation was correct.
+
+**Evidence:** CS73 content PR #319; sub-agent `cs73-impl` DECISIONS-MADE noted the collision and deviated correctly; `CHANGELOG.md [Unreleased]` already had a `### Fixed` subsection when the dispatch said to create one before `### Documentation`.
+
+**Disposition:** Open. Candidate at a future harvest: add a one-line "idempotent section-add" note to `OPERATIONS.md § Sub-agent dispatch` (briefing structure).
+
+---
+
 ### LRN-165
 
 ```yaml
