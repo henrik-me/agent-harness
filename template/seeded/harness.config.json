@@ -12,7 +12,8 @@
       "INSTRUCTIONS.md",
       "CONVENTIONS.md",
       "OPERATIONS.md",
-      "REVIEWS.md"
+      "REVIEWS.md",
+      ".github/copilot-instructions.md"
     ],
     "overrides": {
       "INSTRUCTIONS.md": {
@@ -26,6 +27,9 @@
       },
       "REVIEWS.md": {
         "local_blocks": ["reviews.project-gates"]
+      },
+      ".github/copilot-instructions.md": {
+        "local_blocks": ["copilot-instructions.harness"]
       }
     }
   },

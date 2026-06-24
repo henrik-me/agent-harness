@@ -1,7 +1,10 @@
 # Copilot Agent Instructions
 
-This file is **managed** by the harness — do not edit by hand.
-Regenerate via `harness sync` when a new harness version is pinned.
+> **File class:** composed — managed core + one project-local block.
+> Do **not** edit the managed-core sections directly. Edit only the content
+> inside the `copilot-instructions.harness` local block (see § Local block at
+> the end of this file). All managed-core sections are overwritten on every
+> `harness sync`.
 
 ---
 
@@ -58,23 +61,23 @@ conformance before reporting back.
 The orchestrator MUST paste the canonical sub-agent briefing preamble (defined
 in `OPERATIONS.md § Mandatory briefing preamble`) verbatim into every sub-agent
 prompt, including small or "obvious" ones. Reference is not enough — verbatim
-paste is the discipline that prevents process steps from being forgotten
-(LRN-068). Sub-agents should reject (or surface as a learning candidate) any
-dispatch whose prompt does NOT include the canonical preamble.
+paste is the discipline that prevents process steps from being forgotten.
+Sub-agents should reject (or surface as a learning candidate) any dispatch
+whose prompt does NOT include the canonical preamble.
 
 ### 6 — Cross-repo handoff: file issues, never commit
 
-The harness orchestrator operates directly **only in `henrik-me/agent-harness`**.
-For **any other repository** (including consumer repos such as
-`henrik-me/sub-invaders`), the orchestrator MUST NOT commit, push, open
-branches, or create pull requests — even via delegated harness-side
-sub-agents, helper scripts, or background tasks (no proxy bypass). The
-consumer-repo agent owns the PR, validation, and merge path.
+The orchestrator operates directly **only in its own home repository**. For
+**any other repository** (including consumer repos that adopt this harness),
+the orchestrator MUST NOT commit, push, open branches, or create pull
+requests — even via delegated harness-side sub-agents, helper scripts, or
+background tasks (no proxy bypass). The consumer-repo agent owns the PR,
+validation, and merge path.
 
-**Check-only mode for status questions** (e.g. "is SI updated to v0.6.0?"):
-use read-only `gh pr list`, `gh issue list`, or `gh api` to inspect state.
-If no tracking issue exists for the work in question, idempotently create
-exactly one issue labeled `harness-orchestrator` and report its URL.
+**Check-only mode for status questions** (e.g. "is the consumer on the latest
+pin?"): use read-only `gh pr list`, `gh issue list`, or `gh api` to inspect
+state. If no tracking issue exists for the work in question, idempotently
+create exactly one issue labeled `harness-orchestrator` and report its URL.
 
 **No escape hatch.** Even urgent cross-repo work routes through an issue
 (see `OPERATIONS.md § Cross-repo procedures`). This is an orchestrator
@@ -82,13 +85,11 @@ constraint; the human user can always act directly outside the orchestrator.
 
 **Cross-repo PR body checklist:** when the consumer-repo agent opens a PR
 in response to a harness-filed issue (typically a pin bump), the PR body
-MUST include `## Summary`, `## Changes`, `## Testing`, `## Model audit`
-(with `Implementer agent` and `Reviewer agent` rows since v0.6.0), and
-`## Review log` (6-column, bare reviewer-model identifier — no `(R2)`
-decorations; see REVIEWS.md § 2.8) at PR-open time. The consumer's
-`.github/pull_request_template.md` cannot be assumed to populate them.
-See `OPERATIONS.md § Cross-repo pin-bump PR body checklist (CS54)` for
-the full doctrine and pre-open self-check.
+MUST include the sections your review process requires — at minimum
+`## Summary`, `## Changes`, `## Testing`, `## Model audit`, and `## Review
+log` — at PR-open time. The consumer's `.github/pull_request_template.md`
+cannot be assumed to populate them. See `OPERATIONS.md § Cross-repo
+procedures` for the full doctrine and pre-open self-check.
 
 ---
 
@@ -106,12 +107,12 @@ Each clickstop (CS) follows this lifecycle. See `OPERATIONS.md` and
 4. **Dispatch** — identify parallelisable sub-tasks; dispatch sub-agents
    with structured briefings (see `OPERATIONS.md § Sub-agent dispatch`).
 5. **Implement** — work only on owned files; validate early and often.
-6. **Local review** — GPT-5.5 rubber-duck before opening a PR; record
-   model + timestamp in the PR body.
+6. **Local review** — rubber-duck with the configured review model before
+   opening a PR; record model + timestamp in the PR body.
 7. **Open PR** — use `pull_request_template.md`; CI must pass.
 8. **Review + merge** — threads resolved; squash-merge.
-9. **Plan-vs-implementation review gate (GPT-5.5)** — run before the
-   close-out PR. See `OPERATIONS.md § Plan-vs-implementation review (close-out gate)`.
+9. **Plan-vs-implementation review gate** — run before the close-out PR.
+   See `OPERATIONS.md § Plan-vs-implementation review (close-out gate)`.
    Record the review in the active CS file's `## Plan-vs-implementation review`
    section. NEEDS-FIX outcome blocks close-out.
 10. **Close-out** — rename `active_csNN_*.md` → `done_csNN_*.md`; update
@@ -141,7 +142,7 @@ For a newly-created git worktree or fresh checkout, the briefing must require
 `npm install` in that checkout before dependency-backed harness linters run;
 `node_modules` is gitignored and per-checkout, not shared from the parent tree.
 
-### Reporting independence (CS48 / issue #142)
+### Reporting independence
 
 **Self-review carries zero review weight.** Any implementer self-review of
 the diff is a debugging aid, not a review-of-record. The orchestrator MUST
@@ -212,7 +213,7 @@ node scripts/check-pr-body.mjs --file <path-to-pr-body>
 | `composed` | Generated from templates + project config | No (edit config instead) |
 | `seeded` | One-time scaffold; harness never touches again | Yes |
 
-This file is `managed`. Treat all files under `template/managed/` the same
+This file is `composed`. Treat all files under `template/managed/` the same
 way in consumer repos.
 
 ---
@@ -227,3 +228,19 @@ If you encounter any uncertainty, deviation, or surprise:
   friction, gotchas, anything the next agent should know.
 - **Never decide silently.** A silent decision that goes wrong costs far
   more to unwind than an escalation that turns out to be trivial.
+
+---
+
+## Local block
+
+The section below is project-local and is preserved across `harness sync`.
+Edit only the content **between** the markers. The markers and all content
+above are managed by the harness and will be overwritten on the next
+`harness sync`. The block ID `copilot-instructions.harness` must be listed in
+`harness.config.json` under
+`composed.overrides[".github/copilot-instructions.md"].local_blocks`.
+
+<!-- harness:local-start id=copilot-instructions.harness -->
+_(Project-local agent instructions — repository-specific cross-repo
+procedures, model choices, and institutional citations. Empty by default.)_
+<!-- harness:local-end id=copilot-instructions.harness -->

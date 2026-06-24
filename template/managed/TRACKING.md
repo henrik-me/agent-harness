@@ -74,11 +74,11 @@ to consult after the CS is done.
 
 ### Naming conventions
 
-- CS numbers are **zero-padded two digits**: `cs01`, `cs08`, etc.
-- CS numbers are **uppercase in prose/tables** (`CS08`) and **lowercase in
-  branches and filenames** (`cs08`).
+- CS numbers occupy the `<NN>` field, **zero-padded to two digits**.
+- CS numbers are **uppercase in prose/tables** (`CS<NN>`) and **lowercase in
+  branches and filenames** (`cs<NN>`).
 - Slugs are **kebab-case** (`bootstrap-repo`, `cli-dispatcher`).
-- Branch name: `cs<NN>/<slug>` (e.g. `cs08/content`).
+- Branch name: `cs<NN>/<slug>`.
 - WORKBOARD-only PR branches: `workboard/cs<NN>-claim`,
   `workboard/cs<NN>-close`, etc.
 
@@ -104,7 +104,7 @@ Every clickstop file begins with the following header block:
 ## Notes / Learnings
 ```
 
-`check-clickstop.mjs` (CS06) validates this structure on every lint run.
+`check-clickstop.mjs` validates this structure on every lint run.
 
 > **Close-out gate reminder:** every `done/` clickstop file MUST also include a
 > `## Plan-vs-implementation review` H2 section with verbatim
@@ -161,7 +161,7 @@ planned  ──(claim)──►  claimed  ──(start work)──►  active  �
 When a task in the **Active Work** table is assigned to an agent ID, no other
 orchestrator may claim it. The assignment is a soft lock enforced by convention
 (and eventually by `check-workboard.mjs`). There is no automated reclamation in
-the proto phase (CS01–CS10); manual edits only.
+the proto phase; manual edits only.
 
 ---
 
@@ -296,8 +296,6 @@ or reviewing a PR from a new contributor.
 
 - [`WORKBOARD.md`](WORKBOARD.md) — live coordination board
 - [`harness.config.json`](harness.config.json) — project-level harness config
-- [Decision #20 in cs-plan](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) — agent ID schema
-- [Decision #20c in cs-plan](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) — override env var pattern
-- `harness whoami [--explain]` — CLI derivation tool (CS04)
+- `harness whoami [--explain]` — CLI derivation tool
 - `scripts/check-workboard.mjs` — WORKBOARD structural linter
-- `check-clickstop.mjs` — clickstop file structure linter (CS06)
+- `check-clickstop.mjs` — clickstop file structure linter

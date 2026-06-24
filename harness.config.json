@@ -18,7 +18,6 @@
       "RETROSPECTIVES.md",
       "READMEGUIDE.md",
       ".github/CODEOWNERS",
-      ".github/copilot-instructions.md",
       ".github/workflows/harness-drift.yml",
       ".github/workflows/pr-evidence-lint.yml",
       ".github/workflows/review-gates.yml"
@@ -30,6 +29,7 @@
       "CONVENTIONS.md",
       "OPERATIONS.md",
       "REVIEWS.md",
+      ".github/copilot-instructions.md",
       ".github/pull_request_template.md"
     ],
     "overrides": {
@@ -51,6 +51,11 @@
       "REVIEWS.md": {
         "local_blocks": [
           "reviews.project-gates"
+        ]
+      },
+      ".github/copilot-instructions.md": {
+        "local_blocks": [
+          "copilot-instructions.harness"
         ]
       },
       ".github/pull_request_template.md": {

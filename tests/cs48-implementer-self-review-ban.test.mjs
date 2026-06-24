@@ -22,7 +22,7 @@ const REVIEW_CLI = '`harness review <pr>` CLI';
 const DISPATCH_SURFACES = [
   'template/composed/OPERATIONS.md',
   'OPERATIONS.md',
-  'template/managed/.github/copilot-instructions.md',
+  'template/composed/.github/copilot-instructions.md',
   '.github/copilot-instructions.md',
 ];
 const OPERATIONS_SURFACES = ['template/composed/OPERATIONS.md', 'OPERATIONS.md'];
