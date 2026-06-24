@@ -64,7 +64,7 @@ function buildCwd(overrides = {}) {
 }
 
 /**
- * Run the linter. Pass { cwd: false } to omit the --cwd flag entirely.
+ * Run the linter with the given CLI args (omit `--cwd` by leaving it out of `args`).
  *
  * @param {string[]} [args]
  * @returns {{ stdout: string, stderr: string, status: number }}

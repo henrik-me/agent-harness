@@ -213,7 +213,7 @@ node scripts/check-pr-body.mjs --file <path-to-pr-body>
 | `composed` | Generated from templates + project config | No (edit config instead) |
 | `seeded` | One-time scaffold; harness never touches again | Yes |
 
-This file is `composed`. Treat all files under `template/managed/` the same
+This file is `composed`. Treat all files under `template/composed/` the same
 way in consumer repos.
 
 ---
