@@ -23,7 +23,8 @@
  * For composed bases, the ENTIRE base is scanned — including the default body
  * of `<!-- harness:local-start id=... -->` local blocks. That default body is
  * rendered verbatim into a fresh consumer's file on first init (lib/composed.mjs
- * § renderInitialComposed), so it is consumer-shipped and MUST be generic too.
+ * seeds the local-block body from the template default), so it is
+ * consumer-shipped and MUST be generic too.
  * lib/composed.mjs `parseComposed` is still used to validate the markers are
  * well-formed: a malformed/unclosed/nested marker is fail-closed — the parse
  * error is surfaced AND the entire raw file is scanned (so a broken marker
