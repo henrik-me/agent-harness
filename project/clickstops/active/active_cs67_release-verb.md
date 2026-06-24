@@ -1,9 +1,9 @@
 # CS67 — `harness release` verb: mechanize the release cut
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c3
+**Branch:** cs67/content
+**Started:** 2026-06-24
 **Closed:** —
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the `release` verb cataloged in CS64's command/skill surface is spun out here because it depends on the release-process documentation that CS59 produces.
 **Depends on:** **CS59** (hard) — `harness release` mechanizes the procedure CS59 documents as `OPERATIONS.md § Release process`; that section is the spec. Also reuses `lib/cross-repo.mjs` (CS56) for consumer notification. Do not claim before CS59 closes. **CS64b** (hard, added 2026-06-10) — `harness release` allocates a temp clone for tag/release SHA verification and consumer-notification staging; it must adopt the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) from the outset rather than retrofit them. C64b-3's `harness sync` new-managed-file reconciliation is also referenced by the consumer-notification path.
@@ -72,11 +72,29 @@ The single hardest sequencing constraint: the tag and GitHub release must land o
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | 7b44cf4f9f30 | 2026-06-06T23:49:00Z | Needs-Fix | Requiring --sha doesn't prevent tagging the wrong commit; +2 non-blocking (ambiguous git-push vs gh release create; partial-publish idempotency). All fixed in R2. |
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | 9826cb248fc0 | 2026-06-06T23:58:00Z | Go-with-amendments | R1 BLOCKING resolved: Phase B verifies squash-merge SHA + idempotent publish; gh release create --target named as release mutation; consumer-issue (issue-only) mutation clarified. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c3 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c3) |
+| Notes | Planned models — implementation dispatched to background sub-agents (`claude-opus-4.8`); sub-agent ledger refined at close-out per materially-used models. Model independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. CS67 is NOT on `reviews.high_risk_clickstops`; fallback `claude-sonnet-4.6` permitted if `gpt-5.5` unavailable. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — `lib/release.mjs` Phase A (prepare): version bump (`package.json` + `package-lock.json`), CHANGELOG `[Unreleased]`→`[x.y.z]` promotion, README pin update, version-vs-SemVer validation; dry-run-first, `--apply` writes only + `tests/lib-release.test.mjs` | pending | cs67-release | C67-1,C67-2,C67-5,C67-6; Deliverable 1. Injectable fs/git/gh seams; tests under os.tmpdir() only. agent-id=cs67-release \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `lib/release.mjs` Phase B (publish): verify `--sha` is the squash-merge commit on main (refuse branch-head/arbitrary), `gh release create --target`, idempotent/resumable, `cross-repo open-issue` consumer notify (issue-only) | pending | cs67-release | C67-1,C67-3,C67-4; Deliverable 1. Reuses `lib/cross-repo.mjs` + `lib/disposers.mjs`/`assertSafeRef`. agent-id=cs67-release \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — `bin/harness.mjs`: register `release` in COMMAND_REGISTRY + TOP_HELP + SUBCOMMAND_HELP; thin delegation; `--version`/`--bump`/`--apply`/`--publish`/`--sha` via `requireValue` | pending | cs67-release | C67-5; Deliverable 2. agent-id=cs67-release \| role=implementer \| report-status=pending \| learnings=0 |
+| T4 — `OPERATIONS.md` + `template/composed/OPERATIONS.md` mirror (lockstep): `§ Release process` references `harness release` as the canonical executable path | pending | cs67-release | C67-3; Deliverable 3. Lockstep lint. agent-id=cs67-release \| role=implementer \| report-status=pending \| learnings=0 |
+| T5 — `CHANGELOG.md` `[Unreleased]` entry for the new `release` subcommand | pending | cs67-release | Deliverable 4; LRN-101 CHANGELOG-touch convention. agent-id=cs67-release \| role=implementer \| report-status=pending \| learnings=0 |
+| T6 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before content PR | pending | omni-ah-c3 | Independence invariant: reviewer model ≠ implementer model. |
+| T7 — Open content PR (`cs67/content`); PR-level rubber-duck + `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c3 | Per OPERATIONS.md § Three-PR shape (content PR). |
+| T8 — Close-out: docs + restart state — rename `active_cs67_*.md` → `done_cs67_*.md`; update WORKBOARD + CONTEXT handoff | pending | omni-ah-c3 | Close-out PR (`cs67/close-out`). |
+| T9 — Close-out: learnings + follow-ups — file new LEARNINGS; create planned follow-up CSs for unresolved items | pending | omni-ah-c3 | Per RETROSPECTIVES.md. |
 
 ## Notes / Learnings
 
