@@ -1,9 +1,9 @@
 # CS72 — Genericize consumer-shipped governance docs + guard linter
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs72/content
+**Started:** 2026-06-24
 **Closed:** —
 **Filed by:** omni-ah (Claude Opus 4.8), 2026-06-23 — surfaced during CS64b execution when @henrik-me rejected shipping the harness's own governance/onboarding docs (which carry harness-internal LRN/ADR/CS cross-references) verbatim to consumers. User directive: *"there should be no lrn's in a repo that adopts the harness that refers back to lrn's in the agent-harness repo … it has to be clean with basic/generic instructions, not specific to another repo."* The CS64b consumer-delivery strand (C64b-7 seed/init core-doc delivery + C64b-8 core-doc sync WARN gate) was **split out** of PR #310 and is re-planned here, done correctly: genericize first, then deliver.
 **Depends on:** **CS64b** (soft) — CS64b's C64b-3 `harness sync` new-managed-file reconciliation is the delivery mechanism the now-generic core docs flow through; this CS restores the delivery (descoped from CS64b) on top of generic templates.
@@ -79,11 +79,28 @@ The harness already has the right primitive for "generic base shipped to all + r
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — Reclassify `INSTRUCTIONS.md` → composed: author generic `template/composed/INSTRUCTIONS.md` base + harness self-host local block in root `INSTRUCTIONS.md`; move to `composed.files` in `harness.config.json` + `template/seeded/harness.config.json` (C72-1, D1) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — Genericize `.github/copilot-instructions.md`, `TRACKING.md`, `RETROSPECTIVES.md` per Gate A; confirm `READMEGUIDE.md` clean (C72-2, D2) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — Add `scripts/check-consumer-template-genericity.mjs` + `harness lint` registration + fixtures/tests; parser-based local-block exclusion via `lib/composed.mjs` (C72-3, D3) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T4 — Fresh-init wiring in `template/seeded/harness.config.json`; revert CS64b `check-instructions` self-host gating in `bin/harness.mjs` (C72-4, D4) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T5 — `CHANGELOG.md` `[Unreleased]` entry + `OPERATIONS.md` (+ composed mirror) genericity-invariant note (D5) | pending | — | agent-id=TBD \| role=implementer \| report-status=pending \| learnings=0 |
+| T6 — Local review (GPT-5.5 rubber-duck) + self-checks (`harness lint`, `node --test`, `sync --mode=check`) + open content PR (D6) | pending | — | agent-id=TBD \| role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state — update `WORKBOARD.md` (remove CS72 row); refresh `CONTEXT.md`; run `harness sync --mode=check` (no drift) | pending | omni-ah | close-out |
+| Close-out: learnings + follow-ups — file any new LRNs; file the OPERATIONS/REVIEWS cross-ref genericization follow-up CS (covers issue #229); run `harness harvest` if cadence triggers | pending | omni-ah | close-out |
 
 ## Notes / Learnings
 
 - Filed as the corrective follow-up to the CS64b consumer-delivery strand (C64b-7/8), which was split out of PR #310 because it shipped harness-internal docs to consumers. This CS does delivery correctly: **genericize first (composed base + guard linter), then deliver.**
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | Forward-looking at claim time; materially-used implementer models + the sub-agent ledger are confirmed at close-out. Independence per REVIEWS § 2.3 — reviewer gpt-5.5 ≠ implementer claude-opus-4.8. CS72 is NOT on reviews.high_risk_clickstops; fallback claude-sonnet-4.6 permitted if gpt-5.5 is unavailable. |
 
 ## Plan-vs-implementation review
 
