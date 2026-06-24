@@ -1,10 +1,10 @@
 # CS64b — Harness verb reliability primitives (post-CS64 hardening)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
 **Branch:** cs64b/content
 **Started:** 2026-06-22
-**Closed:** —
+**Closed:** 2026-06-24
 **Filed by:** Follow-up to active **CS64** (2026-06-10 by `omni-ah-c2`) to absorb three open LRNs that surfaced reliability gaps in the harness lifecycle/verb surface and were tagged as "CS64 scope candidates" during the 2026-06-10 LRN disposition refresh (PR #288). Rather than expand CS64 mid-flight, the items are spun out here as the dedicated post-CS64 hardening CS, gating the downstream planned CS65–CS68 stream so the reliability primitives land before further work on top of the verb surface.
 **Depends on:** **CS64** (hard) — all three deliverables harden or extend verbs that CS64 introduces (`startup`/`status`, the cross-clone temp-dir/clone patterns shared by the lifecycle verbs, and the `harness upgrade` flow). CS64 must close first.
 
@@ -26,7 +26,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| C64b-1 | `harness doctor` probe | Add a read-only `harness doctor` subcommand (backed by `lib/doctor.mjs`) that detects the LRN-151 broken-loose-ref state by walking `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only files, cross-checking with `git for-each-ref ... 2>&1 \| grep "ignoring broken ref"`, and printing the exact repair recipe (`rm .git/refs/remotes/<…>` + `packed-refs` line removal + `git fetch origin --prune`). Default **report-only**; `--repair` applies the deletion + `fetch` with explicit confirmation. Idempotent. | A read-only probe is safe to run anytime (including from `harness startup`); `--repair` keeps the destructive step explicit. Encodes the LRN-151 recipe so an agent does not have to rediscover it after a crash. |
+| C64b-1 | `harness doctor` probe | Add a read-only `harness doctor` subcommand (backed by `lib/doctor.mjs`) that detects the LRN-151 broken-loose-ref state by walking `.git/refs/remotes/origin/` for zero-byte / whitespace-only / NUL-only ref files and printing the exact repair recipe (`rm .git/refs/remotes/<…>` + `packed-refs` line removal + `git fetch origin --prune`). Default **report-only** (exit 0 advisory); `--repair` is an explicit opt-in flag that applies the deletion + `fetch origin --prune` immediately (non-interactive). Idempotent. | A read-only probe is safe to run anytime (including from `harness startup`); `--repair` keeps the destructive step behind an explicit flag. Detection is **origin-scoped** because repair re-fetches origin only — deleting a broken ref under another remote would orphan it (deleted, never recreated), so a non-origin broken ref is left for manual recovery. Encodes the LRN-151 recipe so an agent does not have to rediscover it after a crash. |
 | C64b-2 | Temp-dir / clone disposer pattern | Audit every `lib/*.mjs` verb that allocates a temp dir or clone and apply the `{path, cleanup}` disposer pattern from LRN-157 (paired allocation + idempotent `cleanup()` registered before any use), plus a shared `assertSafeRef(ref)` helper that rejects refs matching `^-` (or `--`) before they are passed to `git`. Land as a small new `lib/disposers.mjs` + unit tests. Add a CONVENTIONS bullet stating the pattern is required for any new verb. | Encodes the LRN-157 finding as a reusable helper rather than three copies; making it a CONVENTIONS rule means CS66/CS67's later verbs adopt it by default. Leading-dash ref rejection is a tiny but real argv-injection mitigation for verbs that take `--ref`/`--branch`. |
 | C64b-3 | Sync-time new-managed-file reconciliation | Extend `harness sync --mode=check` (and the default sync path) to surface every consumer-deliverable file in the harness's `template/managed/` manifest (excluding sentinels such as `.gitkeep`) that is **absent from the consumer's `managed.files`** — membership, not mere disk presence, since an untracked-on-disk file is still skipped by sync — alongside the existing drift detection. Default: report-only (a "new managed files" section in the sync report). `--apply-new` adopts them (adds the `managed.files` entry + copies the file) non-interactively in apply mode (adopt-all; see the G-apply-new resolution). Update the `pr_check` schema/doc note (LRN-155 evidence; `schemas/harness.config.schema.json`) to reference the new flow. | Closes the LRN-155 gap symmetrically with the existing drift checks: today sync notices *changed* managed files but not *new* ones; the asymmetry is exactly the failure mode. Report-only default keeps consumers from getting unexpected file additions on a `sync`. |
 | C64b-4 | Logic in `lib/`, thin `bin/` | All mechanics in `lib/doctor.mjs` + `lib/disposers.mjs` + `lib/sync.mjs` edits, with **injectable fs/git seams** so tests run without real git/network. `bin/harness.mjs` only parses flags + delegates. Tests write only under `os.tmpdir()`, never REPO_ROOT (per the test-hygiene memory / LRN-094). | Matches the C64-10 pattern; keeps the surface unit-testable and consistent with the rest of the verb library. |
@@ -46,7 +46,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 ## User-approval gates
 
-- **G-doctor-repair** — confirm whether `harness doctor --repair` should require interactive confirmation or accept `--yes` (default: interactive).
+- **G-doctor-repair** — **resolved: non-interactive.** `--repair` is itself the explicit opt-in (default is read-only advisory), so it applies the deletion + `fetch origin --prune` immediately with no interactive prompt and no `--yes` flag — consistent with autonomous/CI execution.
 - **G-apply-new** — **resolved: adopt-all (non-interactive).** `harness sync --apply-new` adopts every detected new managed file in apply mode without prompting (per-file interactive confirmation would hang in CI / autonomous contexts). Per-file confirmation remains a possible follow-up.
 
 ## Exit criteria
@@ -63,7 +63,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 
 | # | Risk / what breaks | Mitigation |
 |---|---|---|
-| R1 | `harness doctor --repair` deletes a ref the user wanted (false positive on a legitimate zero-byte ref). | Default report-only; `--repair` is explicit + interactive (G-doctor-repair); the heuristic is precise (zero-byte / whitespace-only / NUL-only + `git for-each-ref` flags it as `ignoring broken ref`). |
+| R1 | `harness doctor --repair` deletes a ref the user wanted (false positive on a legitimate zero-byte ref). | Default report-only; `--repair` is an explicit opt-in flag (non-interactive — G-doctor-repair); the heuristic is precise (only zero-byte / whitespace-only / NUL-only ref files under `refs/remotes/origin/` match — healthy 40-hex / symref refs never do). |
 | R2 | Disposer-pattern audit touches every verb in `lib/` and creates a sprawling diff. | Scope the audit to verbs that *actually* allocate temp dirs/clones (likely 2–3 today + CS64's new verbs); land the helper first, then per-verb adoption commits. |
 | R3 | `harness sync --apply-new` adopts a file a consumer deliberately omitted. | Report-only default; `--apply-new` only adopts in apply mode (never check/dry-run), is opt-in, and skips `config.excluded` targets, so adoption is never a silent surprise; per-file confirmation is a possible follow-up (G-apply-new). |
 | R4 | CS64 ships verbs that themselves should have used the disposer pattern — needs retrofit. | C64b-2 explicitly includes "any CS64 verbs once that PR lands" in the audit scope; retrofit lands as part of *this* CS, not a separate follow-up. |
@@ -78,6 +78,7 @@ None of these are blockers for CS64 to ship as scoped, but each is a primitive t
 | R3 | gpt-5.5 | claude-opus-4.7-1m-internal | rubber-duck (orchestrator: omni-ah-c2) | 4ab5755f0df1 | 2026-06-10T14:47:06Z | Go | Hash verified; `git-util` absent; deliverables 1-8 contiguous; independence holds. |
 | R4 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | 245219717720 | 2026-06-23T05:18:24Z | Go | Re-attest after split: C64b-3 + Deliverable 4 corrected to membership wording (absent from `managed.files`, not disk presence) to match the implementation; hash verified; independence holds. |
 | R5 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | aa0314e427e4 | 2026-06-23T15:12:20Z | Go | Re-attest after resolving G-apply-new to adopt-all: C64b-3 + gate + Exit-3 + R3 + Notes now consistently describe non-interactive adopt-all (apply-mode-only, skips `config.excluded`); hash verified. |
+| R6 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah) | e0f2ad1d3f39 | 2026-06-24T04:59:39Z | Go | Re-attest after C64b-1 doctor wording update: origin-only scan, dropped `for-each-ref`, non-interactive `--repair`; hash verified; deliverables remain consistent. |
 
 ## Model audit
 
@@ -116,6 +117,17 @@ confirmation remains a possible follow-up. The plan text (C64b-3, the G-apply-ne
 gate, Exit criterion 3, Risk R3) was updated to reflect this resolution and
 re-attested (see the Plan review R5 row).
 
+**G-doctor-repair resolved + `doctor` detection narrowed (CS64b review fixes).**
+The shipped `harness doctor` scans `.git/refs/remotes/origin/` only (not all
+remotes): repair re-fetches origin, so detecting/deleting a broken ref under
+another remote would orphan it — LRN-151 is origin-scoped. The planned
+`git for-each-ref ... ignoring broken ref` cross-check was dropped — the direct
+file-content heuristic (zero-byte / whitespace-only / NUL-only) is sufficient and
+injectable. `--repair` is an explicit opt-in flag that acts immediately (no
+interactive prompt; G-doctor-repair resolved non-interactive). The plan text
+(C64b-1, the G-doctor-repair gate) was updated to match the shipped behaviour and
+re-attested (see the Plan review R6 row).
+
 **Review trail.** gpt-5.5 rubber-duck R1 (pre-PR) = Go with 4 non-blocking findings;
 all addressed in the fix commit. R2 verified the fixes (findings 2/4 fully resolved;
 1/3 logic correct, doc-wording nits + this G-apply-new plan-vs-impl note remained) →
@@ -124,4 +136,19 @@ addressed here. Implementer models: claude-opus-4.8 (orchestrator) + claude-opus
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, orchestrator: omni-ah)
+**Date:** 2026-06-24
+**Outcome:** GO
+
+Reviewed at merge commit `f27c214` (PR #310). The initial PVI returned NEEDS-FIX on a D1 plan-vs-impl gap — the plan described all-`refs/remotes/` walking, a `git for-each-ref ... ignoring broken ref` cross-check, and `--repair` with interactive confirmation, none of which the shipped `lib/doctor.mjs` does. The plan (C64b-1, the G-doctor-repair gate, Risk R1, Notes) was updated to the shipped behaviour — origin-scoped detection, file-content heuristic only, non-interactive explicit `--repair` — and re-attested (Plan review **R6**, hash `e0f2ad1d3f39`). Re-review confirms D1 now matches; D2–D8 unchanged from the first pass.
+
+- **D1** (`harness doctor`) — PASS: `lib/doctor.mjs` walks `.git/refs/remotes/origin/` for zero-byte / whitespace-only / NUL-only refs (no `for-each-ref`); `--repair` is an explicit non-interactive flag that deletes the broken loose refs, strips matching `packed-refs` lines, and runs `git fetch origin --prune`.
+- **D2** (`lib/disposers.mjs` — `makeTempDir`/`withTempDir`/`assertSafeRef`) — PASS.
+- **D3** (disposer retrofit of `lib/upgrade.mjs` + `cs64b-disposer-pattern` guard test) — PASS.
+- **D4** (`lib/sync.mjs` new-managed reconciliation — membership, `.gitkeep` excluded, report-only default, `--apply-new` adopt-all, respects `config.excluded`) — PASS.
+- **D5** (`doctor` registered in COMMAND_REGISTRY / TOP_HELP / SUBCOMMAND_HELP) — PASS.
+- **D6** (disposer reviewer convention in `OPERATIONS.md` + composed mirror) — PASS.
+- **D7** (LRN-151 / LRN-155 / LRN-157 → `applied` with merge SHA) — done in this close-out.
+- **D8** (`CHANGELOG.md` `[Unreleased]` — doctor + sync new-managed + disposers) — PASS.
+
+Exit criteria EC1–EC4 + EC6 verified (targeted CS64b tests, full `node --test`, `harness lint --quiet` 30/0/3, self `sync --mode=check` no drift). The consumer governance-doc strand was split out to CS72 (filed + merged as PR #313), so this CS contains no C64b-7/8 content.

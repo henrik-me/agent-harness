@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-06-22 (omni-ah — CS64b claimed; planned→active)
+> **Last updated:** 2026-06-24 (omni-ah — CS64b CLOSED; active→done rename + Active Work row removed)
 
 ## Orchestrators
 
@@ -10,7 +10,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 
 | Agent ID | Machine | Repo Folder | Status | Last Seen |
 |----------|---------|-------------|--------|-----------|
-| omni-ah  | HENRIKM-OMNI | C:\src\agent-harness | 🟢 Active | 2026-06-22 |
+| omni-ah  | HENRIKM-OMNI | C:\src\agent-harness | 🟢 Active | 2026-06-24 |
 | omni-ah-c2 | HENRIKM-OMNI | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-10 |
 | omni-ah-c3 | HENRIKM-OMNI | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-10 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-08 |
@@ -28,6 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS64b | CS64b — Harness verb reliability + consumer-delivery primitives (post-CS64 hardening) | 🟢 Active | omni-ah | cs64b/content | 2026-06-22 | — |
+| — | no active CS | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
