@@ -534,7 +534,7 @@ Test hygiene rules:
 - Tests must be runnable with `node --test tests/*.test.mjs`.
 - No third-party test frameworks. Use `node:test` and `node:assert` only.
 - Fixture files live in `tests/fixtures/` and are named after the test file.
-- Tests must not write to `/tmp` or any path outside the project root.
+- Tests must not write transient files under the repository root; use the OS temp directory (e.g. `os.tmpdir()`) for scratch.
 - Brief sub-agents with minimum counts; over-delivery is encouraged.
 
 Use scaffold: `scaffolds/new-test.md`.

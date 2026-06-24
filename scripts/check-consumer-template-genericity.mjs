@@ -135,10 +135,11 @@ for (let i = 0; i < argv.length; i++) {
     process.stdout.write(
       'Usage: check-consumer-template-genericity.mjs [--cwd <dir>] [--allow <token>]... [--quiet]\n\n' +
       'Fail if any consumer-onboarding doc in the scope set contains a\n' +
-      'harness-internal reference (LRN-NNN / CSNN / LEARNINGS.md#lrn- / the\n' +
-      'henrik-me/agent-harness slug). Composed bases are scanned in full,\n' +
-      'including default local-block bodies (they ship to consumers); the\n' +
-      'composed marker parser only fail-closes on malformed markers.\n\n' +
+      'harness-internal reference (a bare LRN-<digits> / CS<digits> token, a\n' +
+      'LEARNINGS.md#lrn- anchor, or the case-insensitive henrik-me/agent-harness\n' +
+      'slug). Composed bases are scanned in full, including default local-block\n' +
+      'bodies (they ship to consumers); the composed marker parser only\n' +
+      'fail-closes on malformed markers.\n\n' +
       'Options:\n' +
       '  --cwd <dir>     Repo root the scope-set paths resolve against (default: cwd)\n' +
       '  --allow <token> Exempt an exact token from the scan (repeatable)\n' +
