@@ -330,6 +330,13 @@ test('doctor: --cwd followed by a flag is rejected (requireValue guard)', async 
   assert.match(err.join('\n'), /--cwd requires a value/);
 });
 
+test('doctor: --cwd= with an empty value exits 2 (equals form matches the space form)', async () => {
+  const err = [];
+  const code = await doctor(['--cwd='], { stdout: () => {}, stderr: (s) => err.push(s) });
+  assert.equal(code, 2);
+  assert.match(err.join('\n'), /--cwd requires a value/);
+});
+
 test('doctor: unknown argument exits 2 with usage', async () => {
   const err = [];
   const code = await doctor(['--bogus'], { stdout: () => {}, stderr: (s) => err.push(s) });
