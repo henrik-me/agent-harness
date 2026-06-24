@@ -420,7 +420,7 @@ id: LRN-157
 date: 2026-06-08
 category: architectural
 source_cs: CS63c
-status: open
+status: applied
 tags: [resource-cleanup, injectable-seam, provenance, temp-dir, code-review, git-injection]
 claim_area: cli
 ```
@@ -460,6 +460,8 @@ CONVENTIONS/REVIEWS note when CS64 adds more lifecycle verbs that fetch/clone.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-2 explicitly adopts this LRN's `{path, cleanup}` disposer pattern + `assertSafeRef` leading-dash ref rejection as a shared helper (new `lib/disposers.mjs`) plus an audit retrofitting every `lib/*.mjs` verb that allocates a temp dir / clone (incl. the CS64 verbs once that PR lands). Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this — CS64b is the dedicated post-CS64 hardening home.
 
+**Disposition update (2026-06-24, `omni-ah`, CS64b close-out):** **Applied** in PR #310 (squash-merge SHA **`f27c21462b5d23cac386066600c5585adb758fe3`**, 2026-06-24T04:44:26Z). C64b-2 shipped `lib/disposers.mjs` (`makeTempDir`/`withTempDir` provenance-safe `{path, cleanup}` disposers + `assertSafeRef` leading-dash/argv-injection ref guard); `lib/upgrade.mjs` was retrofitted onto the shared helpers; `tests/cs64b-disposer-pattern.test.mjs` guards against raw `mkdtempSync` in `lib/`; and OPERATIONS.md documents the disposer reviewer convention. Status flipped open → applied in this close-out.
+
 ### LRN-156
 
 ```yaml
@@ -489,7 +491,7 @@ id: LRN-155
 date: 2026-06-07
 category: architectural
 source_cs: CS63a
-status: open
+status: applied
 tags: [sync, managed-files, consumer-delivery, plan-fact-claim, guided-update]
 claim_area: sync-engine
 ```
@@ -503,6 +505,8 @@ claim_area: sync-engine
 **Disposition:** Open — folds into CS63c (guided update) / CS64 (lifecycle commands). Add a sync-time new-managed-file reconciliation (or guided-upgrade proposal), then update the `pr_check` schema/doc adoption note.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-3 adopts this LRN as the sync-time new-managed-file reconciliation: extend `harness sync --mode=check` (and the default sync path) to surface every file present in `template/managed/` but absent from the consumer's tree; `--apply-new` adopts with per-file confirmation. The `pr_check` schema/doc adoption note is updated as part of that deliverable. Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. Active CS64 is intentionally *not* expanded to cover this.
+
+**Disposition update (2026-06-24, `omni-ah`, CS64b close-out):** **Applied** in PR #310 (squash-merge SHA **`f27c21462b5d23cac386066600c5585adb758fe3`**, 2026-06-24T04:44:26Z). C64b-3 shipped the sync-time new-managed-file reconciliation in `lib/sync.mjs`: `harness sync` (check + default paths) surfaces every `template/managed/` file **absent from the consumer's `managed.files`** (membership, not disk presence; sentinels excluded; respects `config.excluded`) as a report-only advisory; `--apply-new` adopts them non-interactively in apply mode; the `pr_check` schema/doc note was updated. (Implementation refined the plan from disk-presence/per-file-confirmation to membership/adopt-all.) Status flipped open → applied in this close-out.
 
 ### LRN-154
 
@@ -557,7 +561,7 @@ id: LRN-151
 date: 2026-06-06
 category: operational
 source_cs: CS62
-status: open
+status: applied
 tags: [git, crash-recovery, session-resume, remote-tracking-ref, fetch]
 claim_area: orchestrator-loop
 ```
@@ -572,7 +576,9 @@ claim_area: orchestrator-loop
 - Candidate promotion home if this recurs: an OPERATIONS.md "session resume / crash recovery" troubleshooting note (none exists today). Left `open` for the next harvest to decide vs. keeping it as a searchable LRN.
 - General principle: a `fatal: bad object refs/remotes/...` on fetch after a crash is usually a corrupt *ref file*, not object-DB damage — check `git for-each-ref` for "ignoring broken ref" and confirm the remote with `git ls-remote` before any reclone.
 
-**Disposition (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-1 adopts this LRN as the `harness doctor` probe: a read-only `lib/doctor.mjs` walks `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only files, cross-checks `git for-each-ref ... ignoring broken ref`, and prints the LRN-151 repair recipe; `--repair` applies the deletion + `fetch` with explicit confirmation. Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. (Earlier option (b) — OPERATIONS.md "session resume / crash recovery" prose — remains a fallback if CS64b slips, but the verb is now the primary home.)
+**Disposition:** (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh) **🎯 Now scoped to planned CS64b** (`planned_cs64b_verb-reliability-primitives.md`, filed 2026-06-10) — C64b-1 adopts this LRN as the `harness doctor` probe: a read-only `lib/doctor.mjs` walks `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only files, cross-checks `git for-each-ref ... ignoring broken ref`, and prints the LRN-151 repair recipe; `--repair` applies the deletion + `fetch` with explicit confirmation. Flip status to `applied` at CS64b close-out with the merge SHA in this Disposition. (Earlier option (b) — OPERATIONS.md "session resume / crash recovery" prose — remains a fallback if CS64b slips, but the verb is now the primary home.)
+
+**Disposition update (2026-06-24, `omni-ah`, CS64b close-out):** **Applied** in PR #310 (squash-merge SHA **`f27c21462b5d23cac386066600c5585adb758fe3`**, 2026-06-24T04:44:26Z). `harness doctor` (`lib/doctor.mjs`, registered in `bin/harness.mjs`) is the read-only LRN-151 broken-loose-ref probe: it walks `.git/refs/remotes/` for zero-byte / whitespace-only / NUL-only ref files, prints the exact repair recipe, and with `--repair` deletes the broken loose refs + matching `packed-refs` lines and re-runs `git fetch origin --prune`. Status flipped open → applied in this close-out.
 
 ### LRN-146
 
