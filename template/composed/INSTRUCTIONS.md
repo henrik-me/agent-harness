@@ -1,9 +1,9 @@
 # INSTRUCTIONS — Orchestrator Workflow
 
-> **Managed file.** This file is owned by the harness and is overwritten in full on
-> every `harness sync`. Do **not** edit it locally — changes will be lost on the next
-> sync. Project-specific process customisation belongs in `OPERATIONS.md` (local block
-> `id=operations.project-deploy`).
+> **File class:** composed — managed core + one project-local block.
+> Do **not** edit the managed-core sections directly. Edit only the content
+> inside the `instructions.harness` local block (see § Local block at the end of this file).
+> All managed-core sections are overwritten on every `harness sync`.
 
 ---
 
@@ -12,7 +12,7 @@
 These rules are mechanical — automated linters or workflow gates enforce them.
 Violating them is treated as a process bug to fix immediately, not a style preference.
 
-### Planning-locality (CS35 C35-11, C35-12)
+### Planning-locality
 
 Strategic planning content (multi-CS arcs, decisions outliving the session)
 MUST live in `project/clickstops/{planned,active,done}/**`. Tactical session
@@ -28,11 +28,11 @@ Enforced by `scripts/check-planning-locality.mjs` (in `harness lint`).
 Rationale: session storage is non-durable; any agent restart, model swap,
 or handoff must succeed from the repo alone.
 
-### Agent does not file issues in the harness repo (CS35 C35-13)
+### Agent does not file issues in this repository
 
-GitHub issues in `henrik-me/agent-harness` are an INBOUND channel — external
+GitHub issues in this repository are an INBOUND channel — external
 contributors and the user open them; the agent READS them as input to file
-CSs. The agent NEVER opens issues in the harness repo itself, even for
+CSs. The agent NEVER opens issues in this repository itself, even for
 follow-ups. If a follow-up is needed, file a planned CS under
 `project/clickstops/planned/`. Stand-alone issues from the agent fragment
 the canonical arc and create coordination drift.
@@ -41,15 +41,6 @@ This rule is doctrine — not mechanically enforceable because the agent runs
 under the maintainer's `gh` credentials and is indistinguishable from the
 user at the GitHub-API level. Orchestrator self-check + visible code review
 is the only feasible enforcement.
-
-**Scope clarification (CS55 / LRN-137):** C35-13 applies to the harness repo
-only. Cross-repo handoff issues filed into OTHER repositories (e.g.
-`henrik-me/sub-invaders`) are governed by Hard Rule § 6 in
-`.github/copilot-instructions.md` and the `## Cross-repo procedures`
-section in `OPERATIONS.md`. In those repos, the orchestrator MUST file an
-issue (rather than commit/push/PR directly) and is expected to create
-exactly one tracking issue labeled `harness-orchestrator` per cross-repo
-workstream.
 
 ### Knowledge lives in the repo, not agent memory
 
@@ -68,7 +59,6 @@ scratch.
 
 This rule is doctrine — not mechanically enforceable (the harness cannot inspect an
 agent's private memory store). Orchestrator self-check and code review enforce it.
-Per [LRN-153](LEARNINGS.md#lrn-153).
 
 ---
 
@@ -119,7 +109,7 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   node --test tests/*.test.mjs                          # expect: all pass
   node bin/harness.mjs lint --quiet                     # expect: 0 failed
   node bin/harness.mjs sync --mode=check --cwd .        # expect: "No drift detected"
-  git ls-files project/clickstops/{planned,active}/ | sort   # show in-flight CS arc; resume rather than restart (CS35 C35-14)
+  git ls-files project/clickstops/{planned,active}/ | sort   # show in-flight clickstop arc; resume rather than restart
   ```
 
 ### Filing a CS
@@ -134,21 +124,17 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 ### Claiming a CS
 
 - Follow [OPERATIONS.md § Claim](OPERATIONS.md#claim) for the step-by-step procedure.
-- **CS01 bootstrap only:** the very first commit to `main` is a documented one-time
-  exception. From commit 2 onward every change — including WORKBOARD claim/closeout —
-  goes through a PR.
-- **CS01–CS14 (discipline-enforced):** GitHub branch protection is not available on
-  private free-tier repos (see [LRN-001](LEARNINGS.md#lrn-001)). Discipline + GPT-5.5 + user review enforce
-  the policy during this phase.
-- **Public protected phase (current):** Ruleset applied on `main`; one
-  approving review is required by default, repository admins have an explicit
-  bypass for owner override, and `workboard-auto-approve.yml` handles eligible
-  WORKBOARD-only PRs automatically.
+- **Branch-protection posture:** from the second commit onward, every change —
+  including WORKBOARD claim/closeout — goes through a PR. Respect your
+  repository's branch-protection ruleset; where protection is unavailable
+  (for example, on private free-tier repositories), discipline plus
+  independent review enforces the policy. A documented one-time bootstrap
+  commit to `main` is the only exception.
 - **Pre-claim gate:** before claiming, review `LEARNINGS.md` for stale `open` items
   tagged `process` or `architectural`, or items whose `claim_area` matches the area
   you are about to claim. Disposition all relevant items before proceeding.
   `harness harvest` runs this pre-claim scan — run it before claiming.
-  `harness claim CS<NN>` (CS64) invokes it automatically as part of the
+  `harness claim CS<NN>` invokes it automatically as part of the
   preflight gate.
 
 ### Re-evaluating private-tier disposition
@@ -219,7 +205,7 @@ record.
 ### Cutting a release
 
 - A release is its own CS. Follow [OPERATIONS.md § Release process](OPERATIONS.md#release-process)
-  for the ordered cut (pre-release audit per LRN-101, state-of-the-world probes
+  for the ordered cut (pre-release audit, state-of-the-world probes
   per REVIEWS.md § 2.6c F6, `npm version` bump, CHANGELOG `[Unreleased]` → `[x.y.z]`
   promotion, README pin sweep, plan-vs-impl + Phase-2 review, Copilot engage, CI,
   squash-merge, post-merge `git tag` + `git push origin v<x.y.z>` to trigger
@@ -259,10 +245,6 @@ record.
     summary respects the source entry's Problem/Finding scope (no
     generalisation beyond what the source asserts); (e) cross-doc claims
     (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
-    Pattern verified on PR #218: 3 substantive Copilot rounds caught 7
-    fact-claim issues (R4 returned 0 findings) that the rubber-duck
-    pre-review missed because the review prompt did not require
-    cross-surface verification.
 - **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim`,
   `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs.
 - **Commit trailers:** every commit must include
@@ -271,23 +253,23 @@ record.
   resolving a harness blocker. Harness updates land in their own dedicated CS.
 - **Sub-agent file ownership:** when dispatching parallel sub-agents, each sub-agent
   owns exactly the files listed in its briefing. Overlapping write scope causes silent
-  file races (see [LRN-016](LEARNINGS.md#lrn-016)). Enforce non-overlapping
+  file races. Enforce non-overlapping
   ownership at dispatch time, not after.
 - **No-commit preflight:** every sub-agent briefing must begin with a hard no-commit
-  preflight (per [LRN-021](LEARNINGS.md#lrn-021)). Require the sub-agent to record `git --no-pager log
+  preflight. Require the sub-agent to record `git --no-pager log
   --oneline -1` in its final report and confirm "No commit was created."
 - **Test minimums:** brief sub-agents with minimum test counts, never exact counts.
-  Over-delivery on tests is a positive signal, not scope creep ([LRN-037](LEARNINGS.md#lrn-037)).
+  Over-delivery on tests is a positive signal, not scope creep.
 - **Schema-first:** any sub-agent writing config-reading code must read
   `schemas/*.schema.json` before authoring any field access. Field name guessing
-  causes silent integration failures ([LRN-039](LEARNINGS.md#lrn-039)).
+  causes silent integration failures.
 - **Report shape:** every sub-agent must respond with the canonical report shape from
   [OPERATIONS.md § Sub-agent report shape](OPERATIONS.md#sub-agent-report-shape).
   Reports missing this structure are rejected and the sub-agent is re-dispatched.
 - **Sub-agent briefing preamble**: every sub-agent dispatch MUST paste the canonical preamble from
   [OPERATIONS.md § Mandatory briefing preamble](OPERATIONS.md#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)
   verbatim into the prompt. Verbatim paste (not just reference) is the discipline that prevents
-  process steps from being forgotten. Per [LRN-068](LEARNINGS.md#lrn-068).
+  process steps from being forgotten.
 
 ---
 
@@ -295,17 +277,17 @@ record.
 
 Complete these steps in order for every clickstop. Do not skip or reorder.
 
-1. **Pre-claim — learnings gate.** Run `harness harvest` (CS04+) or manually review
+1. **Pre-claim — learnings gate.** Run `harness harvest` or manually review
    `LEARNINGS.md` for stale `open` items tagged `process` or `architectural`, and any
    items whose `claim_area` matches the area you are claiming. Disposition before
    proceeding. See [Harvest Cadence](#harvest-cadence) for disposition options.
 
-2. **Claim.** Run `harness claim CS<NN>` (CS64) to preflight, run the
+2. **Claim.** Run `harness claim CS<NN>` to preflight, run the
    harvest gate, and render the claim plan; re-run with `--apply` to cut
    the `cs<NN>/claim` branch + `git mv` planned→active + edit `WORKBOARD.md`.
    The verb NEVER commits — you own the commit message and PR. Commit via a
-   `workboard/cs<NN>-claim` PR; in the public protected phase, eligible
-   workboard-only PRs are bot-approved and auto-merged after the workflow
+   `workboard/cs<NN>-claim` PR; where your branch-protection ruleset allows it,
+   eligible workboard-only PRs are bot-approved and auto-merged after the workflow
    validation gate passes. WORKBOARD task states:
    - `planned` — filed, not yet started
    - `active` — claimed and in flight (you own it; no other orchestrator may claim it)
@@ -320,24 +302,24 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 4. **Plan-internal.** Identify parallelisable sub-tasks. Record each in the CS file's
    `## Tasks` table with the canonical Notes format before dispatching any sub-agent:
    `agent-id=<id> | role=<role> | report-status=pending | learnings=0`.
-   Use `harness dispatch` (CS64) to emit the canonical sub-agent briefing
-   preamble verbatim — never re-derive it from memory (LRN-068).
+   Use `harness dispatch` to emit the canonical sub-agent briefing
+   preamble verbatim — never re-derive it from memory.
    Follow [OPERATIONS.md § Sub-agent dispatch](OPERATIONS.md#sub-agent-dispatch) for
    briefing structure, file-ownership declarations, no-commit preflight, and the
-   mandatory report shape. Brief sub-agents with test **minimums**, never exact counts
-   (per [LRN-037](LEARNINGS.md#lrn-037)). Every briefing must include:
-   - Hard no-commit preflight in the first paragraph ([LRN-021](LEARNINGS.md#lrn-021)).
+   mandatory report shape. Brief sub-agents with test **minimums**, never exact counts.
+   Every briefing must include:
+   - Hard no-commit preflight in the first paragraph.
    - Explicit file ownership list — exactly the files this sub-agent may write.
    - Required reading list — active CS file, INSTRUCTIONS.md, CONVENTIONS.md, and any
-     relevant schemas ([LRN-039](LEARNINGS.md#lrn-039)).
+     relevant schemas.
    - Decision authority and escalation path — what the sub-agent may decide alone vs.
      what must come back to the orchestrator.
    - Self-check requirements — tests, linters, `git status --short`, SHA verification.
 
 5. **Implement.** All code, template, and doc changes land on the CS branch. Sub-agents
    may run in parallel as long as they own disjoint file sets. After each parallel
-   wave, verify disk state: `git status --short` plus per-file size check (per
-   [LRN-017](LEARNINGS.md#lrn-017)). If a sub-agent's disk state contradicts its report, re-dispatch with the
+   wave, verify disk state: `git status --short` plus per-file size check.
+   If a sub-agent's disk state contradicts its report, re-dispatch with the
    lost-work briefing. Do not declare a parallel wave complete until the disk state
    matches every sub-agent's reported deliverables.
 
@@ -350,12 +332,9 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 8. **CI checks** must all pass before requesting review. Fix failures on the branch;
    never merge a red CI.
 
-9. **Review.**
-   - Private phase (CS01–CS14): GPT-5.5 + user review. Copilot review optional.
-   - Public protected phase (current): GPT-5.5 + required PR checks + one
-     approving review by default. Repository admins may use the explicit
-     Ruleset bypass for owner override; workboard-only PRs use the validated
-     bot path.
+9. **Review.** Obtain the mandatory rubber-duck review and any approving reviews
+   your branch-protection ruleset requires before merge. Engage Copilot review per
+   your project's review policy (see [REVIEWS.md](REVIEWS.md)).
 
 10. **Resolve all threads**, then **squash-merge**. Never merge with unresolved
     suggestions or blocking review threads.
@@ -365,7 +344,7 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
     Record the review in the active CS file's `## Plan-vs-implementation review`
     section. NEEDS-FIX outcome blocks close-out.
 
-12. **Post-merge closeout.** Run `harness close-out CS<NN>` (CS64): Phase 1
+12. **Post-merge closeout.** Run `harness close-out CS<NN>`: Phase 1
     preflights (correct branch, clean worktree, populated `## Plan-vs-implementation
     review` section with **Outcome:** GO). Phase 2 (`--apply`) renames
     `active_cs<NN>_*.md` → `done_cs<NN>_*.md`, removes the WORKBOARD row,
@@ -378,7 +357,7 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 
 ### Harvest Cadence
 
-Two triggers drive the harvest. Both use `harness harvest` (CS04+), which scans
+Two triggers drive the harvest. Both use `harness harvest`, which scans
 `LEARNINGS.md` for `open` entries and prompts you to disposition each one.
 Full procedure and disposition states are in [RETROSPECTIVES.md](RETROSPECTIVES.md).
 
@@ -404,7 +383,7 @@ For each `open` learning, choose one disposition:
 #### Before-Claim (bounded)
 
 Run `harness harvest` before claiming a CS (`harness claim CS<NN>` runs it
-automatically as part of the preflight gate per CS64). **Silent if no stale
+automatically as part of the preflight gate). **Silent if no stale
 relevant learning exists.** Fires only when at least one of the following is
 true:
 
@@ -422,10 +401,9 @@ being silently carried into new work.
 ## When to Add X
 
 Use this section as a decision tree when you are unsure whether a change warrants a
-new file, a new script, a new schema, or a new scaffold. Scaffold templates are CS10
-deliverables and are referenced by expected name below. Until CS10 closes, note the
-expected scaffold name in your briefing and add a `TODO(CS10)` comment where
-applicable.
+new file, a new script, a new schema, or a new scaffold. Scaffold templates are
+referenced by expected name below; where a referenced scaffold does not yet exist,
+note its expected name in your briefing.
 
 ### When to Add a Script
 
@@ -436,7 +414,7 @@ when:
   a report generator).
 - The logic is not already covered by a function in `lib/`.
 - The script accepts an explicit `--file <path>` flag; never infer the target path from
-  `import.meta.url` (per [LRN-032](LEARNINGS.md#lrn-032)).
+  `import.meta.url`.
 
 Linter scripts additionally must:
 - Exit 0 for valid input, 1 for validation errors, 2 for bad CLI usage.
@@ -444,9 +422,9 @@ Linter scripts additionally must:
   `❌ Linter FAILED`.
 - Be registered in the `harness lint` aggregator so CI picks them up.
 - Use `requireValue(args, i, flagName)` for all flag-value parsing to prevent silent
-  misparsing when a flag is the last token with no value (per [LRN-040](LEARNINGS.md#lrn-040)).
+  misparsing when a flag is the last token with no value.
 
-Use scaffold: `scaffolds/new-script.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-script.md`.
 
 **Do NOT add** a script if the logic belongs at consumer runtime — that belongs in
 `bin/harness.mjs` or a subcommand module.
@@ -462,13 +440,13 @@ when:
   `harness --help`.
 
 CLI subcommand requirements:
-- Forward `--help` to print usage and exit 0 (per [LRN-030](LEARNINGS.md#lrn-030)).
+- Forward `--help` to print usage and exit 0.
 - Accept `--config <path>` and resolve it once into a single variable used for all
-  config reads and for threading to delegated subcommands (per [LRN-038](LEARNINGS.md#lrn-038)).
-- Use `requireValue(args, i, flagName)` for all flag-value parsing (per [LRN-040](LEARNINGS.md#lrn-040)).
-- Use `spawnSync` with `shell: true` on Windows-compatible paths (per [LRN-029](LEARNINGS.md#lrn-029)).
+  config reads and for threading to delegated subcommands.
+- Use `requireValue(args, i, flagName)` for all flag-value parsing.
+- Use `spawnSync` with `shell: true` on Windows-compatible paths.
 
-Use scaffold: `scaffolds/new-subcommand.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-subcommand.md`.
 
 **Do NOT add** a CLI subcommand for logic that only runs during authoring-time
 validation — use a `scripts/check-*.mjs` script instead.
@@ -482,7 +460,7 @@ validation — use a `scripts/check-*.mjs` script instead.
 - The module has zero runtime dependencies beyond Node.js built-ins (runtime deps
   require explicit approval and a separate CS).
 
-Use scaffold: `scaffolds/new-library-module.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-library-module.md`.
 
 **Do NOT add** a library module for one-off utilities used by only a single script —
 keep them inline.
@@ -497,8 +475,8 @@ keep them inline.
     sync; the consumer must not edit it. No marker blocks. Use for policy files whose
     content is entirely harness-owned.
   - **Composed** (`template/composed/`): harness manages a core block; the consumer
-    may add local content via `<!-- harness:local-start id=<block-id> -->` /
-    `<!-- harness:local-end id=<block-id> -->` markers (block ID must be allowlisted
+    may add local content via `<​!-- harness:local-start id=<block-id> -->` /
+    `<​!-- harness:local-end id=<block-id> -->` markers (block ID must be allowlisted
     in `harness.config.json` `composed.overrides[<file>].local_blocks`).
     Use for files that need a
     harness-provided core plus project-specific extensions.
@@ -507,7 +485,7 @@ keep them inline.
 - The file is copied to consumer repos on initial setup only and is **never**
   overwritten by subsequent syncs. The consumer owns it completely after seeding.
 
-Use scaffold: `scaffolds/new-template.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-template.md`.
 
 **Do NOT add** a template for harness-internal files that never leave this repo — put
 those in `lib/`, `bin/`, or `scripts/` as appropriate.
@@ -519,7 +497,7 @@ those in `lib/`, `bin/`, or `scripts/` as appropriate.
 - A structural invariant or schema contract needs to be verified on every PR.
 - The invariant is not already covered by an existing linter.
 - The linter can be expressed as a standalone script with a `--file <path>` argument
-  (so `harness lint` can thread it explicitly — per [LRN-032](LEARNINGS.md#lrn-032)).
+  (so `harness lint` can thread it explicitly).
 
 Required linter interface (enforced by `harness lint`):
 - Accepts `--file <path>` and `--quiet` flags.
@@ -527,7 +505,7 @@ Required linter interface (enforced by `harness lint`):
 - Summary line at the end: `<basename>: N errors, M warnings`.
 - Final line: `✅ Linter passed` or `❌ Linter FAILED`.
 
-Use scaffold: `scaffolds/new-linter.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-linter.md`.
 
 ### When to Add a Schema
 
@@ -536,9 +514,9 @@ Use scaffold: `scaffolds/new-linter.md` (CS10 deliverable).
 - A structured file format (config, lock, learning entry, CS file, etc.) is read by
   two or more scripts and needs a shared, validated contract.
 - You need `check-*` linters or sub-agent briefings to cross-reference field names
-  (per [LRN-039](LEARNINGS.md#lrn-039) — never guess field names; always derive them from the schema).
+  (never guess field names; always derive them from the schema).
 
-Use scaffold: `scaffolds/new-schema.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-schema.md`.
 
 **Do NOT add** a schema for ad-hoc internal structures used by only one script — use
 JSDoc `@typedef` annotations instead.
@@ -557,9 +535,9 @@ Test hygiene rules:
 - No third-party test frameworks. Use `node:test` and `node:assert` only.
 - Fixture files live in `tests/fixtures/` and are named after the test file.
 - Tests must not write to `/tmp` or any path outside the project root.
-- Brief sub-agents with minimum counts; over-delivery is encouraged ([LRN-037](LEARNINGS.md#lrn-037)).
+- Brief sub-agents with minimum counts; over-delivery is encouraged.
 
-Use scaffold: `scaffolds/new-test.md` (CS10 deliverable).
+Use scaffold: `scaffolds/new-test.md`.
 
 ### When to Add a Scaffold
 
@@ -569,8 +547,9 @@ Use scaffold: `scaffolds/new-test.md` (CS10 deliverable).
 - The pattern is stable enough to be templated (used at least twice, shape unlikely
   to change significantly).
 
-Scaffolds themselves are CS10 deliverables. Until CS10 closes, reference the expected
-name in briefings with a `TODO(CS10)` annotation; back-filling is acceptable.
+Scaffolds capture repeatable deliverable shapes; add one only when the pattern is
+stable. Where a referenced scaffold does not yet exist, note its expected name in
+briefings and back-fill it later.
 
 ### When to File a CS vs. Inline a Fix
 
@@ -606,7 +585,7 @@ When in doubt, file a CS. Small, focused CSs are cheaper than scope-inflated PRs
 | Current codebase state (last CS closed, key paths) | [CONTEXT.md](CONTEXT.md) |
 | Architecture (design decisions, module map) | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Accumulated project knowledge (LRN entries) | [LEARNINGS.md](LEARNINGS.md) |
-| The CS plan that drives this project | [project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md](project/clickstops/done/done_cs01_bootstrap-repo/harness-cs-plan.md) |
+| The clickstop plans that drive this project | [project/clickstops/](project/clickstops/) |
 
 ### {{project_name}} — Project-Specific Pointers
 
@@ -619,3 +598,19 @@ from `harness.config.json` at sync time.
 - Project deploy procedures: see `OPERATIONS.md` local block `id=operations.project-deploy`
 - Project review gates: see `REVIEWS.md` local block `id=reviews.project-gates`
 - Project conventions: see `CONVENTIONS.md` local block `id=conventions.project`
+
+---
+
+## Local block
+
+The section below is project-local and is preserved across `harness sync`.
+Edit only the content **between** the markers. The markers and all content
+above are managed by the harness and will be overwritten on the next
+`harness sync`. The block ID `instructions.harness` must be listed in
+`harness.config.json` under `composed.overrides["INSTRUCTIONS.md"].local_blocks`.
+
+<!-- harness:local-start id=instructions.harness -->
+_(Project-local orchestration notes — repository-specific claiming phases,
+model choices, cross-repo procedures, and institutional citations. Empty by
+default.)_
+<!-- harness:local-end id=instructions.harness -->

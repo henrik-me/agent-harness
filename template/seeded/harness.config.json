@@ -9,11 +9,15 @@
   },
   "composed": {
     "files": [
+      "INSTRUCTIONS.md",
       "CONVENTIONS.md",
       "OPERATIONS.md",
       "REVIEWS.md"
     ],
     "overrides": {
+      "INSTRUCTIONS.md": {
+        "local_blocks": ["instructions.harness"]
+      },
       "CONVENTIONS.md": {
         "local_blocks": ["conventions.project"]
       },
