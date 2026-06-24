@@ -2335,8 +2335,8 @@ branch ruleset contexts are installed; this catches partial sync/init states.
           template/ dir does not run it.
 **Rules:**
   - No harness-internal reference may appear in a consumer-shipped onboarding
-    doc: a LEARNINGS.md#lrn- anchor link, a bare LRN-NNN or CSNN token, or the
-    literal henrik-me/agent-harness slug.
+    doc: a LEARNINGS.md#lrn- anchor link, a bare LRN-<digits> or CS<digits>
+    token, or the case-insensitive henrik-me/agent-harness slug.
   - Composed bases are scanned IN FULL, including the default body of
     harness:local-* blocks (that body is rendered verbatim into a fresh
     consumer's file on first init, so it ships to consumers and must be generic
@@ -2544,8 +2544,8 @@ async function cmdLint(args, _global) {
     (() => {
       // CS72 (C72-3/C72-4): consumer-template genericity guard. Scans the
       // consumer-onboarding doc set (template/composed bases + template/managed)
-      // and fails on any harness-internal reference (a bare LRN-NNN / CSNN
-      // token, a LEARNINGS.md#lrn- anchor, or the henrik-me/agent-harness slug),
+      // and fails on any harness-internal reference (a bare LRN-<digits> / CS<digits>
+      // token, a LEARNINGS.md#lrn- anchor, or the case-insensitive henrik-me/agent-harness slug),
       // including default harness:local-* block bodies (they ship to consumers).
       // Self-host-guarded by package name (LRN-077, like `pack`): only runs when
       // the consumer's package.json `name` is `@henrik-me/agent-harness`. A

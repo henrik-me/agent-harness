@@ -18,7 +18,7 @@
  *   - a `LEARNINGS.md#lrn-` link
  *   - a bare `\bLRN-\d+\b` token
  *   - a bare `\bCS\d+[a-z]?\b` token
- *   - the literal `henrik-me/agent-harness` slug
+ *   - the (case-insensitive) `henrik-me/agent-harness` slug
  *
  * For composed bases, the ENTIRE base is scanned — including the default body
  * of `<!-- harness:local-start id=... -->` local blocks. That default body is
