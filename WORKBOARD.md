@@ -30,5 +30,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-06-30 | Paused pending CS67 (release verb); reclaimable by owner after CS67 close-out |
 | CS74 | CS74 — Cut harness v0.9.0 | 🟢 Active | omni-ah | cs74/content | 2026-06-30 | — |
+| CS67 | CS67 — `harness release` verb: mechanize the release cut | 🟢 Active | omni-ah-c2 | cs67/content | 2026-06-30 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
