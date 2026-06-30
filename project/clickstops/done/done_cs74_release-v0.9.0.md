@@ -1,10 +1,10 @@
 # CS74 — Cut harness v0.9.0
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah
 **Branch:** cs74/content
 **Started:** 2026-06-30
-**Closed:** —
+**Closed:** 2026-06-30
 **Filed by:** `omni-ah` (Claude Opus 4.8) on 2026-06-30, at @henrik-me's request. Surfacing context: ~39 commits and 9 shipped clickstops have accumulated under `CHANGELOG.md` `[Unreleased]` since `v0.8.0` (2026-06-09), dominated by new CLI surface — CS64 lifecycle verbs (`startup`/`status`/`claim`/`close-out`/`dispatch`), CS64b `doctor` + sync reconciliation, CS66 review-family verbs (`review-doc`/`review-cs`/`perf-review`/`security-review`) — plus new linters (CS69, CS70 orphan guard, CS72 genericity) and a new composed template (CS72). Per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) those are **minor** signals, so the pending cut is **v0.9.0**.
 **Depends on:** None hard. [CS59](../done/done_cs59_document-release-process.md) (release-process docs — **closed**) is the spec this CS follows. CS67 (`harness release` verb) is **not** required: CS74 is the **manual** cut per [OPERATIONS.md § Release process](../../../OPERATIONS.md#release-process); CS67 will mechanize future cuts and is deliberately the v0.10.0 headline, not a blocker here (see C74-2).
 
@@ -121,18 +121,27 @@ The `[Unreleased]` section is therefore **complete and accurate** as of filing. 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Pre-release audit re-run + CHANGELOG promote `[Unreleased]` → `[0.9.0] — <date>` + link refs (C74-3) | pending | omni-ah | Re-run `git log v0.8.0..HEAD` reconciliation at content time; em-dash heading. |
-| T2 — `npm version 0.9.0 --no-git-tag-version` + README pin sweep v0.8.0→v0.9.0 (C74-4/C74-6) | pending | omni-ah | package.json + package-lock.json parity; README sync-excluded. |
-| T3 — Add CS74 to `reviews.high_risk_clickstops`; validate (`harness lint --quiet`, `node --test`); GPT-5.5 PVI review (C74-8) | pending | omni-ah | high_risk edit lands in the content PR (outside workboard-only scope); record Model audit + Review log in PR body. |
-| T4 — Content PR → admin-merge; `git tag -a v0.9.0 <squash-sha>` + push; publish draft Release; re-probe single release (C74-5) | pending | omni-ah | Tag squash SHA (LRN-101); dedupe stale drafts (LRN-159/121). |
-| T5 — Consumer notification: `harness cross-repo open-issue` → henrik-me/sub-invaders (pin v0.9.0) (C74-7) | pending | omni-ah | Issue-only; canonical step-4 fields + pin-bump checklist verbatim. |
-| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; remove CS74 from `reviews.high_risk_clickstops`; `sync --mode=check` clean | pending | omni-ah | Mandatory close-out row (OPERATIONS § Claim). |
-| Close-out: learnings + follow-ups — file release LEARNINGS; disposition stale process LRNs (163/161/156/152/101); follow-up CSs for any deferred scope | pending | omni-ah | Mandatory close-out row. |
+| T1 — Pre-release audit re-run + CHANGELOG promote `[Unreleased]` → `[0.9.0] — 2026-06-30` + link refs (C74-3) | done | omni-ah | Re-audited at content time (43 commits, no new close-out since filing); em-dash heading; link refs updated. |
+| T2 — `npm version 0.9.0 --no-git-tag-version` + README pin sweep v0.8.0→v0.9.0 (C74-4/C74-6) | done | omni-ah | package.json + package-lock.json parity verified; README swept (v0.8.0 demoted to historical). |
+| T3 — Add CS74 to `reviews.high_risk_clickstops`; validate (`harness lint --quiet`, `node --test`); GPT-5.5 PVI review (C74-8) | done | omni-ah | high_risk added in #333; lint 33/0/3, tests 1475/0; GPT-5.5 GO recorded in PR body + PVI. |
+| T4 — Content PR → admin-merge; `git tag -a v0.9.0 <squash-sha>` + push; publish draft Release; re-probe single release (C74-5) | done | omni-ah | PR #333 squash `f731eab`; tag on squash SHA; Release published; exactly one release for the tag (LRN-159 clean). |
+| T5 — Consumer notification: `harness cross-repo open-issue` → henrik-me/sub-invaders (pin v0.9.0) (C74-7) | done | omni-ah | Filed `henrik-me/sub-invaders#117` (harness-orchestrator label; canonical fields + pin-bump checklist). |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; remove CS74 from `reviews.high_risk_clickstops`; `sync --mode=check` clean | done | omni-ah | Mandatory close-out row (OPERATIONS § Claim). This close-out PR. |
+| Close-out: learnings + follow-ups — file release LEARNINGS; disposition stale process LRNs (163/161/156/152/101); follow-up CSs for any deferred scope | done | omni-ah | No new LRNs (notes captured above); 5 stale process LRNs left `open` for weekly harvest (non-blocking). |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **Clean manual cut.** v0.9.0 cut manually per OPERATIONS § Release process (no `harness release` verb — that is CS67, deferred to v0.10.0). Tag on squash SHA `f731eab` (LRN-101 anchor-drift avoided); `release.yml` auto-drafted, then published; exactly one release for the tag (LRN-159 clean).
+- **Deviation (C74-8 `high_risk` revert in this PR).** `CS74` was added to `reviews.high_risk_clickstops` in the content PR (#333) and is removed in this close-out PR — which therefore touches `harness.config.json` (outside the workboard-only allowlist), making this close-out a **content PR**, not workboard-only. Lesson: the CS70 release precedent did NOT persist a high-risk entry (it relied on GPT-5.5 dispatch discipline, keeping its close-out workboard-only); a future release CS should follow CS70 and skip the config flag.
+- **Filing-PR branch gotcha.** The CS74 filing PR initially used branch `docs/file-cs74-...` and failed `validate-and-approve` (the auto-approve regex requires `docs/file-planned-cs<NN>-...`); reopened as #327. Recorded to agent memory.
+- **Stale process LRNs (163/161/156/152/101).** Surfaced by the pre-claim harvest; none release-relevant or release-blocking. Left `open` for the weekly harvest sweep (no disposition change at this close-out).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (general-purpose dispatch `cs74-content-review`)
+**Date:** 2026-06-30T21:30Z
+**Outcome:** GO
+
+Run against the content branch HEAD `225ef56` (admin-squash-merged as `f731eab`, PR #333). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence invariant, REVIEWS § 2.3). Verified all 8 checklist items with zero findings: package/lock version parity at `0.9.0`; CHANGELOG `[Unreleased]` → `[0.9.0] — 2026-06-30` (em-dash) with no content loss + correct `compare/...` link refs; README `v0.8.0`→`v0.9.0` pin sweep (only historical "Prior:" narrative remains); `CS74` added to `reviews.high_risk_clickstops`; SemVer-minor correct (new CLI verbs/linters/templates, no breaking change); 5-file scope. Post-merge steps executed: tag `v0.9.0` on the squash SHA, GitHub Release published (single release for the tag — LRN-159 clean), and the `henrik-me/sub-invaders#117` pin-bump issue filed.
+
+Per-deliverable outcome: D1 (version bump) match; D2 (CHANGELOG) match; D3 (README) match; D4 (validation — lint 33/0/3, tests 1475/0) match; D5 (GPT-5.5 review) match; D6 (tag + Release) match; D7 (consumer issue) match; D8 (plan-review attestation) match; D9 (close-out) this PR. Decisions C74-1…C74-10 honored; C74-8's `high_risk` revert lands in this close-out PR (see Notes).
