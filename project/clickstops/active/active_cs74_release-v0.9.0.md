@@ -1,9 +1,9 @@
 # CS74 — Cut harness v0.9.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah
+**Branch:** cs74/content
+**Started:** 2026-06-30
 **Closed:** —
 **Filed by:** `omni-ah` (Claude Opus 4.8) on 2026-06-30, at @henrik-me's request. Surfacing context: ~39 commits and 9 shipped clickstops have accumulated under `CHANGELOG.md` `[Unreleased]` since `v0.8.0` (2026-06-09), dominated by new CLI surface — CS64 lifecycle verbs (`startup`/`status`/`claim`/`close-out`/`dispatch`), CS64b `doctor` + sync reconciliation, CS66 review-family verbs (`review-doc`/`review-cs`/`perf-review`/`security-review`) — plus new linters (CS69, CS70 orphan guard, CS72 genericity) and a new composed template (CS72). Per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) those are **minor** signals, so the pending cut is **v0.9.0**.
 **Depends on:** None hard. [CS59](../done/done_cs59_document-release-process.md) (release-process docs — **closed**) is the spec this CS follows. CS67 (`harness release` verb) is **not** required: CS74 is the **manual** cut per [OPERATIONS.md § Release process](../../../OPERATIONS.md#release-process); CS67 will mechanize future cuts and is deliberately the v0.10.0 headline, not a blocker here (see C74-2).
@@ -107,11 +107,27 @@ The `[Unreleased]` section is therefore **complete and accurate** as of filing. 
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | general-purpose (orchestrator: omni-ah) | e71fcea81d18 | 2026-06-30T20:17:53Z | Go | No F1–F6 defects found; release-state probes clean; v0.9.0 minor/manual-cut/issue-only decisions match doctrine. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah) |
+| Notes | Planned ledger (finalized at close-out). HIGH-RISK release cut (C74-8): GPT-5.5 only, no Sonnet fallback. Orchestrator omni-ah `claude-opus-4.8` performs claim, `npm version` bump, CHANGELOG promote, README sweep, tag, PRs, consumer issue. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| T1 — Pre-release audit re-run + CHANGELOG promote `[Unreleased]` → `[0.9.0] — <date>` + link refs (C74-3) | pending | omni-ah | Re-run `git log v0.8.0..HEAD` reconciliation at content time; em-dash heading. |
+| T2 — `npm version 0.9.0 --no-git-tag-version` + README pin sweep v0.8.0→v0.9.0 (C74-4/C74-6) | pending | omni-ah | package.json + package-lock.json parity; README sync-excluded. |
+| T3 — Add CS74 to `reviews.high_risk_clickstops`; validate (`harness lint --quiet`, `node --test`); GPT-5.5 PVI review (C74-8) | pending | omni-ah | high_risk edit lands in the content PR (outside workboard-only scope); record Model audit + Review log in PR body. |
+| T4 — Content PR → admin-merge; `git tag -a v0.9.0 <squash-sha>` + push; publish draft Release; re-probe single release (C74-5) | pending | omni-ah | Tag squash SHA (LRN-101); dedupe stale drafts (LRN-159/121). |
+| T5 — Consumer notification: `harness cross-repo open-issue` → henrik-me/sub-invaders (pin v0.9.0) (C74-7) | pending | omni-ah | Issue-only; canonical step-4 fields + pin-bump checklist verbatim. |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; remove CS74 from `reviews.high_risk_clickstops`; `sync --mode=check` clean | pending | omni-ah | Mandatory close-out row (OPERATIONS § Claim). |
+| Close-out: learnings + follow-ups — file release LEARNINGS; disposition stale process LRNs (163/161/156/152/101); follow-up CSs for any deferred scope | pending | omni-ah | Mandatory close-out row. |
 
 ## Notes / Learnings
 
