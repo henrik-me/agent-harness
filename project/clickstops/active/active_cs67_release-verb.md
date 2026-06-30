@@ -1,9 +1,9 @@
 # CS67 — `harness release` verb: mechanize the release cut
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs67/content
+**Started:** 2026-06-30
 **Closed:** —
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the `release` verb cataloged in CS64's command/skill surface is spun out here because it depends on the release-process documentation that CS59 produces.
 **Depends on:** **CS59** (hard) — `harness release` mechanizes the procedure CS59 documents as `OPERATIONS.md § Release process`; that section is the spec. Also reuses `lib/cross-repo.mjs` (CS56) for consumer notification. Do not claim before CS59 closes. **CS64b** (hard, added 2026-06-10) — `harness release` allocates a temp clone for tag/release SHA verification and consumer-notification staging; it must adopt the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) from the outset rather than retrofit them. C64b-3's `harness sync` new-managed-file reconciliation is also referenced by the consumer-notification path.
@@ -72,11 +72,28 @@ The single hardest sequencing constraint: the tag and GitHub release must land o
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | 7b44cf4f9f30 | 2026-06-06T23:49:00Z | Needs-Fix | Requiring --sha doesn't prevent tagging the wrong commit; +2 non-blocking (ambiguous git-push vs gh release create; partial-publish idempotency). All fixed in R2. |
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c3) | 9826cb248fc0 | 2026-06-06T23:58:00Z | Go-with-amendments | R1 BLOCKING resolved: Phase B verifies squash-merge SHA + idempotent publish; gh release create --target named as release mutation; consumer-issue (issue-only) mutation clarified. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Planned ledger (finalized at close-out). Orchestrator omni-ah-c2 `claude-opus-4.8` (claim, `bin/harness.mjs` registration, `OPERATIONS.md` reference + composed mirror, CHANGELOG, PRs). Implementation sub-agent dispatched at `claude-opus-4.8` (`cs67-lib`: `lib/release.mjs` + tests). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — `lib/release.mjs` + `tests/lib-release.test.mjs`: Phase A (bump `package.json`/lock, CHANGELOG `[Unreleased]→[x.y.z]`, README pins, version-vs-SemVer validation) + Phase B (verify squash-SHA, `gh release create --target`, idempotent/resumable, `cross-repo open-issue` notify) via injectable fs/git/`gh` seams | pending | omni-ah-c2 | Deliv. 1; C67-1..C67-5. agent-id=cs67-lib \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `lib/release.mjs` + `tests/lib-release.test.mjs`. Tests under os.tmpdir(). |
+| T2 — `bin/harness.mjs` (orchestrator): register `release` in COMMAND_REGISTRY/TOP_HELP/SUBCOMMAND_HELP; thin delegation; `--version`/`--bump`/`--apply`/`--publish`/`--sha` via `requireValue` | pending | omni-ah-c2 | Deliv. 2. Shared file — orchestrator-owned. |
+| T3 — `OPERATIONS.md § Release process` + `template/composed/OPERATIONS.md` mirror (lockstep): reference `harness release` as canonical executable path — REFERENCE only, NO section thinning (left to CS65) | pending | omni-ah-c2 | Deliv. 3; C64-2 leverage. Lockstep root+composed. |
+| T4 — `CHANGELOG.md` `[Unreleased]` entry (new `release` subcommand); coordinate with CS74 (v0.9.0 cut) promotion | pending | omni-ah-c2 | Deliv. 4; LRN-101. CS67 lands in v0.10.0 (CS74 cuts v0.9.0 concurrently). |
+| T5 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c2 | Independence: reviewer ≠ implementer. |
+| T6 — Content PR (`cs67/content`); `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c2 | OPERATIONS § Three-PR shape. Rebase onto CS74 if it merges first (CHANGELOG contention). |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; managed/composed mirrors green; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row (OPERATIONS § Claim). |
+| Close-out: learnings + follow-ups — file LEARNINGS (incl. workboard-auto-approve `pause`-action gap); resume CS65 | pending | omni-ah-c2 | Mandatory close-out row. |
 
 ## Notes / Learnings
 
