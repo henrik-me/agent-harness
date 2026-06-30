@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.9.0] — 2026-06-30
+
+### Added
+
 - **CS66 (review-family verbs — `review-doc` / `review-cs` / `perf-review` / `security-review`):** Add four domain-specific review verbs layered on the CS52 `harness review` orchestration, each making the right checklist invokable at the right lifecycle moment instead of living only as prose in `REVIEWS.md`. Triggers a **minor** bump (new CLI surface; rolls into the pending v0.9.0). Verbs:
   - **`harness review-doc <pr>`** (`lib/review-doc.mjs`, C66-2): dispatches an independent reviewer with the [REVIEWS.md § 2.6a](REVIEWS.md) **F1–F5 fact-claim checklist** (every `--flag` exists in the CLI surface; every file path exists; doctrine-strength claims match the cited source; LRN/CS summaries stay in scope; cross-doc claims are mutually consistent), scoped to the PR diff. Fact-claim drift is the dominant doc-PR failure mode (verified on PR #218).
   - **`harness perf-review <pr>`** (`lib/perf-review.mjs`, C66-4): a diff-scoped performance checklist (hot-path allocations, algorithmic complexity, N+1 / repeated IO, sync-in-async, unbounded growth).
@@ -478,7 +488,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/henrik-me/agent-harness/compare/v0.6.0...v0.7.0
 [0.2.0]: https://github.com/henrik-me/agent-harness/compare/v0.1.0...v0.2.0
