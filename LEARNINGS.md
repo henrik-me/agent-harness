@@ -96,6 +96,26 @@ claim_area: review-loops
 
 **Disposition:** Open — candidate: a one-line note in REVIEWS.md § 2.8 (Review log) documenting the timestamp-ordering rule.
 
+### LRN-174
+
+```yaml
+id: LRN-174
+date: 2026-07-01
+category: tooling
+source_cs: CS78
+status: applied
+tags: [release, git, annotated-tags, ls-remote, gh-release-create, idempotency]
+claim_area: harness-cli
+```
+
+**Problem:** `gh release create <tag> --target <sha>` creates a **lightweight** git tag, not the **annotated** tag (`git tag -a … -m`) that OPERATIONS § Release process step 9 and most releases use — so `harness release` Phase B diverged from its own documented process. Fixing it exposed two subtle git behaviors: (1) `git ls-remote --tags origin refs/tags/<tag>` with an *exact* single refspec returns ONLY the tag-OBJECT sha for an annotated tag — the peeled `<commit> refs/tags/<tag>^{}` line appears only if `refs/tags/<tag>^{}` is *also* requested — so a peeled-preferring parser silently compares the tag-object sha and mis-fires `ERELEASE_TAG_EXISTS` on rerun; (2) a `git push` that fails after `git tag -a` leaves a LOCAL-only tag, and a remote-only state check then re-runs `git tag -a`, which fails on the existing local tag.
+
+**Finding:** To cut annotated tags via the CLI: `git tag -a <tag> <sha> -m "Release <tag>"` + `git push origin <tag>`, then `gh release create <tag> --verify-tag` (release-only; `--verify-tag` aborts rather than auto-creating a lightweight tag). For idempotency, pass BOTH `refs/tags/<tag>` AND `refs/tags/<tag>^{}` to `ls-remote` (prefer the `^{}` line); and before `git tag -a`, consult the LOCAL tag (`git rev-parse -q --verify refs/tags/<tag>^{commit}`) so a failed-push rerun resumes by re-pushing instead of re-tagging. `git rev-parse -q --verify` exits 1 for absent, non-0/non-1 for real errors — fail fast on the latter.
+
+**Evidence:** CS78 PR #341 (`c167dd8`). The blocking ls-remote peel bug was caught by the independent GPT-5.5 review and verified empirically: `git ls-remote --tags origin refs/tags/v0.9.0` → only `c22e2e… refs/tags/v0.9.0` (the tag object); adding `refs/tags/v0.9.0^{}` → also `f731ea… refs/tags/v0.9.0^{}` (the commit). v0.5.0/v0.6.0/v0.8.0/v0.9.0 are annotated; v0.7.0 is lightweight (a CS70 backfill artifact).
+
+**Disposition:** Applied (CS78, merge `c167dd8`). `lib/release.mjs` `publishRelease` now cuts annotated tags via `git tag -a` + `git push` + `gh release create --verify-tag`, requests the peeled `^{}` refspec in `ls-remote`, and consults the local tag for push-failure resume; 69 tests + the OPERATIONS/CHANGELOG/help docs document the flow.
+
 ### LRN-173
 
 ```yaml

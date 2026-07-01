@@ -1,10 +1,10 @@
 # CS78 — `harness release` Phase B: annotated tags (match the documented process)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs78/content
 **Started:** 2026-07-01
-**Closed:** —
+**Closed:** 2026-07-01
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request. Surfacing context: while validating the CS67 `harness release` verb ahead of the v0.10.0 cut (CS77), the GPT-5.5 plan-review found that the verb's Phase B creates the git tag via `gh release create v<x> --target <sha>`, which produces a **lightweight** tag — but [OPERATIONS.md § Release process](../../../OPERATIONS.md#release-process) step 9 and most prior releases (v0.5.0/v0.6.0/v0.8.0/v0.9.0) use an **annotated** tag (`git tag -a v<x> <sha> -m "Release v<x>"`; v0.7.0 is an exception — already lightweight, a CS70 backfill artifact). @henrik-me directed fixing the verb to emit annotated tags **before** cutting v0.10.0, so the release tooling matches the documented process and the dominant annotated-tag convention.
 **Depends on:** **CS67** (`harness release` verb — **closed**, merged `b2fb81d`) — this CS refines CS67's `lib/release.mjs` Phase B. **Blocks CS77** (cut v0.10.0), which must consume the corrected verb.
 
@@ -87,17 +87,24 @@ Change `harness release` Phase B (`publishRelease` in `lib/release.mjs`) so that
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `publishRelease`: annotated `git tag -a` + `git push` then release-only `gh release create` (no `--target`); preserve R7 idempotency + error taxonomy; JSDoc (C78-1/2/3/4/5) | pending | omni-ah-c2 | Background implementer sub-agent (claude-opus-4.8). |
-| T2 — Tests: flip the one `--target` assertion; extend `phaseBGit()` + the `--pr` `gitSeam`; add annotated-cut, push-failure-fatal, resume-after-push-failure, fully-done-skip tests (C78-6) | pending | omni-ah-c2 | os.tmpdir()-only (LRN-094). |
-| T3 — Doc lockstep: bin help + both OPERATIONS copies (byte-equal) + CHANGELOG `[Unreleased]` CS67 tag phrasing (C78-5) | pending | omni-ah-c2 | `check-doc-lockstep` must pass. |
-| T4 — Validate (`harness lint --quiet`, `node --test`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C78-7/C78-8) | pending | omni-ah-c2 | Independence: reviewer gpt-5.5 ≠ implementer claude-opus-4.8. |
-| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. CS65 stays paused (resumed at CS77 close). |
-| Close-out: learnings — file the lightweight-vs-annotated finding as an LRN; follow-ups if any | pending | omni-ah-c2 | Captures the CS77-plan-review discovery. |
+| T1 — `publishRelease`: annotated `git tag -a` + `git push` then release-only `gh release create` (no `--target`); preserve R7 idempotency + error taxonomy; JSDoc (C78-1/2/3/4/5) | done | omni-ah-c2 | Implemented by sub-agent `cs78-impl` (claude-opus-4.8). Review added the ls-remote `^{}` peel fix + local-probe fail-fast. |
+| T2 — Tests: flip the one `--target` assertion; extend `phaseBGit()` + the `--pr` `gitSeam`; add annotated-cut, push-failure-fatal, resume-after-push-failure, fully-done-skip tests (C78-6) | done | omni-ah-c2 | 62→69 tests (also added local-probe-128-fatal + peel-aware-idempotency-w/-argv-assertion + remote-tag+release-absent). os.tmpdir()-only. |
+| T3 — Doc lockstep: bin help + both OPERATIONS copies (byte-equal) + CHANGELOG `[Unreleased]` CS67 tag phrasing (C78-5) | done | omni-ah-c2 | `harness check` → no drift; OPERATIONS copies byte-equal. |
+| T4 — Validate (`harness lint --quiet`, `node --test`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C78-7/C78-8) | done | omni-ah-c2 | PR #341 squash `c167dd8`. lint 33/0/3; 1545 tests 0 fail. 3 rubber-duck (R1 Needs-Fix→R2/R3 Go) + 3 Copilot rounds. |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; `sync --mode=check` clean | done | omni-ah-c2 | This close-out PR. CS65 stays ⏸️ Paused (resumed at CS77 close). |
+| Close-out: learnings — file the lightweight-vs-annotated finding as an LRN; follow-ups if any | done | omni-ah-c2 | LRN filed (annotated-vs-lightweight verb tag + ls-remote peel-refspec). |
 
 ## Notes / Learnings
 
-- _(populated at close-out)_
+- **Discovered pre-cut, fixed before the artifact.** The CS77 v0.10.0 plan-review (GPT-5.5) caught that `harness release` Phase B created a **lightweight** tag via `gh release create --target` — diverging from OPERATIONS § Release process step 9's annotated `git tag -a`. @henrik-me chose to fix the verb first (this CS) before cutting v0.10.0. Net effect: the verb now cuts annotated tags matching the documented process; v0.10.0 (CS77) will be annotated.
+- **Two subtle git behaviors the reviews surfaced (LRN filed):** (1) `git ls-remote --tags origin refs/tags/<tag>` with an *exact* single refspec returns only the tag-OBJECT SHA for an **annotated** tag — the peeled `^{}` commit line appears ONLY when `refs/tags/<tag>^{}` is *also* passed. Switching to annotated tags without this made a rerun mis-compare the tag-object SHA to the release commit → false `ERELEASE_TAG_EXISTS`. Fix: request both refspecs. (2) A failed `git push` after `git tag -a` leaves a LOCAL-only tag; the remote-state check alone would then re-run `git tag -a` and fail on the existing local tag — so the code consults the local tag first and resumes by re-pushing.
+- **`--verify-tag` guard.** `gh release create <tag> --verify-tag` aborts if the tag is not already on the remote, preventing gh from silently re-introducing a lightweight tag if the push somehow didn't land — defense-in-depth for the exact bug being fixed.
+- **Review value (LRN-163 reaffirmed).** 3 GPT-5.5 rubber-duck rounds + 3 Copilot rounds. The independent GPT-5.5 review-of-record caught the BLOCKING ls-remote peel bug (empirically verified) that both the implementer (claude-opus-4.8) and orchestrator missed; Copilot caught the local-probe error-precision + markdown/JSDoc backtick nits. No prior tags need backfill (v0.7.0 is already lightweight — a CS70 artifact — but rewriting a published ref is out of scope).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs78-pvi`)
+**Date:** 2026-07-01
+**Outcome:** GO
+
+Run against `main` at the squash-merge HEAD `c167dd8` (PR #341). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence invariant, REVIEWS § 2.3). Per-deliverable fidelity confirmed with **all matching**: C78-1 (annotated `git tag -a` + `git push origin` before `gh release create --verify-tag`, no `--target`); C78-2 (remote idempotency + local-tag resume + peeled `refs/tags/<tag>^{}` handling); C78-3 (tag/push/create failures fatal `ERELEASE_PUBLISH`, non-1 local probe fatal, local tag left for resume); C78-4 (message `Release <tag>`); C78-5 (help/docs/CHANGELOG describe the annotated flow, no stale `--target` tag-creation claim); C78-6 (tests cover flipped `--target`, annotated cut, push-failure, resume, fully-done skip, peeled idempotency; count 69). Reviewer validation: `node --test tests/lib-release.test.mjs` 69/69, `node bin/harness.mjs check` no drift. The reviewer's only flagged item was the then-empty `## Plan-vs-implementation review` section (this section) causing a transient clickstop-lint failure — a close-out-ordering artifact resolved by populating it here, not an implementation deviation.
