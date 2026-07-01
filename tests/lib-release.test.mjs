@@ -608,18 +608,38 @@ function ghRecorder() {
   };
 }
 
-function phaseBGit({ originMain = FULL_SHA, pkgVersion = '0.9.0', tagSha = null } = {}) {
+function phaseBGit({ originMain = FULL_SHA, pkgVersion = '0.9.0', tagSha = null, localTagSha = null } = {}) {
   return gitSeam([
     ['fetch origin main', { status: 0 }],
     ['rev-parse origin/main', { stdout: originMain + '\n' }],
     [/^show .*:package\.json$/, { stdout: PKG(pkgVersion) }],
     [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG(pkgVersion) }],
     [/^ls-remote --tags origin/, { stdout: tagSha ? `${tagSha}\trefs/tags/v0.9.0\n` : '' }],
+    // Local-tag probe (`rev-parse -q --verify refs/tags/<tag>^{commit}`): absent
+    // by default (fresh cut → status 1), present at `localTagSha` for the
+    // resume-after-push-failure case.
+    [/^rev-parse -q --verify refs\/tags\//, localTagSha ? { status: 0, stdout: localTagSha + '\n' } : { status: 1, stdout: '' }],
+    [/^tag -a /, { status: 0 }],
+    [/^push origin /, { status: 0 }],
   ]);
 }
 
-test('publishRelease: apply creates tag+release with --target <sha> and notifies consumers', () => {
+/** A recording git seam: routes like `phaseBGit()` but captures every argv. */
+function gitRecorder(opts = {}) {
+  const calls = [];
+  const seam = phaseBGit(opts);
+  return {
+    calls,
+    runGit: (args) => {
+      calls.push(args);
+      return seam(args);
+    },
+  };
+}
+
+test('publishRelease: apply creates an annotated tag + pushes it, then a release without --target, and notifies consumers', () => {
   const gh = ghRecorder();
+  const git = gitRecorder();
   const issues = [];
   const result = publishRelease({
     version: '0.9.0',
@@ -628,7 +648,7 @@ test('publishRelease: apply creates tag+release with --target <sha> and notifies
     consumers: [{ repo: 'henrik-me/sub-invaders', title: 'bump', bodyFile: '/x/body.md' }],
     apply: true,
     seams: {
-      runGit: phaseBGit(),
+      runGit: git.runGit,
       runGh: gh.runGh,
       openIssue: (a) => {
         issues.push(a);
@@ -641,15 +661,125 @@ test('publishRelease: apply creates tag+release with --target <sha> and notifies
   assert.equal(result.releaseCreated, true);
   assert.equal(result.notified.length, 1);
   assert.equal(result.notified[0].repo, 'henrik-me/sub-invaders');
-  // gh release create invoked with --target <sha>.
+  // (i) annotated tag: git tag -a v0.9.0 <sha> -m "Release v0.9.0".
+  const tagCall = git.calls.find((c) => c[0] === 'tag' && c[1] === '-a');
+  assert.ok(tagCall, 'git tag -a was invoked');
+  assert.deepEqual(tagCall, ['tag', '-a', 'v0.9.0', FULL_SHA, '-m', 'Release v0.9.0']);
+  // (ii) git push origin v0.9.0.
+  const pushCall = git.calls.find((c) => c[0] === 'push');
+  assert.ok(pushCall, 'git push was invoked');
+  assert.deepEqual(pushCall, ['push', 'origin', 'v0.9.0']);
+  // (iii) gh release create v0.9.0 with NO --target and WITH --verify-tag.
   const createCall = gh.calls.find((c) => c[0] === 'release' && c[1] === 'create');
   assert.ok(createCall, 'gh release create was invoked');
   assert.deepEqual(createCall.slice(0, 3), ['release', 'create', 'v0.9.0']);
-  const ti = createCall.indexOf('--target');
-  assert.ok(ti >= 0 && createCall[ti + 1] === FULL_SHA, 'release create used --target <sha>');
+  assert.ok(!createCall.includes('--target'), 'release create no longer passes --target');
+  assert.ok(createCall.includes('--verify-tag'), 'release create passes --verify-tag');
   // openIssue reused per consumer.
   assert.equal(issues.length, 1);
   assert.equal(issues[0].repo, 'henrik-me/sub-invaders');
+});
+
+test('publishRelease: fresh cut creates the annotated tag, then pushes it, then creates the release (in order)', () => {
+  const gh = ghRecorder();
+  const git = gitRecorder();
+  const result = publishRelease({
+    version: '0.9.0',
+    sha: FULL_SHA,
+    cwd: '/repo',
+    apply: true,
+    seams: { runGit: git.runGit, runGh: gh.runGh, openIssue: () => ({ url: 'x', created: true }) },
+  });
+  assert.equal(result.tagCreated, true);
+  assert.equal(result.releaseCreated, true);
+  const tagIdx = git.calls.findIndex((c) => c[0] === 'tag' && c[1] === '-a');
+  const pushIdx = git.calls.findIndex((c) => c[0] === 'push' && c[1] === 'origin');
+  assert.ok(tagIdx >= 0, 'git tag -a invoked on a fresh cut');
+  assert.ok(pushIdx >= 0, 'git push origin invoked on a fresh cut');
+  assert.ok(tagIdx < pushIdx, 'the annotated tag is created before it is pushed');
+  assert.deepEqual(git.calls[tagIdx], ['tag', '-a', 'v0.9.0', FULL_SHA, '-m', 'Release v0.9.0']);
+});
+
+test('publishRelease: git push failure is fatal (ERELEASE_PUBLISH) and aborts before the release is created', () => {
+  const gh = ghRecorder();
+  const runGit = gitSeam([
+    ['fetch origin main', { status: 0 }],
+    ['rev-parse origin/main', { stdout: FULL_SHA + '\n' }],
+    [/^show .*:package\.json$/, { stdout: PKG('0.9.0') }],
+    [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG('0.9.0') }],
+    [/^ls-remote --tags origin/, { stdout: '' }],
+    [/^rev-parse -q --verify refs\/tags\//, { status: 1, stdout: '' }],
+    [/^tag -a /, { status: 0 }],
+    [/^push origin /, { status: 1, stderr: 'fatal: unable to push origin' }],
+  ]);
+  assert.throws(
+    () =>
+      publishRelease({
+        version: '0.9.0',
+        sha: FULL_SHA,
+        cwd: '/repo',
+        apply: true,
+        seams: { runGit, runGh: gh.runGh, openIssue: () => ({ url: 'x', created: true }) },
+      }),
+    (e) => e instanceof ReleaseError && e.code === 'ERELEASE_PUBLISH' && /push/.test(e.message)
+  );
+  assert.ok(!gh.calls.some((c) => c[0] === 'release' && c[1] === 'create'), 'no gh release create after a failed tag push');
+});
+
+test('publishRelease: resume after a failed push — local tag at <sha>, remote absent — skips git tag -a, re-pushes, creates the release', () => {
+  const gh = ghRecorder();
+  const git = gitRecorder({ localTagSha: FULL_SHA }); // remote tag absent (tagSha:null) but local tag already at our sha
+  const result = publishRelease({
+    version: '0.9.0',
+    sha: FULL_SHA,
+    cwd: '/repo',
+    apply: true,
+    seams: { runGit: git.runGit, runGh: gh.runGh, openIssue: () => ({ url: 'x', created: true }) },
+  });
+  assert.equal(result.tagCreated, true, 'the tag is (re)published this run');
+  assert.equal(result.releaseCreated, true);
+  assert.ok(!git.calls.some((c) => c[0] === 'tag' && c[1] === '-a'), 'git tag -a is skipped when the local tag is already at <sha>');
+  assert.ok(git.calls.some((c) => c[0] === 'push' && c[1] === 'origin'), 'git push origin is retried on resume');
+});
+
+test('publishRelease: local tag at a DIFFERENT sha (remote absent) → ERELEASE_TAG_EXISTS', () => {
+  assert.throws(
+    () =>
+      publishRelease({
+        version: '0.9.0',
+        sha: FULL_SHA,
+        cwd: '/repo',
+        apply: true,
+        seams: {
+          runGit: phaseBGit({ localTagSha: OTHER_SHA }),
+          runGh: ghRecorder().runGh,
+          openIssue: () => ({ url: 'x', created: true }),
+        },
+      }),
+    (e) => e instanceof ReleaseError && e.code === 'ERELEASE_TAG_EXISTS'
+  );
+});
+
+test('publishRelease: fully done — remote tag at <sha> and release present — creates neither the tag nor the release', () => {
+  const git = gitRecorder({ tagSha: FULL_SHA }); // remote tag already present at our sha
+  const ghCalls = [];
+  const runGh = (args) => {
+    ghCalls.push(args);
+    if (args[0] === 'release' && args[1] === 'view') return { status: 0, stdout: '{"tagName":"v0.9.0"}' };
+    return { status: 0, stdout: '' };
+  };
+  const result = publishRelease({
+    version: '0.9.0',
+    sha: FULL_SHA,
+    cwd: '/repo',
+    apply: true,
+    seams: { runGit: git.runGit, runGh, openIssue: () => ({ url: 'x', created: true }) },
+  });
+  assert.equal(result.tagCreated, false);
+  assert.equal(result.releaseCreated, false);
+  assert.ok(result.skipped.some((m) => /already exists/.test(m)), 'skip message present');
+  assert.ok(!git.calls.some((c) => c[0] === 'tag' && c[1] === '-a'), 'no git tag -a when already fully done');
+  assert.ok(!ghCalls.some((c) => c[0] === 'release' && c[1] === 'create'), 'no gh release create when already fully done');
 });
 
 test('publishRelease: draft by default appends --draft to gh release create', () => {
@@ -728,6 +858,9 @@ test('publishRelease: --pr strong-verifies sha == PR squash mergeCommit.oid even
     [/^show .*:package\.json$/, { stdout: PKG('0.9.0') }],
     [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG('0.9.0') }],
     [/^ls-remote --tags origin/, { stdout: '' }],
+    [/^rev-parse -q --verify refs\/tags\//, { status: 1, stdout: '' }],
+    [/^tag -a /, { status: 0 }],
+    [/^push origin /, { status: 0 }],
   ]);
   const gh = {
     calls: [],

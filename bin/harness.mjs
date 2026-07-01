@@ -867,11 +867,13 @@ Phase B (--publish): verifies --sha is the current origin/main HEAD (a stale or
 arbitrary SHA fails); pass --pr <number> to instead require --sha to equal that
 release PR's squash mergeCommit.oid and reject its branch head (the strong
 check). package.json + CHANGELOG at that SHA must already carry the version.
-Then --apply creates the tag + GitHub Release
-(a DRAFT by default; --no-draft publishes immediately — G-publish is the human
-gate either way) via 'gh release create --target <sha>', idempotent/resumable,
-and files issue-only consumer notifications (--consumer) via
-'harness cross-repo open-issue' (Hard Rule § 6). Note: a verb-created tag may
+Then --apply creates an ANNOTATED tag ('git tag -a v<x.y.z> <sha> -m "Release
+v<x.y.z>"' then 'git push origin v<x.y.z>', matching OPERATIONS.md § Release
+process step 9) and the GitHub Release on it via 'gh release create <tag>
+--verify-tag' — release-only, no --target — a DRAFT by default; --no-draft
+publishes immediately (G-publish is the human gate either way);
+idempotent/resumable, and files issue-only consumer notifications (--consumer)
+via 'harness cross-repo open-issue' (Hard Rule § 6). Note: a verb-created tag may
 also trigger .github/workflows/release.yml (which drafts) — use the verb OR the
 manual tag-push flow, and re-check for stale duplicate drafts (LRN-159).
 
