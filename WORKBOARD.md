@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-01 (omni-ah-c2 — **CS79 CLOSED** [`release.yml` idempotency guard — closes the LRN-175 double-draft]; CS79 row removed. **CS65 resumed** ⏸️→🟢 Active)
+> **Last updated:** 2026-07-01 (omni-ah-c2 — CS65 PAUSED pending CS80 (single release creator — delete release.yml); reclaimable by owner after CS80 close-out)
 
 ## Orchestrators
 
@@ -28,6 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | 🟢 Active | omni-ah-c2 | cs65/content | 2026-07-01 | — |
+| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-01 | Paused pending CS80 (single release creator — delete release.yml); reclaimable by owner after CS80 close-out |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
