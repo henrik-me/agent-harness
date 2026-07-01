@@ -1,9 +1,9 @@
 # CS78 — `harness release` Phase B: annotated tags (match the documented process)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs78/content
+**Started:** 2026-07-01
 **Closed:** —
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request. Surfacing context: while validating the CS67 `harness release` verb ahead of the v0.10.0 cut (CS77), the GPT-5.5 plan-review found that the verb's Phase B creates the git tag via `gh release create v<x> --target <sha>`, which produces a **lightweight** tag — but [OPERATIONS.md § Release process](../../../OPERATIONS.md#release-process) step 9 and most prior releases (v0.5.0/v0.6.0/v0.8.0/v0.9.0) use an **annotated** tag (`git tag -a v<x> <sha> -m "Release v<x>"`; v0.7.0 is an exception — already lightweight, a CS70 backfill artifact). @henrik-me directed fixing the verb to emit annotated tags **before** cutting v0.10.0, so the release tooling matches the documented process and the dominant annotated-tag convention.
 **Depends on:** **CS67** (`harness release` verb — **closed**, merged `b2fb81d`) — this CS refines CS67's `lib/release.mjs` Phase B. **Blocks CS77** (cut v0.10.0), which must consume the corrected verb.
