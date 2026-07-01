@@ -2242,7 +2242,9 @@ own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 > list. The steps below remain the canonical spec and the manual fallback;
 > commits, the content PR, and the merge stay explicit orchestrator actions.
 > The verb is the **single** creator of the GitHub Release; no workflow drafts a
-> duplicate. A manual (no-verb) tag push must create the Release by hand
+> duplicate. After a manual tag push, re-running `harness release --publish` still
+> creates the Release (Phase B is resumable — it creates only the Release when the
+> tag already exists); a fully manual (no-verb) cut creates it by hand
 > (§ Post-merge step 10).
 
 ### Inputs
