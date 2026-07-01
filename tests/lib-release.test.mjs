@@ -726,6 +726,31 @@ test('publishRelease: git push failure is fatal (ERELEASE_PUBLISH) and aborts be
   assert.ok(!gh.calls.some((c) => c[0] === 'release' && c[1] === 'create'), 'no gh release create after a failed tag push');
 });
 
+test('publishRelease: local-tag probe non-1 git failure (e.g. 128) is fatal, not read as "no tag" (Copilot)', () => {
+  const gh = ghRecorder();
+  const runGit = gitSeam([
+    ['fetch origin main', { status: 0 }],
+    ['rev-parse origin/main', { stdout: FULL_SHA + '\n' }],
+    [/^show .*:package\.json$/, { stdout: PKG('0.9.0') }],
+    [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG('0.9.0') }],
+    [/^ls-remote --tags origin/, { stdout: '' }],
+    // Local-tag probe fails with 128 (repo/cwd problem) — must NOT be read as "absent".
+    [/^rev-parse -q --verify refs\/tags\//, { status: 128, stderr: 'fatal: not a git repository' }],
+  ]);
+  assert.throws(
+    () =>
+      publishRelease({
+        version: '0.9.0',
+        sha: FULL_SHA,
+        cwd: '/repo',
+        apply: true,
+        seams: { runGit, runGh: gh.runGh, openIssue: () => ({ url: 'x', created: true }) },
+      }),
+    (e) => e instanceof ReleaseError && e.code === 'ERELEASE_PUBLISH' && /rev-parse for local tag/.test(e.message)
+  );
+  assert.ok(!gh.calls.some((c) => c[0] === 'release' && c[1] === 'create'), 'no release created after a fatal local-tag probe');
+});
+
 test('publishRelease: resume after a failed push — local tag at <sha>, remote absent — skips git tag -a, re-pushes, creates the release', () => {
   const gh = ghRecorder();
   const git = gitRecorder({ localTagSha: FULL_SHA }); // remote tag absent (tagSha:null) but local tag already at our sha
@@ -1020,14 +1045,20 @@ test('publishRelease: git ls-remote failure is fatal, not treated as "no tag" (C
 
 test('publishRelease: annotated-tag ls-remote (peeled ^{}) idempotency compares the commit SHA (Copilot R3)', () => {
   const TAG_OBJ = 'e'.repeat(40); // annotated tag OBJECT sha (differs from the commit)
-  const runGit = gitSeam([
+  // Realistic git: the peeled `^{}` commit line is emitted ONLY when the query
+  // explicitly requests the `^{}` pattern; a bare exact-refspec query returns
+  // only the tag-OBJECT line. Two routes encode that, so this test regresses if
+  // the code ever drops the peel pattern from its ls-remote query.
+  const baseGit = gitSeam([
     ['fetch origin main', { status: 0 }],
     ['rev-parse origin/main', { stdout: FULL_SHA + '\n' }],
     [/^show .*:package\.json$/, { stdout: PKG('0.9.0') }],
     [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG('0.9.0') }],
-    // Annotated tag: the tag-object line PLUS the peeled `^{}` commit line (== our sha).
-    [/^ls-remote --tags origin/, { stdout: `${TAG_OBJ}\trefs/tags/v0.9.0\n${FULL_SHA}\trefs/tags/v0.9.0^{}\n` }],
+    [/^ls-remote --tags origin refs\/tags\/v0\.9\.0 refs\/tags\/v0\.9\.0\^\{\}$/, { stdout: `${TAG_OBJ}\trefs/tags/v0.9.0\n${FULL_SHA}\trefs/tags/v0.9.0^{}\n` }],
+    [/^ls-remote --tags origin refs\/tags\/v0\.9\.0$/, { stdout: `${TAG_OBJ}\trefs/tags/v0.9.0\n` }],
   ]);
+  const gitCalls = [];
+  const runGit = (args) => { gitCalls.push(args); return baseGit(args); };
   const calls = [];
   const runGh = (args) => {
     calls.push(args);
@@ -1041,10 +1072,42 @@ test('publishRelease: annotated-tag ls-remote (peeled ^{}) idempotency compares 
     apply: true,
     seams: { runGit, runGh, openIssue: () => ({ url: 'x', created: true }) },
   });
+  // The ls-remote query MUST request the peeled ^{} ref so an annotated remote tag
+  // is compared by its commit SHA, not the tag-object SHA (else false ERELEASE_TAG_EXISTS).
+  const lsrCall = gitCalls.find((c) => c[0] === 'ls-remote');
+  assert.ok(lsrCall && lsrCall.includes('refs/tags/v0.9.0^{}'), 'ls-remote requests the peeled ^{} ref');
   // The peeled commit == our sha → existing tag/release is the resumable case, not a conflict.
   assert.equal(result.releaseCreated, false, 'annotated tag peeled to our commit → idempotent skip, not ERELEASE_TAG_EXISTS');
   assert.ok(result.skipped.some((s) => /already exists/.test(s)));
   assert.ok(!calls.some((c) => c[0] === 'release' && c[1] === 'create'), 'no gh release create for the resumable case');
+});
+
+test('publishRelease: remote annotated tag at sha but release ABSENT → creates release, no re-tag (R7 resumable)', () => {
+  const TAG_OBJ = 'e'.repeat(40);
+  const baseGit = gitSeam([
+    ['fetch origin main', { status: 0 }],
+    ['rev-parse origin/main', { stdout: FULL_SHA + '\n' }],
+    [/^show .*:package\.json$/, { stdout: PKG('0.9.0') }],
+    [/^show .*:CHANGELOG\.md$/, { stdout: CHANGELOG('0.9.0') }],
+    // remote annotated tag already at our commit (peeled ^{} line == FULL_SHA).
+    [/^ls-remote --tags origin/, { stdout: `${TAG_OBJ}\trefs/tags/v0.9.0\n${FULL_SHA}\trefs/tags/v0.9.0^{}\n` }],
+  ]);
+  const gitCalls = [];
+  const runGit = (args) => { gitCalls.push(args); return baseGit(args); };
+  const gh = ghRecorder(); // release view → status 1 (release ABSENT) → create proceeds
+  const result = publishRelease({
+    version: '0.9.0',
+    sha: FULL_SHA,
+    cwd: '/repo',
+    apply: true,
+    seams: { runGit, runGh: gh.runGh, openIssue: () => ({ url: 'x', created: true }) },
+  });
+  assert.equal(result.tagCreated, false, 'remote tag already at sha → no git tag -a / push');
+  assert.equal(result.releaseCreated, true, 'release created because it was absent');
+  assert.ok(!gitCalls.some((c) => c[0] === 'tag'), 'no git tag -a when the remote tag already exists');
+  assert.ok(!gitCalls.some((c) => c[0] === 'push'), 'no git push when the remote tag already exists');
+  const createCall = gh.calls.find((c) => c[0] === 'release' && c[1] === 'create');
+  assert.ok(createCall && createCall.includes('--verify-tag') && !createCall.includes('--target'), 'release create uses --verify-tag, not --target');
 });
 
 test('publishRelease: dry-run verifies but creates nothing', () => {
