@@ -2368,11 +2368,11 @@ After the content PR squash-merges to `main`:
 
 10. **Create + publish the Release.** The `harness release` verb (Phase B)
     creates the **draft** GitHub Release with notes from `CHANGELOG.md`
-    `[<x.y.z>]`; for a **manual** (no-verb) cut, create it by hand — extract the
-    `[<x.y.z>]` section to a file, then `gh release create v<x.y.z> --draft
-    --notes-file <file>`. The draft is intentional
-    ([LRN-121](LEARNINGS.md#lrn-121)) — review it, then publish, then confirm
-    exactly one release for the tag ([LRN-159](LEARNINGS.md#lrn-159)):
+    `[<x.y.z>]`. For a **manual** (no-verb) cut, extract that section to a file and
+    create it by hand: `gh release create v<x.y.z> --verify-tag --draft --notes-file <file>`.
+    The draft is intentional ([LRN-121](LEARNINGS.md#lrn-121)) — review it, then
+    publish, then confirm exactly one release for the tag
+    ([LRN-159](LEARNINGS.md#lrn-159)):
 
     ```bash
     gh release view v<x.y.z>                 # confirm notes match CHANGELOG

@@ -17,7 +17,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Removed
 
-- **CS80 (single release creator):** Deleted `.github/workflows/release.yml` — the pre-verb, self-host-only workflow that auto-created a GitHub Release on every `v*.*.*` tag push. The `harness release` verb is now the **single** creator of the GitHub Release, matching consumer repos (which never shipped `release.yml`). This eliminates the LRN-175 duplicate-draft at the source and **supersedes** the CS79 workflow guard (removed together with the workflow — neither shipped in a release). A manual (no-verb) tag push now creates the Release by hand (`gh release create <tag> --draft`); no `lib/release.mjs` change (the verb already creates the release).
+- **CS80 (single release creator):** Deleted `.github/workflows/release.yml` — the pre-verb, self-host-only workflow that auto-created a GitHub Release on every `v*.*.*` tag push. The `harness release` verb is now the **single** creator of the GitHub Release, matching consumer repos (which never shipped `release.yml`). This eliminates the LRN-175 duplicate-draft at the source and **supersedes** the CS79 workflow guard (removed together with the workflow — neither shipped in a release). A manual (no-verb) tag push now creates the Release by hand (`gh release create <tag> --verify-tag --draft`); no `lib/release.mjs` change (the verb already creates the release).
 
 ### Fixed
 
