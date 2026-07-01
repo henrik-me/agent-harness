@@ -66,6 +66,15 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # LRN-175 (CS79): a `harness release` cut creates the tag AND the GitHub
+          # Release; the tag push also triggers this workflow, which would then
+          # create a SECOND (duplicate) draft. Skip if a release already exists for
+          # the tag (including a draft) so the verb path yields exactly one release.
+          # For a manual (non-verb) tag push no release exists yet, so we create it.
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release for $TAG_NAME already exists (likely created by 'harness release'); skipping creation to avoid a duplicate draft (LRN-175)."
+            exit 0
+          fi
           notes_arg=()
           if [ -s release-notes.md ]; then
             notes_arg=(--notes-file release-notes.md)
