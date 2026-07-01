@@ -257,6 +257,12 @@ const SUBCOMMAND_PLAN = {
     skip: 'Clones the harness at a target ref + runs a dry-run sync to preview an upgrade; ' +
       'network-dependent and performs no HEAD-moving git operation in this repo (lib/upgrade.mjs).',
   },
+  release: {
+    skip: 'CS67 release-cut verb; dry-run by default (Phase A previews the version/CHANGELOG/README ' +
+      'edits and writes nothing without --apply). Phase B (--publish) requires gh and performs only ' +
+      'read-only git (fetch origin main updates remote-tracking refs, plus rev-parse/show/ls-remote) ' +
+      'and the remote `gh release create` — no HEAD-moving git op (bin/harness.mjs cmdRelease -> lib/release.mjs).',
+  },
   startup: {
     skip: 'CS64 read-only bootstrap report; spawns child `node --test` + `harness lint` + ' +
       '`harness sync --mode=check` for diagnostics (heavy/slow). Performs no HEAD-moving git op ' +

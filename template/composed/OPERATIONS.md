@@ -2221,6 +2221,27 @@ the bump size; this section assumes that decision is made. A release is its
 own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 3-PR shape (claim → content → close-out).
 
+> **Mechanized by `harness release` (CS67).** The verb turns the Cut +
+> Post-merge steps below into a previewable, two-phase, dry-run-first command.
+> **Phase A** — `harness release --version <x.y.z>` (or `--bump <level>`)
+> previews the version bump (`package.json` + `package-lock.json`), the CHANGELOG
+> `[Unreleased] → [x.y.z]` promotion, and the README pin sweep; `--apply` writes
+> the files but never commits/tags/pushes. It refuses a SemVer-inconsistent bump.
+> **Phase B** — `harness release --publish --version <x.y.z> --sha <squash-sha>`
+> verifies `<squash-sha>`: by default it must be the current `origin/main` HEAD
+> (a stale/arbitrary SHA fails); passing `--pr <n>` **switches** the check so
+> `<squash-sha>` must instead equal that release PR's squash `mergeCommit.oid`
+> (authoritative even if `origin/main` has since advanced) and must not be the PR
+> branch head. Then `--apply` creates the tag + GitHub Release
+> (a **draft** by default; `--no-draft` to publish immediately) via
+> `gh release create --target`, idempotently, and files issue-only consumer
+> notifications (`--consumer`). Run `harness release --help` for the full flag
+> list. The steps below remain the canonical spec and the manual fallback;
+> commits, the content PR, and the merge stay explicit orchestrator actions.
+> Because a verb-created tag can also trigger `release.yml` (which drafts), use
+> the verb **or** the manual tag-push flow and re-check for stale duplicate
+> drafts before publishing.
+
 ### Inputs
 
 - Current pinned version (`package.json` `version` field).
