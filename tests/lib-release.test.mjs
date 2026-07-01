@@ -474,6 +474,70 @@ test('formatReleasePlan: dry-run header + per-file lines + warnings', () => {
   assert.match(out, /--apply/);
 });
 
+test('formatReleasePlan: renders a unified diff for a change with old/new content (Exit-1 / PVI)', () => {
+  const plan = {
+    currentVersion: '0.8.0',
+    targetVersion: '0.9.0',
+    applied: false,
+    changes: [
+      {
+        path: 'package.json',
+        action: 'updated',
+        summary: 'version 0.8.0 -> 0.9.0',
+        oldContent: '{\n  "name": "x",\n  "version": "0.8.0"\n}\n',
+        newContent: '{\n  "name": "x",\n  "version": "0.9.0"\n}\n',
+      },
+    ],
+    warnings: [],
+  };
+  const out = formatReleasePlan(plan);
+  assert.match(out, /--- a\/package\.json/);
+  assert.match(out, /\+\+\+ b\/package\.json/);
+  assert.match(out, /-\s+"version": "0\.8\.0"/);
+  assert.match(out, /\+\s+"version": "0\.9\.0"/);
+});
+
+test('prepareRelease: dry-run output includes a unified diff of the changes (Exit-1 / PVI)', () => {
+  const fsm = memFs(phaseAFiles());
+  const plan = prepareRelease({
+    version: '0.9.0',
+    cwd: '/repo',
+    seams: { readFile: fsm.readFile, writeFile: fsm.writeFile, now: () => new Date('2026-06-30T00:00:00Z') },
+  });
+  const out = formatReleasePlan(plan);
+  assert.match(out, /--- a\/package\.json[\s\S]*\+\+\+ b\/package\.json/);
+  assert.match(out, /-\s+"version": "0\.8\.0"/);
+  assert.match(out, /\+\s+"version": "0\.9\.0"/);
+  assert.match(out, /--- a\/CHANGELOG\.md/);
+});
+
+test('formatReleasePlan: unchanged old/new renders no diff body (no lone gap marker) (diff-fix)', () => {
+  const same = 'x\ny\nz\n';
+  const out = formatReleasePlan({
+    currentVersion: '0.8.0',
+    targetVersion: '0.9.0',
+    applied: false,
+    changes: [{ path: 'f', action: 'updated', summary: 's', oldContent: same, newContent: same }],
+    warnings: [],
+  });
+  assert.ok(!out.includes(' …'), 'no lone gap marker when content is unchanged');
+  assert.ok(!out.includes('--- a/f'), 'no diff header block when the diff body is empty');
+});
+
+test('formatReleasePlan: newline-terminated content diff has no phantom trailing blank line (diff-fix)', () => {
+  const out = formatReleasePlan({
+    currentVersion: '0.8.0',
+    targetVersion: '0.9.0',
+    applied: false,
+    changes: [{ path: 'f', action: 'updated', summary: 's', oldContent: 'a\nb\n', newContent: 'a\nc\n' }],
+    warnings: [],
+  });
+  assert.match(out, /-b/);
+  assert.match(out, /\+c/);
+  const body = out.split('\n').filter((l) => l.startsWith('    ') && !l.includes('---') && !l.includes('+++'));
+  assert.ok(body.length > 0 && body.every((l) => l.trim().length > 0), 'no blank context line from the trailing-newline sentinel');
+});
+
 // ---------------------------------------------------------------------------
 // verifySquashSha (R2).
 // ---------------------------------------------------------------------------
