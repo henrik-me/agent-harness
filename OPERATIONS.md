@@ -2241,9 +2241,10 @@ own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 > notifications (`--consumer`). Run `harness release --help` for the full flag
 > list. The steps below remain the canonical spec and the manual fallback;
 > commits, the content PR, and the merge stay explicit orchestrator actions.
-> Because a verb-created tag can also trigger `release.yml` (which drafts), use
-> the verb **or** the manual tag-push flow and re-check for stale duplicate
-> drafts before publishing.
+> A verb-created tag also triggers `release.yml`; that workflow now **no-ops**
+> when a release already exists for the tag (the verb creates it first), so the
+> verb path yields a single draft. (`release.yml` still creates the release for a
+> manual, no-verb tag push.)
 
 ### Inputs
 
