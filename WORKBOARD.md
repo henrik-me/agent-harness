@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-01 (omni-ah-c2 — **CS78 CLOSED** [`harness release` Phase B annotated tags]; CS78 row removed. CS65 remains ⏸️ Paused pending CS77 release-v0.10.0)
+> **Last updated:** 2026-07-01 (omni-ah-c2 — **CS77 CLOSED** [cut harness **v0.10.0** — the `harness release` verb's first live use]; CS77 row removed. **CS65 resumed** ⏸️→🟢 Active)
 
 ## Orchestrators
 
@@ -28,7 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-01 | Paused pending CS77 (release v0.10.0); reclaimable by owner after CS77 close-out |
-| CS77 | CS77 — Cut harness v0.10.0 (validate the `harness release` verb) | 🟢 Active | omni-ah-c2 | cs77/content | 2026-07-01 | — |
+| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | 🟢 Active | omni-ah-c2 | cs65/content | 2026-07-01 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

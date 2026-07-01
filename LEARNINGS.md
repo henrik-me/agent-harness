@@ -96,6 +96,24 @@ claim_area: review-loops
 
 **Disposition:** Open — candidate: a one-line note in REVIEWS.md § 2.8 (Review log) documenting the timestamp-ordering rule.
 
+### LRN-175
+
+```yaml
+id: LRN-175
+date: 2026-07-01
+category: tooling
+source_cs: CS77
+status: open
+tags: [release, release-yml, gh-release-create, duplicate-draft, workflow, idempotency]
+claim_area: harness-cli
+```
+
+**Problem:** Cutting a release with `harness release --publish --apply` produces TWO draft GitHub Releases for the tag. Phase B does `git push origin v<x>`, which triggers `.github/workflows/release.yml` (fires on `v*.*.*` push); that workflow unconditionally runs `gh release create <tag> --draft` with NO idempotency probe. The verb ALSO creates its own draft via `gh release create <tag> --verify-tag --draft`. Because GitHub permits multiple *draft* releases per tag, the result is two drafts (one authored by the pusher, one by `github-actions[bot]`) with identical CHANGELOG notes.
+
+**Finding:** Expect the double-draft on every verb-cut and reconcile per LRN-159 BEFORE publishing: `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<x>"))'` → if length > 1, delete the extra with `gh api -X DELETE repos/<owner>/<repo>/releases/<id>` (keep either — the notes are identical). The verb's own idempotency does NOT prevent this: its `gh release view` probe runs ~immediately after the push, before `release.yml` has spun up, so it sees no existing release and creates one; `release.yml` then creates the second ~20–40s later. A follow-up should make the verb race-proof — e.g. wait for / adopt the `release.yml` draft, or have `release.yml` no-op when a release already exists.
+
+**Evidence:** CS77 v0.10.0 cut. After `harness release --publish --version 0.10.0 --sha 6ccc284 --pr 345 --apply`: `gh api …/releases` returned 2 entries for `v0.10.0` (id 347664859 author `henrik-me`; id 347664926 author `github-actions[bot]`), both `draft=true`, same `created_at`, identical bodies. Deleted the `github-actions[bot]` one → exactly one release; published to Latest.
+
 ### LRN-174
 
 ```yaml

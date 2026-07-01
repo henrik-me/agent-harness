@@ -1,10 +1,10 @@
 # CS77 — Cut harness v0.10.0 (validate the `harness release` verb)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs77/content
 **Started:** 2026-07-01
-**Closed:** —
+**Closed:** 2026-07-01
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("we should validate the new release verb by making a release"). Two distributed-surface clickstops have shipped under `CHANGELOG.md` `[Unreleased]` since `v0.9.0` (2026-06-30): **CS67** (the `harness release` verb) and **CS78** (the verb's Phase B annotated-tag fix). CS67 added a new CLI subcommand — a **minor** signal per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) — so the pending cut is **v0.10.0**. This cut is executed **with** the `harness release` verb it validates (the verb's first live production use), against a differential-equivalence reference of the canonical manual commands.
 **Depends on:** **CS67** (`harness release` verb — **closed**, `b2fb81d`) and **CS78** (Phase B annotated tags — **closed**, `c167dd8`) — together they are the verb under validation. CS78 is a hard prerequisite: it makes Phase B cut **annotated** tags matching the documented process, so v0.10.0's tag is annotated like its predecessors. [CS59](../done/done_cs59_document-release-process.md) (release-process docs — closed) is the manual fallback the verb must match.
 
@@ -119,18 +119,28 @@ Conclusion: **no published or draft GitHub Release and no git tag exists for `v0
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Content-time re-audit + CHANGELOG "67→69" fix + verb Phase A `--apply` (bump + CHANGELOG `[0.10.0]` + README sweep) + human `v0.10.0` README narrative (C77-3/4/6) | pending | omni-ah-c2 | Re-audit before `--apply`; em-dash; link refs; verb-produced. |
-| T2 — Differential-equivalence checks: verb vs `npm version` (byte-identical package/lock) + CHANGELOG/README parity + Phase B negative-test refusals + annotated-tag parity (C77-10) | pending | omni-ah-c2 | Evidence in content PR body. |
-| T3 — Validate (`harness lint --quiet`, `node --test`); GPT-5.5 PVI; content PR → admin-merge (C77-8/9) | pending | omni-ah-c2 | Reviewer gpt-5.5 ≠ implementer claude-opus-4.8. |
-| T4 — Phase B on the squash SHA: `--publish --sha <squash> --pr <pr> --apply` → annotated tag + draft Release; reconcile `release.yml` duplicate (LRN-159); verify single release; human publishes at G-publish (C77-5) | pending | omni-ah-c2 | Records the empirical verb-vs-release.yml finding. |
-| T5 — Consumer notification: verb `--consumer henrik-me/sub-invaders --consumer-body <file>` (pin v0.10.0) (C77-7) | pending | omni-ah-c2 | harness-orchestrator label; canonical fields + pin-bump checklist. |
-| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS77, resume CS65) + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
-| Close-out: learnings + follow-ups — file the `release.yml`-vs-verb finding + any release LRNs; follow-up CSs for deferred scope | pending | omni-ah-c2 | Records the primary validation finding (R1). |
+| T1 — Content-time re-audit + CHANGELOG "67→69" fix + verb Phase A `--apply` (bump + CHANGELOG `[0.10.0]` + README sweep) + human `v0.10.0` README narrative (C77-3/4/6) | done | omni-ah-c2 | Re-audit confirmed CS67+CS78 only; "67→69" fixed; verb Phase A produced the 4-file cut. |
+| T2 — Differential-equivalence checks: verb vs `npm version` (byte-identical package/lock) + CHANGELOG/README parity + Phase B negative-test refusals + annotated-tag parity (C77-10) | done | omni-ah-c2 | package.json+lock **byte-identical** to `npm version` (`git diff --no-index` exit 0 ×2); Phase B refused branch-head/stale/wrong-version SHAs; tag annotated. |
+| T3 — Validate (`harness lint --quiet`, `node --test`); GPT-5.5 PVI; content PR → admin-merge (C77-8/9) | done | omni-ah-c2 | lint 33/0/3; 1545 tests 0-fail. Content PR #345 squash `6ccc284` — 4 rubber-duck (R1 Needs-Fix→R2/R3/R4 Go) + 4 Copilot rounds. |
+| T4 — Phase B on the squash SHA: `--publish --sha <squash> --pr <pr> --apply` → annotated tag + draft Release; reconcile `release.yml` duplicate (LRN-159); verify single release; human publishes at G-publish (C77-5) | done | omni-ah-c2 | Annotated tag `v0.10.0`@`6ccc284`; **release.yml double-draft confirmed** → deleted the `github-actions[bot]` duplicate; exactly one release; human published (Latest). |
+| T5 — Consumer notification: verb `--consumer henrik-me/sub-invaders --consumer-body <file>` (pin v0.10.0) (C77-7) | done | omni-ah-c2 | `sub-invaders#128` filed via the verb's idempotent `--consumer` path (skipped tag/release, filed issue). |
+| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS77, resume CS65) + CONTEXT; `sync --mode=check` clean | done | omni-ah-c2 | This close-out PR. CS65 resumed 🟢 Active. |
+| Close-out: learnings + follow-ups — file the `release.yml`-vs-verb finding + any release LRNs; follow-up CSs for deferred scope | done | omni-ah-c2 | LRN-175 filed (release.yml double-draft); follow-up recommended (verb-side workflow-draft handling). |
 
 ## Notes / Learnings
 
-- _(populated at close-out)_
+- **The verb's first live use — validated end-to-end.** v0.10.0 was cut *with* `harness release` (Phase A `--apply` + Phase B `--publish --apply`), proving equivalence to the documented manual process: `package.json`/`package-lock.json` **byte-identical** to `npm version 0.10.0 --no-git-tag-version` (`git diff --no-index` exit 0 for both); the CHANGELOG `[Unreleased]→[0.10.0]` promotion + README pin sweep matched OPERATIONS steps 2–3; and — thanks to CS78 — the `v0.10.0` tag is **annotated** (`git cat-file -t` = `tag`, peeled `^{}` == squash SHA `6ccc284`), matching the manual `git tag -a` step.
+- **Primary finding — the `release.yml` double-draft is real (LRN-175).** The verb's `git push origin v0.10.0` triggered `.github/workflows/release.yml`, which unconditionally ran `gh release create --draft` (it has NO idempotency probe), producing a SECOND draft release. Both drafts had identical CHANGELOG `[0.10.0]` notes. Reconciled per LRN-159: deleted the `github-actions[bot]` duplicate (`gh api -X DELETE …/releases/<id>`), kept the verb's (`henrik-me`) draft — exactly one release for the tag. A follow-up CS is recommended to make the verb wait-for / skip / adopt the `release.yml` draft rather than race it.
+- **Idempotency + consumer path validated.** Re-running Phase B `--apply --consumer` correctly skipped tag/release creation (remote tag already at the sha → no re-push, no new duplicate) and filed exactly one `sub-invaders#128` pin-bump issue (`harness-orchestrator`) via the `--consumer`/`--consumer-body` path.
+- **Phase B verification is sound.** Accepts the squash SHA (with `--pr` pinning to `mergeCommit.oid`); refuses the PR branch head, a stale/arbitrary SHA, and a SHA whose files don't carry the target version.
+- **Review value (LRN-163).** 4 GPT-5.5 rubber-duck + 4 Copilot rounds on the content cut. R1 (rubber-duck) caught two stale `v0.9.0` README refs the verb flagged-but-didn't-rewrite (the C77-6 human-decision occurrences); Copilot caught grammar/anchor + a doubled "Prior" label. Converged R4 Go + Copilot clean.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs77-pvi`)
+**Date:** 2026-07-01
+**Outcome:** GO
+
+Run against `main` (the v0.10.0 release end-state) after the content PR #345 squash-merge (`6ccc284`) and the live Phase B publish. Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence, REVIEWS § 2.3). All deliverables **match** with probe evidence: D1 `package.json`/`package-lock.json` = `0.10.0` (byte-identical to `npm version`); D2 CHANGELOG `[0.10.0] — 2026-07-01` + fresh `[Unreleased]` + correct `compare/...` refs + "69 unit tests"; D3 README only historical `v0.9.0` "Prior" remains; D4 differential-equivalence evidence in the PR body; D5 lint 33/0/3 + 1545 tests 0-fail; D6 4× GPT-5.5 rubber-duck (R1 Needs-Fix→R2/R3/R4 Go) + 4× Copilot, independent; D7 **annotated** tag `v0.10.0` (`cat-file`=`tag`; peeled `^{}`==`6ccc284`) + **exactly one** published Release (`draft:false`); D8 `sub-invaders#128` OPEN, `harness-orchestrator`, pins v0.10.0; D9 plan-review R1 Go-with-amendments. `harness sync --mode=check` reports no drift.
+
+The reviewer's single flagged deviation (D10: CONTEXT not refreshed / LRN-175 absent) was a **stale-read timing artifact** — its 284s probe run read `CONTEXT.md` and `LEARNINGS.md` *before* the close-out edits landed. Both are confirmed present at close-out time: `CONTEXT.md` carries the CS77 close-out entry, and `LRN-175` (release.yml double-draft) is filed. No implementation deviation remains.
