@@ -96,6 +96,26 @@ claim_area: review-loops
 
 **Disposition:** Open — candidate: a one-line note in REVIEWS.md § 2.8 (Review log) documenting the timestamp-ordering rule.
 
+### LRN-176
+
+```yaml
+id: LRN-176
+date: 2026-07-01
+category: architectural
+source_cs: CS80
+status: applied
+tags: [release, release-yml, gh-release-create, single-creator, workflow, architecture]
+claim_area: harness-cli
+```
+
+**Problem:** Two independent code paths created a GitHub Release for a pushed tag — the `harness release` verb's Phase B (`gh release create`) AND `.github/workflows/release.yml` (CS14, pre-verb; `gh release create` on `v*.*.*` push). This redundancy caused the LRN-175 duplicate-draft. CS79 mitigated it by guarding the workflow (Option A), but that left TWO release creators coordinated by an existence check — the redundancy itself remained.
+
+**Finding:** There should be exactly ONE release creator. Because `release.yml` is **self-host-only** (never shipped to consumers) while the verb IS shipped, consumers already use the verb as their sole creator — so the clean, consistent fix is to make the **verb the single creator everywhere** and **delete `release.yml`** (not to ship the workflow to every consumer, the discarded B1 alternative). The verb already creates the release, so deleting the workflow removes the second creator with **no `lib/` change**. A manual (no-verb) tag push now creates the Release by hand (`gh release create <tag> --verify-tag --draft`; `--verify-tag` aborts rather than auto-creating a lightweight tag, matching the verb). This supersedes the CS79 guard (removed together with the workflow).
+
+**Evidence:** CS80. `.github/workflows/release.yml` + `tests/cs14-release-workflow.test.mjs` deleted; `release.yml` was the only tag-triggered workflow, was not a required status check, and was not in `template/managed`/`managed.files`. The v0.10.0 cut (CS77) had already shown the verb creates the release itself (its draft existed before the workflow's duplicate).
+
+**Disposition:** Applied (CS80). `release.yml` + its test deleted; the verb is the single release creator; docs (OPERATIONS steps 9–10, bin help, INSTRUCTIONS) updated for the manual `gh release create` fallback. Merge SHA recorded at close-out.
+
 ### LRN-175
 
 ```yaml
@@ -115,6 +135,8 @@ claim_area: harness-cli
 **Evidence:** CS77 v0.10.0 cut. After `harness release --publish --version 0.10.0 --sha 6ccc284 --pr 345 --apply`: `gh api …/releases` returned 2 entries for `v0.10.0` (id 347664859 author `henrik-me`; id 347664926 author `github-actions[bot]`), both `draft=true`, same `created_at`, identical bodies. Deleted the `github-actions[bot]` one → exactly one release; published to Latest.
 
 **Disposition:** Applied (CS79, merge `9171ca6`). `.github/workflows/release.yml`'s "Create GitHub Release" step now guards with `if gh release view "$TAG_NAME" >/dev/null 2>&1; then exit 0; fi` before `gh release create`, so it no-ops when the verb already created the release — the verb path yields a single draft (the verb creates the release ~1–2s post-push, before the workflow's ~20–40s spin-up). Manual (no-verb) tag pushes still get a release from the workflow. Order-independent verb hardening (skip on any post-push `gh release view`) is deferred as OQ2, not required.
+
+**Superseded by CS80 ([LRN-176](LEARNINGS.md#lrn-176)):** the CS79 workflow guard was removed together with `release.yml` — the verb is now the single release creator, eliminating the duplicate at the source (no second creator to coordinate). LRN-175 remains `applied` (the double-draft is resolved); CS80 replaced the mechanism.
 
 ### LRN-174
 

@@ -15,9 +15,11 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Documentation
 
-### Fixed
+### Removed
 
-- **CS79 (`release.yml` idempotency guard):** The `.github/workflows/release.yml` "Create GitHub Release" step now skips (`exit 0`) when a release already exists for the tag (`gh release view "$TAG_NAME"`), instead of unconditionally running `gh release create --draft`. Closes the duplicate-draft the `harness release` verb path produced (LRN-175): the verb creates the release ~1–2s after pushing the tag, so this workflow — triggered by the same push, ~20–40s later — now finds that release and no-ops, yielding a single draft; `release.yml` still creates the release for a manual (no-verb) tag push. Self-host workflow only (not a shipped consumer template); no `lib/release.mjs` change (the verb already creates its release first).
+- **CS80 (single release creator):** Deleted `.github/workflows/release.yml` — the pre-verb, self-host-only workflow that auto-created a GitHub Release on every `v*.*.*` tag push. The `harness release` verb is now the **single** creator of the GitHub Release, matching consumer repos (which never shipped `release.yml`). This eliminates the LRN-175 duplicate-draft at the source and **supersedes** the CS79 workflow guard (removed together with the workflow — neither shipped in a release). A manual (no-verb) tag push now creates the Release by hand (`gh release create <tag> --verify-tag --draft`); no `lib/release.mjs` change (the verb already creates the release).
+
+### Fixed
 
 ## [0.10.0] — 2026-07-01
 

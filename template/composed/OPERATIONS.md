@@ -2241,10 +2241,11 @@ own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 > notifications (`--consumer`). Run `harness release --help` for the full flag
 > list. The steps below remain the canonical spec and the manual fallback;
 > commits, the content PR, and the merge stay explicit orchestrator actions.
-> A verb-created tag also triggers `release.yml`; that workflow now **no-ops**
-> when a release already exists for the tag (the verb creates it first), so the
-> verb path yields a single draft. (`release.yml` still creates the release for a
-> manual, no-verb tag push.)
+> The verb is the **single** creator of the GitHub Release; no workflow drafts a
+> duplicate. After a manual tag push, re-running `harness release --publish` still
+> creates the Release (Phase B is resumable — it creates only the Release when the
+> tag already exists); a fully manual (no-verb) cut creates it by hand
+> (§ Post-merge step 10).
 
 ### Inputs
 
@@ -2284,8 +2285,8 @@ gh release list --repo <owner>/<repo> --limit 5
 git ls-remote origin refs/tags/v<x.y.z>
 ```
 
-Stale duplicate drafts (e.g. an auto-draft from `release.yml` left behind by
-a prior partial cut) MUST be deleted **before** the cut starts:
+Stale duplicate drafts (e.g. a draft left behind by a prior partial cut) MUST be
+deleted **before** the cut starts:
 
 ```bash
 gh api -X DELETE repos/<owner>/<repo>/releases/<draft-release-id>
@@ -2365,13 +2366,15 @@ After the content PR squash-merges to `main`:
    ```
 
    Tag the **squash SHA**, not pre-merge branch HEAD — LRN-101's anchor-drift
-   case. The `v*.*.*` tag push triggers `.github/workflows/release.yml`.
+   case.
 
-10. **Publish the draft Release.** `release.yml` creates a **draft** GitHub
-    Release with notes extracted from `CHANGELOG.md` `[<x.y.z>]`. The draft
-    is intentional ([LRN-121](LEARNINGS.md#lrn-121)) — you review then
-    publish, then re-probe for stale duplicate drafts that `release.yml`
-    may have left behind ([LRN-159](LEARNINGS.md#lrn-159)):
+10. **Create + publish the Release.** The `harness release` verb (Phase B)
+    creates the **draft** GitHub Release with notes from `CHANGELOG.md`
+    `[<x.y.z>]`. For a **manual** (no-verb) cut, extract that section to a file and
+    create it by hand: `gh release create v<x.y.z> --verify-tag --draft --notes-file <file>`.
+    The draft is intentional ([LRN-121](LEARNINGS.md#lrn-121)) — review it, then
+    publish, then confirm exactly one release for the tag
+    ([LRN-159](LEARNINGS.md#lrn-159)):
 
     ```bash
     gh release view v<x.y.z>                 # confirm notes match CHANGELOG
