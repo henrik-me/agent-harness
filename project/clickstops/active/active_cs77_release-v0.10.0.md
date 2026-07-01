@@ -1,9 +1,9 @@
 # CS77 — Cut harness v0.10.0 (validate the `harness release` verb)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs77/content
+**Started:** 2026-07-01
 **Closed:** —
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("we should validate the new release verb by making a release"). Two distributed-surface clickstops have shipped under `CHANGELOG.md` `[Unreleased]` since `v0.9.0` (2026-06-30): **CS67** (the `harness release` verb) and **CS78** (the verb's Phase B annotated-tag fix). CS67 added a new CLI subcommand — a **minor** signal per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) — so the pending cut is **v0.10.0**. This cut is executed **with** the `harness release` verb it validates (the verb's first live production use), against a differential-equivalence reference of the canonical manual commands.
 **Depends on:** **CS67** (`harness release` verb — **closed**, `b2fb81d`) and **CS78** (Phase B annotated tags — **closed**, `c167dd8`) — together they are the verb under validation. CS78 is a hard prerequisite: it makes Phase B cut **annotated** tags matching the documented process, so v0.10.0's tag is annotated like its predecessors. [CS59](../done/done_cs59_document-release-process.md) (release-process docs — closed) is the manual fallback the verb must match.
