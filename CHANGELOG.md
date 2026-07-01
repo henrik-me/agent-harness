@@ -11,7 +11,17 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
-- **CS67 (`harness release` verb):** Add `harness release` to mechanize the release cut that `OPERATIONS.md § Release process` documents by hand — a previewable, two-phase, dry-run-first command. Triggers a **minor** bump (new CLI surface). **Phase A** (`--version <x.y.z>` or `--bump <level>`) previews (default — printing a unified diff of every change) or `--apply`s the version bump (`package.json` + `package-lock.json`), the CHANGELOG `[Unreleased] → [x.y.z]` promotion, and the README install-pin sweep, and refuses a SemVer-inconsistent bump (e.g. a patch when `[Unreleased]` advertises a new CLI subcommand — C67-2); it never commits/tags/pushes. **Phase B** (`--publish --version <x.y.z> --sha <squash-sha>`) verifies the SHA — by default it must be the current `origin/main` HEAD (a stale / arbitrary SHA fails); `--pr <n>` **switches** the check so the SHA must instead equal that release PR's squash `mergeCommit.oid` (authoritative even if `origin/main` advanced) and not the branch head; either way `package.json` + CHANGELOG at that SHA must already carry the version — then `--apply` creates an **annotated** tag (`git tag -a v<x.y.z> <sha> -m "Release v<x.y.z>"` + `git push origin v<x.y.z>`, matching `OPERATIONS.md § Release process` step 9) and the GitHub Release on it via `gh release create v<x.y.z> --verify-tag` (release-only, no `--target`) — a **draft by default**, `--no-draft` to publish immediately (G-publish is the human gate either way) — idempotent and resumable (a pre-existing tag+release at the intended SHA is skipped, only consumer notifications retried), and files issue-only consumer notifications (`--consumer`) via `harness cross-repo open-issue` ([Hard Rule § 6](.github/copilot-instructions.md)). Logic lives in the dependency-free `lib/release.mjs` with injectable git/`gh`/fs seams; 67 unit tests write only under `os.tmpdir()`. `OPERATIONS.md § Release process` (+ `template/composed/` mirror) references the verb as the canonical executable path.
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.10.0] — 2026-07-01
+
+### Added
+
+- **CS67 (`harness release` verb):** Add `harness release` to mechanize the release cut that `OPERATIONS.md § Release process` documents by hand — a previewable, two-phase, dry-run-first command. Triggers a **minor** bump (new CLI surface). **Phase A** (`--version <x.y.z>` or `--bump <level>`) previews (default — printing a unified diff of every change) or `--apply`s the version bump (`package.json` + `package-lock.json`), the CHANGELOG `[Unreleased] → [x.y.z]` promotion, and the README install-pin sweep, and refuses a SemVer-inconsistent bump (e.g. a patch when `[Unreleased]` advertises a new CLI subcommand — C67-2); it never commits/tags/pushes. **Phase B** (`--publish --version <x.y.z> --sha <squash-sha>`) verifies the SHA — by default it must be the current `origin/main` HEAD (a stale / arbitrary SHA fails); `--pr <n>` **switches** the check so the SHA must instead equal that release PR's squash `mergeCommit.oid` (authoritative even if `origin/main` advanced) and not the branch head; either way `package.json` + CHANGELOG at that SHA must already carry the version — then `--apply` creates an **annotated** tag (`git tag -a v<x.y.z> <sha> -m "Release v<x.y.z>"` + `git push origin v<x.y.z>`, matching `OPERATIONS.md § Release process` step 9) and the GitHub Release on it via `gh release create v<x.y.z> --verify-tag` (release-only, no `--target`) — a **draft by default**, `--no-draft` to publish immediately (G-publish is the human gate either way) — idempotent and resumable (a pre-existing tag+release at the intended SHA is skipped, only consumer notifications retried), and files issue-only consumer notifications (`--consumer`) via `harness cross-repo open-issue` ([Hard Rule § 6](.github/copilot-instructions.md)). Logic lives in the dependency-free `lib/release.mjs` with injectable git/`gh`/fs seams; 69 unit tests write only under `os.tmpdir()`. `OPERATIONS.md § Release process` (+ `template/composed/` mirror) references the verb as the canonical executable path.
 
 ### Changed
 
@@ -490,7 +500,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/henrik-me/agent-harness/compare/v0.6.0...v0.7.0
