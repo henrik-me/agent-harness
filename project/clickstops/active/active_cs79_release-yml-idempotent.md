@@ -1,9 +1,9 @@
 # CS79 — `release.yml` idempotency guard (close the double-draft race, LRN-175)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs79/content
+**Started:** 2026-07-01
 **Closed:** —
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("go with A") — the follow-up for **[LRN-175](../../../LEARNINGS.md#lrn-175)** surfaced by the CS77 v0.10.0 cut. The `harness release` verb's Phase B does `git push origin v<x>`, which triggers `.github/workflows/release.yml`; that workflow **unconditionally** runs `gh release create <tag> --draft` with no existence check, while the verb *also* creates its own draft — yielding **two draft releases** per cut (reconciled by hand per LRN-159 for v0.10.0). @henrik-me chose **Option A**: make `release.yml` idempotent so it no-ops when a release already exists for the tag.
 **Depends on:** **CS77** (cut v0.10.0 — **closed**, `6ccc284`) which discovered + recorded LRN-175. No hard code dependency; `release.yml` is a self-host-only workflow (NOT in `template/managed/**`, NOT in `harness.config.json` `managed.files`), so this CS does not touch consumer templates.
