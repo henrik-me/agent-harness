@@ -2232,9 +2232,12 @@ own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 > (a stale/arbitrary SHA fails); passing `--pr <n>` **switches** the check so
 > `<squash-sha>` must instead equal that release PR's squash `mergeCommit.oid`
 > (authoritative even if `origin/main` has since advanced) and must not be the PR
-> branch head. Then `--apply` creates the tag + GitHub Release
-> (a **draft** by default; `--no-draft` to publish immediately) via
-> `gh release create --target`, idempotently, and files issue-only consumer
+> branch head. Then `--apply` creates an **annotated** tag
+> (`git tag -a v<x.y.z> <sha> -m "Release v<x.y.z>"` then `git push origin v<x.y.z>`,
+> matching § Release process step 9) and the GitHub Release on it (a **draft**
+> by default; `--no-draft` to publish immediately) via
+> `gh release create <tag> --verify-tag` (release-only, no `--target`),
+> idempotently, and files issue-only consumer
 > notifications (`--consumer`). Run `harness release --help` for the full flag
 > list. The steps below remain the canonical spec and the manual fallback;
 > commits, the content PR, and the merge stay explicit orchestrator actions.
