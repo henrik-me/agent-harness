@@ -97,7 +97,46 @@ The single hardest sequencing constraint: the tag and GitHub release must land o
 
 ## Notes / Learnings
 
-(filled during execution)
+**Escalation resolutions (sub-agent `cs67-lib` → orchestrator, 2026-06-30):**
+- **(a) draft vs immediate publish** — user (G-publish gate owner) chose **draft-by-default**; added a `draft` option to `publishRelease` (default `true` → appends `--draft` to `gh release create`) and a bin `--no-draft` opt-out. Rationale: LRN-121 (drafts intentional), composes with `release.yml`, safer for an irreversible op. +2 tests.
+- **(b) consumers[] source** — bin surface: repeatable `--consumer <owner/repo>` + `--consumer-body <file>` (required with `--consumer`) + `--consumer-title` (default `Adopt agent-harness v<x.y.z>`), labeled `harness-orchestrator`. Richer config-driven list deferred (follow-up).
+- **(c) npm-vs-string bump** — accepted the sub-agent's dep-free, deterministic string-edit `bumpVersionFiles` default (same two root version fields `npm version --no-git-tag-version` touches); seam stays injectable.
+
+**Design notes:**
+- Phase B verifies via `git show <sha>:package.json|CHANGELOG.md` + `rev-parse origin/main` + `ls-remote --tags` — no temp clone (satisfies C64b-2 "prefer git show over clone").
+- README pin sweep is conservative: rewrites unambiguous `#v<prev>` install pins + in-fence tokens; flags every other `v<prev>` occurrence in `plan.warnings` for manual review (dry-run shows them).
+- **Known limitation (follow-up candidate):** a verb-created tag may also trigger `.github/workflows/release.yml` (which drafts) → possible duplicate draft; documented in OPERATIONS + `--help` (use verb XOR manual tag-push; LRN-159 recheck). Not exercised until the first real `--publish` (v0.10.0).
+- CS67 lands in **v0.10.0** (CS74 is cutting v0.9.0 concurrently on a sibling clone).
+
+**Local review — GPT-5.5 rubber-duck R1 (2026-06-30, `cs67-review`): Needs-Fix → all findings fixed:**
+- **B1** CHANGELOG.md at SHA not required (contradicted docs) → `git show <sha>:CHANGELOG.md` failure now fatal `ERELEASE_SHA_UNVERIFIED`. +test.
+- **B2** Phase B ignored `--cwd` → default git/gh seams now execute in `cwd` (`resolveSeams(seams, cwd)` → `spawnRun(..., cwd)`). Validated by inspection (injected-seam tests bypass the default).
+- **B3** `--repo` parsed but unused → threaded `--repo` into `gh release view`/`create` (+ `gh pr view`). +test.
+- **B4** verification only proved "sha == current origin/main + files match", not "the squash-merge commit" → added `--pr <n>` to strong-verify `--sha == PR mergeCommit.oid` and reject the branch head; softened help/OPERATIONS/CHANGELOG wording to be accurate for both paths. +3 tests.
+- Non-blocking: documented `--draft`; clarified Phase B dry-run runs a read-only fetch preflight. Tests 45 → **50**; full suite 1525/0/1.
+
+**Local review — GPT-5.5 rubber-duck R2 (2026-06-30): Needs-Fix → fixed:**
+- **R2-B1** `--pr` path still accepted `sha == originMainSha` even when `!= mergeCommitOid` → `verifySquashSha` now makes `mergeCommitOid` authoritative when supplied (falls back to origin/main only without `--pr`). +test.
+- **R2-B2** `git fetch origin main` failure was ignored (stale local `origin/main` could pass the default path) → fetch failure now fatal `ERELEASE_SHA_UNVERIFIED`. +test.
+- **R2-NB1** malformed `null` PR JSON would throw `TypeError` → added non-object guard → `ReleaseError`. +test. Tests 50 → **53**.
+
+**Copilot review R1 (2026-07-01, PR #335): 4 inline comments → all fixed:**
+- Phase A `resolveSeams` missing `cwd` (consistency with the B2 fix) → `resolveSeams(seams, cwd)` in `prepareRelease`.
+- `git ls-remote` failure silently treated as "no tag" → now fatal `ERELEASE_SHA_UNVERIFIED`. +test.
+- `LRN-159` link in the OPERATIONS reference note (root + composed) ships a broken anchor to consumers → dropped the LRN cite (generic-consumer-template rule). Tests 53 → **54**.
+
+**Copilot review R2 (2026-07-01, PR #335 @ 69aacbe): 2 inline comments → both fixed:**
+- `defaultBumpVersionFiles` treated ANY `package-lock.json` read error as "no lockfile" → now discriminates `ENOENT` (absent) vs other errors (fatal `ERELEASE_FILE`). +test.
+- Unused `existsSync` import in the test file → removed. Tests 54 → **55**.
+
+**Copilot review R3 (2026-07-01, PR #335 @ 7f16be1): 1 inline comment → fixed:**
+- `parseLsRemoteSha` used the first `ls-remote` line, so an **annotated** tag (the release process uses `git tag -a`) would compare the tag-object SHA (not the peeled `^{}` commit) and wrongly throw `ERELEASE_TAG_EXISTS`, breaking idempotency → now prefers the peeled `^{}` commit line. +test. Tests 55 → **56**.
+
+**Copilot review R4 (2026-07-01, PR #335 @ 3f20e71): 1 inline comment → fixed:**
+- Stale `parseLsRemoteSha` doc comment (said "first line") → updated to match the peeled-`^{}` behavior. (doc-only)
+
+**Copilot review R5 (2026-07-01, PR #335 @ bd42bfa): 1 inline comment → fixed:**
+- `prepareRelease` hardcoded `DEFAULT_REPO_SLUG = 'henrik-me/agent-harness'` as a fallback → would bake the harness's own slug into a fork/consumer's CHANGELOG compare links. Removed the hardcoded slug entirely; now uses `--repo` (Phase A) or an existing CHANGELOG link, and **fails closed** if neither is derivable. +2 tests. Tests 56 → **58**.
 
 ## Plan-vs-implementation review
 

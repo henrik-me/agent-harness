@@ -130,6 +130,8 @@ Subcommands:
   claim             Claim a planned CS — preflight + harvest + plan (CS64)
   close-out         Two-phase close-out (preflight + apply; CS64)
   dispatch          Emit the canonical sub-agent briefing preamble (CS64)
+  release           Mechanize the release cut — Phase A prepare (dry-run) +
+                    Phase B publish (verify SHA → tag+release → notify; CS67)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -839,6 +841,60 @@ Options:
   --quiet         Suppress advisory output (errors still print to stderr)
   --cwd <path>    Repo path (default: cwd)
   --help          Print this help
+`.trimStart(),
+
+  release: `
+Usage:
+  harness release --version <x.y.z> [--apply]                                   (Phase A — prepare)
+  harness release --bump <major|minor|patch> [--apply]                          (Phase A — prepare)
+  harness release --publish --version <x.y.z> --sha <40-char hex> [--apply]
+                  [--pr <number>] [--no-draft] [--consumer <owner/repo> ...]
+                  [--consumer-body <file>] [--consumer-title <str>] [--repo <owner/repo>]  (Phase B — publish)
+
+Mechanize the harness release cut (CS67) — the procedure OPERATIONS.md
+§ Release process documents by hand. Dry-run-first and irreversible-safe: no
+files are written and no tag/release/consumer-issue is created without an
+explicit --apply (Phase B still runs a read-only 'git fetch origin main'
+preflight even in dry-run).
+
+Phase A (--version or --bump): preview (default) or --apply the version bump
+(package.json + package-lock.json), the CHANGELOG [Unreleased] → [x.y.z]
+promotion, and the README pin sweep. Never commits/pushes — the orchestrator
+owns the commit + content PR. Refuses a SemVer-inconsistent bump (e.g. a patch
+when [Unreleased] advertises a new CLI subcommand).
+
+Phase B (--publish): verifies --sha is the current origin/main HEAD (a stale or
+arbitrary SHA fails); pass --pr <number> to instead require --sha to equal that
+release PR's squash mergeCommit.oid and reject its branch head (the strong
+check). package.json + CHANGELOG at that SHA must already carry the version.
+Then --apply creates the tag + GitHub Release
+(a DRAFT by default; --no-draft publishes immediately — G-publish is the human
+gate either way) via 'gh release create --target <sha>', idempotent/resumable,
+and files issue-only consumer notifications (--consumer) via
+'harness cross-repo open-issue' (Hard Rule § 6). Note: a verb-created tag may
+also trigger .github/workflows/release.yml (which drafts) — use the verb OR the
+manual tag-push flow, and re-check for stale duplicate drafts (LRN-159).
+
+Options:
+  --version <x.y.z>        Target version (Phase A: one of --version/--bump; Phase B: required)
+  --bump <level>           major|minor|patch — derive the target from package.json (Phase A)
+  --apply                  Execute (default is dry-run/preview). Phase B --apply is IRREVERSIBLE.
+  --publish                Phase B (tag + release + notify) instead of Phase A prepare
+  --sha <40-char hex>      The commit SHA on main to tag (Phase B, required)
+  --pr <number>            Release PR number — strong-verify --sha == its squash mergeCommit.oid (Phase B)
+  --draft                  Create a draft release (the default; pair with --no-draft to override)
+  --no-draft               Publish the release immediately instead of creating a draft
+  --consumer <owner/repo>  Consumer repo to notify (repeatable; Phase B)
+  --consumer-body <file>   Issue body file for consumer notifications (required with --consumer)
+  --consumer-title <str>   Issue title (default: "Adopt agent-harness v<x.y.z>")
+  --repo <owner/repo>      Release repo — targets gh (Phase B) and supplies the CHANGELOG compare-link slug (Phase A); Phase A otherwise derives the slug from an existing CHANGELOG link and fails rather than guess.
+  --cwd <path>             Repo path (default: cwd)
+  --help                   Print this help
+
+Exit codes:
+  0  preview composed / --apply succeeded
+  1  validation failure (bad version, SemVer-inconsistent, SHA unverified, publish failure)
+  2  usage error
 `.trimStart(),
 };
 
@@ -4545,6 +4601,137 @@ async function cmdDispatch(args, global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: release (CS67)
+// ---------------------------------------------------------------------------
+
+/** Format the Phase B publishRelease result for stdout. */
+function formatReleasePublishResult(result, { version }) {
+  const tag = `v${version}`;
+  const lines = [];
+  if (result.planned) {
+    lines.push(`harness release --publish (dry-run): SHA verified for ${tag}.`);
+    lines.push(
+      `  Would ${result.planned.tagExists ? 'reuse existing tag' : 'create tag'} ${tag} @ ${result.planned.sha}` +
+        (result.planned.draft ? ' as a DRAFT release.' : ' and publish immediately (--no-draft).')
+    );
+    if (result.planned.consumers.length) {
+      lines.push(`  Would notify consumers: ${result.planned.consumers.join(', ')}`);
+    }
+    lines.push('  Re-run with --apply to execute (IRREVERSIBLE — G-publish gate).');
+  } else {
+    const state = result.releaseCreated
+      ? result.draft
+        ? 'draft release created'
+        : 'release published'
+      : 'release already existed (creation skipped)';
+    lines.push(`harness release --publish: ${tag} — ${state}.`);
+    if (result.draft && result.releaseCreated) {
+      lines.push(`  Review the notes, then publish: gh release edit ${tag} --draft=false`);
+    }
+    for (const n of result.notified) lines.push(`  Notified ${n.repo}: ${n.url}`);
+    for (const skipped of result.skipped) lines.push(`  ${skipped}`);
+  }
+  return lines.join('\n') + '\n';
+}
+
+async function cmdRelease(args, global) {
+  let version = null;
+  let bump = null;
+  let apply = false;
+  let publish = false;
+  let sha = null;
+  let pr = null;
+  // CS67 escalation (a): draft-by-default; --no-draft opts into immediate publish.
+  let draft = true;
+  let repo = null;
+  const consumerRepos = [];
+  let consumerBody = null;
+  let consumerTitle = null;
+
+  const need = (i, flag) => {
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('-')) {
+      die(`harness release: ${flag} requires a value\n\n${SUBCOMMAND_HELP['release']}`, 2);
+    }
+    return v;
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['release']);
+      process.exit(0);
+    } else if (a === '--version') {
+      version = need(i, '--version');
+      i++;
+    } else if (a === '--bump') {
+      bump = need(i, '--bump');
+      i++;
+    } else if (a === '--apply') {
+      apply = true;
+    } else if (a === '--publish') {
+      publish = true;
+    } else if (a === '--sha') {
+      sha = need(i, '--sha');
+      i++;
+    } else if (a === '--pr') {
+      pr = need(i, '--pr');
+      i++;
+    } else if (a === '--draft') {
+      draft = true;
+    } else if (a === '--no-draft') {
+      draft = false;
+    } else if (a === '--consumer') {
+      consumerRepos.push(need(i, '--consumer'));
+      i++;
+    } else if (a === '--consumer-body') {
+      consumerBody = need(i, '--consumer-body');
+      i++;
+    } else if (a === '--consumer-title') {
+      consumerTitle = need(i, '--consumer-title');
+      i++;
+    } else if (a === '--repo') {
+      repo = need(i, '--repo');
+      i++;
+    } else {
+      die(`harness release: unknown flag: ${a}\n\n${SUBCOMMAND_HELP['release']}`, 2);
+    }
+  }
+
+  const cwd = global && global.cwd ? global.cwd : process.cwd();
+  const { prepareRelease, publishRelease, formatReleasePlan, ReleaseError } = await import('../lib/release.mjs');
+
+  try {
+    if (publish) {
+      if (!version) die(`harness release --publish: --version <x.y.z> is required\n\n${SUBCOMMAND_HELP['release']}`, 2);
+      if (!sha) die(`harness release --publish: --sha <40-char hex> is required\n\n${SUBCOMMAND_HELP['release']}`, 2);
+      let consumers = [];
+      if (consumerRepos.length > 0) {
+        if (!consumerBody) {
+          die(`harness release --publish: --consumer requires --consumer-body <file>\n\n${SUBCOMMAND_HELP['release']}`, 2);
+        }
+        const bodyFile = path.resolve(consumerBody);
+        if (!existsSync(bodyFile)) die(`harness release --publish: --consumer-body file not found: ${consumerBody}`, 2);
+        const title = consumerTitle || `Adopt agent-harness v${version}`;
+        consumers = consumerRepos.map((r) => ({ repo: r, title, bodyFile, labels: ['harness-orchestrator'] }));
+      }
+      const result = publishRelease({ version, sha, cwd, repo, pr, consumers, apply, draft, seams: {} });
+      process.stdout.write(formatReleasePublishResult(result, { version }));
+    } else {
+      if (sha) die(`harness release: --sha is only valid with --publish (Phase B)\n\n${SUBCOMMAND_HELP['release']}`, 2);
+      if (pr) die(`harness release: --pr is only valid with --publish (Phase B)\n\n${SUBCOMMAND_HELP['release']}`, 2);
+      const plan = prepareRelease({ version, bump, cwd, repoSlug: repo, apply, seams: {} });
+      process.stdout.write(formatReleasePlan(plan));
+    }
+  } catch (err) {
+    if (err instanceof ReleaseError) {
+      die(`harness release: ${err.message}`, 1);
+    }
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main dispatcher
 // ---------------------------------------------------------------------------
 
@@ -4582,6 +4769,7 @@ export const COMMAND_REGISTRY = {
   claim: cmdClaim,
   'close-out': cmdCloseOut,
   dispatch: cmdDispatch,
+  release: cmdRelease,
   doctor: cmdDoctor,
   version: cmdVersion,
   whoami: cmdWhoami,
