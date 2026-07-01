@@ -114,7 +114,7 @@ claim_area: harness-cli
 
 **Evidence:** CS80. `.github/workflows/release.yml` + `tests/cs14-release-workflow.test.mjs` deleted; `release.yml` was the only tag-triggered workflow, was not a required status check, and was not in `template/managed`/`managed.files`. The v0.10.0 cut (CS77) had already shown the verb creates the release itself (its draft existed before the workflow's duplicate).
 
-**Disposition:** Applied (CS80). `release.yml` + its test deleted; the verb is the single release creator; docs (OPERATIONS steps 9–10, bin help, INSTRUCTIONS) updated for the manual `gh release create` fallback. Merge SHA recorded at close-out.
+**Disposition:** Applied (CS80, merge `59030a6`). `release.yml` + its test deleted; the verb is the single release creator; docs (OPERATIONS steps 9–10, bin help, INSTRUCTIONS) updated for the manual `gh release create` fallback.
 
 ### LRN-175
 
