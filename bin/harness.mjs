@@ -873,9 +873,9 @@ process step 9) and the GitHub Release on it via 'gh release create <tag>
 --verify-tag' — release-only, no --target — a DRAFT by default; --no-draft
 publishes immediately (G-publish is the human gate either way);
 idempotent/resumable, and files issue-only consumer notifications (--consumer)
-via 'harness cross-repo open-issue' (Hard Rule § 6). Note: a verb-created tag may
-also trigger .github/workflows/release.yml (which drafts) — use the verb OR the
-manual tag-push flow, and re-check for stale duplicate drafts (LRN-159).
+via 'harness cross-repo open-issue' (Hard Rule § 6). The verb is the sole creator
+of the GitHub Release; a manual (no-verb) tag push has no workflow to draft one, so
+create it by hand with 'gh release create <tag> --draft'.
 
 Options:
   --version <x.y.z>        Target version (Phase A: one of --version/--bump; Phase B: required)
