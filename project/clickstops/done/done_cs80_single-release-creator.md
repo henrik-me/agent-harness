@@ -1,10 +1,10 @@
 # CS80 — Single release creator: the verb owns releases; delete `release.yml`
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs80/content
 **Started:** 2026-07-01
-**Closed:** —
+**Closed:** 2026-07-01
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("go with option B, there should only be one thing that does the release"). The `harness release` verb (CS67) and `.github/workflows/release.yml` (CS14, pre-verb) both create a GitHub Release for a pushed tag ([LRN-175](../../../LEARNINGS.md#lrn-175)); CS79 mitigated the resulting double-draft by guarding the workflow (Option A). @henrik-me chose the **structural** fix (Option B, refined): make the **verb the single release creator** and **delete `release.yml`**. Because `release.yml` is **self-host-only** (never shipped to consumers), consumers *already* use the verb as their sole creator — so deleting `release.yml` makes the harness self-host **consistent** with every consumer, rather than shipping a workflow to everyone (the discarded B1 alternative).
 **Depends on:** **CS77** (`6ccc284` — discovered LRN-175) and **CS79** (`9171ca6` — the Option-A guard this CS supersedes). No hard code dependency. **No `lib/release.mjs` change** — the verb already creates the release; this CS only removes the redundant second creator.
 
@@ -98,23 +98,33 @@ So `release.yml` is the only tag-triggered workflow, is not a required merge che
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah-c2 |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
-| Notes | Planned ledger (finalized at close-out). Standard risk (C80-7); NOT in `reviews.high_risk_clickstops`. Delete `release.yml` + its test + doc updates; **no `lib/` change**. Supersedes CS79's Option-A guard. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. |
+| Notes | Finalized at close-out. Standard risk (C80-7); NOT in `reviews.high_risk_clickstops`. Delete `release.yml` + its test + doc updates; **no `lib/` change**. Supersedes CS79's Option-A guard. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`; Copilot (`claude-sonnet`) alternating across 3 rounds. |
 
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `git rm` `.github/workflows/release.yml` + `tests/cs14-release-workflow.test.mjs` (C80-2) | pending | omni-ah-c2 | Verify no tag-triggered workflow remains. |
-| T2 — Doc updates: bin help + both OPERATIONS copies (steps 9–10 + caveats + probe, byte-equal) + both INSTRUCTIONS copies (byte-equal) + `private-smoke.yml` paths-filter + replace the CS79 `[Unreleased]` CHANGELOG entry with the CS80 entry (C80-4/C80-5) | pending | omni-ah-c2 | `harness check` no drift. Leave historical done_cs*/REVIEWS + shipped CHANGELOG entries. |
-| T3 — File LRN-176 (single release creator) + LRN-175 Disposition supersession note (C80-6) | pending | omni-ah-c2 | status applied (structural fix landed). |
-| T4 — Validate (`harness lint --quiet`, `node --test`, `harness check`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C80-7) | pending | omni-ah-c2 | Reviewer gpt-5.5 ≠ implementer claude-opus-4.8. |
-| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS80, resume CS65) + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
-| Close-out: learnings — LRN-176 finalized; follow-ups | pending | omni-ah-c2 | Notes the CS79→CS80 evolution. |
+| T1 — `git rm` `.github/workflows/release.yml` + `tests/cs14-release-workflow.test.mjs` (C80-2) | done | omni-ah-c2 | Both deleted in PR #357 (`59030a6`); no tag-triggered workflow remains. |
+| T2 — Doc updates: bin help + both OPERATIONS copies (steps 9–10 + caveats + probe, byte-equal) + both INSTRUCTIONS copies (byte-equal) + `private-smoke.yml` paths-filter + replace the CS79 `[Unreleased]` CHANGELOG entry with the CS80 entry (C80-4/C80-5) | done | omni-ah-c2 | `harness check` no drift; byte-equal confirmed. |
+| T3 — File LRN-176 (single release creator) + LRN-175 Disposition supersession note (C80-6) | done | omni-ah-c2 | LRN-176 status applied; merge SHA `59030a6` recorded. |
+| T4 — Validate (`harness lint --quiet`, `node --test`, `harness check`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C80-7) | done | omni-ah-c2 | lint 33/0/3; 3 review rounds (GPT-5.5 Go ×3 + Copilot, all threads resolved); PR #357 admin-merged `59030a6`. |
+| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS80, resume CS65) + CONTEXT; `sync --mode=check` clean | done | omni-ah-c2 | This PR. |
+| Close-out: learnings — LRN-176 finalized; follow-ups | done | omni-ah-c2 | LRN-176 merge SHA finalized; CS79→CS80 evolution recorded. |
 
 ## Notes / Learnings
 
-- _(populated at close-out)_
+- **Shipped** in PR #357 (squash `59030a6`, admin-merged 2026-07-01). Deleted `.github/workflows/release.yml` + `tests/cs14-release-workflow.test.mjs`; the `harness release` verb is now the **single** creator of the GitHub Release — self-host consistent with every consumer (which never shipped `release.yml`). **No `lib/` change.**
+- **Supersedes CS79** (the Option-A workflow guard) — removed together with the workflow; neither shipped in a release, so no CHANGELOG churn beyond replacing the unreleased CS79 `### Fixed` entry with the CS80 `### Removed` entry.
+- **LRN-176** (single release creator, architectural/applied) filed; **LRN-175** carries a supersession note.
+- **Review:** 3 rounds on PR #357 (GPT-5.5 rubber-duck **Go** ×3, alternating Copilot). Copilot R1 → added `--verify-tag` to every manual-fallback mention + single-lined the step-10 command; Copilot R2 → reworded the verb-note blockquote to note Phase B is resumable (re-running the verb recovers a manual tag push, creating only the Release for an existing tag — verified against `lib/release.mjs:976-988`). All threads resolved.
+- **Follow-up (optional, unfiled):** OQ2 — make the verb's own release-skip order-independent (skip on any post-push `gh release view`, not just the pre-push `tagPointsAtSha` snapshot). Belt-and-suspenders; not required now that the second creator is gone.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs80-pvi`)
+**Date:** 2026-07-01
+**Outcome:** GO
+
+Run against `main` at the squash-merge HEAD `59030a6` (PR #357). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence, REVIEWS § 2.3). All Decisions/Deliverables **match** with evidence: **C80-1/C80-2** — `git ls-files` shows no `.github/workflows/release.yml` and no `tests/cs14-release-workflow.test.mjs` (both `Test-Path` = False); no tag-triggered workflow remains. **C80-3** — `git show --stat 59030a6` touches no `lib/` file; `bin/harness.mjs` changes are help-text only. **C80-4** — no `release.yml` reference in any current-state surface; `private-smoke.yml` paths-filter no longer lists the release workflow; CHANGELOG has the CS80 `### Removed` entry with the unreleased CS79 entry replaced (not duplicated); both OPERATIONS copies byte-equal (`harness check` = no drift). **C80-5** — the manual no-verb fallback is documented as `gh release create <tag> --verify-tag --draft` (bin help + OPERATIONS step 10 + LRN-176 + CHANGELOG), and the OPERATIONS verb-note blockquote notes Phase B is resumable (re-run recovers a manual tag push, creating only the Release for an existing tag — verified vs `lib/release.mjs:976-988`). **C80-6** — LRN-176 (`category: architectural`, `status: applied`) present; LRN-175 carries the supersession note; referenced LRN anchors resolve.
+
+The reviewer's flagged deviation (`harness lint` returned 32/1/3) was the expected **close-out-in-progress** state — its probe ran while this `## Plan-vs-implementation review` section was still the placeholder (check-clickstop requires a populated PVI for `done/` files). Populating this section with the GO verdict resolves that lint failure; `harness lint --quiet` returns 33/0/3 at close-out.
