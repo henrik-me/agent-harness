@@ -1,10 +1,10 @@
 # CS79 — `release.yml` idempotency guard (close the double-draft race, LRN-175)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs79/content
 **Started:** 2026-07-01
-**Closed:** —
+**Closed:** 2026-07-01
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("go with A") — the follow-up for **[LRN-175](../../../LEARNINGS.md#lrn-175)** surfaced by the CS77 v0.10.0 cut. The `harness release` verb's Phase B does `git push origin v<x>`, which triggers `.github/workflows/release.yml`; that workflow **unconditionally** runs `gh release create <tag> --draft` with no existence check, while the verb *also* creates its own draft — yielding **two draft releases** per cut (reconciled by hand per LRN-159 for v0.10.0). @henrik-me chose **Option A**: make `release.yml` idempotent so it no-ops when a release already exists for the tag.
 **Depends on:** **CS77** (cut v0.10.0 — **closed**, `6ccc284`) which discovered + recorded LRN-175. No hard code dependency; `release.yml` is a self-host-only workflow (NOT in `template/managed/**`, NOT in `harness.config.json` `managed.files`), so this CS does not touch consumer templates.
 
@@ -101,16 +101,25 @@ The `v0.10.0` tag is annotated (peeled `^{}` == the CS77 content squash SHA `6cc
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `release.yml` idempotency guard in the Create-GitHub-Release step (C79-2) | pending | omni-ah-c2 | `gh release view "$TAG_NAME"` → skip/exit 0 if exists. |
-| T2 — Doc lockstep: OPERATIONS verb-note caveat (both copies, byte-equal) + CHANGELOG `[Unreleased]` `### Fixed` (C79-4) | pending | omni-ah-c2 | `check-doc-lockstep`/`harness check` must pass. |
-| T3 — Validate (`harness lint --quiet`, `node --test`, `harness check`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C79-5/6/7) | pending | omni-ah-c2 | Reviewer gpt-5.5 ≠ implementer claude-opus-4.8. |
-| Close-out: docs + restart state — rename active→done; WORKBOARD + CONTEXT; flip LRN-175 → applied; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
-| Close-out: learnings — any new LRN; follow-ups | pending | omni-ah-c2 | LRN-175 disposition = applied (this CS). |
+| T1 — `release.yml` idempotency guard in the Create-GitHub-Release step (C79-2) | done | omni-ah-c2 | `if gh release view "$TAG_NAME" >/dev/null 2>&1; then exit 0; fi` before `gh release create`. |
+| T2 — Doc lockstep: OPERATIONS verb-note caveat (both copies, byte-equal) + CHANGELOG `[Unreleased]` `### Fixed` (C79-4) | done | omni-ah-c2 | Both OPERATIONS copies byte-equal (`harness check` no drift); CHANGELOG `### Fixed` entry added. |
+| T3 — Validate (`harness lint --quiet`, `node --test`, `harness check`); GPT-5.5 rubber-duck + Copilot; content PR → admin-merge (C79-5/6/7) | done | omni-ah-c2 | PR #350 squash `9171ca6`. lint 33/0/3, no drift, YAML valid. Converged round 1 (rubber-duck **Go** + Copilot clean, 0 comments). |
+| Close-out: docs + restart state — rename active→done; WORKBOARD + CONTEXT; flip LRN-175 → applied; `sync --mode=check` clean | done | omni-ah-c2 | This close-out PR. CS65 resumed 🟢 Active; LRN-175 → applied. |
+| Close-out: learnings — any new LRN; follow-ups | done | omni-ah-c2 | No new LRN; LRN-175 disposition = applied (this CS). OQ2 (order-independent verb hardening) left as a future option, not filed. |
 
 ## Notes / Learnings
 
-- _(populated at close-out)_
+- **Closed the LRN-175 double-draft structurally.** Before CS79, every `harness release` cut produced two draft releases (the verb's + `release.yml`'s) that had to be reconciled by hand. The guard (`if gh release view "$TAG_NAME" >/dev/null 2>&1; then exit 0; fi`) makes the workflow no-op when a release already exists — the verb creates the release first (~1–2s post-push), so the workflow (triggered by the same push, ~20–40s later) now finds it and skips. Manual (no-verb) tag pushes still get a release from the workflow. **LRN-175 → applied.**
+- **Minimal, self-host-only.** `release.yml` is not a shipped consumer template (not in `template/managed/**` / `harness.config.json` `managed.files`), so no consumer-template change; no `lib/release.mjs` change (the verb already creates its release first in the observed ordering).
+- **The plan-review caught an overstated proof (OQ2).** The verb's release-skip keys off the *pre-push* tag snapshot (`tagPointsAtSha && releaseExists`), so it is not *strictly* idempotent against a release created in the ~1–2s window between its push and its own `gh release view`. Empirically the verb creates first, so Option A closes the observed race; a future CS could harden the verb to skip on any post-push `gh release view` (OQ2) for order-independence — left as a documented option, not filed.
+- **Converged fast.** Content review was clean on round 1 (GPT-5.5 rubber-duck **Go** + Copilot 0 comments) — the guard is a small, well-understood idempotency check. Empirical confirmation lands on the next cut (v0.11.0): exactly one draft, no manual reconciliation.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs79-pvi`)
+**Date:** 2026-07-01
+**Outcome:** GO
+
+Run against `main` at the squash-merge HEAD `9171ca6` (PR #350). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence, REVIEWS § 2.3). Content deliverables all **match** with evidence: D1 the guard (`if gh release view "$TAG_NAME" >/dev/null 2>&1; then exit 0; fi`) is placed before `gh release create` in the same `run:` block (with `GH_TOKEN` + `TAG_NAME` env); D2 both `OPERATIONS.md` copies' verb-note hunks are identical (byte-equal) and the CHANGELOG `[Unreleased] ### Fixed` CS79 entry is present; D3 no `lib/release.mjs` change; D5 PR-body Model audit + Review log present; D6 plan-review Go rows. `harness check` = no drift; `release.yml` YAML valid.
+
+The reviewer's flagged deviation (D4/D7: `harness lint` returned 32/1/3) was the expected **close-out-in-progress** state — its probe ran while this `## Plan-vs-implementation review` section was still the placeholder (check-clickstop requires a populated PVI for `done/` files). Populating this section with the GO verdict resolves that lint failure; `harness lint --quiet` returns 33/0/3 at close-out.

@@ -103,7 +103,7 @@ id: LRN-175
 date: 2026-07-01
 category: tooling
 source_cs: CS77
-status: open
+status: applied
 tags: [release, release-yml, gh-release-create, duplicate-draft, workflow, idempotency]
 claim_area: harness-cli
 ```
@@ -113,6 +113,8 @@ claim_area: harness-cli
 **Finding:** Expect the double-draft on every verb-cut and reconcile per LRN-159 BEFORE publishing: `gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="v<x>"))'` → if length > 1, delete the extra with `gh api -X DELETE repos/<owner>/<repo>/releases/<id>` (keep either — the notes are identical). The verb's own idempotency does NOT prevent this: its `gh release view` probe runs ~immediately after the push, before `release.yml` has spun up, so it sees no existing release and creates one; `release.yml` then creates the second ~20–40s later. A follow-up should make the verb race-proof — e.g. wait for / adopt the `release.yml` draft, or have `release.yml` no-op when a release already exists.
 
 **Evidence:** CS77 v0.10.0 cut. After `harness release --publish --version 0.10.0 --sha 6ccc284 --pr 345 --apply`: `gh api …/releases` returned 2 entries for `v0.10.0` (id 347664859 author `henrik-me`; id 347664926 author `github-actions[bot]`), both `draft=true`, same `created_at`, identical bodies. Deleted the `github-actions[bot]` one → exactly one release; published to Latest.
+
+**Disposition:** Applied (CS79, merge `9171ca6`). `.github/workflows/release.yml`'s "Create GitHub Release" step now guards with `if gh release view "$TAG_NAME" >/dev/null 2>&1; then exit 0; fi` before `gh release create`, so it no-ops when the verb already created the release — the verb path yields a single draft (the verb creates the release ~1–2s post-push, before the workflow's ~20–40s spin-up). Manual (no-verb) tag pushes still get a release from the workflow. Order-independent verb hardening (skip on any post-push `gh release view`) is deferred as OQ2, not required.
 
 ### LRN-174
 
