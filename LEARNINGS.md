@@ -56,6 +56,66 @@ claim_area: templates
 
 ---
 
+### LRN-171
+
+```yaml
+id: LRN-171
+date: 2026-07-01
+category: process
+source_cs: CS67
+status: open
+tags: [workboard, auto-approve, pause, branch-allowlist, ci-gate]
+claim_area: workflows
+```
+
+**Problem:** Pausing an in-flight CS mid-work (to pick up a prerequisite) requires a WORKBOARD state change, which goes through a PR. A `workboard/cs<NN>-pause` PR **fails** the `validate-and-approve` (workboard-auto-approve) job because its branch-name allowlist recognizes only `claim|close|close-out` actions — even though `validate-workboard-only-scope`, `pr-body`, and `commit-trailers` all pass. So a legitimately-scoped pause PR cannot auto-merge.
+
+**Finding:** There is no first-class **pause / unclaim** workboard workflow. A pause PR must be admin-merged (owner override), or the auto-approve branch allowlist should be extended with a `pause`/`unclaim` action (and `check-workboard` should accept the `⏸️ Paused` state — it already does). Adjacent to CS71 (workboard-only gate hygiene).
+
+**Evidence:** CS67 session — PR #331 (CS65 pause) failed `validate-and-approve` with `branch name 'workboard/cs65-pause' does not match the workboard-only branch pattern` while all substantive gates passed; admin-merged as the documented owner-override path.
+
+**Disposition:** Open — candidate: extend `workboard-auto-approve.yml` branch regex to include `pause`/`unclaim`, or document pause admin-merge in OPERATIONS § Claim. Fold into CS71 if claimed.
+
+### LRN-172
+
+```yaml
+id: LRN-172
+date: 2026-07-01
+category: process
+source_cs: CS67
+status: open
+tags: [reviews, review-log, a5-ordering, timestamps, copilot]
+claim_area: review-loops
+```
+
+**Problem:** The A5+A16 gate (`scripts/check-copilot-review.mjs`) requires the Copilot review at the current HEAD to be submitted **after** the latest local (rubber-duck) Go review's timestamp. Fabricated review-log timestamps that postdate the real Copilot review fail A5 (surfacing as a stale-Go / "latest copilot review is on a stale commit" error even when Copilot *did* review the HEAD).
+
+**Finding:** In the `## Review log`, the local Go row's `timestamp` for a given HEAD must **precede** that HEAD's real Copilot review `submitted_at`. Because the rubber-duck and Copilot are dispatched in parallel and the rubber-duck finishes first, use realistic timestamps (rubber-duck-completion `<` Copilot-`submitted_at`); never fabricate a local-Go time later than the Copilot review. Fetch the real Copilot timestamps (`gh api .../pulls/<n>/reviews`) when filling the log.
+
+**Evidence:** CS67 PR #335 — an R5 Go row fabricated at `02:00:00Z` postdated Copilot's real `7f16be1` review (`01:48:07Z`); `read-only-gates` failed on A5 until every local-Go timestamp was corrected to precede its corresponding Copilot review.
+
+**Disposition:** Open — candidate: a one-line note in REVIEWS.md § 2.8 (Review log) documenting the timestamp-ordering rule.
+
+### LRN-173
+
+```yaml
+id: LRN-173
+date: 2026-07-01
+category: process
+source_cs: CS67
+status: open
+tags: [copilot-engage, api-lag, verification, review-at-head]
+claim_area: harness-cli
+```
+
+**Problem:** `harness copilot-engage <pr>` can **exit 0** (claiming a Copilot review at HEAD was found) while the actual Copilot review at the current HEAD only lands ~1–2 minutes later — so trusting its exit code leads to acting on a stale review state. Separately, ad-hoc `gh api .../pulls/<n>/reviews` (REST) and even GraphQL `reviews` queries can lag 1–2 minutes behind the review-at-HEAD state that `check-copilot-review.mjs` and the CI `copilot-review-attached` gate observe.
+
+**Finding:** Do not trust `copilot-engage`'s exit code alone. Verify the latest Copilot review's `commit_id == PR HEAD` before proceeding (poll the reviews list until it matches), and treat `scripts/check-copilot-review.mjs --head <HEAD>` / the CI `copilot-review-attached` gate as authoritative over ad-hoc queries. Each premature-proceed caused an extra alternating round (Copilot re-reviewed the new HEAD and found one more item).
+
+**Evidence:** CS67 PR #335/#336 across ~7 HEADs — `copilot-engage` exited 0 at poll ~2 (≈31s) but the reviews API showed the Copilot review one commit behind for 1–2 min; the authoritative `check-copilot-review --head` and `copilot-review-attached` gate were consistent.
+
+**Disposition:** Open — candidate: harden `lib/copilot-engage.mjs` to require `review.commit_id == headRefOid` before declaring success (not just "a review submitted at/after request time"), and add a retry/settle window.
+
 ### LRN-170
 
 ```yaml
