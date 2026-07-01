@@ -1,10 +1,10 @@
 # CS67 — `harness release` verb: mechanize the release cut
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs67/content
 **Started:** 2026-06-30
-**Closed:** —
+**Closed:** 2026-07-01
 **Filed by:** CS64 (2026-06-06 by `yoga-ah-c3`) per decision **C64-8** — the `release` verb cataloged in CS64's command/skill surface is spun out here because it depends on the release-process documentation that CS59 produces.
 **Depends on:** **CS59** (hard) — `harness release` mechanizes the procedure CS59 documents as `OPERATIONS.md § Release process`; that section is the spec. Also reuses `lib/cross-repo.mjs` (CS56) for consumer notification. Do not claim before CS59 closes. **CS64b** (hard, added 2026-06-10) — `harness release` allocates a temp clone for tag/release SHA verification and consumer-notification staging; it must adopt the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2) from the outset rather than retrofit them. C64b-3's `harness sync` new-managed-file reconciliation is also referenced by the consumer-notification path.
 
@@ -140,4 +140,10 @@ The single hardest sequencing constraint: the tag and GitHub release must land o
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, orchestrator omni-ah-c2)
+**Date:** 2026-07-01
+**Outcome:** GO
+
+- **PVI R1** (`cs67-pvi`, @ merged `91fd191`): **NEEDS-FIX** — 1 divergence. C67-1 / Exit-1 require the Phase A dry-run to print a **diff**, but `formatReleasePlan` emitted only per-file summary lines.
+- **Fix** (follow-up content PR #336, squash `8f5fe68`): threaded `oldContent` through every change + added a dependency-free LCS `unifiedDiffLines` renderer so the dry-run prints a unified diff (`--- a/`, `+++ b/`, `-/+` lines, ` …` gaps, empty-diff/header suppression) of every computed change; +6 tests (62 total). Reviewed rubber-duck R1–R3 (Go) + Copilot R1–R2 (clean).
+- **PVI R2** (`cs67-pvi-r2`, @ `8f5fe68`): **GO** — divergence resolved (dry-run renders per-file diffs); all other Decisions/Deliverables/Exit-criteria met; `lint` 33/0/3, `node --test` 1537 pass / 0 fail, `sync --mode=check` no drift.
