@@ -1,9 +1,9 @@
 # CS80 — Single release creator: the verb owns releases; delete `release.yml`
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs80/content
+**Started:** 2026-07-01
 **Closed:** —
 **Filed by:** `omni-ah-c2` (Claude Opus 4.8) on 2026-07-01, at @henrik-me's request ("go with option B, there should only be one thing that does the release"). The `harness release` verb (CS67) and `.github/workflows/release.yml` (CS14, pre-verb) both create a GitHub Release for a pushed tag ([LRN-175](../../../LEARNINGS.md#lrn-175)); CS79 mitigated the resulting double-draft by guarding the workflow (Option A). @henrik-me chose the **structural** fix (Option B, refined): make the **verb the single release creator** and **delete `release.yml`**. Because `release.yml` is **self-host-only** (never shipped to consumers), consumers *already* use the verb as their sole creator — so deleting `release.yml` makes the harness self-host **consistent** with every consumer, rather than shipping a workflow to everyone (the discarded B1 alternative).
 **Depends on:** **CS77** (`6ccc284` — discovered LRN-175) and **CS79** (`9171ca6` — the Option-A guard this CS supersedes). No hard code dependency. **No `lib/release.mjs` change** — the verb already creates the release; this CS only removes the redundant second creator.
