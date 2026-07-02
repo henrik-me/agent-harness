@@ -1743,10 +1743,10 @@ The workflow is split into TWO jobs per [ADR4-8 (`docs/adr/0004-copilot-graphql-
   because Copilot delivers reviews asynchronously (~3 min); a single-run
   engage-and-verify will always fail the verify step the first time.
 
-The workflow uses the canonical clone-then-run-`bin/harness.mjs` install
-pattern from `.github/workflows/harness-checks.yml` (NOT `npx harness@<ref>`
-— `harness` is a private package and npm 10.8.x's GitFetcher regression
-makes `npx` invocation flaky). The derive-ref step validates the resolved
+The workflow uses the canonical clone-then-run pattern from
+`.github/workflows/harness-checks.yml` — clone the harness repo and invoke
+`bin/harness.mjs` directly (NOT `npx harness@<ref>` — `harness` is a private
+package and npm 10.8.x's GitFetcher regression makes `npx` invocation flaky). The derive-ref step validates the resolved
 ref against the allowlist `^[a-zA-Z0-9._/-]+$` (CS12 R1 — shell-injection
 hardening) and uses environment-variable indirection for all interpolation.
 
