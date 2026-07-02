@@ -264,7 +264,7 @@ record.
   `schemas/*.schema.json` before authoring any field access. Field name guessing
   causes silent integration failures.
 - **Report shape:** every sub-agent must respond with the canonical report shape from
-  [OPERATIONS.md § Sub-agent report shape](OPERATIONS.md#sub-agent-report-shape).
+  [OPERATIONS.md § Sub-agent report shape](OPERATIONS.md#sub-agent-report-shape-mandatory).
   Reports missing this structure are rejected and the sub-agent is re-dispatched.
 - **Sub-agent briefing preamble**: every sub-agent dispatch MUST paste the canonical preamble from
   [OPERATIONS.md § Mandatory briefing preamble](OPERATIONS.md#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)

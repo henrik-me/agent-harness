@@ -154,7 +154,7 @@ Every active/done CS file must include explicit `## Tasks` rows for:
 `check-clickstop.mjs` enforces these rows for active CS files and for done CS
 files closed on or after CS15a's close-out enforcement date.
 
-**Directory-form CS close-out — `git mv` the whole directory (CS70 / LRN-A).** When a CS
+**Directory-form CS close-out — `git mv` the whole directory (CS70 / LRN-164).** When a CS
 plan lives in **directory form** (`<state>/<state>_cs<NN>_<slug>/<state>_cs<NN>_<slug>.md` —
 the plan file sits inside a per-CS directory that may hold sibling artifacts), the
 `active → done` rename in the close-out PR MUST be a **directory-level** rename of the entire
@@ -588,7 +588,7 @@ urgent cross-repo work routes through an issue. (The human user can
 still act directly outside the orchestrator at any time.)
 
 **Pre-flight — verify the target artifact exists before filing an "update file X"
-issue (CS70 / LRN-B).** Before filing a cross-repo issue whose deliverable is
+issue (CS70 / LRN-165).** Before filing a cross-repo issue whose deliverable is
 "update / annotate / add file `X` in consumer repo `Y`", the orchestrator MUST first
 verify **either** (a) that file `X` already exists in `Y` (e.g.
 `gh api repos/Y/contents/<path>`, `git ls-remote`, or a clone check), **or** (b) that a
@@ -599,7 +599,7 @@ belongs in a **harness-side CS**. Filing a consumer issue to "update a file that
 exist and that no harness contract emits" routes work against a phantom artifact — exactly
 the `sub-invaders-bootstrap-summary.md` misrouting
 ([sub-invaders#91](https://github.com/henrik-me/sub-invaders/issues/91) →
-[agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290); see LRN-B).
+[agent-harness#290](https://github.com/henrik-me/agent-harness/issues/290); see LRN-165).
 
 **Status questions (e.g. "is SI updated to v0.6.0?"):**
 

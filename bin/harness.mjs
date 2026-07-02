@@ -251,6 +251,7 @@ Self-host-only (when package.json.name === '@henrik-me/agent-harness'):
   - check-pack.mjs        (package whitelist)
   - check-scaffold-readme.mjs (one invocation per scaffolds/<name>/README.md; LRN-077)
   - check-consumer-template-genericity.mjs (consumer-onboarding doc set — genericity guard)
+  - check-doc-xref-resolvability.mjs (doc cross-ref resolvability — LRN tokens, cross-file anchors, onboarding relative links)
 
 Auto-dispatched scaffold policy linters (when harness.config.json declares
 the scaffold AND the consumer ships the corresponding script in scripts/):
@@ -2407,6 +2408,33 @@ instructions — not references that dangle back into the harness's own
 institutional memory. The guard makes the genericity invariant permanent so
 the dead-anchor regression cannot recur silently.
 `.trim(),
+  'doc-xref-resolvability': `
+**Linter:** check-doc-xref-resolvability (scripts/check-doc-xref-resolvability.mjs)
+**Target:** three doc cross-reference classes, self-host-only (gated by package
+          name, skipped unless package.json \`name\` is \`@henrik-me/agent-harness\`):
+          (a) OPERATIONS.md + REVIEWS.md (root), (b) INSTRUCTIONS.md (root),
+          (c) the consumer-onboarding doc set — template/managed/READMEGUIDE.md,
+          template/composed/INSTRUCTIONS.md,
+          template/composed/.github/copilot-instructions.md,
+          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md.
+**Rules:**
+  - (a) LRN tokens: every uppercase LRN-<id> token in OPERATIONS.md / REVIEWS.md
+    must resolve to a \`### LRN-<id>\` heading in LEARNINGS.md. A placeholder
+    (LRN-A/LRN-B) or dead numeric token (LRN-999) fails. (#352-F1)
+  - (b) cross-file anchors: every \`](X.md#anchor)\` link in INSTRUCTIONS.md whose
+    sibling doc X.md exists must point at a real heading in X.md (GitHub anchor
+    algorithm). A stale anchor fails. (#356a)
+  - (c) relative-link deliverability: every relative FILE link in an onboarding
+    doc must resolve to a target that ships under template/ (composed / managed /
+    seeded). A target absent from template/ (e.g. docs/adr/0001-*.md) fails. (#356b)
+  - Checks (b)/(c) skip fenced code blocks + inline-code spans so example links
+    do not false-positive; the composed process-doc bases are NOT scanned for (c)
+    (pervasive out-of-scope docs/adr links — follow-up R3).
+**Why:** The v0.10.0 templates shipped three dangling refs no gate caught
+(placeholder LRN tokens, a stale cross-file anchor, an undeliverable relative
+link). This guard makes each class mechanical and permanent so they cannot
+recur silently in a consumer-shipped doc.
+`.trim(),
 };
 
 async function cmdLint(args, _global) {
@@ -2623,6 +2651,29 @@ async function cmdLint(args, _global) {
       return {
         name: 'consumer-template-genericity',
         script: 'check-consumer-template-genericity.mjs',
+        args: isSelfHost ? ['--cwd', cwd] : null,
+        target: isSelfHost ? path.join(cwd, 'template') : null,
+      };
+    })(),
+    (() => {
+      // CS81 (C81-5/C81-6): doc cross-reference resolvability guard. Validates
+      // that (a) LRN tokens in OPERATIONS.md/REVIEWS.md resolve to LEARNINGS.md
+      // headings, (b) INSTRUCTIONS.md `](X.md#anchor)` links hit real headings,
+      // and (c) relative FILE links in the consumer-onboarding doc set ship
+      // under template/. Self-host-guarded by package name (like the genericity
+      // guard): checks (a)/(b) read consumer-present docs, so target=null makes
+      // the runner emit a clean "skipped" row in a consumer.
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft: skip xref-resolvability linter on parse error */ }
+      return {
+        name: 'doc-xref-resolvability',
+        script: 'check-doc-xref-resolvability.mjs',
         args: isSelfHost ? ['--cwd', cwd] : null,
         target: isSelfHost ? path.join(cwd, 'template') : null,
       };

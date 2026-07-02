@@ -21,6 +21,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Fixed
 
+- **CS81 (shipped-template dangling refs — #352-F1 + #356):** Fix three dangling cross-references shipped in the v0.10.0 consumer templates, each with a new resolvability guard. **(1)** `OPERATIONS.md` (+ `template/composed/` mirror) cited placeholder learning IDs `LRN-A`/`LRN-B` (never assigned at CS70 close-out) → corrected to the real `LRN-164`/`LRN-165` (bare tokens; a `LEARNINGS.md#…` link would 404 in consumers). **(2)** `INSTRUCTIONS.md` (+ mirror) linked the stale anchor `OPERATIONS.md#sub-agent-report-shape` → `#sub-agent-report-shape-mandatory` (the heading carries a `(mandatory)` suffix). **(3)** `template/managed/READMEGUIDE.md` linked `docs/adr/000{1,2}-*.md`, which exist at the harness root but ship under no `template/` class (404 in every consumer) → genericized (ADR pointers dropped, explanatory prose kept). New self-host-only, node-builtins-only linter `scripts/check-doc-xref-resolvability.mjs` (wired into `harness lint` as `doc-xref-resolvability`) now guards all three classes — LRN-token resolvability in `OPERATIONS.md`/`REVIEWS.md`, cross-file-anchor resolvability in `INSTRUCTIONS.md`, and relative-link deliverability for the consumer-onboarding doc set. A new linter script drives a **Minor** version bump (C81-6).
+
 ## [0.10.0] — 2026-07-01
 
 ### Added
