@@ -1,9 +1,9 @@
 # CS82 — Lock provenance robustness under npx installs (#352-F2)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs82/content
+**Started:** 2026-07-02
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — from the consumer-feedback triage of issue **#352** (Finding 2), filed by the sub-invaders orchestrator (`omni-si`) during the v0.10.0 pin bump (consumer PR henrik-me/sub-invaders#129). @henrik-me directed the two-CS split (CS81 = doc dangling-ref fixes; this CS = the sync lock-provenance code fix).
 **Depends on:** none (hard). **Revives CS26 decision C26-4** (the npx-cache lock-provenance strategy CS26's 2026-06-09 disposition wrongly marked "Obsolete/Done"). CS26 remains a separate stale bundle for its other live findings (#2/#3/#6/#9); this CS extracts only the lock-provenance strand.
@@ -70,11 +70,27 @@ Verified against `main` (HEAD `1e129fb`):
 | R1 | gpt-5.5 | claude-opus-4.8 | cs82-plan-review | 6e4fa1c9d5e3 | 2026-07-02T00:08:03Z | Needs-Fix | npx lock source wrong field; --resolved-sha not standalone recovery; fail-closed must be apply-only; schema allows all-zero (need explicit validator); add seam+migrate tests. |
 | R2 | gpt-5.5 | claude-opus-4.8 | cs82-plan-review-r2 | 45e27c669899 | 2026-07-02T00:14:03Z | Go-with-amendments | All 5 R1 blockers resolved (correct lock key, apply-only fail-closed, explicit validator, test seam+migration). Amend Risks R1 path key + R3 override wording. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Planned ledger (finalized at close-out). **Patch** SemVer (bug fix, no new CLI flag). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`; Copilot (`claude-sonnet`) alternating. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — npx-cache resolution in `lib/sync.mjs`: read the parent install project's `node_modules/.package-lock.json` `packages["node_modules/<pkg>"].resolved` for ref→SHA; reorder chain npx-cache→git→fail-closed (C82-2) | pending | omni-ah-c2 | NOT `packages[""]`. |
+| T2 — `validateResolvedProvenance()` (apply-mode) before `writeLock`: throw `ESYNC_UNRESOLVED_PROVENANCE` on `harness_ref==='unknown'`/all-zero SHA; scaffold versions from resolved ref (C82-3/4/5) | pending | omni-ah-c2 | Do NOT tighten the schema. |
+| T3 — exported provenance-resolution seam (git/fs/cache injectable); tests `os.tmpdir()` (npx-cache / self-host / fail-closed / SHA-without-ref); migrate existing `.git`-less fixtures `tests/sync.test.mjs:61-86,:1835-1841` (C82-7) | pending | omni-ah-c2 | Existing tests encode old placeholder behavior. |
+| T4 — OPERATIONS § Sync "Lock provenance" note + `--resolved-sha` refresh (both copies, lockstep); `LEARNINGS.md` learning; `CHANGELOG.md` `[Unreleased]` Fixed (C82-6) | pending | omni-ah-c2 | `harness check` no drift. |
+| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C82-9) | pending | omni-ah-c2 | Reviewer `gpt-5.5` ≠ implementer. |
+| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS82; CS65 stays paused) + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
+| Close-out: learnings — learning finalized | pending | omni-ah-c2 | — |
 
 ## Notes / Learnings
 
