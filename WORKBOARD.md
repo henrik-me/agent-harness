@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c3 — **CS65 taken over** from omni-ah-c2 (user-directed; c2 busy on other work). CS65 stays ⏸️ Paused — still gated on user-approval gates **G-target / G-threshold / Q1**, now being sought by the new owner omni-ah-c3 to resume. **Prior:** CS84 CLOSED — cut harness **v0.12.0** (draft GitHub Release pending the human's G-publish `gh release edit v0.12.0 --draft=false`).)
+> **Last updated:** 2026-07-02 (omni-ah-c3 — **CS65 resumed 🟢 Active**: @henrik-me gave sign-off; the T0 user-approval gates are resolved (G-target = ≈600-line *goal* not hard enforcement; G-threshold = archive `applied`/`obsolete` entries dated `<2026-06-01` via **stub-redirect** so all inbound anchors still resolve; Q1 = single `LEARNINGS-archive.md`). Implementation next on `cs65/content` — T4 resolvability guard + T2 OPERATIONS thinning to `harness <cmd> --help` pointers + T3 LEARNINGS archival. CS85 stays 🟢 Active under omni-ah-c2.)
 
 ## Orchestrators
 
@@ -28,7 +28,7 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c3 | cs65/content | 2026-07-02 | Taken over from omni-ah-c2 (2026-07-02, user-directed; c2 busy on other work). Still gated on user-approval gates G-target/G-threshold/Q1 — new owner omni-ah-c3 is seeking answers to resume. |
+| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | 🟢 Active | omni-ah-c3 | cs65/content | 2026-07-02 | — |
 | CS85 | CS85 — Consumer-doc clickstop-link durability: bootstrap-authoring doctrine + a link-durability guard (fixes #371, harness-side) | 🟢 Active | omni-ah-c2 | cs85/content | 2026-07-02 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

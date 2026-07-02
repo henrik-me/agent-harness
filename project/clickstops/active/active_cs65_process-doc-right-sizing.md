@@ -45,6 +45,14 @@ This is explicitly a separate CS from CS63 because aggressive trimming of load-b
 - **G-threshold** — confirm the `LEARNINGS.md` archival age/status threshold before moving entries (C65-3).
 - **G-target** — confirm the `OPERATIONS.md` line-count target / how aggressively to thin (C65-1).
 
+**Resolved 2026-07-02** (@henrik-me sign-off — "you have my sign-off, go"; exact threshold/archive-shape values are the orchestrator's documented decision under that sign-off, recorded here for review; orchestrator omni-ah-c3):
+
+- **G-target →** ≈600 lines is a **goal, not hard enforcement**. Direct user quote: *"the 600 line goal is not a hard enforcement it's a goal, everything needs to work as before just with a better structure for what exists, leveraging the full power of the harness."* Priority order for T2: (1) **no procedure loss** — every command-backed procedure body collapses to a "what it does / when to run it / `harness <cmd> --help`" stub with the executable detail backfilled into the command `--help`; (2) **preserve every heading anchor** (103 inbound `OPERATIONS.md#…` links repo-wide — thinning collapses bodies, never renames/removes a heading, per C65-5); (3) hit ≈600 lines only as far as (1)/(2) allow.
+- **G-threshold →** archive `applied`/`obsolete` entries **dated `< 2026-06-01`** (139 entries — the entire May backlog); **keep as full entries** all `open`/`deferred` (any date) **plus** all `applied`/`obsolete` dated `>= 2026-06-01` (June/July recent window). Active-log entry count 179 → ~40. Month distribution at decision time: May 139 / June 19 / July 6 applied+obsolete; 14 open + 1 deferred. Trivially re-tunable by moving the cut date.
+- **Archive shape (C65-3/C65-5 mechanism) →** **stub-redirect**, forced by **396 inbound `LEARNINGS.md#lrn-…` anchored links** repo-wide (OPERATIONS ×43 + composed ×43, INSTRUCTIONS ×14, CONTEXT ×11, CHANGELOG ×34, REVIEWS ×4, many historical `done_` files). Each archived entry: the full body (frontmatter + Problem/Finding/Evidence/Disposition) MOVES to `LEARNINGS-archive.md`; a **`### LRN-NNN` heading stub + one-line redirect stays in `LEARNINGS.md`**, so every existing `LEARNINGS.md#lrn-nnn` anchor and every bare `LRN-###` token still resolves unchanged (no repo-wide link rewrite; historical `done_` files untouched). "Everything works as before."
+- **Q1 →** a **single** `LEARNINGS-archive.md` (139 entries does not warrant per-era splitting).
+- **T4 scope refinement (recon finding) →** do NOT author a brand-new linter. CS81 already shipped `scripts/check-doc-xref-resolvability.mjs` (repo cross-ref resolvability). T4 = **extend** it + `check-learnings.mjs` to be archive/stub-aware (validate full entries in the archive; recognise heading-only stubs; guard no orphan stub↔archive-entry), and register `LEARNINGS-archive.md` in `harness lint` + text-encoding.
+
 ## Exit criteria
 
 1. `OPERATIONS.md` (+ composed mirror) procedure sections are pointer stubs referencing command help; the file is materially smaller (≈ target) with **no procedure removed without a command-help equivalent** (C65-1, C65-5).
@@ -86,7 +94,7 @@ This is explicitly a separate CS from CS63 because aggressive trimming of load-b
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T0 — User-approval gates: confirm G-threshold (LEARNINGS archival age/status) + G-target (OPERATIONS line target) + Q1 (single vs per-era archive) | pending | omni-ah-c3 | Blocks T2/T3 implementation. Orchestrator-owned (asks user). |
+| T0 — User-approval gates: confirm G-threshold (LEARNINGS archival age/status) + G-target (OPERATIONS line target) + Q1 (single vs per-era archive) | done | omni-ah-c3 | Resolved 2026-07-02 under @henrik-me sign-off — see `## User-approval gates § Resolved`. G-target=goal-not-hard; G-threshold=archive applied/obsolete dated <2026-06-01 via stub-redirect; Q1=single archive; T4=extend check-doc-xref-resolvability. |
 | T1 — Recon/baseline: pre-extraction OPERATIONS procedure-heading inventory (C65-5) + repo-wide inventory of every inbound `LRN-###` / `OPERATIONS.md#` / `LEARNINGS.md#` reference (C65-4 baseline) | pending | omni-ah-c3 | agent-id=cs65-recon \| role=explore \| report-status=pending \| learnings=0. Read-only recon; produces the audit baseline. |
 | T2 — OPERATIONS thinning: thin command-backed procedure sections to "what/when/`harness <cmd> --help`" stubs, one section per commit (C65-1/2); backfill any moved step detail into `bin/harness.mjs` --help | pending | omni-ah-c3 | Deliv. 1,2. agent-id=cs65-ops \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `OPERATIONS.md`, `template/composed/OPERATIONS.md`, `bin/harness.mjs`. Lockstep root+composed; depends on T0 G-target. |
 | T3 — LEARNINGS archival: split aged `applied`/`obsolete` entries into `LEARNINGS-archive.md`; keep all `open`/`deferred` in active log; every `LRN-###` anchor resolvable (C65-3) | pending | omni-ah-c3 | Deliv. 3. agent-id=cs65-learnings \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `LEARNINGS.md`, `LEARNINGS-archive.md`. Depends on T0 G-threshold/Q1. |
@@ -101,6 +109,8 @@ This is explicitly a separate CS from CS63 because aggressive trimming of load-b
 ## Notes / Learnings
 
 - **2026-07-02 — Ownership takeover (omni-ah-c2 → omni-ah-c3).** Reassigned at the user's direction (omni-ah-c2 is busy on other work). No `cs65/content` branch existed on `origin` — CS65 had stalled at **T0 (user-approval gates)** before any implementation, so the handoff is clean (no WIP to preserve). New owner omni-ah-c3 is seeking the **G-target / G-threshold / Q1** answers to unblock T2/T3. Reclaim landed via a workboard-only PR on `workboard/cs65-takeover`.
+
+- **2026-07-02 — Resumed 🟢 Active + gates resolved (omni-ah-c3).** @henrik-me gave sign-off to proceed. T0 gates dispositioned (see `## User-approval gates § Resolved`). Recon established: 396 inbound `LEARNINGS.md#lrn-` anchored links ⇒ archival must use **stub-redirect** (not a bare move); 103 inbound `OPERATIONS.md#` anchors ⇒ T2 preserves every heading; CS81's `check-doc-xref-resolvability.mjs` already exists ⇒ T4 **extends** it rather than adding a new linter; LEARNINGS entries carry a `date` field ⇒ date-based threshold is mechanical. Next: content branch `cs65/content` — T4 (guard) + T2 (OPERATIONS thinning) + T3 (LEARNINGS archival) via background sub-agents with disjoint file ownership.
 
 (further notes filled during execution)
 
