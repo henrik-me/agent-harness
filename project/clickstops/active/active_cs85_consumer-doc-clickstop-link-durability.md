@@ -1,9 +1,9 @@
 # CS85 — Consumer-doc clickstop-link durability: bootstrap-authoring doctrine + a link-durability guard (fixes #371, harness-side)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2 (Claude Opus 4.8)
+**Branch:** cs85/content
+**Started:** 2026-07-02
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — filed at @henrik-me's request from inbound bug **#371** (a `henrik-me/sub-invaders` bootstrap-authored `ARCHITECTURE.md` that links into a now-404 harness `project/clickstops/active/active_cs16…` path and duplicates the CS16 decision table). Harness-side root cause only; the consumer-side cleanup is **explicitly out of scope** (tracked separately in the consumer repo) — per @henrik-me, this CS does **no** cross-repo commits/PRs and instead files an inbound "addressed" issue in `sub-invaders` at close-out.
 **Depends on:** none (hard). Builds on **CS70** (`done_cs70_bootstrap-summary-doctrine-and-stale-links` — bootstrap-summary doctrine + cross-repo pre-flight; fixed #290) and the CS72/CS81 consumer-doc guard family (`scripts/check-consumer-template-genericity.mjs`, `scripts/check-doc-xref-resolvability.mjs`). Same failure family as **#229** (CS76, planned) and **#370** (CS83, done). No in-flight CS owns `OPERATIONS.md`'s composed core except paused **CS65** (Risks R4).
@@ -69,11 +69,25 @@ Close the harness-side root cause of **#371**: the bootstrap-authoring step embe
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs85-plan-review | 35cfe6b0ecd5 | 2026-07-02T16:39:54Z | Go-with-amendments | Sound root cause + scope; amended guard wiring so consumer mode really runs (not target:null), widened self-host scan to template/**, added #371-URL fixtures, kept provenance guard doctrine-only. |
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 (T1/T2) — finalized at integration |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | **Minor** SemVer (new linter `check-clickstop-link-durability.mjs`; no schema change). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (Go-with-amendments, hash `35cfe6b0ecd5`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Doctrine: add `### Consumer-doc bootstrap-authoring durability invariant` to `template/composed/OPERATIONS.md` composed core next to the CS72 genericity invariant (C85-1: no transient `active/` links + no duplicated clickstop decision tables/`(C<NN>-<n>)` provenance in durable consumer docs; prefer no link → commit-SHA permalink → stable `done/` pointer) | planned | — | implementer; owns `template/composed/OPERATIONS.md` only. Root mirror regenerated at T3 (lockstep). |
+| T2 — Guard: new `scripts/check-clickstop-link-durability.mjs` (branch-pinned `blob/<ref>/…/project/clickstops/active/…` permalink; allow 40-hex SHA-pin; consumer-active ERROR; scan-mode-by-package-name, NOT `target:null`) + register in `bin/harness.mjs` (lint registry both modes + `--explain` + help bullet) + `tests/cs85-clickstop-link-durability.test.mjs` + `tests/fixtures/**` (incl. exact #371 URL shape: `#fragment`, slashy ref, SHA-pin pass) (C85-2/3) | planned | — | implementer; owns `scripts/check-clickstop-link-durability.mjs`, `bin/harness.mjs`, `tests/cs85-*.test.mjs`, `tests/fixtures/cs85-*/**`. |
+| T3 — Integration (orchestrator): regenerate root `OPERATIONS.md` mirror LOCKSTEP (LRN-179 `mergeComposed` bootstrap; leave `.harness-lock.json` untouched); CHANGELOG `[Unreleased]` Added (guard) + Fixed/Documentation (doctrine); full `harness lint` + `node --test` green (C85-5/6/7) | planned | omni-ah-c2 | orchestrator integration after T1/T2 land. |
+| Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and rendered mirrors so a fresh agent can restart from actual state. |
+| Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md (new applied LRN); file the SI notify issue (C85-4); create follow-up CSs for anything unresolved. |
 
 ## Notes / Learnings
 
