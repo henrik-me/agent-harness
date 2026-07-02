@@ -25,10 +25,44 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
 
-import { sync, SyncError } from '../lib/sync.mjs';
+import { sync as _sync, SyncError } from '../lib/sync.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot   = path.resolve(__dirname, '..');
+
+// ---------------------------------------------------------------------------
+// CS82 — hermetic provenance seam.
+//
+// These fixtures build `.git`-less temp harness dirs. Provenance now derives
+// from the running install (C82-2), and apply mode fails-closed on unresolved
+// provenance (C82-3). Inject a resolvable git seam by default so the legacy
+// fixtures model a harness checkout at `v0.1.0`@<sha> WITHOUT depending on the
+// ambient repo's `.git`. Individual tests that pass their own `provenanceDeps`
+// opt out of this default.
+// ---------------------------------------------------------------------------
+const TEST_PROVENANCE_SHA  = 'a'.repeat(40);
+const TEST_PROVENANCE_DEPS = {
+  installRoot: '/cs82-hermetic-harness-checkout', // not under node_modules → git branch
+  readFileSync: () => { throw new Error('no npx cache in hermetic fixture'); },
+  execSync: (cmd) => {
+    if (cmd.includes('rev-parse HEAD')) return `${TEST_PROVENANCE_SHA}\n`;
+    if (cmd.includes('describe --tags --exact-match')) return 'v0.1.0\n';
+    if (cmd.includes('rev-parse --abbrev-ref')) return 'main\n';
+    throw new Error(`unexpected git command in hermetic fixture: ${cmd}`);
+  },
+};
+
+/**
+ * `sync()` wrapper that injects a hermetic, resolvable provenance seam when a
+ * test does not supply its own `provenanceDeps` (CS82). Preserves the existing
+ * single-object call convention used throughout this file.
+ */
+function sync(args) {
+  if (args && args.provenanceDeps === undefined) {
+    return _sync({ ...args, provenanceDeps: TEST_PROVENANCE_DEPS });
+  }
+  return _sync(args);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1832,13 +1866,21 @@ describe('sync() — CS11b resolvedShaOverride', () => {
     );
   });
 
-  it('absent override preserves current behavior', async () => {
+  it('absent override records derived (non-placeholder) provenance', async () => {
+    // CS82: with no --resolved-sha, provenance is derived from the running
+    // install. The hermetic seam (see top of file) resolves to v0.1.0@<sha>,
+    // so the lock must record a real ref + a real (non-all-zero) 40-hex SHA —
+    // never the old `unknown`/all-zero placeholder that npx used to leak.
     const result = await sync({
       consumerRepoPath: consumerDir,
       harnessRepoPath: harnessDir,
       mode: 'apply',
     });
     assert.match(result.lockAfter.resolved_sha, /^[0-9a-f]{40}$/);
+    assert.notEqual(result.lockAfter.resolved_sha, '0'.repeat(40));
+    assert.equal(result.lockAfter.resolved_sha, TEST_PROVENANCE_SHA);
+    assert.equal(result.lockAfter.harness_ref, 'v0.1.0');
+    assert.notEqual(result.lockAfter.harness_ref, 'unknown');
   });
 
   it('override with non-string value rejected', async () => {
