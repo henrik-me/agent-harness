@@ -12,6 +12,50 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-182
+
+```yaml
+id: LRN-182
+date: 2026-07-02
+category: process
+source_cs: CS65
+status: applied
+tags: [review-gates, copilot-engage, a5-ordering, review-log, timestamp, pr-body]
+claim_area: reviews
+```
+
+**Problem:** The A5+A16 Copilot-review gate (`read-only-gates` → `check-copilot-review` / `harness pr-evidence`) treats a Copilot review as **stale** when its `submittedAt` PRECEDES the latest local Go row's `timestamp` in the PR body's `## Review log` — the A5 ordering doctrine ("a Copilot review predating the latest local Go must not satisfy the gate"). When the orchestrator hand-writes the local Go row with a rounded or future timestamp that lands AFTER Copilot's actual review time, the gate fails ("A5+A16 did not pass") even though Copilot reviewed at the correct PR HEAD and left no findings.
+
+**Finding:** The local rubber-duck Go row's `timestamp` MUST be an instant **before** the Copilot review's `submittedAt`, because the enforced order is local-Go → then Copilot-review. When re-engaging Copilot after a fix commit, record the local Go with its real completion time (not a rounded/future value) and ensure it is earlier than Copilot's submission. `check-review-evidence` (A4) only validates the Go row's `analyzed_head`==HEAD + ISO format — it does NOT catch the A5 ordering violation, so the failure surfaces only in the separate `read-only-gates` job, which is easy to misread as a real Copilot-engagement failure.
+
+**Evidence:** CS65 PR #388: the R5 Go row timestamped `2026-07-02T19:00:00Z` while Copilot re-reviewed at `18:57:14Z` → `read-only-gates` A5+A16 failed while `copilot-review-attached` / `review-log-evidence` / `review-threads-resolved` all passed; correcting R5 to `18:55:00Z` (before Copilot's submission) made the gate pass on re-run.
+
+**Disposition:** Applied (CS65, merge `ef8a545`). Doctrine for future content-PR review logs; complements the A5 ordering doctrine in `OPERATIONS.md § A5 ordering doctrine` / REVIEWS.md.
+
+---
+
+### LRN-181
+
+```yaml
+id: LRN-181
+date: 2026-07-02
+category: process
+source_cs: CS65
+status: applied
+tags: [parallel-dispatch, sub-agent-ownership, archival, test-fixtures, doc-watchdog, integration]
+claim_area: clickstops
+```
+
+**Problem:** A CS that **archives or relocates content** breaks EXISTING tests that pin the moved content as real-data fixtures or doc-alignment watchdogs — CS65 moved 139 aged `LEARNINGS.md` entries to `LEARNINGS-archive.md` and thinned `OPERATIONS.md`, which broke `tests/cs49-operations-doctrine.test.mjs` (asserted `id: LRN-126` + body in `LEARNINGS.md`), `tests/cs48-implementer-self-review-ban.test.mjs` (LRN-127 evidence body), and `tests/cs44-docs-impl-alignment.test.mjs` (pinned `node(id:)` / `BOT_kgDOCnlnWA` literals in `OPERATIONS.md`). These tests are owned by **no sub-agent** — they sit outside every archival/thinning sub-agent's declared file scope — so the breakage falls through the ownership model and surfaces only in the full `node --test` suite at integration (7 failures), never in `harness lint` (which does not run `tests/`). Same full-suite-at-integration blind spot [LRN-180](#lrn-180)(d) records for lint-registry row-count tests, but a distinct class: **moved-content fixtures/watchdogs**, not registry counts.
+
+**Finding:** Before dispatching an archival/relocation/rename sub-agent, the orchestrator must **grep `tests/` for every token, path, or literal being moved** (`LRN-###` ids, doc anchors, pinned constants like `BOT_...`) and **pre-assign the resulting test fixups to the orchestrator's integration scope** (or a dedicated sub-agent) — the moving sub-agent's disjoint [file ownership](#lrn-016) guarantees it will NOT fix them. Corollary: run a full `node --test tests/*.test.mjs` at integration (not just `harness lint`) whenever a CS moves content other suites may reference. Fixes preserve each test's intent (the content still exists) by re-pointing it at the new location (archive body + stub redirect), never by weakening the assertion.
+
+**Evidence:** CS65 (merge `ef8a545`, #388). 7 integration `node --test` failures outside the 3 sub-agents' ownership: cs49 (`id: LRN-126` + `sub-invaders CS02 hotfix episode`), cs48 (LRN-127 `?startWave=N` evidence), cs44 (`BOT_kgDOCnlnWA` + `node(id:` in both `OPERATIONS.md` copies — the T2 thinning dropped the CS44-pinned literal), and `cs11-self-host-config` (new `LEARNINGS-archive.md` root file unclassified in `harness.config.json`). All fixed by the orchestrator at integration; `harness lint` stayed 34/0 green throughout (it does not run `tests/`).
+
+**Disposition:** Applied (CS65). Doctrine recorded here + in the CS65 `## Notes / Learnings`; complements [LRN-180](#lrn-180)(d) (lint-registry count) and [LRN-016](#lrn-016) (sub-agent file ownership).
+
+---
+
 ### LRN-180
 
 ```yaml
