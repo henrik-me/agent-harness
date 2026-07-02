@@ -318,15 +318,15 @@ function checkCrossFileAnchors() {
     while ((m = XFILE_ANCHOR_RE.exec(text)) !== null) {
       const targetDoc = m[1];
       const anchor = m[2];
-      // Only validate anchors into a sibling repo doc that actually exists; a
-      // link to a non-existent doc is a different (out-of-scope) class here.
-      const targetContent = readDoc(targetDoc);
-      if (targetContent === null) continue;
+      // Read + slug each target doc at most once; cache the anchor set (null =
+      // known-absent sibling doc, a different out-of-scope class here).
       let anchors = anchorSetCache.get(targetDoc);
-      if (!anchors) {
-        anchors = headingAnchorSet(targetContent);
+      if (anchors === undefined) {
+        const targetContent = readDoc(targetDoc);
+        anchors = targetContent === null ? null : headingAnchorSet(targetContent);
         anchorSetCache.set(targetDoc, anchors);
       }
+      if (anchors === null) continue;
       if (!anchors.has(anchor)) {
         logError(
           `${CHECK_B_DOC}:${lineNo}: cross-file anchor "${targetDoc}#${anchor}" does not resolve to a heading in ${targetDoc}`
