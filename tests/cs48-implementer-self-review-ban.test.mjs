@@ -74,8 +74,11 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
     }
   });
 
-  it('3. LRN-127 exists in root and seeded LEARNINGS with the Sub Invaders PR #28 evidence', () => {
-    for (const relPath of ['LEARNINGS.md', 'template/seeded/LEARNINGS.md']) {
+  it('3. LRN-127 exists with the Sub Invaders PR #28 evidence (root archived by CS65 → stub+archive; seeded full)', () => {
+    // The seeded LEARNINGS.md ships the full entry; the root LEARNINGS.md
+    // archived LRN-127 (CS65), so its body moved to LEARNINGS-archive.md behind
+    // an anchor-stable stub. The evidence must survive in both body-bearing files.
+    for (const relPath of ['template/seeded/LEARNINGS.md', 'LEARNINGS-archive.md']) {
       const content = read(relPath);
       assert.ok(content.includes('### LRN-127'), `${relPath} must contain LRN-127`);
       assert.ok(
@@ -91,5 +94,9 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
         `${relPath} must cite the concrete SI PR #28 review-evidence incident`,
       );
     }
+    // The root LEARNINGS.md keeps an anchor-stable stub redirecting to the archive.
+    const rootLearnings = read('LEARNINGS.md');
+    assert.ok(rootLearnings.includes('### LRN-127'), 'root LEARNINGS.md must keep the LRN-127 stub heading');
+    assert.match(rootLearnings, /LEARNINGS-archive\.md#lrn-127/);
   });
 });

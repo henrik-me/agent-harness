@@ -91,11 +91,15 @@ describe('CS49 operations doctrine', () => {
     });
   }
 
-  it('LEARNINGS.md records the downstream consumer gap as LRN-126', () => {
+  it('LEARNINGS.md records the downstream consumer gap as LRN-126 (archived by CS65: stub + archive body)', () => {
+    // CS65 archived LRN-126 (applied, pre-2026-06-01): LEARNINGS.md keeps an
+    // anchor-stable stub redirect and the full entry moved to the archive.
     const learnings = readRepoFile('LEARNINGS.md');
     assert.match(learnings, /^### LRN-126$/m);
-    assert.match(learnings, /id: LRN-126/);
-    assert.match(learnings, /sub-invaders CS02 hotfix episode/);
-    assert.match(learnings, /orchestrator-availability/);
+    assert.match(learnings, /LEARNINGS-archive\.md#lrn-126/);
+    const archive = readRepoFile('LEARNINGS-archive.md');
+    assert.match(archive, /id: LRN-126/);
+    assert.match(archive, /sub-invaders CS02 hotfix episode/);
+    assert.match(archive, /orchestrator-availability/);
   });
 });

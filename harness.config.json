@@ -85,7 +85,8 @@
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
-    "CODE_OF_CONDUCT.md"
+    "CODE_OF_CONDUCT.md",
+    "LEARNINGS-archive.md"
   ],
   "templating": {
     "harness_invoke": "node bin/harness.mjs",
