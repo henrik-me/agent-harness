@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-178
+
+```yaml
+id: LRN-178
+date: 2026-07-02
+category: architectural
+source_cs: CS82
+status: applied
+tags: [provenance, lock-file, npx, fail-closed, sync-engine, package-lock]
+claim_area: sync-engine
+```
+
+**Problem:** `harness sync --mode=apply` derived the lock's `harness_ref` + `resolved_sha` solely by shelling `git` against the running install directory. Under `npx`/`npm` installs that directory has no `.git` (npm strips it from the installed package), so the git probe failed and the engine silently recorded a placeholder — `harness_ref: "unknown"`, an all-zero `resolved_sha`, and `version: "unknown"` scaffolds — a corrupt, non-reproducible pin that passed the lock schema (which accepts any 40-hex incl. all-zero) and only surfaced downstream (#352-F2).
+
+**Finding:** Provenance must NOT derive solely from the CLI's own `.git`. The authoritative source under npx/npm is the install project's `node_modules/.package-lock.json`: the harness package's `packages["node_modules/<pkg>"]` entry carries the resolved commit in its `resolved` `git+https://…#<40-hex>` URL and the requested ref in `from`/spec/`version` (NOT `packages[""]`, which a `github:` install leaves without a `resolved`). The derivation is an ordered chain — (1) npx/npm cache → (2) git self-host → (3) fail-closed — resolved from the RUNNING module's package root (`import.meta.url`), not the passed-in harness path, so it is correct under both npx and self-host. Apply mode must FAIL-CLOSED (new `ESYNC_UNRESOLVED_PROVENANCE`, writing no lock) rather than persist a placeholder; `--resolved-sha` overrides only `resolved_sha`, so it is not a standalone rescue when `harness_ref` is underivable. Crucially the guard is apply-only: `sync --mode=check`/`--mode=dry-run` validate file drift, NOT provenance, so they never start red-flagging a pre-existing corrupt lock. The lock schema is deliberately NOT tightened (tightening would fail-closed on READING an existing placeholder lock).
+
+**Evidence:** #352-F2 (sub-invaders v0.10.0 pin-adoption feedback). CS82: `lib/sync.mjs` exports `resolveHarnessProvenance(deps)` (seam-injectable fs reader + git runner + install root; npx-cache → git → fail-closed) and `validateResolvedProvenance()` (apply-only guard, new `ESYNC_UNRESOLVED_PROVENANCE` code); scaffold `version`s derive from the resolved `harness_ref`. `tests/cs82-lock-provenance.test.mjs` (27 tests, `os.tmpdir()` only) covers every branch incl. sha-without-ref → fail-closed (C82-7) and check/dry-run no-throw (C82-8); `tests/sync.test.mjs` migrated to a hermetic provenance seam. `OPERATIONS.md` + `template/composed/OPERATIONS.md` § Sync gained a "Lock provenance" subsection; `schemas/harness-lock.schema.json` left unchanged (C82-3).
+
+**Disposition:** Applied (CS82). The ordered chain + apply-mode fail-closed ship in `lib/sync.mjs`; docs + CHANGELOG `[Unreleased]` (Fixed, patch bump) record it. Merge SHA recorded at close-out.
+
+---
+
 ### LRN-177
 
 ```yaml

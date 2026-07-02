@@ -1862,11 +1862,15 @@ with a previewable upgrade.
   Default: `process.cwd()`.
 - **`--accept-major`** — required when the resolved template version is a
   major bump from the pinned version (see § SemVer policy).
-- **`--resolved-sha <40hex>`** (apply-mode only) — pin the recorded
-  `resolved_sha` field in `.harness-lock.json` to a specific 40-character
-  lowercase hex commit SHA, instead of letting the engine derive it from
-  `git rev-parse HEAD`. Removes the post-commit-regenerate ordering trap
-  ([LRN-070](LEARNINGS.md#lrn-070)) for CSs that touch templates AND root
+- **`--resolved-sha <40hex>`** (apply-mode only) — override **only** the
+  recorded `resolved_sha` field in `.harness-lock.json` with a specific
+  40-character lowercase hex commit SHA, instead of the SHA derived by the
+  provenance chain (§ Lock provenance). It does **not** set `harness_ref`, so
+  it is **not** a standalone rescue for an install whose provenance is
+  otherwise unresolvable: a real `harness_ref` must still be derivable (from
+  the npx/npm cache or a git checkout) or apply fails closed
+  (`ESYNC_UNRESOLVED_PROVENANCE`). Removes the post-commit-regenerate ordering
+  trap ([LRN-070](LEARNINGS.md#lrn-070)) for CSs that touch templates AND root
   files in the same commit: commit content first, then `harness sync
   --mode=apply --resolved-sha <commit-sha>` records a lock that points at
   the actual content commit. The override is rejected (exit 2) in
@@ -1881,6 +1885,39 @@ with a previewable upgrade.
 - **`--quiet`** (CS64b C64b-3) — suppress the new-managed-file advisory (below);
   errors still go to stderr. (Net-new on `sync` in CS64b — before then
   `harness sync --quiet` errored.)
+
+### Lock provenance (CS82)
+
+Apply mode records the running harness install's identity in
+`.harness-lock.json` as `harness_ref` (the symbolic ref — tag / branch / spec)
+and `resolved_sha` (the exact 40-char commit SHA). These are derived by an
+ordered chain against the **harness install** (never the consumer repo):
+
+1. **npx / npm cache.** The install project's
+   `node_modules/.package-lock.json` entry for the harness package
+   (`packages["node_modules/<pkg>"]`) carries the authoritative `resolved`
+   `git+https://…#<sha>` URL and the requested ref (`from` / spec / `version`).
+   This is the source of truth under `npx` / `npm`, which strip the installed
+   package's own `.git`.
+2. **git self-host.** When the harness runs from its own git checkout (e.g.
+   local development), the ref + SHA come from `git describe` / `rev-parse`
+   against the install directory.
+3. **Fail-closed.** If neither yields a real ref + SHA, apply mode **throws**
+   `ESYNC_UNRESOLVED_PROVENANCE` and writes **no** lock — it never persists a
+   placeholder (`harness_ref: "unknown"`, an all-zero `resolved_sha`, or
+   `version: "unknown"` scaffolds). Scaffold `version`s derive from the
+   resolved `harness_ref`, so they are guaranteed non-placeholder too.
+
+**npx vs. checkout guidance.** Run apply from a context where provenance is
+resolvable: either a git checkout parked at the intended ref, or an
+`npx` / `npm` install whose `node_modules/.package-lock.json` is present. A bare
+source tarball with neither will fail closed by design. `--resolved-sha` fixes
+only `resolved_sha` once a real `harness_ref` is derivable — it is not a
+substitute for a resolvable install (see § Flags).
+
+The fail-closed guard runs in **apply mode only**: `--mode=check` and
+`--mode=dry-run` validate file drift, not provenance, so they never start
+red-flagging a pre-existing lock that already contains placeholder values.
 
 ### New-managed-file reconciliation (CS64b)
 
