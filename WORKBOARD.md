@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS83 CLOSED** (consumer-doc invocation-form genericity — `{{harness_invoke}}` render-context templating + invocation guard, fix #370), merge `e05aa75`; **#370 closed**. Minor SemVer (new optional `harness_invoke` templating key). CS65 stays ⏸️ Paused (blocked on user gates). Next: release + sub-invaders pin-bump issue.)
+> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS84 CLOSED** (cut harness **v0.12.0** — Minor, CS83's `harness_invoke` key + #369 docs), content merge `3e66461`; annotated tag `v0.12.0` + **one DRAFT** GitHub Release + sub-invaders pin-bump issue #139. **G-publish pending:** the human runs `gh release edit v0.12.0 --draft=false` to publish to Latest. CS65 stays ⏸️ Paused (blocked on user gates).)
 
 ## Orchestrators
 
@@ -29,6 +29,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on unanswered user-approval gates (G-target/G-threshold/Q1); CS81+CS82 (#352/#356 remediation) now closed — reclaimable by owner once the gates are answered |
-| CS84 | CS84 — Cut harness v0.12.0 | 🟢 Active | omni-ah-c2 | cs84/content | 2026-07-02 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
