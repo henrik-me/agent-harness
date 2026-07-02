@@ -74,10 +74,11 @@ const ACTIVE_PATH = 'project/clickstops/active/';
 // `blob/` (no slash); (2) rest = everything after `blob/<seg1>/` up to the URL
 // boundary (MAY contain `/`, so a slashy ref/path and a trailing `#frag`/`?query`
 // are captured). Boundary chars (excluded from every class): whitespace and
-// `)` `]` `"` `'` `<` `>` backtick `|` — so a markdown link `](url)`, autolink
-// `<url>`, table cell `| url |`, or inline-code span terminates the match.
+// `)` `]` `"` `'` `<` `>` backtick `|` `\` — so a markdown link `](url)`, autolink
+// `<url>`, table cell `| url |`, inline-code span, or a trailing escape (`\`) all
+// terminate the match (none are valid in a GitHub URL path).
 const BLOB_RE =
-  /https?:\/\/github\.com\/[^/\s)\]"'<>`|]+\/[^/\s)\]"'<>`|]+\/blob\/([^/\s)\]"'<>`|]+)\/([^\s)\]"'<>`|]*)/g;
+  /https?:\/\/github\.com\/[^/\s)\]"'<>`|\\]+\/[^/\s)\]"'<>`|\\]+\/blob\/([^/\s)\]"'<>`|\\]+)\/([^\s)\]"'<>`|\\]*)/g;
 
 // A full 40-hex commit SHA — a permalink pinned on one of these is durable.
 const SHA_RE = /^[0-9a-f]{40}$/;
@@ -95,14 +96,21 @@ function normalizeLF(content) {
 }
 
 /**
- * Strip inline-code spans from a single line, CommonMark-correctly: a code span
- * opens with a run of N backticks and closes with a run of EXACTLY N backticks.
- * A run that is too long/short does NOT close the span (e.g. `` ``url``` `` is
- * NOT a 2-backtick span — its 3-backtick run is not a valid close — so its URL
- * stays LIVE and is not hidden). Implemented as an explicit forward scan (no
- * regex, hence no backtracking / ReDoS); worst case is bounded linear in the
- * line length. A code span found is replaced with a space so surrounding text
- * does not fuse.
+ * Strip inline-code spans from a single line, CommonMark-correctly enough for a
+ * doc linter:
+ *   - a code span opens with a run of N backticks and closes with a run of
+ *     EXACTLY N backticks (a too-long/short run does NOT close — e.g.
+ *     `` ``url``` `` is not a 2-span, so its URL stays LIVE and is flagged);
+ *   - a backslash-escaped backtick (`` \` ``) is a LITERAL character, never a
+ *     delimiter (so `` \`url\` `` is NOT a code span — its URL stays LIVE).
+ *     Backslashes bind left-to-right: each `\` consumes the next char as a
+ *     literal pair, so `` \\` `` = literal backslash + a real span delimiter.
+ * Implemented as an explicit forward scan (no regex → no backtracking / ReDoS).
+ * A found span is replaced with a space so surrounding text does not fuse.
+ * Worst case is a bounded polynomial in line length (a run with no valid close
+ * rescans its suffix once); deterministic and negligible for committed-doc
+ * lines. HTML entities / numeric-escape backticks are out of scope (a durable
+ * doc does not wrap a live permalink in `&#96;`).
  *
  * @param {string} line - a single line (no newline).
  * @returns {string} the line with inline-code spans removed.
@@ -112,19 +120,30 @@ function stripInlineCode(line) {
   let i = 0;
   const n = line.length;
   while (i < n) {
+    // Backslash escape: this char + the next are literal; an escaped backtick is
+    // NOT a code-span delimiter.
+    if (line[i] === '\\' && i + 1 < n) {
+      out += line[i] + line[i + 1];
+      i += 2;
+      continue;
+    }
     if (line[i] !== '`') {
       out += line[i];
       i++;
       continue;
     }
-    // Measure the opening backtick run.
+    // Measure the opening (unescaped) backtick run.
     let j = i;
     while (j < n && line[j] === '`') j++;
     const runLen = j - i;
-    // Find a closing run of EXACTLY runLen backticks.
+    // Find a closing run of EXACTLY runLen UNescaped backticks.
     let k = j;
     let close = -1;
     while (k < n) {
+      if (line[k] === '\\' && k + 1 < n) {
+        k += 2; // skip an escaped char (an escaped backtick cannot close)
+        continue;
+      }
       if (line[k] !== '`') {
         k++;
         continue;

@@ -177,6 +177,21 @@ describe('scanTextForViolations (detection rule)', () => {
     assert.equal(hits[0].url, BAD_BRANCH);
   });
 
+  it('flags a URL wrapped in ESCAPED backticks (\\` is literal, not a delimiter)', () => {
+    // In CommonMark `\`url\`` is NOT a code span (the backticks are literal), so
+    // the URL is LIVE and must be flagged (regression guard: escaped-delimiter
+    // over-strip = false-negative).
+    const hits = scanTextForViolations('prose \\`' + BAD_BRANCH + '\\` more\n');
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].url, BAD_BRANCH);
+  });
+
+  it('still skips a real code span after an escaped backslash (\\\\`url` is a span)', () => {
+    // `\\` is a literal backslash; the following `url` IS a real code span, so
+    // the URL is an example and must be skipped (escape parity check).
+    assert.deepEqual(scanTextForViolations('pre \\\\`' + BAD_BRANCH + '` post\n'), []);
+  });
+
   it('does not flag active/ appearing only in a benign URL query string or fragment', () => {
     assert.deepEqual(
       scanTextForViolations('[q](https://github.com/o/r/blob/main/README.md?p=project/clickstops/active/x)\n'),
