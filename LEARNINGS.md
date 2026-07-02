@@ -19,7 +19,7 @@ id: LRN-179
 date: 2026-07-02
 category: process
 source_cs: CS83
-status: applied
+status: open
 tags: [consumer-templates, invocation-forms, templating, render-context, npx, non-strict-templating, guard]
 claim_area: templates
 ```
@@ -30,7 +30,7 @@ claim_area: templates
 
 **Evidence:** #370 (sub-invaders v0.10.0→v0.11.0 adoption review). CS83: 3 invocations in `template/composed/INSTRUCTIONS.md`, 3 in `.github/copilot-instructions.md` (+1 adjacent false "schema validation" claim fixed), 6 in `RETROSPECTIVES.md`, 2 in `READMEGUIDE.md`, 8 in `template/composed/OPERATIONS.md` (7 templated, 1 reworded — the clone-then-`node bin/harness.mjs` CI prose → source-ref). `computeHarnessInvokeDefault` + merge in `lib/sync.mjs`; `harness.config.json` override; `check-consumer-template-genericity.mjs` `INVOCATION_SCOPE_SET` (8 docs) + 2 patterns + 11 fixtures. **Self-host composed-root regeneration gotcha (for future composed-template CSs):** roots are regenerated in LOCKSTEP with templates and must never be left divergent — `sync --mode=apply`/`check` fail-closed here on composed divergence because the CS55-era lock's `template_prose_hash` was stale (case-b) and INSTRUCTIONS/copilot-instructions lock entries were mis-classed `managed` (case-d). Regenerated correctly via `mergeComposed(rendered, root, { lockRecords: [], lockTemplateProseHash: null })` (case-c bootstrap auto-adopt), lock left untouched (matches the `0a4eff8` self-host pattern; `sync --mode=check` compares root-vs-rendered-template, not the lock). Full `node --test` 1609 pass / 0 fail (+25); `harness lint` 34/0.
 
-**Disposition:** Applied (CS83, merge `<pending — finalized at close-out>`). Minor SemVer (new optional `harness_invoke` templating key; open string map, no schema change). Follow-up: the self-host lock is stale (CS55-era `harness_ref`/`resolved_sha`, mis-classed composed entries) — out of CS83 scope; a lock-normalization pass could adopt it.
+**Disposition:** Open — flips to `applied` at CS83 close-out with the content-PR merge SHA (#374). Minor SemVer (new optional `harness_invoke` templating key; open string map, no schema change). Follow-up: the self-host lock is stale (CS55-era `harness_ref`/`resolved_sha`, mis-classed composed entries) — out of CS83 scope; a lock-normalization pass could adopt it.
 
 ---
 

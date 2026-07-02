@@ -368,17 +368,30 @@ for (const doc of SCOPE_SET) {
 
 // ---------------------------------------------------------------------------
 // Invocation pass — consumer-invalid `node bin/harness.mjs` / `node
-// scripts/<x>.mjs` run commands over the broader invocation scope set. A
-// whole-file line scan is used for every doc (composed or managed): it covers
-// template regions AND default local-block bodies, so a malformed marker cannot
-// hide an invocation. The shared composed bases are already marker-validated by
-// the anchor pass; re-validating here would double-report a parse error.
+// scripts/<x>.mjs` run commands over the broader invocation scope set. Composed
+// bases ONLY in this set (OPERATIONS.md / REVIEWS.md / CONVENTIONS.md) are
+// marker-validated here via scanComposed (fail-closed on a malformed marker);
+// the composed bases shared with the anchor scope (INSTRUCTIONS.md /
+// copilot-instructions.md) were already marker-validated by the anchor pass, so
+// they use a whole-file scan to avoid double-reporting a parse error. Either
+// way the whole file — template regions AND default local-block bodies — is
+// scanned, so a malformed marker cannot hide an invocation. Managed docs are
+// scanned whole.
 // ---------------------------------------------------------------------------
+
+const anchorComposedPaths = new Set(
+  SCOPE_SET.filter((d) => d.kind === 'composed').map((d) => path.join(cwd, ...d.segments)),
+);
 
 for (const doc of INVOCATION_SCOPE_SET) {
   const content = readInScope(doc);
   if (content === null) continue;
-  scanWhole(doc.display, content, INVOCATION_PATTERNS);
+  const absPath = path.join(cwd, ...doc.segments);
+  if (doc.kind === 'composed' && !anchorComposedPaths.has(absPath)) {
+    scanComposed(doc.display, content, INVOCATION_PATTERNS);
+  } else {
+    scanWhole(doc.display, content, INVOCATION_PATTERNS);
+  }
 }
 
 // ---------------------------------------------------------------------------

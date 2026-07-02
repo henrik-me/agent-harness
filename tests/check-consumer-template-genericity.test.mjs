@@ -319,4 +319,16 @@ describe('check-consumer-template-genericity — invocation scan (CS83 / C83-5)'
     assert.equal(status, 1);
     assert.match(stderr, /template\/composed\/REVIEWS\.md: cannot read file/);
   });
+
+  it('(q) marker-validates an invocation-only composed base — a malformed OPERATIONS.md marker is surfaced (exit 1)', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-unclosed-marker.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    // OPERATIONS.md is composed and invocation-only (outside the anchor scope);
+    // the invocation scan marker-validates it via scanComposed, so an unclosed
+    // marker is surfaced as a parse error, and the whole-file fallback still
+    // catches the invocation the broken marker would otherwise hide.
+    assert.match(stderr, /composed parse error \(ECOMPOSED_UNCLOSED\)/);
+    assert.match(stderr, /template\/composed\/OPERATIONS\.md:\d+: node bin\/harness\.mjs/);
+  });
 });
