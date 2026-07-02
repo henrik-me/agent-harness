@@ -95,14 +95,67 @@ function normalizeLF(content) {
 }
 
 /**
+ * Strip inline-code spans from a single line, CommonMark-correctly: a code span
+ * opens with a run of N backticks and closes with a run of EXACTLY N backticks.
+ * A run that is too long/short does NOT close the span (e.g. `` ``url``` `` is
+ * NOT a 2-backtick span — its 3-backtick run is not a valid close — so its URL
+ * stays LIVE and is not hidden). Implemented as an explicit forward scan (no
+ * regex, hence no backtracking / ReDoS); worst case is bounded linear in the
+ * line length. A code span found is replaced with a space so surrounding text
+ * does not fuse.
+ *
+ * @param {string} line - a single line (no newline).
+ * @returns {string} the line with inline-code spans removed.
+ */
+function stripInlineCode(line) {
+  let out = '';
+  let i = 0;
+  const n = line.length;
+  while (i < n) {
+    if (line[i] !== '`') {
+      out += line[i];
+      i++;
+      continue;
+    }
+    // Measure the opening backtick run.
+    let j = i;
+    while (j < n && line[j] === '`') j++;
+    const runLen = j - i;
+    // Find a closing run of EXACTLY runLen backticks.
+    let k = j;
+    let close = -1;
+    while (k < n) {
+      if (line[k] !== '`') {
+        k++;
+        continue;
+      }
+      let m = k;
+      while (m < n && line[m] === '`') m++;
+      if (m - k === runLen) {
+        close = k;
+        break;
+      }
+      k = m; // wrong-length run — cannot close; skip past it
+    }
+    if (close === -1) {
+      // No valid close: the opening backticks are literal text.
+      out += line.slice(i, j);
+      i = j;
+    } else {
+      out += ' '; // drop the whole span (open..close)
+      i = close + runLen;
+    }
+  }
+  return out;
+}
+
+/**
  * Yield `{ lineNo, text }` for every line OUTSIDE a fenced code block, with
  * inline-code spans stripped — so example URLs inside ``` fences or `backticks`
  * are not treated as live links. A simple fence toggle on ``` / ~~~ lines
  * suffices for these docs (mirrors check-doc-xref-resolvability.mjs). Inline
- * stripping is delimiter-length-aware (`` `x` ``, ``` ``x`y`` ```, …): a code
- * span opened by a run of N backticks closes on the next run of N backticks
- * (CommonMark), so double-backtick spans wrapping a `` ` ``-bearing URL are
- * also skipped.
+ * stripping is delimiter-length-aware via `stripInlineCode` (`` `x` ``,
+ * ``` ``x`y`` ```, …).
  */
 function contentLines(content) {
   const out = [];
@@ -114,10 +167,7 @@ function contentLines(content) {
       continue;
     }
     if (inFence) continue;
-    // Strip inline-code spans: an opening run of N backticks (captured) closes
-    // on the next identical-length run. `.*?` is lazy + line-scoped (no newline
-    // in a single line), so this is linear-bounded (no ReDoS).
-    out.push({ lineNo: i + 1, text: lines[i].replace(/(`+).*?\1/g, '') });
+    out.push({ lineNo: i + 1, text: stripInlineCode(lines[i]) });
   }
   return out;
 }

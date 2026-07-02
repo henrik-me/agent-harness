@@ -169,6 +169,14 @@ describe('scanTextForViolations (detection rule)', () => {
     assert.deepEqual(scanTextForViolations(`prose \`\`${BAD_BRANCH}\`\` more\n`), []);
   });
 
+  it('flags a URL after a MISMATCHED backtick run (``url``` is not a valid 2-span)', () => {
+    // Open run of 2, close run of 3 — not a CommonMark code span, so the URL is
+    // LIVE and must NOT be hidden (regression guard: over-stripping = false-neg).
+    const hits = scanTextForViolations(`prose \`\`${BAD_BRANCH}\`\`\` more\n`);
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].url, BAD_BRANCH);
+  });
+
   it('does not flag active/ appearing only in a benign URL query string or fragment', () => {
     assert.deepEqual(
       scanTextForViolations('[q](https://github.com/o/r/blob/main/README.md?p=project/clickstops/active/x)\n'),
