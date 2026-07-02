@@ -279,7 +279,7 @@ function validateDoc(markdownText, { quiet: isQuiet, sourceLabel = null }) {
 
   // -------------------------------------------------------------------------
   // Check 6 — section heading validation
-  //   Warn if entries exist for a status but the matching ## heading is absent.
+  //   Error if entries exist for a status but the matching ## heading is absent.
   //   Error if an unrecognised ## heading is present.
   //
   //   NOTE: section placement does NOT have to match status (per LEARNINGS.md
@@ -302,7 +302,7 @@ function validateDoc(markdownText, { quiet: isQuiet, sourceLabel = null }) {
     deferred: 'Deferred',
   };
 
-  // Warn if entries exist in a category but the heading is missing.
+  // Error if entries exist in a category but the heading is missing.
   for (const [status, heading] of Object.entries(statusToHeading)) {
     const hasEntries = validBlocks.some((b) => b.parsed.status === status);
     if (hasEntries && !existingH2Headings.has(heading)) {
@@ -414,14 +414,20 @@ const main = validateDoc(markdownText, { quiet, sourceLabel: null });
 
 let archive = null;
 const archivePath = path.join(path.dirname(filePath), 'LEARNINGS-archive.md');
-if (fs.existsSync(archivePath)) {
-  let archiveText;
-  try {
-    archiveText = fs.readFileSync(archivePath, 'utf8');
-  } catch (err) {
+// existsSync() returns false on permission/I/O errors too, so gating the read
+// behind it would fail OPEN (silently skip a present-but-unreadable archive).
+// Read directly and treat only a genuinely absent archive (ENOENT) as a no-op;
+// any other read error fails CLOSED (mirrors readDoc() in check-doc-xref-resolvability).
+let archiveText = null;
+try {
+  archiveText = fs.readFileSync(archivePath, 'utf8');
+} catch (err) {
+  if (err.code !== 'ENOENT') {
     process.stderr.write(`check-learnings: cannot read archive "${archivePath}": ${err.message}\n`);
     process.exit(1);
   }
+}
+if (archiveText !== null) {
   archive = validateDoc(archiveText, { quiet, sourceLabel: 'LEARNINGS-archive.md' });
 }
 

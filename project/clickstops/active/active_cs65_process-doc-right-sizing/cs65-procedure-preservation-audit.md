@@ -63,10 +63,10 @@ Archival moved 139 aged `applied` entries (dated `<2026-06-01`) to
   `check-doc-xref-resolvability.mjs` check (d) and `check-learnings.mjs`
   sibling-archive validation.
 
-## 4. Mechanical gates (all green at audit time)
+## 4. Mechanical gates (all green; counts are a snapshot at the CS85-merge HEAD and drift as the repo grows)
 
-- `node bin/harness.mjs lint --quiet` → 34 passed / 0 failed / 3 skipped
-- `node --test tests/*.test.mjs` → 1628 tests, 1627 pass, 0 fail, 1 skip
+- `node bin/harness.mjs lint --quiet` → 35 passed / 0 failed / 3 skipped
+- `node --test tests/*.test.mjs` → 1666 tests, 1665 pass, 0 fail, 1 skip
 - `node bin/harness.mjs sync --mode=check --cwd .` → No drift detected (exit 0)
 - `cs65-t5-audit.mjs` (this audit) → AUDIT PASSED: no procedure heading anchor lost
 

@@ -190,7 +190,7 @@ unless its basename is declared in an optional `.harness-closeout-allow-drop` fi
 **What:** move a planned CS into flight — run the preflight + harvest gate, cut
 the `cs<NN>/claim` branch, `git mv` the CS file `planned → active`, and add the
 WORKBOARD Active Work row. **When:** at the start of a CS, from an up-to-date
-`main`, before any implementation work. **How:** run `harness claim CS<NN>`
+`main`, before any implementation work. **How:** run `node bin/harness.mjs claim CS<NN>`
 (dry-run by default; `--apply` executes the branch cut + rename + WORKBOARD
 edit). It NEVER commits and NEVER pushes — you own the commit message
 (`Claim CS<NN>` with the `Co-authored-by: Copilot` trailer) and the
