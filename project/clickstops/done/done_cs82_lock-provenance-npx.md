@@ -1,10 +1,10 @@
 # CS82 — Lock provenance robustness under npx installs (#352-F2)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs82/content
 **Started:** 2026-07-02
-**Closed:** —
+**Closed:** 2026-07-02
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — from the consumer-feedback triage of issue **#352** (Finding 2), filed by the sub-invaders orchestrator (`omni-si`) during the v0.10.0 pin bump (consumer PR henrik-me/sub-invaders#129). @henrik-me directed the two-CS split (CS81 = doc dangling-ref fixes; this CS = the sync lock-provenance code fix).
 **Depends on:** none (hard). **Revives CS26 decision C26-4** (the npx-cache lock-provenance strategy CS26's 2026-06-09 disposition wrongly marked "Obsolete/Done"). CS26 remains a separate stale bundle for its other live findings (#2/#3/#6/#9); this CS extracts only the lock-provenance strand.
 
@@ -78,24 +78,33 @@ Verified against `main` (HEAD `1e129fb`):
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah-c2 |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
-| Notes | Planned ledger (finalized at close-out). **Patch** SemVer (bug fix, no new CLI flag). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`; Copilot (`claude-sonnet`) alternating. |
+| Notes | Finalized at close-out. **Patch** SemVer (bug fix, no new CLI flag). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`; Copilot (`claude-sonnet`) alternating across 2 rounds. |
 
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — npx-cache resolution in `lib/sync.mjs`: read the parent install project's `node_modules/.package-lock.json` `packages["node_modules/<pkg>"].resolved` for ref→SHA; reorder chain npx-cache→git→fail-closed (C82-2) | pending | omni-ah-c2 | NOT `packages[""]`. |
-| T2 — `validateResolvedProvenance()` (apply-mode) before `writeLock`: throw `ESYNC_UNRESOLVED_PROVENANCE` on `harness_ref==='unknown'`/all-zero SHA; scaffold versions from resolved ref (C82-3/4/5) | pending | omni-ah-c2 | Do NOT tighten the schema. |
-| T3 — exported provenance-resolution seam (git/fs/cache injectable); tests `os.tmpdir()` (npx-cache / self-host / fail-closed / SHA-without-ref); migrate existing `.git`-less fixtures `tests/sync.test.mjs:61-86,:1835-1841` (C82-7) | pending | omni-ah-c2 | Existing tests encode old placeholder behavior. |
-| T4 — OPERATIONS § Sync "Lock provenance" note + `--resolved-sha` refresh (both copies, lockstep); `LEARNINGS.md` learning; `CHANGELOG.md` `[Unreleased]` Fixed (C82-6) | pending | omni-ah-c2 | `harness check` no drift. |
-| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C82-9) | pending | omni-ah-c2 | Reviewer `gpt-5.5` ≠ implementer. |
-| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS82; CS65 stays paused) + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
-| Close-out: learnings — learning finalized | pending | omni-ah-c2 | — |
+| T1 — npx-cache resolution in `lib/sync.mjs`: read the parent install project's `node_modules/.package-lock.json` `packages["node_modules/<pkg>"].resolved` for ref→SHA; reorder chain npx-cache→git→fail-closed (C82-2) | done | omni-ah-c2 | `resolveHarnessProvenance` in PR #366 (`24f36287`); from the running module's package root. |
+| T2 — `validateResolvedProvenance()` (apply-mode) before `writeLock`: throw `ESYNC_UNRESOLVED_PROVENANCE` on `harness_ref==='unknown'`/all-zero SHA; scaffold versions from resolved ref (C82-3/4/5) | done | omni-ah-c2 | Apply-mode only; schema untouched. |
+| T3 — exported provenance-resolution seam (git/fs/cache injectable); tests `os.tmpdir()` (npx-cache / self-host / fail-closed / SHA-without-ref); migrate existing `.git`-less fixtures (C82-7) | done | omni-ah-c2 | 28 fixtures; hermetic seam wrapper migrated the legacy tests. |
+| T4 — OPERATIONS § Sync "Lock provenance" note + `--resolved-sha` refresh (both copies, lockstep); `LEARNINGS.md` learning; `CHANGELOG.md` `[Unreleased]` Fixed (C82-6) | done | omni-ah-c2 | LRN-178; no drift; bare `LRN-070` on the touched line. |
+| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C82-9) | done | omni-ah-c2 | lint 34/0/3; node --test 1585/0-fail; no drift. 2 review rounds (GPT-5.5 Go×2 + Copilot; all threads resolved). PR #366 admin-merged `24f36287`. |
+| Close-out: docs + restart state — rename active→done; WORKBOARD (remove CS82; CS65 stays paused) + CONTEXT; `sync --mode=check` clean | done | omni-ah-c2 | This PR. |
+| Close-out: learnings — learning finalized | done | omni-ah-c2 | LRN-178 merge SHA `24f36287`. |
 
 ## Notes / Learnings
 
-- Closes #352-F2. Revives CS26 C26-4 (npx-cache provenance); CS26's other findings stay in that bundle.
+- **Shipped** in PR #366 (squash `24f36287`, admin-merged 2026-07-02). Closes #352-F2. Revives CS26 C26-4 (npx-cache provenance); CS26's other findings (#2/#3/#6/#9) stay in that bundle.
+- **Implemented by a background sub-agent** (`cs82-impl`, claude-opus-4.8). Key design: provenance derives from the running module's package root (`import.meta.url`), not `harnessRepoPath` — in production = REPO_ROOT (identical behavior), in tests points at the real repo, which kept non-owned apply tests green with zero edits.
+- **Confirmed asymmetry (C82-7 vs C82-9):** the npx-cache branch fails-closed when no symbolic ref is derivable, while the git self-host branch retains its `sha[:7]` ref fallback (backward-compat). Intended: the common npx case derives a ref from the install spec; only ref-less npx installs fail closed. A direct regression test for the git `sha[:7]` fallback was added at review (GPT-5.5 R1).
+- **Review:** 2 alternating rounds on PR #366 (GPT-5.5 rubber-duck **Go ×2** + Copilot). Copilot R1 flagged a `LEARNINGS.md#lrn-070` link on the CS82-touched `--resolved-sha` note (404s in the consumer-shipped composed copy) → converted to a bare `LRN-070` token per CS81's C81-2 (the rest of the composed base's pervasive `LEARNINGS.md#lrn-` links remain the CS81-R3/CS76 follow-up). Converged R2 clean.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs82-pvi`)
+**Date:** 2026-07-02
+**Outcome:** GO
+
+Run against `main` at the squash-merge HEAD `24f36287` (PR #366). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence, REVIEWS § 2.3). All Decisions/Deliverables **match** with evidence: **C82-2** — `resolveHarnessProvenance` (npx-cache → git → fail-closed), reads `packages["node_modules/<pkg>"].resolved`, derives from the running install root not `harnessRepoPath` (`lib/sync.mjs:255-455`). **C82-3/C82-8** — `validateResolvedProvenance` throws `ESYNC_UNRESOLVED_PROVENANCE` on unknown/all-zero, called only under `if (mode === 'apply')` after `--resolved-sha`, before planning/writes (`:468-483`, `:1034-1047`); check/dry-run best-effort; no schema diff. **C82-4** — scaffold versions derive from resolved `harness_ref`. **C82-5** — `--resolved-sha` overrides only `resolved_sha`; no `--harness-ref` flag; no dangling `resolveHarnessRef` callers. **C82-6** — both OPERATIONS copies carry the matching § Sync "Lock provenance" note + refreshed `--resolved-sha` note (bare `LRN-070`, no consumer-dangling `LEARNINGS.md#` link); LRN-178 `applied`; CHANGELOG `[Unreleased]` Fixed; `harness check` no drift. **C82-7** — `tests/cs82-lock-provenance.test.mjs` covers npx-cache / git self-host incl. `sha[:7]` fallback / fail-closed / SHA-without-ref / `--resolved-sha` / check-dry-run-no-throw; legacy `tests/sync.test.mjs` fixtures migrated via a hermetic seam. No `lib/lock.mjs`/`bin`/`schemas` change.
+
+The reviewer's flagged deviation (`harness lint` 33/1/3 + a few full-suite clickstop-test failures) was the expected **close-out-in-progress** state — the empty `## Plan-vs-implementation review` + `Status: active`; populating this section + Status→done resolves it (`harness lint --quiet` = 34/0/3 at close-out).
