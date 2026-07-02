@@ -236,6 +236,19 @@ describe('resolveHarnessProvenance() — git self-host branch', () => {
     assert.equal(prov.source, 'git');
   });
 
+  it('C82-9: falls back to the short SHA when neither an exact tag nor a branch name resolves', () => {
+    const exec = (cmd) => {
+      if (cmd.includes('rev-parse HEAD')) return `${SHA_A}\n`;
+      if (cmd.includes('describe --tags --exact-match')) throw new Error('no tag');
+      if (cmd.includes('rev-parse --abbrev-ref')) throw new Error('no branch');
+      throw new Error('x');
+    };
+    const prov = resolveHarnessProvenance({
+      installRoot: '/tmp/co', readFileSync: throwingRead, execSync: exec,
+    });
+    assert.deepEqual(prov, { harness_ref: SHA_A.slice(0, 7), resolved_sha: SHA_A, source: 'git' });
+  });
+
   it('rejects a non-40-hex HEAD (falls through to fail-closed)', () => {
     const prov = resolveHarnessProvenance({
       installRoot: '/tmp/co',

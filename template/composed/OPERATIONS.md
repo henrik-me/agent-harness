@@ -1870,7 +1870,7 @@ with a previewable upgrade.
   otherwise unresolvable: a real `harness_ref` must still be derivable (from
   the npx/npm cache or a git checkout) or apply fails closed
   (`ESYNC_UNRESOLVED_PROVENANCE`). Removes the post-commit-regenerate ordering
-  trap ([LRN-070](LEARNINGS.md#lrn-070)) for CSs that touch templates AND root
+  trap (LRN-070) for CSs that touch templates AND root
   files in the same commit: commit content first, then `harness sync
   --mode=apply --resolved-sha <commit-sha>` records a lock that points at
   the actual content commit. The override is rejected (exit 2) in
