@@ -1,9 +1,9 @@
 # CS84 — Cut harness v0.12.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs84/content
+**Started:** 2026-07-02
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02, at @henrik-me's request ("release"). One distributed-surface clickstop (**CS83** — consumer-doc invocation-form genericity, #370) plus one distributed-surface docs PR (**#369** — workboard auto-merge branch patterns in the composed `OPERATIONS.md` base) have shipped since `v0.11.0` (2026-07-02). CS83 adds a new **optional `templating` config key** (`harness_invoke`) — a **Minor** signal per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) — so the pending cut is **v0.12.0**.
 **Depends on:** none (hard). Uses the shipped, validated `harness release` verb (CS67 + CS78; first live use CS77/v0.10.0). `.github/workflows/release.yml` was **deleted by CS80** (single-creator), so the verb is the sole Release creator — **no `release.yml`-vs-verb double-draft** (the CS77 primary finding is now structurally eliminated).
@@ -96,11 +96,25 @@ Conclusion: **no published or draft GitHub Release and no git tag exists for `v0
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs84-plan-review | 1c7b01b48eb9 | 2026-07-02T13:15:46Z | Go-with-amendments | GPT-5.5: SemVer Minor / F6 probes / #369-bullet / release.yml-gone / verb usage verified; amendment applied: resolve ALL Phase A README warnings (:5/:35/:37), not just install pins |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | **Minor** SemVer (v0.11.0 → v0.12.0; CS83's new optional `harness_invoke` templating key). HIGH-RISK release (irreversible tag + Release) — GPT-5.5 review-of-record + Copilot; **not** in `reviews.high_risk_clickstops` (C84-8, CS70/CS74/CS77 precedent). Independence: reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan review Go-with-amendments (hash `1c7b01b48eb9`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Pre-release audit + Phase A cut: add #369 CHANGELOG `### Documentation` bullet (C84-3); `harness release --version 0.12.0 --apply` (version bump + CHANGELOG promotion + README pin sweep); resolve ALL Phase A README warnings (`:5`/`:35`/`:37`) + add v0.12.0 Status narrative; validate lint + tests | pending | omni-ah-c2 | orchestrator-owned (release cut, not sub-agent fan-out). |
+| T2 — Content PR review + merge: GPT-5.5 review-of-record + Copilot converge; admin squash-merge `cs84/content` | pending | omni-ah-c2 | HIGH-RISK; GPT-5.5 only. |
+| T3 — Phase B publish (draft) + consumer notify: `harness release --publish --version 0.12.0 --sha <squash> --pr <pr> --apply --consumer henrik-me/sub-invaders --consumer-body <file>` → annotated tag + **draft** Release + sub-invaders pin-bump issue; **STOP at the draft** (human G-publish) | pending | omni-ah-c2 | Irreversible; G-publish is the human gate (C84-9). |
+| Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md so a fresh agent can restart. |
+| Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md; note the draft-pending-publish state + any follow-ups. |
 
 ## Notes / Learnings
 
