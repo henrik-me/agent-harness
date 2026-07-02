@@ -17,6 +17,18 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Fixed
 
+## [0.12.0] — 2026-07-02
+
+### Added
+
+### Changed
+
+### Documentation
+
+- **#369 (workboard auto-merge branch patterns):** Document the workboard-only PR auto-merge branch-naming convention in the composed `OPERATIONS.md` base (promotes the previously memory-only convention into the repo per LRN-153): a `workboard-only`-labelled PR auto-merges only when its branch matches `cs<NN>/(claim|close|close-out)`, `workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?` (with an optional lowercase CS suffix letter, e.g. `cs64b`); a non-matching workboard PR (e.g. `workboard/cs<NN>-pause`) keeps the label so the review-evidence gates skip, but its `validate-and-approve` job fails the branch-name check and an admin squash-merges it.
+
+### Fixed
+
 - **CS83 (consumer-doc invocation-form genericity — #370):** Fix consumer-shipped onboarding docs (`INSTRUCTIONS.md`, `.github/copilot-instructions.md`, `RETROSPECTIVES.md`, `READMEGUIDE.md`) and the `OPERATIONS.md` process base instructing consumers to run harness-repo-local invocations — `node bin/harness.mjs <cmd>` and `node scripts/<harness-script>.mjs` — that do not exist in a consumer (which invokes the CLI via `npx -y github:henrik-me/agent-harness#<ref>` and ships neither `bin/harness.mjs` nor the harness `scripts/`). Introduces a `{{harness_invoke}}` templating placeholder rendered per context: the harness self-host keeps `node bin/harness.mjs` (via a `templating.harness_invoke` config override) while consumers render `npx -y github:henrik-me/agent-harness#<ref>` (`<ref>` = the consumer's pinned `config.version`, else a literal `<ref>` placeholder). `lib/sync.mjs` injects this default UNDER `config.templating` (`computeHarnessInvokeDefault`), so every existing consumer gets the corrected form on the next `harness sync` with no re-init and no literal `{{harness_invoke}}` leak (templating is non-strict — an unresolved key ships verbatim). Single-linter script examples (`check-learnings`, `check-readme`, `check-pr-body`, `check-planning-locality`, `check-text-encoding`, `check-templates`) map to `{{harness_invoke}} lint` (verified against the lint registry); the harness-repo-only `validate-schemas.mjs` reference is dropped (config-schema conformance maps to `{{harness_invoke}} sync --mode=check`), correcting a false "`harness lint` runs schema validation" claim. `scripts/check-consumer-template-genericity.mjs` gains an orthogonal, `node `-anchored **invocation scan** across the 8-file consumer-shipped composed+managed doc set (kept separate from the anchor-token scan so it can cover `OPERATIONS.md`, which legitimately carries CS/LRN tokens) so the regression cannot recur. Adding the optional `harness_invoke` templating key drives a **Minor** bump (`templating` is an open string map — no schema change). Re-files the command-example half of #356 (its link/anchor half was CS81).
 
 ## [0.11.0] — 2026-07-02
@@ -520,7 +532,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...v0.9.0
