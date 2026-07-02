@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-179
+
+```yaml
+id: LRN-179
+date: 2026-07-02
+category: process
+source_cs: CS83
+status: applied
+tags: [consumer-templates, invocation-forms, templating, render-context, npx, non-strict-templating, guard]
+claim_area: templates
+```
+
+**Problem:** Consumer-shipped onboarding docs (and `OPERATIONS.md`) hard-coded harness-repo-local *run commands* — `node bin/harness.mjs <cmd>` and `node scripts/<harness-script>.mjs` — that do not exist in a consumer (which installs the CLI via `npx -y github:henrik-me/agent-harness#<ref>` and ships neither `bin/harness.mjs` nor the harness `scripts/`). Because these live in harness-managed core template prose (not consumer-owned local blocks), a consumer cannot fix them without `harness sync --mode=check` reporting drift, and `.github/copilot-instructions.md` ships as active repository custom instructions an agent reads every session (#370; re-files the command-example half of #356 CS81 left). The CS72 genericity guard caught banned LRN/CS/slug *anchor* tokens but not consumer-invalid *invocation* forms.
+
+**Finding:** A command shown in a consumer-shipped doc must be runnable in a consumer, gated on render context via the existing `{{key}}` templating engine — NOT hard-coded. (a) A `{{harness_invoke}}` placeholder renders `node bin/harness.mjs` on the self-host (via a `templating.harness_invoke` config override) and `npx -y github:henrik-me/agent-harness#<ref>` for consumers. (b) **Non-strict-templating hazard:** `lib/templating.mjs` `applyTemplating` defaults `strict=false` and emits an unresolved `{{key}}` LITERALLY — so a new placeholder MUST have a value for every consumer or it ships as literal `{{harness_invoke}}` (worse than the bug). The fix injects a computed default UNDER `config.templating` in `lib/sync.mjs` (`{ harness_invoke: computeHarnessInvokeDefault(config), ...config.templating }`), so a config value wins and every existing consumer is covered on next sync with no re-init. (c) Map a script example to a CLI command only after verifying equivalence: `harness lint` runs check-learnings/readme/pr-body/planning-locality/text-encoding/templates but NOT `validate-schemas.mjs` (harness-repo-only) — asserting otherwise ships a false fact-claim (REVIEWS § 2.6a). (d) Guard it with a `node `-anchored invocation scan kept ORTHOGONAL to the anchor-token scan (a separate scope set), so it can cover `OPERATIONS.md`, which legitimately carries CS/LRN tokens the anchor scan bans.
+
+**Evidence:** #370 (sub-invaders v0.10.0→v0.11.0 adoption review). CS83: 3 invocations in `template/composed/INSTRUCTIONS.md`, 3 in `.github/copilot-instructions.md` (+1 adjacent false "schema validation" claim fixed), 6 in `RETROSPECTIVES.md`, 2 in `READMEGUIDE.md`, 8 in `template/composed/OPERATIONS.md` (7 templated, 1 reworded — the clone-then-`node bin/harness.mjs` CI prose → source-ref). `computeHarnessInvokeDefault` + merge in `lib/sync.mjs`; `harness.config.json` override; `check-consumer-template-genericity.mjs` `INVOCATION_SCOPE_SET` (8 docs) + 2 patterns + 11 fixtures. **Self-host composed-root regeneration gotcha (for future composed-template CSs):** roots are regenerated in LOCKSTEP with templates and must never be left divergent — `sync --mode=apply`/`check` fail-closed here on composed divergence because the CS55-era lock's `template_prose_hash` was stale (case-b) and INSTRUCTIONS/copilot-instructions lock entries were mis-classed `managed` (case-d). Regenerated correctly via `mergeComposed(rendered, root, { lockRecords: [], lockTemplateProseHash: null })` (case-c bootstrap auto-adopt), lock left untouched (matches the `0a4eff8` self-host pattern; `sync --mode=check` compares root-vs-rendered-template, not the lock). Full `node --test` 1609 pass / 0 fail (+25); `harness lint` 34/0.
+
+**Disposition:** Applied (CS83, merge `<pending — finalized at close-out>`). Minor SemVer (new optional `harness_invoke` templating key; open string map, no schema change). Follow-up: the self-host lock is stale (CS55-era `harness_ref`/`resolved_sha`, mis-classed composed entries) — out of CS83 scope; a lock-normalization pass could adopt it.
+
+---
+
 ### LRN-178
 
 ```yaml

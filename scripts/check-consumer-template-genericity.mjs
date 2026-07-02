@@ -1,24 +1,51 @@
 #!/usr/bin/env node
 /**
- * scripts/check-consumer-template-genericity.mjs — Guard linter (CS72 / C72-3).
+ * scripts/check-consumer-template-genericity.mjs — Guard linter (CS72 / C72-3;
+ * invocation scan CS83 / C83-5).
  *
- * Fails if any consumer-onboarding doc in the defined scope set contains a
- * harness-internal reference. This makes the consumer-template genericity
- * invariant permanent: the exact regression CS64b shipped (harness-internal
- * LRN/CS/anchor refs leaking into consumer-shipped docs) cannot recur silently.
+ * Runs two orthogonal scans over the consumer-shipped harness docs:
  *
- * Scope set (each resolved to its generic location, relative to --cwd):
+ *   1. ANCHOR scan (CS72) — fails if any onboarding doc in the anchor scope set
+ *      contains a harness-internal reference. This makes the consumer-template
+ *      genericity invariant permanent: the exact regression CS64b shipped
+ *      (harness-internal LRN/CS/anchor refs leaking into consumer-shipped docs)
+ *      cannot recur silently.
+ *
+ *   2. INVOCATION scan (CS83) — fails if any process/onboarding doc in the
+ *      broader invocation scope set contains a consumer-invalid harness-repo run
+ *      command (`node bin/harness.mjs …` or `node scripts/<x>.mjs …`). Neither
+ *      path exists in a consumer checkout, so such an invocation fails there with
+ *      `Cannot find module` (issue #370). The scans are kept separate because
+ *      process docs (e.g. OPERATIONS.md) legitimately carry LRN/CS tokens — so
+ *      they cannot join the anchor scan — yet their run commands must still be
+ *      consumer-runnable.
+ *
+ * Anchor scope set (each resolved to its generic location, relative to --cwd):
  *   - template/composed/INSTRUCTIONS.md               (composed base)
  *   - template/composed/.github/copilot-instructions.md (composed base)
  *   - template/managed/TRACKING.md                    (scrubbed managed)
  *   - template/managed/RETROSPECTIVES.md              (scrubbed managed)
  *   - template/managed/READMEGUIDE.md                 (managed, already clean)
  *
- * Banned references (each is a FAIL anywhere in a consumer-shipped doc):
+ * Invocation scope set — the broader consumer-shipped composed + managed process
+ * and onboarding docs (the five anchor docs plus the composed process bases):
+ *   - the five anchor-scope docs above
+ *   - template/composed/OPERATIONS.md                 (composed base)
+ *   - template/composed/REVIEWS.md                    (composed base)
+ *   - template/composed/CONVENTIONS.md                (composed base)
+ *
+ * Banned anchor references (each is a FAIL anywhere in an anchor-scope doc):
  *   - a `LEARNINGS.md#lrn-` link
  *   - a bare `\bLRN-\d+\b` token
  *   - a bare `\bCS\d+[a-z]?\b` token
  *   - the (case-insensitive) `henrik-me/agent-harness` slug
+ *
+ * Banned invocations (each is a FAIL anywhere in an invocation-scope doc). Both
+ * patterns are anchored on the `node ` run prefix, so a backtick source-ref
+ * (e.g. `` `bin/harness.mjs` ``) and the `{{harness_invoke}}` templating
+ * placeholder are NOT flagged — only actual run commands are:
+ *   - `\bnode\s+bin/harness\.mjs\b`
+ *   - `\bnode\s+scripts/[\w-]+\.mjs\b`
  *
  * For composed bases, the ENTIRE base is scanned — including the default body
  * of `<!-- harness:local-start id=... -->` local blocks. That default body is
@@ -83,6 +110,59 @@ const SCOPE_SET = [
 ];
 
 // ---------------------------------------------------------------------------
+// Invocation scope set — the broader set scanned for consumer-invalid harness
+// run commands (C83-5). Superset of SCOPE_SET: the five onboarding docs plus the
+// composed process bases OPERATIONS.md / REVIEWS.md / CONVENTIONS.md, which
+// legitimately carry LRN/CS tokens (so they stay OUT of the anchor scan) but
+// whose run-command examples must still be consumer-runnable. Same
+// { display, segments, kind } shape; the invocation scan is a whole-file line
+// scan for every kind (see the invocation pass below).
+// ---------------------------------------------------------------------------
+
+const INVOCATION_SCOPE_SET = [
+  {
+    display: 'template/composed/INSTRUCTIONS.md',
+    segments: ['template', 'composed', 'INSTRUCTIONS.md'],
+    kind: 'composed',
+  },
+  {
+    display: 'template/composed/.github/copilot-instructions.md',
+    segments: ['template', 'composed', '.github', 'copilot-instructions.md'],
+    kind: 'composed',
+  },
+  {
+    display: 'template/managed/TRACKING.md',
+    segments: ['template', 'managed', 'TRACKING.md'],
+    kind: 'managed',
+  },
+  {
+    display: 'template/managed/RETROSPECTIVES.md',
+    segments: ['template', 'managed', 'RETROSPECTIVES.md'],
+    kind: 'managed',
+  },
+  {
+    display: 'template/managed/READMEGUIDE.md',
+    segments: ['template', 'managed', 'READMEGUIDE.md'],
+    kind: 'managed',
+  },
+  {
+    display: 'template/composed/OPERATIONS.md',
+    segments: ['template', 'composed', 'OPERATIONS.md'],
+    kind: 'composed',
+  },
+  {
+    display: 'template/composed/REVIEWS.md',
+    segments: ['template', 'composed', 'REVIEWS.md'],
+    kind: 'composed',
+  },
+  {
+    display: 'template/composed/CONVENTIONS.md',
+    segments: ['template', 'composed', 'CONVENTIONS.md'],
+    kind: 'composed',
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Banned-reference patterns. Precise + word-boundaried to avoid false
 // positives on legitimate generic prose (the word "learnings", "clickstop",
 // the placeholders LRN-NNN / CSNN, etc.).
@@ -102,6 +182,21 @@ const PATTERNS = [
   // not slip the guard (Copilot review #322; matches how the slug is treated
   // elsewhere in the codebase).
   { name: 'slug', re: /henrik-me\/agent-harness/gi },
+];
+
+// ---------------------------------------------------------------------------
+// Invocation patterns (C83-5). Both are anchored on the `node ` run prefix so
+// they match RUN COMMANDS but not prose/backtick source-refs
+// (`` `bin/harness.mjs` ``) or the `{{harness_invoke}}` templating placeholder.
+// `node --test …` is not matched either (it is neither `node bin/harness.mjs`
+// nor `node scripts/<x>.mjs`).
+// ---------------------------------------------------------------------------
+
+const INVOCATION_PATTERNS = [
+  // `node bin/harness.mjs …` — the harness CLI entry point, not shipped to consumers.
+  { name: 'harness-bin-invocation', re: /\bnode\s+bin\/harness\.mjs\b/g },
+  // `node scripts/<harness-script>.mjs …` — harness-repo-only linters/scripts.
+  { name: 'harness-script-invocation', re: /\bnode\s+scripts\/[\w-]+\.mjs\b/g },
 ];
 
 // ---------------------------------------------------------------------------
@@ -135,15 +230,23 @@ for (let i = 0; i < argv.length; i++) {
   } else if (a === '--help' || a === '-h') {
     process.stdout.write(
       'Usage: check-consumer-template-genericity.mjs [--cwd <dir>] [--allow <token>]... [--quiet]\n\n' +
-      'Fail if any consumer-onboarding doc in the scope set contains a\n' +
-      'harness-internal reference (a bare LRN-<digits> / CS<digits> token, a\n' +
-      'LEARNINGS.md#lrn- anchor, or the case-insensitive henrik-me/agent-harness\n' +
-      'slug). Composed bases are scanned in full, including default local-block\n' +
-      'bodies (they ship to consumers); the composed marker parser only\n' +
-      'fail-closes on malformed markers.\n\n' +
+      'Run two orthogonal genericity scans over the consumer-shipped harness docs:\n\n' +
+      '  1. Anchor scan — fail if any onboarding doc in the anchor scope set\n' +
+      '     contains a harness-internal reference (a bare LRN-<digits> / CS<digits>\n' +
+      '     token, a LEARNINGS.md#lrn- anchor, or the case-insensitive\n' +
+      '     henrik-me/agent-harness slug).\n' +
+      '  2. Invocation scan — fail if any process/onboarding doc in the broader\n' +
+      '     invocation scope set (the anchor docs plus OPERATIONS.md, REVIEWS.md\n' +
+      '     and CONVENTIONS.md) contains a consumer-invalid harness-repo run\n' +
+      '     command (node bin/harness.mjs ... or node scripts/<x>.mjs ...). Both\n' +
+      '     patterns are anchored on the "node " prefix, so backtick source-refs\n' +
+      '     and the {{harness_invoke}} placeholder are not flagged.\n\n' +
+      'Composed bases are scanned in full, including default local-block bodies\n' +
+      '(they ship to consumers); the composed marker parser only fail-closes on\n' +
+      'malformed markers.\n\n' +
       'Options:\n' +
       '  --cwd <dir>     Repo root the scope-set paths resolve against (default: cwd)\n' +
-      '  --allow <token> Exempt an exact token from the scan (repeatable)\n' +
+      '  --allow <token> Exempt an exact token from either scan (repeatable)\n' +
       '  --quiet         Suppress success output; errors still go to stderr\n' +
       '  --help          Print this help text\n'
     );
@@ -171,11 +274,12 @@ function logError(msg) {
 }
 
 /**
- * Scan a single line for banned references, recording an error per match
- * (allowlisted exact tokens are skipped).
+ * Scan a single line against the given pattern list, recording an error per
+ * match (allowlisted exact tokens are skipped). The `patterns` argument lets the
+ * same scanner drive both the anchor and invocation passes.
  */
-function scanLine(display, lineNo, line) {
-  for (const { re } of PATTERNS) {
+function scanLine(display, lineNo, line, patterns) {
+  for (const { re } of patterns) {
     re.lastIndex = 0;
     let m;
     while ((m = re.exec(line)) !== null) {
@@ -189,11 +293,12 @@ function scanLine(display, lineNo, line) {
   }
 }
 
-/** Scan every line of raw content (used for managed docs + fail-closed fallback). */
-function scanWhole(display, content) {
+/** Scan every line of raw content against `patterns` (used for managed docs, the
+ * invocation pass, and the composed fail-closed fallback). */
+function scanWhole(display, content, patterns) {
   const lines = normalizeLF(content).split('\n');
   for (let i = 0; i < lines.length; i++) {
-    scanLine(display, i + 1, lines[i]);
+    scanLine(display, i + 1, lines[i], patterns);
   }
 }
 
@@ -205,14 +310,14 @@ function scanWhole(display, content) {
  * markers are well-formed; a parse error is fail-closed: surface it and scan
  * the whole raw file so a broken marker hides nothing.
  */
-function scanComposed(display, content) {
+function scanComposed(display, content, patterns) {
   try {
     parseComposed(content, { filename: display });
   } catch (err) {
     if (err instanceof ComposedParseError) {
       logError(`${display}: composed parse error (${err.code}): ${err.message}`);
       // Fail-closed: a malformed/unclosed/nested marker must not hide a ref.
-      scanWhole(display, content);
+      scanWhole(display, content, patterns);
       return;
     }
     throw err;
@@ -220,29 +325,60 @@ function scanComposed(display, content) {
 
   // Markers validated — scan the whole file. Local-block bodies are NOT exempt:
   // their default content ships to consumers and must be generic too.
-  scanWhole(display, content);
+  scanWhole(display, content, patterns);
 }
 
 // ---------------------------------------------------------------------------
-// Main — scan every doc in the scope set
+// Read helper — fail-closed, and memoized so a doc that appears in BOTH scope
+// sets (all five anchor docs are also in the invocation scope) is read, and any
+// read error reported, exactly once.
 // ---------------------------------------------------------------------------
 
-for (const doc of SCOPE_SET) {
+const fileCache = new Map();
+
+function readInScope(doc) {
   const absPath = path.join(cwd, ...doc.segments);
+  if (fileCache.has(absPath)) return fileCache.get(absPath);
   let content;
   try {
     content = fs.readFileSync(absPath, 'utf8');
   } catch (err) {
-    // Fail-closed: an in-scope onboarding doc that should exist is missing.
+    // Fail-closed: an in-scope doc that should exist is missing.
     logError(`${doc.display}: cannot read file (${err.message})`);
-    continue;
+    content = null;
   }
+  fileCache.set(absPath, content);
+  return content;
+}
 
+// ---------------------------------------------------------------------------
+// Anchor pass — harness-internal LRN/CS/slug refs over the anchor scope set.
+// Composed bases are marker-validated then scanned in full; managed docs whole.
+// ---------------------------------------------------------------------------
+
+for (const doc of SCOPE_SET) {
+  const content = readInScope(doc);
+  if (content === null) continue;
   if (doc.kind === 'composed') {
-    scanComposed(doc.display, content);
+    scanComposed(doc.display, content, PATTERNS);
   } else {
-    scanWhole(doc.display, content);
+    scanWhole(doc.display, content, PATTERNS);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Invocation pass — consumer-invalid `node bin/harness.mjs` / `node
+// scripts/<x>.mjs` run commands over the broader invocation scope set. A
+// whole-file line scan is used for every doc (composed or managed): it covers
+// template regions AND default local-block bodies, so a malformed marker cannot
+// hide an invocation. The shared composed bases are already marker-validated by
+// the anchor pass; re-validating here would double-report a parse error.
+// ---------------------------------------------------------------------------
+
+for (const doc of INVOCATION_SCOPE_SET) {
+  const content = readInScope(doc);
+  if (content === null) continue;
+  scanWhole(doc.display, content, INVOCATION_PATTERNS);
 }
 
 // ---------------------------------------------------------------------------

@@ -221,8 +221,8 @@ before the workboard-claim PR lands.
 Before claiming any CS, verify no strategic planning content lives outside
 the canonical `project/clickstops/{planned,active,done}/**` arc:
 
-1. Run `node scripts/check-planning-locality.mjs --cwd .` — must exit 0.
-   (Also runs as part of `harness lint` per CS35.)
+1. Run `{{harness_invoke}} lint` — must exit 0 (it includes the
+   planning-locality check).
 2. If the orchestrator's session-state plan file (`~/.copilot/session-state/<id>/plan.md`)
    contains anything beyond (a) which CS this session is currently executing
    and (b) ephemeral todos for that one CS, externalize the strategic content
@@ -689,7 +689,7 @@ the `sub-invaders-bootstrap-summary.md` misrouting
    - **Acceptance criteria:** how the consumer agent will know the
      work is complete.
    - **Verification steps:** which harness checks / lint commands to
-     run on the consumer side (e.g. `node bin/harness.mjs lint`).
+     run on the consumer side (e.g. `{{harness_invoke}} lint`).
    - **Relevant LRNs / docs:** links to applicable `LEARNINGS.md`
      entries and the harness `OPERATIONS.md` / `INSTRUCTIONS.md`
      sections that govern the handoff.
@@ -1213,18 +1213,19 @@ Run all of the following and include each result in SELF-CHECKS RUN:
 
 1. `git status --short` — only owned files appear; nothing staged.
 2. `git log --oneline -1` — must match preflight SHA.
-3. Text-encoding check on every modified file (BOM + line endings; LRN-065, LRN-074):
-   `node scripts/check-text-encoding.mjs --dir <owned-paths> --quiet`
-   must exit 0. (Replaces the prior inline PowerShell BOM-check snippet; the
-   linter also catches CRLF/bare-\r line endings introduced by Windows
-   core.autocrlf or stale editor settings.)
+3. Text-encoding + line-ending validation (BOM + line endings; LRN-065,
+   LRN-074): `{{harness_invoke}} lint` must exit 0. The encoding check
+   runs as part of the lint aggregate over the whole cwd (not just
+   modified files); it catches CRLF/bare-\r line endings introduced by
+   Windows core.autocrlf or stale editor settings.
 4. If tests were added/modified: `node --test` — report count delta
    (e.g. "23 → 27 tests; all pass").
 5. For any .mjs files authored: `node -c <file>` exits 0.
-6. If template files were modified (anything under `template/`): run the
-   templates linter — `node scripts/check-templates.mjs --dir template --cwd .`
-   must exit 0 (LRN-049/050/051: no dot-notation placeholders, no relative-up
-   paths, no self-referencing TODO/FIXME tokens in PR-template files).
+6. If template files were modified (anything under `template/`),
+   `{{harness_invoke}} lint` must exit 0 — the lint aggregate includes the
+   templates linter (LRN-049/050/051: no dot-notation placeholders, no
+   relative-up paths, no self-referencing TODO/FIXME tokens in PR-template
+   files).
 
 ## Reporting independence (CS48 / issue #142)
 
@@ -1706,7 +1707,7 @@ two scripts would double the API spend without adding signal (per ADR4-3).
 ```sh
 PR_BODY=$(mktemp)
 gh pr view <num> --json body --jq .body > "$PR_BODY"
-node bin/harness.mjs pr-evidence \
+{{harness_invoke}} pr-evidence \
   --base "$(gh pr view <num> --json baseRefOid --jq .baseRefOid)" \
   --head "$(gh pr view <num> --json headRefOid --jq .headRefOid)" \
   --pr-body "$PR_BODY"
@@ -1742,7 +1743,7 @@ The workflow is split into TWO jobs per [ADR4-8 (`docs/adr/0004-copilot-graphql-
   because Copilot delivers reviews asynchronously (~3 min); a single-run
   engage-and-verify will always fail the verify step the first time.
 
-The workflow uses the canonical clone-then-`node bin/harness.mjs` install
+The workflow uses the canonical clone-then-run-`bin/harness.mjs` install
 pattern from `.github/workflows/harness-checks.yml` (NOT `npx harness@<ref>`
 — `harness` is a private package and npm 10.8.x's GitFetcher regression
 makes `npx` invocation flaky). The derive-ref step validates the resolved
@@ -2380,7 +2381,7 @@ All file edits land on the `cs<NN>/content` branch:
 4. **Validate.** From the repo root:
 
    ```bash
-   node bin/harness.mjs lint --quiet   # expect: 0 failed
+   {{harness_invoke}} lint --quiet     # expect: 0 failed
    node --test tests/*.test.mjs        # expect: 0 failed
    ```
 
@@ -2517,7 +2518,7 @@ npm version <x.y.z> --no-git-tag-version
 #   then: sweep README pins v<prev> → v<x.y.z>
 
 # 4. Validate
-node bin/harness.mjs lint --quiet
+{{harness_invoke}} lint --quiet
 node --test tests/*.test.mjs
 
 # 5-7. Review + engage Copilot + merge

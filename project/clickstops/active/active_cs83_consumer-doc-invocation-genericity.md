@@ -96,7 +96,7 @@ Key mechanics verified in the tree:
 
 | Field | Value |
 |---|---|
-| Implementer models | claude-opus-4.8 |
+| Implementer models | claude-opus-4.8 (T1/T2/T3), claude-opus-4.6 (T4) |
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah-c2 |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
@@ -106,11 +106,11 @@ Key mechanics verified in the tree:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Onboarding-doc invocation fixes: INSTRUCTIONS / copilot-instructions / RETROSPECTIVES / READMEGUIDE template sources → `{{harness_invoke}}` / `{{harness_invoke}} lint` (C83-1/2/4) | pending | omni-ah-c2 | agent-id=cs83-templates \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY the 4 template SOURCES (not rendered roots). |
-| T2 — OPERATIONS.md invocation-only pass: 7 examples → `{{harness_invoke}} …`; reword L1745 + L1216-1225 self-check prose (C83-6) | pending | omni-ah-c2 | agent-id=cs83-operations \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY `template/composed/OPERATIONS.md`; invocation lines only, no cross-ref edits (CS76). |
-| T3 — Sync computed default + self-host override + tests: `lib/sync.mjs` merges `harness_invoke` default under config; `harness.config.json` sets `node bin/harness.mjs`; sync-rendering tests (C83-3) | pending | omni-ah-c2 | agent-id=cs83-lib \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY `lib/sync.mjs`, `harness.config.json`, its new test file. |
-| T4 — Guard extension: `check-consumer-template-genericity.mjs` `INVOCATION_SCOPE_SET` + 2 node-anchored patterns + fixtures/tests (C83-5) | pending | omni-ah-c2 | agent-id=cs83-guard \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY the linter + its tests/fixtures. |
-| T5 — Integration (orchestrator): regenerate rendered mirrors via `harness sync --mode=apply`, refresh `.harness-lock.json`, CHANGELOG `[Unreleased]`, LEARNINGS entry; full lint + tests green (C83-7/8) | pending | omni-ah-c2 | orchestrator-owned; runs after T1–T4 land. |
+| T1 — Onboarding-doc invocation fixes: INSTRUCTIONS / copilot-instructions / RETROSPECTIVES / READMEGUIDE template sources → `{{harness_invoke}}` / `{{harness_invoke}} lint` (C83-1/2/4) | done | omni-ah-c2 | agent-id=cs83-templates \| role=implementer \| report-status=complete \| learnings=2. Also fixed an adjacent false "harness lint runs schema validation" claim. |
+| T2 — OPERATIONS.md invocation-only pass: 7 examples → `{{harness_invoke}} …`; reword L1745 + L1216-1225 self-check prose (C83-6) | done | omni-ah-c2 | agent-id=cs83-operations \| role=implementer \| report-status=complete \| learnings=0. All 8 handled; `node --test` lines preserved; no cross-ref edits. |
+| T3 — Sync computed default + self-host override + tests: `lib/sync.mjs` merges `harness_invoke` default under config; `harness.config.json` sets `node bin/harness.mjs`; sync-rendering tests (C83-3) | done | omni-ah-c2 | agent-id=cs83-lib \| role=implementer \| report-status=complete \| learnings=1. Single render site confirmed; 14 tests. |
+| T4 — Guard extension: `check-consumer-template-genericity.mjs` `INVOCATION_SCOPE_SET` + 2 node-anchored patterns + fixtures/tests (C83-5) | done | omni-ah-c2 | agent-id=cs83-guard \| model=claude-opus-4.6 \| role=implementer \| report-status=complete \| learnings=2. Orthogonal invocation scan (8 docs) + 11 fixtures; 26 tests. |
+| T5 — Integration (orchestrator): regenerate rendered mirrors, CHANGELOG `[Unreleased]`, LEARNINGS entry; full lint + tests green (C83-7/8) | done | omni-ah-c2 | Roots regenerated LOCKSTEP via `mergeComposed(rendered, root, {lockRecords:[], lockTemplateProseHash:null})` bootstrap + `applyTemplating` (managed); `.harness-lock.json` left UNTOUCHED (self-host stale-lock; matches `0a4eff8`; `sync --mode=check` no-drift). `node --test` 1609/0 (+25); `harness lint` 34/0. |
 | Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and rendered mirrors so a fresh agent can restart from actual state. |
 | Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md; flag the CS76 OPERATIONS.md rebase; create follow-up CSs for anything unresolved. |
 
