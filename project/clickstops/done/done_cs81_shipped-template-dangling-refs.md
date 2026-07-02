@@ -1,10 +1,10 @@
 # CS81 — Fix v0.10.0 shipped-template dangling refs + resolvability guards (#352-F1 + #356)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs81/content
 **Started:** 2026-07-02
-**Closed:** —
+**Closed:** 2026-07-02
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — from the consumer-feedback triage of issues **#352** (Finding 1) and **#356**, filed by the sub-invaders orchestrator (`omni-si`) during the v0.10.0 pin adoption. @henrik-me directed a two-CS split (this CS = doc dangling-ref fixes + guards; CS82 = the sync lock-provenance code fix).
 **Depends on:** none (hard). Adjacent to **CS76** (composed-process-doc cross-ref resolvability, planned R4=Go) which guards a *different* dangling-ref sub-class (non-guaranteed sibling refs in OPERATIONS/REVIEWS); see C81-8 for coordination. No in-flight CS owns these files.
 
@@ -91,18 +91,28 @@ All three verified against `main` (HEAD `1e129fb`):
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Content: `LRN-A/B`→`LRN-164/165` (both OPERATIONS copies), INSTRUCTIONS anchor → `#sub-agent-report-shape-mandatory` (both copies), genericize READMEGUIDE `docs/adr` links (C81-2/3/4) | pending | omni-ah-c2 | Lockstep root ↔ composed; `harness check` no drift. |
-| T2 — New node-builtins-only guard `scripts/check-doc-xref-resolvability.mjs` (LRN-token + cross-file-anchor + relative-link-vs-`template/`-delivery-surface) + `harness lint` wiring (C81-5/6) | pending | omni-ah-c2 | Self-host-only by package name; regex + `fs` only. |
-| T3 — Tests (`os.tmpdir()` only) per C81-5 fixtures; audit REVIEWS.md for placeholder LRN (C81-9) | pending | omni-ah-c2 | Each pass/fail branch. |
-| T4 — `LEARNINGS.md` (gate-gap learning) + `CHANGELOG.md` `[Unreleased]` Fixed + new-linter note (Minor) | pending | omni-ah-c2 | Flip learning `applied` at close-out. |
-| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C81-7/9) | pending | omni-ah-c2 | Reviewer `gpt-5.5` ≠ implementer. |
-| Close-out: docs + restart state — rename active→done; WORKBOARD + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
-| Close-out: learnings — learning finalized; follow-ups (R3: process-base `docs/adr` refs) | pending | omni-ah-c2 | Notes the CS76-adjacent follow-up. |
+| T1 — Content: `LRN-A/B`→`LRN-164/165` (both OPERATIONS copies), INSTRUCTIONS anchor → `#sub-agent-report-shape-mandatory` (both copies), genericize READMEGUIDE `docs/adr` links (C81-2/3/4) | done | omni-ah-c2 | Done in PR #363 (`be3bf305`); root READMEGUIDE render also mirrored (see Notes deviation). |
+| T2 — New node-builtins-only guard `scripts/check-doc-xref-resolvability.mjs` (LRN-token + cross-file-anchor + relative-link-vs-`template/`-delivery-surface) + `harness lint` wiring (C81-5/6) | done | omni-ah-c2 | 403-line guard; registered self-host-only; regex + `fs` only. |
+| T3 — Tests (`os.tmpdir()` only) per C81-5 fixtures; audit REVIEWS.md for placeholder LRN (C81-9) | done | omni-ah-c2 | 19 fixtures. REVIEWS.md audit found no placeholder LRN (untouched). |
+| T4 — `LEARNINGS.md` (gate-gap learning) + `CHANGELOG.md` `[Unreleased]` Fixed + new-linter note (Minor) | done | omni-ah-c2 | LRN-177 (status applied); CHANGELOG Fixed + Minor note. |
+| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C81-7/9) | done | omni-ah-c2 | lint 34/0/3; node --test 1557/0-fail; no drift. 4 review rounds (GPT-5.5 Go×4 + Copilot; all threads resolved). PR #363 admin-merged `be3bf305`. |
+| Close-out: docs + restart state — rename active→done; WORKBOARD + CONTEXT; `sync --mode=check` clean | done | omni-ah-c2 | This PR. |
+| Close-out: learnings — learning finalized; follow-ups (R3: process-base `docs/adr` refs) | done | omni-ah-c2 | LRN-177 applied; R3 follow-up recorded. |
 
 ## Notes / Learnings
 
-- Closes #352-F1 + #356. Distinct from CS76 (sibling-cross-ref resolvability) — see C81-8.
+- **Shipped** in PR #363 (squash `be3bf305`, admin-merged 2026-07-02). Closes #352-F1 + #356. Distinct from CS76 (sibling-cross-ref resolvability) — see C81-8.
+- **DEVIATION (C81-4/C81-7 premise corrected):** the plan said "verify no root render at implementation" for READMEGUIDE. The `cs81-impl` sub-agent verified and found the premise **wrong** — `template/managed/READMEGUIDE.md` HAS a root self-apply render (`READMEGUIDE.md`; `lib/sync.mjs` source→root). It correctly escalated rather than edit a non-owned file. The orchestrator mirrored the genericization to root `READMEGUIDE.md` (both now `docs/adr`-free; `harness check` = no drift). Learning candidate: CS plans touching `template/managed/*` must include the paired root render in blast radius (or schedule a close-out `sync --apply`).
+- **Coupled test bump:** adding the linter to the `bin/harness.mjs` registry required `tests/cs15d-aggregator.test.mjs` row count 23→24 (a non-owned coupled change the sub-agent escalated; orchestrator applied).
+- **Review:** 4 alternating rounds on PR #363 (GPT-5.5 rubber-duck **Go ×4** + Copilot). Copilot caught real guard defects each round: readDoc fail-open (R1, both reviewers), fenced-code headings polluting the anchor/LRN sets + listFilesRel fail-open (R2), per-link target re-read (R3) — all fixed. Declined R3's LRN-177-section nit (section headers are non-authoritative; siblings LRN-176/175/174 sit under `## Open` too). Converged R4 (Copilot clean).
+- **Follow-up R3 (unfiled):** the composed process-doc bases (`OPERATIONS.md`/`REVIEWS.md`/`CONVENTIONS.md`) carry pervasive relative `docs/adr/*` refs that dangle in consumers — out of scope here (C81-1), a candidate CS on the process-doc genericization track alongside CS76.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck dispatch `cs81-pvi`)
+**Date:** 2026-07-02
+**Outcome:** GO
+
+Run against `main` at the squash-merge HEAD `be3bf305` (PR #363). Reviewer model `gpt-5.5` differs from the implementer model `claude-opus-4.8` (independence, REVIEWS § 2.3). All Decisions/Deliverables **match** with evidence: **C81-2** — bare `LRN-164`/`LRN-165` at OPERATIONS.md + template/composed/OPERATIONS.md 157/591/602 (no `LEARNINGS.md#` link; no `LRN-A`/`LRN-B` remain). **C81-3** — both INSTRUCTIONS copies link `#sub-agent-report-shape-mandatory`; target heading exists (OPERATIONS.md:1382 + mirror). **C81-4** — `docs/adr` genericized in BOTH `template/managed/READMEGUIDE.md` and root `READMEGUIDE.md` (byte-identical, no drift); the root-render mirror is the correct, documented adaptation of the plan's falsified "no root render" premise (see Notes deviation). **C81-5/6** — new `scripts/check-doc-xref-resolvability.mjs` (node-builtins-only, self-host-gated, three checks) wired into `harness lint`; a new linter script ⇒ Minor. **C81-5c** — process bases excluded; out-of-scope `docs/adr` refs left for R3. **Tests** — `tests/cs81-doc-xref-resolvability.test.mjs` os.tmpdir-only, 19/19; coupled `cs15d-aggregator.test.mjs` row count 24. **C81-9** — LRN-177 (`status: applied`); CHANGELOG `[Unreleased]` Fixed + Minor; no `schemas/`/`lib/` change. `harness check` = no drift.
+
+The reviewer's flagged deviation (`harness lint` 33/1/3 — plan file in `done/` with `Status: active` + empty PVI) was the expected **close-out-in-progress** state; populating this section with the GO verdict + Status→done resolves it (`harness lint --quiet` = 34/0/3 at close-out).

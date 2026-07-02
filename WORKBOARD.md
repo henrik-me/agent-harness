@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c2 — CS65 PAUSED (blocked on user gates G-target/G-threshold/Q1) to yield the single-active slot to CS81+CS82, the #352/#356 consumer-feedback remediation; reclaimable by owner after those close out)
+> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS81 CLOSED** (shipped-template dangling-ref fixes + resolvability guard, #352-F1 + #356), merge `be3bf305`; CS65 stays ⏸️ Paused; **CS82** (lock provenance, #352-F2) is next)
 
 ## Orchestrators
 
@@ -29,6 +29,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on user gates (G-target/G-threshold/Q1); paused to yield the single-active slot to CS81+CS82 (#352/#356 consumer-feedback remediation); reclaimable by owner after those close out |
-| CS81 | CS81 — Fix v0.10.0 shipped-template dangling refs + resolvability guards (#352-F1 + #356) | 🟢 Active | omni-ah-c2 | cs81/content | 2026-07-02 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
