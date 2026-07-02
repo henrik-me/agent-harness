@@ -11,11 +11,15 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS85 (consumer-doc clickstop-link durability — #371):** New `scripts/check-clickstop-link-durability.mjs` lint guard (registered in `harness lint` as `clickstop-link-durability`). It fails on a **branch-pinned** absolute GitHub permalink into a transient `project/clickstops/active/` path in a durable doc — links that 404 the moment a clickstop closes out and is `git mv`'d to `project/clickstops/done/` — while allowing **commit-SHA-pinned** permalinks (the SHA pins the historical tree, so it keeps resolving). Fenced code blocks and inline-code spans are skipped so illustrative examples do not false-positive. Unlike the self-host-only genericity/xref guards, this guard **runs in both the harness self-host and consumer repos** (the `package.json` name selects the scan mode, not a consumer no-op), since #371's defect class lives in consumer repos: self-host scans repo-root `*.md` + `template/**/*.md`; a consumer scans repo-root `*.md` + `.github/copilot-instructions.md` + `.github/pull_request_template.md`; both exclude `project/clickstops/**`. Adding a new linter script drives a **Minor** bump.
+
 ### Changed
 
 ### Documentation
 
 ### Fixed
+
+- **CS85 (bootstrap-authoring durability doctrine — #371):** A durable consumer doc (`henrik-me/sub-invaders`'s `ARCHITECTURE.md`) authored during bootstrap embedded harness-transient/institutional content: a link into a `project/clickstops/active/` path that 404'd once that clickstop closed out, plus a duplicated clickstop decision table and inline `(C<NN>-<n>)` provenance tags. Adds a **"Consumer-doc clickstop-link durability invariant"** section to the composed `OPERATIONS.md` base (ships to consumers): durable docs must never link into a transient `project/clickstops/active/` path (prefer no link, a commit-SHA permalink, or a stable `project/clickstops/done/` pointer) nor duplicate a clickstop's decision table / `(C<NN>-<n>)` provenance tags. The new `clickstop-link-durability` guard (above) mechanically enforces the link half. Same failure family as #229/#290/#370; the consumer-side `ARCHITECTURE.md` cleanup is tracked separately in that repo.
 
 ## [0.12.0] — 2026-07-02
 
