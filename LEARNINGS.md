@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-183
+
+```yaml
+id: LRN-183
+date: 2026-07-02
+category: anti-pattern
+source_cs: CS85
+status: open
+tags: [doc-linters, inline-code, commonmark, guard, consistency-debt, follow-up]
+claim_area: docs-guards
+```
+
+**Problem:** Doc linters that skip inline-code spans (so an illustrative example link/URL in backticks is not treated as a live reference) commonly strip them with the naive one-liner `line.replace(/`[^`]*`/g, '')`. CS85's review-of-record (GPT-5.5, three successive Needs-Fix rounds on PR #386) proved this pattern is NOT CommonMark-correct: it mishandles mismatched backtick runs (`` ``url``` `` — open-2/close-3 is not a valid span), escaped backticks (`` \` `` is a literal, not a delimiter), and backslashes inside a span (literal, so a backtick after `\` still closes). Depending on the linter's polarity these gaps yield false-negatives (a live bad reference hidden) or false-positives (an example flagged as broken).
+
+**Finding:** CS85 replaced the naive stripper with a CommonMark-correct explicit forward scan (`stripInlineCode`, no regex backtracking) in `scripts/check-clickstop-link-durability.mjs`, but the fix landed ONLY in that guard. The sibling guard `scripts/check-doc-xref-resolvability.mjs` (CS81, extended by CS65's T4) still carries the identical naive `/`[^`]*`/g` at line ~276, in its `contentLines()` helper used by every live-reference check (LRN-token, cross-file anchor, relative-link, and the CS65-added classes). The two guards now diverge in correctness for the same sub-problem, and CS65's extension added more checks depending on the un-hardened copy. Candidate follow-up: extract the hardened `stripInlineCode` into a small shared, unit-tested module (node-builtins-only, review-gate-clone-safe) and have both guards import it — retiring the naive copy. Low severity / no known live failure today (both guards are green; the gap affects only backtick-wrapped example references), so this is consistency debt, not an active bug.
+
+**Evidence:** `scripts/check-doc-xref-resolvability.mjs:276` (`lines[i].replace(/`[^`]*`/g, '')` in `contentLines()`); `scripts/check-clickstop-link-durability.mjs` `stripInlineCode` (the correct forward scan, CS85). Surfaced by CS85 review rounds R2/R3/R4 (each a Needs-Fix on exactly this inline-code class) — see `done_cs85_consumer-doc-clickstop-link-durability.md` and [LRN-180](#lrn-180) (point c).
+
+**Disposition:** Open — not yet scheduled. Whoever next touches either doc-link guard (or files a guard-consolidation CS) should unify the inline-code stripper. No consumer impact; self-host guard internals only.
+
+---
+
 ### LRN-182
 
 ```yaml
