@@ -52,7 +52,7 @@ claim_area: linters
 
 **Evidence:** #352-F1 + #356 (sub-invaders v0.10.0 pin-adoption feedback). CS81: `OPERATIONS.md` + `template/composed/OPERATIONS.md` L157/591/602 `LRN-A/B`→`LRN-164/165`; both `INSTRUCTIONS.md` copies L267 anchor → `#sub-agent-report-shape-mandatory`; `template/managed/READMEGUIDE.md` L9/338 `docs/adr` pointers genericized (no `docs/adr` ref remains). `scripts/check-doc-xref-resolvability.mjs` + 18 fixture tests (`tests/cs81-doc-xref-resolvability.test.mjs`, `os.tmpdir()` only) cover each pass/fail branch; the guard passes the remediated tree (`harness lint` exit 0) and fails each reintroduced class. `REVIEWS.md` carried no placeholder LRN tokens (audited, untouched).
 
-**Disposition:** Applied (CS81). The guard is wired into `harness lint` as the self-host-only `doc-xref-resolvability` entry (gated by package name, exactly like `consumer-template-genericity`); the three dangling refs are fixed in both root and `template/composed/` mirrors. Follow-up R3 (pervasive relative `docs/adr/*` links in the composed process bases `OPERATIONS.md`/`CONVENTIONS.md`) is out of scope here and tracked for the process-doc genericization track (alongside CS76). Merge SHA recorded at close-out.
+**Disposition:** Applied (CS81, merge `be3bf305`). The guard is wired into `harness lint` as the self-host-only `doc-xref-resolvability` entry (gated by package name, exactly like `consumer-template-genericity`); the three dangling refs are fixed in both root and `template/composed/` mirrors. Follow-up R3 (pervasive relative `docs/adr/*` links in the composed process bases `OPERATIONS.md`/`CONVENTIONS.md`) is out of scope here and tracked for the process-doc genericization track (alongside CS76).
 
 ---
 

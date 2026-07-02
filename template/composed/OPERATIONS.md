@@ -143,6 +143,15 @@ Every CS produces exactly three PRs in sequence:
    preceded by the plan-vs-implementation review gate (see
    [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
 
+**Auto-merge branch patterns.** A `workboard-only`-labelled PR auto-merges only
+when its branch matches one of `cs<NN>/(claim|close|close-out)`,
+`workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?`
+(the planned-CS filing PR). A workboard-scoped PR on any other branch — notably a
+`workboard/cs<NN>-pause` PR — still passes its content gates but is **not**
+auto-approve-eligible and must be admin-merged. Match the pattern exactly (the
+filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`), or the PR
+waits un-merged until an admin acts.
+
 Every active/done CS file must include explicit `## Tasks` rows for:
 
 - **Close-out: docs + restart state** — update `WORKBOARD.md`, `CONTEXT.md`,
