@@ -73,7 +73,7 @@ Close the harness-side root cause of **#371**: the bootstrap-authoring step embe
 
 | Field | Value |
 |---|---|
-| Implementer models | claude-opus-4.8 (T1/T2) — finalized at integration |
+| Implementer models | claude-opus-4.8 (T1 doctrine — orchestrator; T2 guard — sub-agent `cs85-guard`) |
 | Reviewer model | gpt-5.5 |
 | Implementer agent | omni-ah-c2 |
 | Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
@@ -83,13 +83,18 @@ Close the harness-side root cause of **#371**: the bootstrap-authoring step embe
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Doctrine: add `### Consumer-doc bootstrap-authoring durability invariant` to `template/composed/OPERATIONS.md` composed core next to the CS72 genericity invariant (C85-1: no transient `active/` links + no duplicated clickstop decision tables/`(C<NN>-<n>)` provenance in durable consumer docs; prefer no link → commit-SHA permalink → stable `done/` pointer) | planned | — | implementer; owns `template/composed/OPERATIONS.md` only. Root mirror regenerated at T3 (lockstep). |
-| T2 — Guard: new `scripts/check-clickstop-link-durability.mjs` (branch-pinned `blob/<ref>/…/project/clickstops/active/…` permalink; allow 40-hex SHA-pin; consumer-active ERROR; scan-mode-by-package-name, NOT `target:null`) + register in `bin/harness.mjs` (lint registry both modes + `--explain` + help bullet) + `tests/cs85-clickstop-link-durability.test.mjs` + `tests/fixtures/**` (incl. exact #371 URL shape: `#fragment`, slashy ref, SHA-pin pass) (C85-2/3) | planned | — | implementer; owns `scripts/check-clickstop-link-durability.mjs`, `bin/harness.mjs`, `tests/cs85-*.test.mjs`, `tests/fixtures/cs85-*/**`. |
-| T3 — Integration (orchestrator): regenerate root `OPERATIONS.md` mirror LOCKSTEP (LRN-179 `mergeComposed` bootstrap; leave `.harness-lock.json` untouched); CHANGELOG `[Unreleased]` Added (guard) + Fixed/Documentation (doctrine); full `harness lint` + `node --test` green (C85-5/6/7) | planned | omni-ah-c2 | orchestrator integration after T1/T2 land. |
+| T1 — Doctrine: add `### Consumer-doc clickstop-link durability invariant` to `template/composed/OPERATIONS.md` composed core + root mirror next to the CS72 genericity invariant (C85-1) | done | omni-ah-c2 | Orchestrator. Added identical non-templated section to both mirrors (1943 chars, byte-identical → lockstep by construction). Title genericized ("Consumer-doc clickstop-link durability invariant"). composed-blocks 0 errors both files; `sync --mode=check` no-drift; genericity/xref/encoding green. |
+| T2 — Guard: new `scripts/check-clickstop-link-durability.mjs` + register in `bin/harness.mjs` + tests/fixtures (C85-2/3) | done | cs85-guard | 389-line guard (pure `scanTextForViolations`/`checkTree` + CLI); branch-pinned `active/` permalink FLAG, 40-hex SHA-pin ALLOW, fence/inline-code SKIP, runs BOTH modes (`target:cwd`, not `target:null`). 32 tests (all pass); regex boundary excludes `\|` for table cells. Fixtures built in `os.tmpdir()` (no static dir, per LRN-076). Help bullet placed in always-run list (not Self-host-only). |
+| T3 — Integration (orchestrator): CHANGELOG `[Unreleased]` Added+Fixed; root-mirror lockstep (done in T1); full `harness lint` + `sync --mode=check` + `node --test` green (C85-5/6/7) | done | omni-ah-c2 | CHANGELOG Added (guard) + Fixed (doctrine). Fixed cross-cutting fixture `tests/cs15d-aggregator.test.mjs:129` (linter row count 24/16 → 25/17 — the new always-enabled linter adds one consumer row). Final: `harness lint` **35/0/3**; `sync --mode=check` **no drift**; `node --test tests/*.test.mjs` **1644 pass / 0 fail**. |
 | Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and rendered mirrors so a fresh agent can restart from actual state. |
 | Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md (new applied LRN); file the SI notify issue (C85-4); create follow-up CSs for anything unresolved. |
 
 ## Notes / Learnings
+
+**Learning candidates (file at close-out):**
+- **guard-design / help taxonomy:** a lint guard that runs in BOTH self-host and consumer mode must not be documented under the `harness lint --help` "Self-host-only" heading even when co-located with the self-host-gated doc-guards (genericity/xref) — place it in the always-run list. The runner gates on `args`+`target` presence, independent of the help taxonomy. (cs85-guard, `bin/harness.mjs`.)
+- **testing / cross-cutting linter-count fixtures:** adding an always-enabled linter breaks any test asserting an EXACT dispatched-linter row count. `tests/cs15d-aggregator.test.mjs:129` hardcodes the consumer row count; it surfaced only in the FULL `node --test` suite, not the sub-agent's own test file or `harness lint`. Orchestrator must run the full suite at integration when a CS adds a registry entry.
+- **guard self-consistency:** the new durability guard scans `template/**` + root docs, so the C85-1 doctrine's own illustrative permalink had to live in an inline-code span (which the guard skips) — a clean end-to-end validation of the fence/inline-code skip logic (`OPERATIONS.md` doctrine example passed the guard).
 
 ## Plan-vs-implementation review
 

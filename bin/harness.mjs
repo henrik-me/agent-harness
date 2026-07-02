@@ -246,6 +246,7 @@ Run all harness linters against the repo. Aggregates results from:
   - check-pr-body.mjs     (.github/PR_BODY.md if present)
   - check-commit-trailers.mjs (.git/COMMIT_EDITMSG if present)
   - check-compose-v2.mjs  (compose.yaml or docker-compose.yml if present)
+  - check-clickstop-link-durability.mjs (durable-doc clickstop-link durability — no branch-pinned permalinks into project/clickstops/active/ paths)
 
 Self-host-only (when package.json.name === '@henrik-me/agent-harness'):
   - check-pack.mjs        (package whitelist)
@@ -2442,6 +2443,34 @@ the dead-anchor regression cannot recur silently.
 link). This guard makes each class mechanical and permanent so they cannot
 recur silently in a consumer-shipped doc.
 `.trim(),
+  'clickstop-link-durability': `
+**Linter:** check-clickstop-link-durability (scripts/check-clickstop-link-durability.mjs)
+**Target:** durable docs, scanned in BOTH self-host and consumer mode (the
+          package.json \`name\` selects the scan SET, not a consumer no-op):
+          self-host scans repo-root *.md plus template/**/*.md; a consumer scans
+          repo-root *.md plus .github/copilot-instructions.md and
+          .github/pull_request_template.md (when present). Both modes exclude
+          project/clickstops/** (legitimate workflow refs), .git and
+          node_modules; self-host also excludes tests/fixtures/**.
+**Rules:**
+  - FAIL on a BRANCH-pinned absolute GitHub blob permalink whose path contains
+    project/clickstops/active/ — e.g.
+    https://github.com/<o>/<r>/blob/main/…/project/clickstops/active/…. Such a URL
+    404s the moment the clickstop closes out (git mv active/ -> done/). (#371)
+  - ALLOW a commit-SHA-pinned permalink (blob/<40-hex-sha>/…/active/…): the SHA
+    pins the historical tree, so it stays resolvable. The first path segment after
+    blob/ is the ref; if it is a full 40-hex SHA the link is durable, else it is a
+    branch and is flagged (so a slashy branch blob/feature/x/…/active/… is caught).
+  - ALLOW done/ permalinks, relative links, and prose.
+  - Fenced code blocks and inline-code spans are skipped so illustrative example
+    URLs (e.g. the OPERATIONS.md durability-doctrine section) do not false-positive.
+  - On a hit, prefer (in order): NO link, a commit-SHA permalink, or a stable
+    project/clickstops/done/ pointer.
+**Why:** A bootstrap-authored consumer doc (#371) hard-linked into a transient
+project/clickstops/active/ path that 404'd on close-out. This guard makes the
+link-durability class mechanical so it cannot recur — in the harness and, since
+the rot lives in consumer repos, at consumer \`harness lint\` time too.
+`.trim(),
 };
 
 async function cmdLint(args, _global) {
@@ -2685,6 +2714,21 @@ async function cmdLint(args, _global) {
         target: isSelfHost ? path.join(cwd, 'template') : null,
       };
     })(),
+    {
+      // CS85 (C85-2/C85-3): clickstop-link durability guard. Fails on a
+      // BRANCH-pinned GitHub permalink into a transient project/clickstops/active/
+      // path (404s the moment a CS closes out active->done); allows SHA-pinned
+      // permalinks, done/ pointers, and relative links. Unlike the CS72/CS81
+      // self-host-gated guards, this one RUNS IN BOTH modes — the package.json
+      // `name` selects the scan set inside the script (self-host vs consumer),
+      // NOT a consumer no-op, since #371's rot lives in consumer repos. So it uses
+      // the always-enabled shape (target=cwd, which always exists) rather than the
+      // self-host target=null skip.
+      name: 'clickstop-link-durability',
+      script: 'check-clickstop-link-durability.mjs',
+      args: ['--cwd', cwd],
+      target: cwd,
+    },
     {
       // CS03c: text-encoding linter (BOM + line endings). Walks the consumer cwd
       // recursively. Always enabled; can be skipped via --skip text-encoding.

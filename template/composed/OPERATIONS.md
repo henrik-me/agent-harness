@@ -1963,6 +1963,40 @@ only the `template/**` generic sources and is package-name self-host gated. The
 enforces this invariant so the genericity cannot silently regress, as it did
 when those docs first reached consumers carrying dead harness anchors.
 
+### Consumer-doc clickstop-link durability invariant
+
+A **durable** repository doc — an `ARCHITECTURE.md`, a design note, an
+onboarding guide, anything meant to outlive a single clickstop — must never
+embed **transient** or **institutional** clickstop artefacts. Both failure
+modes below leave a durable doc broken the moment the referenced clickstop
+closes out:
+
+1. **No links into a transient `project/clickstops/active/` path.** A clickstop
+   file lives under `project/clickstops/active/` only while it is in flight;
+   close-out `git mv`s it to `project/clickstops/done/`. A durable doc that
+   hard-links an `active/` path — especially a **branch-pinned** absolute
+   permalink such as
+   `https://github.com/<owner>/<repo>/blob/<branch>/project/clickstops/active/…`
+   — therefore 404s as soon as that clickstop is done. Prefer, in order: **no
+   link** (name the decision inline); a **commit-SHA permalink**
+   (`…/blob/<40-char-sha>/…`, which pins the historical tree and keeps
+   resolving after the file moves); or a **stable `project/clickstops/done/`
+   pointer** once the clickstop has closed. The `clickstop-link-durability`
+   linter (run by `harness lint`) fails on a branch-pinned `active/` permalink
+   in a durable doc and passes a SHA-pinned one.
+
+2. **No duplicated clickstop decision tables or provenance tags.** Do not copy
+   a clickstop's decision table or its inline `(C<NN>-<n>)` provenance tags
+   into a durable doc — those are meaningful only inside the clickstop
+   workflow, and duplicated into an architecture doc they rot into unexplained
+   noise. Restate the decision in the doc's own voice, or reference a single
+   stable pointer, instead.
+
+This invariant holds wherever durable docs are **authored or seeded**,
+including the one-time bootstrap that scaffolds a new repository: seed durable
+docs from generic skeletons and never fold a live clickstop's transient links
+or decision provenance into them.
+
 ### Integration testing for templated outputs (LRN-057)
 
 Any change to seeded skeletons or composed templates must be validated with the
