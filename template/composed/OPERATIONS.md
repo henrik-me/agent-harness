@@ -147,11 +147,13 @@ Every CS produces exactly three PRs in sequence:
 when its branch matches one of `cs<NN>/(claim|close|close-out)`,
 `workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?`
 (the planned-CS filing PR), where `<NN>` is the CS number plus an optional
-lowercase suffix letter (e.g. `cs64b`). A workboard-scoped PR on any other branch — notably a
-`workboard/cs<NN>-pause` PR — still passes its content gates but is **not**
-auto-approve-eligible and must be admin-merged. Match the pattern exactly (the
-filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`), or the PR
-waits un-merged until an admin acts.
+lowercase suffix letter (e.g. `cs64b`). A workboard-scoped PR whose branch does
+**not** match — notably a `workboard/cs<NN>-pause` PR — should still carry the
+`workboard-only` label (so the review-evidence gates skip), but its
+`validate-and-approve` job then **fails** the branch-name check, so an admin must
+squash-merge it (`gh pr merge <n> --admin --squash`). Match an eligible pattern
+exactly (the filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`)
+to keep auto-merge.
 
 Every active/done CS file must include explicit `## Tasks` rows for:
 
