@@ -90,7 +90,7 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   broken-tree failure, **stop and investigate** before claiming new work.
 
   ```bash
-  node bin/harness.mjs startup --pull-ff-only
+  {{harness_invoke}} startup --pull-ff-only
   ```
 
   Once `startup` passes, `harness status` prints a one-screen resume snapshot
@@ -107,8 +107,8 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
   git log -3 --oneline                                  # last 3 commits on main
   git tag --list 'v*' | tail -5                         # latest release tags (if applicable)
   node --test tests/*.test.mjs                          # expect: all pass
-  node bin/harness.mjs lint --quiet                     # expect: 0 failed
-  node bin/harness.mjs sync --mode=check --cwd .        # expect: "No drift detected"
+  {{harness_invoke}} lint --quiet                     # expect: 0 failed
+  {{harness_invoke}} sync --mode=check --cwd .        # expect: "No drift detected"
   git ls-files project/clickstops/{planned,active}/ | sort   # show in-flight clickstop arc; resume rather than restart
   ```
 

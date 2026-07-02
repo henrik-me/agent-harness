@@ -23,15 +23,23 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const LINTER = path.join(REPO_ROOT, 'scripts', 'check-consumer-template-genericity.mjs');
 const CLEAN = path.join(__dirname, 'fixtures', 'cs72', 'clean');
 const VARIANTS = path.join(__dirname, 'fixtures', 'cs72', 'variants');
+// CS83 (C83-5): the invocation-scan fixtures (broader scope: process bases too).
+const CS83_CLEAN = path.join(__dirname, 'fixtures', 'cs83-genericity-invocation', 'clean');
+const CS83_VARIANTS = path.join(__dirname, 'fixtures', 'cs83-genericity-invocation', 'variants');
 const NODE = process.execPath;
 
 // Scope-set destinations (relative to the temp --cwd), keyed for overrides.
+// The first five are the anchor scope; operations/reviews/conventions extend
+// the tree to the broader CS83 invocation scope so buildCwd seeds a valid tree.
 const SCOPE = {
   instructions: ['template', 'composed', 'INSTRUCTIONS.md'],
   copilot: ['template', 'composed', '.github', 'copilot-instructions.md'],
   tracking: ['template', 'managed', 'TRACKING.md'],
   retro: ['template', 'managed', 'RETROSPECTIVES.md'],
   readme: ['template', 'managed', 'READMEGUIDE.md'],
+  operations: ['template', 'composed', 'OPERATIONS.md'],
+  reviews: ['template', 'composed', 'REVIEWS.md'],
+  conventions: ['template', 'composed', 'CONVENTIONS.md'],
 };
 
 const CLEAN_FILES = {
@@ -40,6 +48,9 @@ const CLEAN_FILES = {
   tracking: path.join(CLEAN, 'TRACKING.md'),
   retro: path.join(CLEAN, 'RETROSPECTIVES.md'),
   readme: path.join(CLEAN, 'READMEGUIDE.md'),
+  operations: path.join(CS83_CLEAN, 'OPERATIONS.md'),
+  reviews: path.join(CS83_CLEAN, 'REVIEWS.md'),
+  conventions: path.join(CS83_CLEAN, 'CONVENTIONS.md'),
 };
 
 const tmpDirs = [];
@@ -203,5 +214,121 @@ describe('check-consumer-template-genericity', () => {
     const dir = buildCwd();
     const { status } = runLinter(['--cwd', dir]);
     assert.equal(status, 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CS83 / C83-5 — the INVOCATION scan. A second, orthogonal scan that bans
+// consumer-invalid harness-repo run commands (`node bin/harness.mjs …` /
+// `node scripts/<x>.mjs …`) across the broader invocation scope set (the five
+// anchor docs + OPERATIONS.md + REVIEWS.md + CONVENTIONS.md). The anchor scan is
+// unchanged; these cases exercise only the invocation scan.
+// ---------------------------------------------------------------------------
+
+describe('check-consumer-template-genericity — invocation scan (CS83 / C83-5)', () => {
+  it('(k1) fails (exit 1) on a `node bin/harness.mjs` invocation in OPERATIONS.md', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-invocation-bin.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/OPERATIONS\.md:\d+: node bin\/harness\.mjs/);
+    assert.match(stderr, /❌ Linter FAILED/);
+  });
+
+  it('(k2) fails (exit 1) on a `node scripts/<x>.mjs` invocation in OPERATIONS.md', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-invocation-script.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(
+      stderr,
+      /template\/composed\/OPERATIONS\.md:\d+: node scripts\/check-consumer-template-genericity\.mjs/,
+    );
+  });
+
+  it('(k3) catches an invocation inside a default local-block body (whole-file scan)', () => {
+    const dir = buildCwd({
+      operations: path.join(CS83_VARIANTS, 'OPERATIONS-invocation-in-localblock.md'),
+    });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/OPERATIONS\.md:\d+: node bin\/harness\.mjs/);
+  });
+
+  it('(k4) covers REVIEWS.md (a composed process base in the invocation scope)', () => {
+    const dir = buildCwd({ reviews: path.join(CS83_VARIANTS, 'REVIEWS-invocation.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/REVIEWS\.md:\d+: node bin\/harness\.mjs/);
+  });
+
+  it('(k5) covers CONVENTIONS.md (a composed process base in the invocation scope)', () => {
+    const dir = buildCwd({ conventions: path.join(CS83_VARIANTS, 'CONVENTIONS-invocation.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(
+      stderr,
+      /template\/composed\/CONVENTIONS\.md:\d+: node scripts\/check-text-encoding\.mjs/,
+    );
+  });
+
+  it('(k6) covers the shared onboarding docs — an invocation in INSTRUCTIONS.md fails', () => {
+    const dir = buildCwd({ instructions: path.join(CS83_VARIANTS, 'INSTRUCTIONS-invocation.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/INSTRUCTIONS\.md:\d+: node bin\/harness\.mjs/);
+  });
+
+  it('(l) does NOT flag prose/backtick source-refs, {{harness_invoke}}, or `node --test` (exit 0)', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-prose-only.md') });
+    const { status, stdout } = runLinter(['--cwd', dir]);
+    assert.equal(status, 0);
+    assert.match(stdout, /✅ Linter passed/);
+  });
+
+  it('(m) reports ONLY the invocation — legit CS/LRN tokens stay unflagged (orthogonal scopes)', () => {
+    // OPERATIONS-invocation-bin.md carries a real invocation AND CS83 / LRN-170
+    // tokens. Only the invocation is reported; the CS/LRN tokens are banned solely
+    // by the anchor scan, whose scope excludes OPERATIONS.md.
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-invocation-bin.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /node bin\/harness\.mjs/);
+    assert.doesNotMatch(stderr, /CS83/);
+    assert.doesNotMatch(stderr, /LRN-170/);
+  });
+
+  it('(n) the default all-clean tree — OPERATIONS.md carrying CS/LRN + {{harness_invoke}} — passes', () => {
+    const dir = buildCwd();
+    const { status, stdout } = runLinter(['--cwd', dir]);
+    assert.equal(status, 0);
+    assert.match(stdout, /✅ Linter passed/);
+  });
+
+  it('(o) --allow exempts an exact invocation token (exit 0)', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-invocation-bin.md') });
+    const failed = runLinter(['--cwd', dir]);
+    assert.equal(failed.status, 1, 'the invocation is flagged without --allow');
+    const allowed = runLinter(['--cwd', dir, '--allow', 'node bin/harness.mjs']);
+    assert.equal(allowed.status, 0);
+    assert.match(allowed.stdout, /✅ Linter passed/);
+  });
+
+  it('(p) fail-closed: a missing invocation-only doc (REVIEWS.md) is an error (exit 1)', () => {
+    const dir = buildCwd();
+    fs.rmSync(path.join(dir, ...SCOPE.reviews));
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/composed\/REVIEWS\.md: cannot read file/);
+  });
+
+  it('(q) marker-validates an invocation-only composed base — a malformed OPERATIONS.md marker is surfaced (exit 1)', () => {
+    const dir = buildCwd({ operations: path.join(CS83_VARIANTS, 'OPERATIONS-unclosed-marker.md') });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    // OPERATIONS.md is composed and invocation-only (outside the anchor scope);
+    // the invocation scan marker-validates it via scanComposed, so an unclosed
+    // marker is surfaced as a parse error, and the whole-file fallback still
+    // catches the invocation the broken marker would otherwise hide.
+    assert.match(stderr, /composed parse error \(ECOMPOSED_UNCLOSED\)/);
+    assert.match(stderr, /template\/composed\/OPERATIONS\.md:\d+: node bin\/harness\.mjs/);
   });
 });
