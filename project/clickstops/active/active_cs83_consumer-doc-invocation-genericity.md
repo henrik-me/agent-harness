@@ -1,9 +1,9 @@
 # CS83 — Consumer-doc invocation-form genericity: fix #370 harness-repo invocation paths in shipped onboarding docs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs83/content
+**Started:** 2026-07-02
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02 — filed from inbound consumer-feedback issue #370 (discovered by `henrik-me/sub-invaders`'s v0.10.0→v0.11.0 adoption review, reporter `omni-si`). Re-files the command-example half of #356 that CS81 left unaddressed.
 **Depends on:** none (hard). Builds on CS72 (consumer-template genericity guard, `scripts/check-consumer-template-genericity.mjs`) and the existing `lib/templating.mjs` `{{key}}` engine. Coordinated with planned CS76 (which targets `template/composed/OPERATIONS.md` cross-ref lines): CS83 edits **disjoint invocation lines** in OPERATIONS.md (C83-6) and merges first; CS76 rebases.
@@ -92,11 +92,27 @@ Key mechanics verified in the tree:
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs83-plan-review | 8e8543279c19 | 2026-07-02T05:35:04Z | Go-with-amendments | GPT-5.5: Needs-Fix (OPERATIONS.md scope, seeded-key conflict, validate-schemas not in lint, lock-diff) all addressed; Go-with-amendments after self-check prose reword + broader lock refresh |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | **Minor** SemVer (new optional `harness_invoke` templating key; no schema change). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (Go-with-amendments, hash `8e8543279c19`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Onboarding-doc invocation fixes: INSTRUCTIONS / copilot-instructions / RETROSPECTIVES / READMEGUIDE template sources → `{{harness_invoke}}` / `{{harness_invoke}} lint` (C83-1/2/4) | pending | omni-ah-c2 | agent-id=cs83-templates \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY the 4 template SOURCES (not rendered roots). |
+| T2 — OPERATIONS.md invocation-only pass: 7 examples → `{{harness_invoke}} …`; reword L1745 + L1216-1225 self-check prose (C83-6) | pending | omni-ah-c2 | agent-id=cs83-operations \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY `template/composed/OPERATIONS.md`; invocation lines only, no cross-ref edits (CS76). |
+| T3 — Sync computed default + self-host override + tests: `lib/sync.mjs` merges `harness_invoke` default under config; `harness.config.json` sets `node bin/harness.mjs`; sync-rendering tests (C83-3) | pending | omni-ah-c2 | agent-id=cs83-lib \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY `lib/sync.mjs`, `harness.config.json`, its new test file. |
+| T4 — Guard extension: `check-consumer-template-genericity.mjs` `INVOCATION_SCOPE_SET` + 2 node-anchored patterns + fixtures/tests (C83-5) | pending | omni-ah-c2 | agent-id=cs83-guard \| role=implementer \| report-status=pending \| learnings=0. OWNs ONLY the linter + its tests/fixtures. |
+| T5 — Integration (orchestrator): regenerate rendered mirrors via `harness sync --mode=apply`, refresh `.harness-lock.json`, CHANGELOG `[Unreleased]`, LEARNINGS entry; full lint + tests green (C83-7/8) | pending | omni-ah-c2 | orchestrator-owned; runs after T1–T4 land. |
+| Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and rendered mirrors so a fresh agent can restart from actual state. |
+| Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md; flag the CS76 OPERATIONS.md rebase; create follow-up CSs for anything unresolved. |
 
 ## Notes / Learnings
 
