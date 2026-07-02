@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-180
+
+```yaml
+id: LRN-180
+date: 2026-07-02
+category: process
+source_cs: CS85
+status: applied
+tags: [bootstrap, consumer-docs, clickstop-links, guard, both-modes, commonmark, doc-linter]
+claim_area: templates
+```
+
+**Problem:** A durable consumer doc authored during bootstrap embedded harness-**transient** and harness-**institutional** artefacts: `henrik-me/sub-invaders`'s `ARCHITECTURE.md` (written by the CS16 bootstrap AUTHORING step — NOT the clean `template/seeded/ARCHITECTURE.md`) hard-linked a GitHub permalink into a `project/clickstops/active/active_cs16…` path that 404s the moment close-out `git mv`s the clickstop to `done/`, and duplicated the harness `### CS16 technology decisions` table + inline `(C16-xx)` provenance tags (#371). Same "harness-internal content leaks into a consumer doc" family as #229/#290/#370, but a distinct, previously-unguarded class: transient-clickstop-link + decision-table duplication.
+
+**Finding:** (a) **Doctrine** — durable docs (`ARCHITECTURE.md`, design notes, onboarding) must never link into a transient `project/clickstops/active/` path (prefer, in order: no link → a commit-SHA permalink, which pins the historical tree and survives the `active/`→`done/` rename → a stable `project/clickstops/done/` pointer) nor duplicate a clickstop's decision table / `(C<NN>-<n>)` provenance; captured as the "Consumer-doc clickstop-link durability invariant" in the composed `OPERATIONS.md` base (ships to consumers). (b) **A guard whose rule is generic must RUN IN CONSUMERS, not `target:null`-skip like the CS72/CS81 self-host-only guards.** `check-clickstop-link-durability.mjs` uses the `package.json` name to select the SCAN SET (self-host: root `*.md` + `template/**/*.md`; consumer: root `*.md` + `.github/{copilot-instructions,pull_request_template}.md`), NOT to no-op — because #371's defect lives in consumer repos, and the branch-pinned-`active/`-permalink rule reads no harness-internal tokens, so it does not false-fail in consumers. (c) **A doc linter that skips inline-code needs CommonMark-correct handling or it hides live violations (false-negatives):** a run of N backticks closes only on a run of EXACTLY N (a mismatched run does NOT close); a backslash escapes a backtick ONLY in ordinary text, NOT inside a span (backslashes are literal in code spans, so a backtick after `\` still closes). A naive lazy-regex or single-`` `[^`]*` `` stripper over-strips — GPT-5.5 caught three successive false-negatives (mismatched runs, escaped backticks, backslash-inside-span); the fix is an explicit forward scan (no regex backtracking / ReDoS). (d) **Adding an always-enabled linter breaks any test asserting an EXACT dispatched-linter row count** (`tests/cs15d-aggregator.test.mjs`); it surfaces only in the FULL `node --test` suite — not the implementer's own test file or `harness lint` — so the orchestrator must run the full suite at integration when a CS adds a lint-registry entry.
+
+**Evidence:** #371 (sub-invaders bootstrap-authored `ARCHITECTURE.md`). CS85: `scripts/check-clickstop-link-durability.mjs` (guard; `stripInlineCode` forward-scan hardened across GPT-5.5 R2/R3/R4); `template/composed/OPERATIONS.md` + root doctrine (byte-identical lockstep); `bin/harness.mjs` registration (non-null `target: cwd`, runs both modes) + `--explain` + help bullet; 38 `os.tmpdir()`-only tests; `tests/cs15d-aggregator.test.mjs` count 24→25. The harness's OWN docs + `template/seeded/ARCHITECTURE.md` verified clean (guard preventive there; consumer-active for real teeth). `harness lint` 35/0/3, `node --test` 1650/0, sync no-drift.
+
+**Disposition:** Applied (CS85, merge `0e505c5`, #386). Minor SemVer (new linter script; no schema change). Consumer-side sub-invaders `ARCHITECTURE.md` cleanup tracked separately in that repo (notified issue-only per Hard Rule §6). #371 auto-closed on merge.
+
+---
+
 ### LRN-179
 
 ```yaml

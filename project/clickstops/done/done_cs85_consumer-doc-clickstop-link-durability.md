@@ -1,10 +1,10 @@
 # CS85 — Consumer-doc clickstop-link durability: bootstrap-authoring doctrine + a link-durability guard (fixes #371, harness-side)
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2 (Claude Opus 4.8)
 **Branch:** cs85/content
 **Started:** 2026-07-02
-**Closed:** —
+**Closed:** 2026-07-02 (content merge `0e505c5`, PR #386)
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — filed at @henrik-me's request from inbound bug **#371** (a `henrik-me/sub-invaders` bootstrap-authored `ARCHITECTURE.md` that links into a now-404 harness `project/clickstops/active/active_cs16…` path and duplicates the CS16 decision table). Harness-side root cause only; the consumer-side cleanup is **explicitly out of scope** (tracked separately in the consumer repo) — per @henrik-me, this CS does **no** cross-repo commits/PRs and instead files an inbound "addressed" issue in `sub-invaders` at close-out.
 **Depends on:** none (hard). Builds on **CS70** (`done_cs70_bootstrap-summary-doctrine-and-stale-links` — bootstrap-summary doctrine + cross-repo pre-flight; fixed #290) and the CS72/CS81 consumer-doc guard family (`scripts/check-consumer-template-genericity.mjs`, `scripts/check-doc-xref-resolvability.mjs`). Same failure family as **#229** (CS76, planned) and **#370** (CS83, done). No in-flight CS owns `OPERATIONS.md`'s composed core except paused **CS65** (Risks R4).
 
@@ -86,8 +86,8 @@ Close the harness-side root cause of **#371**: the bootstrap-authoring step embe
 | T1 — Doctrine: add `### Consumer-doc clickstop-link durability invariant` to `template/composed/OPERATIONS.md` composed core + root mirror next to the CS72 genericity invariant (C85-1) | done | omni-ah-c2 | Orchestrator. Added identical non-templated section to both mirrors (1943 chars, byte-identical → lockstep by construction). Title genericized ("Consumer-doc clickstop-link durability invariant"). composed-blocks 0 errors both files; `sync --mode=check` no-drift; genericity/xref/encoding green. |
 | T2 — Guard: new `scripts/check-clickstop-link-durability.mjs` + register in `bin/harness.mjs` + tests/fixtures (C85-2/3) | done | cs85-guard | 389-line guard (pure `scanTextForViolations`/`checkTree` + CLI); branch-pinned `active/` permalink FLAG, 40-hex SHA-pin ALLOW, fence/inline-code SKIP, runs BOTH modes (`target:cwd`, not `target:null`). 32 tests (all pass); regex boundary excludes `\|` for table cells. Fixtures built in `os.tmpdir()` (no static dir, per LRN-076). Help bullet placed in always-run list (not Self-host-only). |
 | T3 — Integration (orchestrator): CHANGELOG `[Unreleased]` Added+Fixed; root-mirror lockstep (done in T1); full `harness lint` + `sync --mode=check` + `node --test` green (C85-5/6/7) | done | omni-ah-c2 | CHANGELOG Added (guard) + Fixed (doctrine). Fixed cross-cutting fixture `tests/cs15d-aggregator.test.mjs:129` (linter row count 24/16 → 25/17 — the new always-enabled linter adds one consumer row). Final: `harness lint` **35/0/3**; `sync --mode=check` **no drift**; `node --test tests/*.test.mjs` **1644 pass / 0 fail**. |
-| Close-out: docs + restart state | pending | omni-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and rendered mirrors so a fresh agent can restart from actual state. |
-| Close-out: learnings + follow-ups | pending | omni-ah-c2 | File/disposition LEARNINGS.md (new applied LRN); file the SI notify issue (C85-4); create follow-up CSs for anything unresolved. |
+| Close-out: docs + restart state | done | omni-ah-c2 | WORKBOARD.md (CS85 row removed), CONTEXT.md (CS85 entry prepended); no rendered-mirror change beyond the merged doctrine. |
+| Close-out: learnings + follow-ups | done | omni-ah-c2 | LRN-180 filed (applied, merge `0e505c5`); sub-invaders notify issue filed; #371 auto-closed on merge. No follow-up CSs needed. |
 
 ## Notes / Learnings
 
@@ -98,4 +98,16 @@ Close the harness-side root cause of **#371**: the bootstrap-authoring step embe
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-02T18:16:54Z
+**Outcome:** GO
+
+CS85 maps cleanly to the merged implementation at `0e505c5`. Every planned deliverable is present and correct; no divergences. The `tests/cs15d-aggregator.test.mjs` fixture count bump is the expected consequence of adding an always-enabled linter (assessed in-scope). Verified `harness lint` 35/0/3, CS85 tests 38 pass, `sync --mode=check` no-drift, full `node --test` exit 0. The LRN-180 flip, the sub-invaders notification issue, and #371 closure are close-out tasks (the last auto-closed on merge via `fixes #371`).
+
+| Deliverable | Outcome | Note |
+|---|---|---|
+| C85-1 / D1 — doctrine | met | "Consumer-doc clickstop-link durability invariant" in `template/composed/OPERATIONS.md` + root mirror (byte-identical), both sub-classes + preferred remediations |
+| C85-2/3 / D2-D4 — guard | met | `scripts/check-clickstop-link-durability.mjs`: branch/SHA detection, fence/inline-code skip, both-modes ERROR, scan sets, registered in lint + `--explain` + help (non-null `target`); 38 tests |
+| C85-5 — SemVer Minor | met | CHANGELOG `[Unreleased]` Added (guard) + Fixed (doctrine); no `schemas/` change |
+| C85-6 — scope | met | Only planned files + the necessary `cs15d` fixture bump; #371 auto-closed on merge |
+| Exit criteria | met | No branch-pinned `active/` permalink in the harness surface; guard fails-on-reintroduce/passes-tree; lockstep + sync-check green; lint 0; full tests pass |
