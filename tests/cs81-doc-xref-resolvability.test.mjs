@@ -156,6 +156,18 @@ describe('check-doc-xref-resolvability', () => {
     assert.equal(runLinter(['--cwd', dir]).status, 0);
   });
 
+  it('(b) does NOT falsely resolve an anchor that only matches a fenced code-block heading', () => {
+    const dir = buildTree({
+      'OPERATIONS.md':
+        '# Operations\n\nExample skeleton:\n\n```markdown\n## Fake heading in a fence\n```\n',
+      'INSTRUCTIONS.md':
+        '# Instructions\n\nSee [x](OPERATIONS.md#fake-heading-in-a-fence).\n',
+    });
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /cross-file anchor "OPERATIONS\.md#fake-heading-in-a-fence" does not resolve/);
+  });
+
   it('(b) skips a link whose target sibling doc does not exist', () => {
     const dir = buildTree({
       'INSTRUCTIONS.md': '# Instructions\n\nSee [x](NOSUCH.md#whatever).\n',

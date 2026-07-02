@@ -201,20 +201,31 @@ function headingAnchor(text) {
     .replace(/^-|-$/g, '');
 }
 
-/** Collect the set of GitHub anchors for every ATX heading in a document. */
+/** Collect the set of GitHub anchors for every ATX heading in a document,
+ *  skipping lines inside fenced code blocks so ```markdown examples (which
+ *  contain literal `#`/`##` lines, e.g. the CS skeleton) do not pollute the
+ *  anchor set and let a stale link falsely resolve. */
 function headingAnchorSet(content) {
   const set = new Set();
+  let inFence = false;
   for (const line of content.split('\n')) {
+    if (/^\s*(?:```|~~~)/.test(line)) { inFence = !inFence; continue; }
+    if (inFence) continue;
     const m = line.match(/^(#{1,6})\s+(.+?)\s*$/);
     if (m) set.add(headingAnchor(m[2].trim()));
   }
   return set;
 }
 
-/** Collect the set of `### LRN-<id>` heading ids declared in LEARNINGS.md. */
+/** Collect the set of `### LRN-<id>` heading ids declared in LEARNINGS.md,
+ *  skipping fenced code blocks (an example `### LRN-NNN` inside ``` is not a
+ *  real entry and must not make a dead token falsely resolve). */
 function learningHeadingIds(content) {
   const set = new Set();
+  let inFence = false;
   for (const line of content.split('\n')) {
+    if (/^\s*(?:```|~~~)/.test(line)) { inFence = !inFence; continue; }
+    if (inFence) continue;
     const m = line.match(/^#{1,6}\s+(LRN-[A-Za-z0-9]+)\b/);
     if (m) set.add(m[1]);
   }
@@ -334,7 +345,9 @@ function listFilesRel(absDir, relBase, acc) {
   let entries;
   try {
     entries = fs.readdirSync(absDir, { withFileTypes: true });
-  } catch {
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return acc; // absent class dir — nothing to add
+    logError(`template delivery surface: cannot read directory ${absDir}: ${e && e.message}`);
     return acc;
   }
   for (const e of entries) {
