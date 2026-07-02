@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-177
+
+```yaml
+id: LRN-177
+date: 2026-07-02
+category: tooling
+source_cs: CS81
+status: applied
+tags: [dangling-refs, resolvability, doc-xref, linter, consumer-templates, cross-references]
+claim_area: linters
+```
+
+**Problem:** The v0.10.0 consumer templates shipped three dangling cross-references that no gate caught: `OPERATIONS.md` cited placeholder learning IDs `LRN-A`/`LRN-B` (never assigned at CS70 close-out; the real IDs are `LRN-164`/`LRN-165` — #352-F1); `INSTRUCTIONS.md` linked `OPERATIONS.md#sub-agent-report-shape`, a stale anchor after the heading gained a `(mandatory)` suffix → `#sub-agent-report-shape-mandatory` (#356a); and `template/managed/READMEGUIDE.md` linked `docs/adr/000{1,2}-*.md`, which exist at the harness root but ship under no `template/` class, so they 404 in every consumer (#356b). Each is a distinct ref class, and no existing linter validated any of them: `check-instructions.mjs` checks LRN/ADR/anchor refs only for `INSTRUCTIONS.md` (not `OPERATIONS.md`/`REVIEWS.md` prose, and not cross-file `X.md#anchor` targets), and `check-consumer-template-genericity.mjs` scans `READMEGUIDE.md` only for banned tokens, not for broken relative paths.
+
+**Finding:** A consumer-shipped doc must contain only cross-references that RESOLVE in the consumer's delivered tree, and each resolvability class needs its own mechanical guard. `scripts/check-doc-xref-resolvability.mjs` (new, node-builtins-only, self-host-gated) now validates all three: **(a)** every uppercase `LRN-<id>` token in `OPERATIONS.md`/`REVIEWS.md` resolves to a `### LRN-<id>` heading in `LEARNINGS.md`; **(b)** every `](X.md#anchor)` link in `INSTRUCTIONS.md` (where sibling doc `X.md` exists) hits a real heading (GitHub anchor algorithm); **(c)** every relative FILE link in the consumer-onboarding doc set (`READMEGUIDE.md` + the CS72 set) resolves to a target that ships under `template/` (composed/managed/seeded). Checks (b)/(c) skip fenced code + inline-code spans so example links don't false-positive; the composed process-doc bases are excluded from (c) (pervasive out-of-scope `docs/adr` links — follow-up R3). It is builtins-only by design (NOT an extension of `check-instructions.mjs`, whose `lib/doc-schema.mjs`→`js-yaml` dep would break the dependency-free review-gate clone, LRN-147), so a new linter script ⇒ **Minor** SemVer (C81-6).
+
+**Evidence:** #352-F1 + #356 (sub-invaders v0.10.0 pin-adoption feedback). CS81: `OPERATIONS.md` + `template/composed/OPERATIONS.md` L157/591/602 `LRN-A/B`→`LRN-164/165`; both `INSTRUCTIONS.md` copies L267 anchor → `#sub-agent-report-shape-mandatory`; `template/managed/READMEGUIDE.md` L9/338 `docs/adr` pointers genericized (no `docs/adr` ref remains). `scripts/check-doc-xref-resolvability.mjs` + 18 fixture tests (`tests/cs81-doc-xref-resolvability.test.mjs`, `os.tmpdir()` only) cover each pass/fail branch; the guard passes the remediated tree (`harness lint` exit 0) and fails each reintroduced class. `REVIEWS.md` carried no placeholder LRN tokens (audited, untouched).
+
+**Disposition:** Applied (CS81). The guard is wired into `harness lint` as the self-host-only `doc-xref-resolvability` entry (gated by package name, exactly like `consumer-template-genericity`); the three dangling refs are fixed in both root and `template/composed/` mirrors. Follow-up R3 (pervasive relative `docs/adr/*` links in the composed process bases `OPERATIONS.md`/`CONVENTIONS.md`) is out of scope here and tracked for the process-doc genericization track (alongside CS76). Merge SHA recorded at close-out.
+
+---
+
 ### LRN-168
 
 ```yaml
