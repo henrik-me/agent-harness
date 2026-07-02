@@ -15,6 +15,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Documentation
 
+### Fixed
+
+## [0.11.0] — 2026-07-02
+
+### Added
+
+### Changed
+
+### Documentation
+
 ### Removed
 
 - **CS80 (single release creator):** Deleted `.github/workflows/release.yml` — the pre-verb, self-host-only workflow that auto-created a GitHub Release on every `v*.*.*` tag push. The `harness release` verb is now the **single** creator of the GitHub Release, matching consumer repos (which never shipped `release.yml`). This eliminates the LRN-175 duplicate-draft at the source and **supersedes** the CS79 workflow guard (removed together with the workflow — neither shipped in a release). A manual (no-verb) tag push now creates the Release by hand (`gh release create <tag> --verify-tag --draft`); no `lib/release.mjs` change (the verb already creates the release).
@@ -508,7 +518,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/henrik-me/agent-harness/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/henrik-me/agent-harness/compare/v0.7.0...v0.8.0

@@ -1,6 +1,6 @@
 {
   "name": "@henrik-me/agent-harness",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Multi-agent process harness — extracted from guesswhatisnext for reuse across projects.",
   "type": "module",
   "private": true,
