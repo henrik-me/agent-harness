@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS81 CLOSED** (shipped-template dangling-ref fixes + resolvability guard, #352-F1 + #356), merge `be3bf305`; CS65 stays ⏸️ Paused; **CS82** (lock provenance, #352-F2) is next)
+> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS82 CLOSED** (lock provenance robustness under npx, #352-F2), merge `24f36287`; both #352/#356 harness-side remediation CSs (CS81+CS82) now shipped. CS65 stays ⏸️ Paused (blocked on user gates). Next: release + sub-invaders pin-bump issue.)
 
 ## Orchestrators
 
@@ -28,7 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on user gates (G-target/G-threshold/Q1); paused to yield the single-active slot to CS81+CS82 (#352/#356 consumer-feedback remediation); reclaimable by owner after those close out |
-| CS82 | CS82 — Lock provenance robustness under npx installs (#352-F2) | 🟢 Active | omni-ah-c2 | cs82/content | 2026-07-02 | — |
+| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on unanswered user-approval gates (G-target/G-threshold/Q1); CS81+CS82 (#352/#356 remediation) now closed — reclaimable by owner once the gates are answered |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

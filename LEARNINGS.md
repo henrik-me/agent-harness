@@ -30,7 +30,7 @@ claim_area: sync-engine
 
 **Evidence:** #352-F2 (sub-invaders v0.10.0 pin-adoption feedback). CS82: `lib/sync.mjs` exports `resolveHarnessProvenance(deps)` (seam-injectable fs reader + git runner + install root; npx-cache → git → fail-closed) and `validateResolvedProvenance()` (apply-only guard, new `ESYNC_UNRESOLVED_PROVENANCE` code); scaffold `version`s derive from the resolved `harness_ref`. `tests/cs82-lock-provenance.test.mjs` (27 tests, `os.tmpdir()` only) covers every branch incl. sha-without-ref → fail-closed (C82-7) and check/dry-run no-throw (C82-8); `tests/sync.test.mjs` migrated to a hermetic provenance seam. `OPERATIONS.md` + `template/composed/OPERATIONS.md` § Sync gained a "Lock provenance" subsection; `schemas/harness-lock.schema.json` left unchanged (C82-3).
 
-**Disposition:** Applied (CS82). The ordered chain + apply-mode fail-closed ship in `lib/sync.mjs`; docs + CHANGELOG `[Unreleased]` (Fixed, patch bump) record it. Merge SHA recorded at close-out.
+**Disposition:** Applied (CS82, merge `24f36287`). The ordered chain + apply-mode fail-closed ship in `lib/sync.mjs`; docs + CHANGELOG `[Unreleased]` (Fixed, patch bump) record it.
 
 ---
 
