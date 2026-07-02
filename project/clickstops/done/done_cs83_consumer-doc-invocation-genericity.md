@@ -1,10 +1,10 @@
 # CS83 — Consumer-doc invocation-form genericity: fix #370 harness-repo invocation paths in shipped onboarding docs
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs83/content
 **Started:** 2026-07-02
-**Closed:** —
+**Closed:** 2026-07-02
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02 — filed from inbound consumer-feedback issue #370 (discovered by `henrik-me/sub-invaders`'s v0.10.0→v0.11.0 adoption review, reporter `omni-si`). Re-files the command-example half of #356 that CS81 left unaddressed.
 **Depends on:** none (hard). Builds on CS72 (consumer-template genericity guard, `scripts/check-consumer-template-genericity.mjs`) and the existing `lib/templating.mjs` `{{key}}` engine. Coordinated with planned CS76 (which targets `template/composed/OPERATIONS.md` cross-ref lines): CS83 edits **disjoint invocation lines** in OPERATIONS.md (C83-6) and merges first; CS76 rebases.
 
@@ -122,4 +122,28 @@ Key mechanics verified in the tree:
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-02T07:46:59Z
+**Outcome:** GO
+
+Two rounds. **R1 (2026-07-02T07:43:47Z): NEEDS-FIX** — all 13 deliverables `match` (D11 `diverged`-but-justified), coverage `sufficient`; the *sole* blocker was the procedural exit criterion "#370 closed" (the issue was still OPEN). **Resolution:** #370 was closed (fix merged as `e05aa75`, with a linking comment) — the agent-does-not-**open**-issues doctrine (INSTRUCTIONS.md:31-35) does not forbid closing a resolved inbound issue, and OPERATIONS.md:713 explicitly allows it once the work is done. **R2 (2026-07-02T07:46:59Z): GO** — confirmed #370 `CLOSED`, HEAD unchanged at `e05aa75`, `harness lint` 34/0, `sync --mode=check` no drift; the R1 deliverable assessment is reaffirmed.
+
+### Per-deliverable outcome table (R1, reaffirmed R2)
+
+| Deliverable | Outcome | Note |
+|---|---|---|
+| 1 (INSTRUCTIONS.md) | match | 3 `{{harness_invoke}}` substitutions; root byte-identical via the override. |
+| 2 (copilot-instructions.md) | match | config conformance → `sync --mode=check`; lint → `lint`; `validate-schemas` fallback dropped. |
+| 3 (RETROSPECTIVES.md) | match | 6 examples → aggregate `lint`; targeted `--file` tip removed, not falsely mapped. |
+| 4 (READMEGUIDE.md) | match | both readme-linter invocations → `{{harness_invoke}} lint`; exit-code `2` row restored. |
+| 5 (OPERATIONS.md) | match | 7 template invocations + CI-prose source-ref reword + aggregate self-check prose; no cross-ref edits. |
+| 6 (harness.config.json) | match | adds only `templating.harness_invoke`; seeded config untouched. |
+| 7 (lib/sync.mjs) | match | computes the default + merges under `config.templating`; ref-charset allowlist hardening. |
+| 8 (sync tests) | match | consumer default, override, version threading, `<ref>` fallback, unsafe/safe refs, no literal leak. |
+| 9 (guard) | match | separate 8-file `INVOCATION_SCOPE_SET` + node-anchored patterns; anchor scan scope preserved. |
+| 10 (guard tests/fixtures) | match | invocation fail, prose/source-ref pass, `{{harness_invoke}}`, CS/LRN orthogonality, marker-validation. |
+| 11 (.harness-lock.json) | diverged | Intentionally **untouched** (not refreshed) — justified by the self-host stale-lock behavior + confirmed `sync --mode=check` no-drift; matches the close-out expectation. |
+| 12 (LEARNINGS.md) | match | LRN-179 (render-context invocation invariant + non-strict-templating gotcha); merge SHA recorded. |
+| 13 (CHANGELOG.md) | match | `[Unreleased]` Fixed entry, Minor rationale, #370 reference. |
+
+**Test-coverage assessment:** `sufficient` — `node --test tests/*.test.mjs` 1612 pass / 0 fail / 1 skipped; `harness lint --quiet` 34 passed / 0 failed; `sync --mode=check` no drift.

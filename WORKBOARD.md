@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS82 CLOSED** (lock provenance robustness under npx, #352-F2), merge `24f36287`; both #352/#356 harness-side remediation CSs (CS81+CS82) now shipped. CS65 stays ⏸️ Paused (blocked on user gates). Next: release + sub-invaders pin-bump issue.)
+> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS83 CLOSED** (consumer-doc invocation-form genericity — `{{harness_invoke}}` render-context templating + invocation guard, fix #370), merge `e05aa75`; **#370 closed**. Minor SemVer (new optional `harness_invoke` templating key). CS65 stays ⏸️ Paused (blocked on user gates). Next: release + sub-invaders pin-bump issue.)
 
 ## Orchestrators
 
@@ -29,6 +29,5 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on unanswered user-approval gates (G-target/G-threshold/Q1); CS81+CS82 (#352/#356 remediation) now closed — reclaimable by owner once the gates are answered |
-| CS83 | CS83 — Consumer-doc invocation-form genericity: fix #370 harness-repo invocation paths in shipped onboarding docs | 🟢 Active | omni-ah-c2 | cs83/content | 2026-07-02 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
