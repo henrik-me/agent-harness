@@ -757,6 +757,10 @@ the orchestrator owns the commit message and the PR).
 
 Preflights:
   - Worktree must be clean.
+  - Current branch must be main.
+  - main must be in sync with origin/main (HEAD == origin/main); otherwise run
+    'git pull origin main --rebase' first (no fetch — Session Start owns the
+    network step per INSTRUCTIONS.md).
   - Branch cs<NN>/claim must not already exist.
   - Exactly one matching planned_cs<NN>_*.md (or directory form).
   - This orchestrator has no existing Active CS row in WORKBOARD (per-orchestrator lock).

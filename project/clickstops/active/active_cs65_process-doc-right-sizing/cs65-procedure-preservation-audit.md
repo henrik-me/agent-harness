@@ -36,11 +36,13 @@ backfilled into the command `--help`. Every thinned section remains reachable:
 | `### Reviewer dispatch via harness review (CS52)` | `harness review --help` | don't-merge-until-Go A5/A16 doctrine |
 | `### Recommended invocation (CS41+)` | `harness copilot-engage --help` | REST-vs-GraphQL primitive, the `node(id: …)`/`BOT_kgDOCnlnWA` identity resolution (CS44-pinned), poll predicate, LRN-009/ADR-0004 |
 
-**Sections deliberately NOT thinned** (kept in full — no command-duplication or
-load-bearing): the `## Sub-agent dispatch` / `### Mandatory briefing preamble` /
-`## Reviewer dispatch — canonical preamble` blocks are **extracted live from
-OPERATIONS.md at runtime** by `lib/dispatch.mjs` (`harness dispatch`) and the
-reviewer path, so they are the source of truth and must stay verbatim; the
+**Sections deliberately NOT thinned** (kept in full): the `## Sub-agent dispatch`
+/ `### Mandatory briefing preamble` block is **extracted live from OPERATIONS.md
+at runtime** by `lib/dispatch.mjs` (`harness dispatch`), so it is load-bearing and
+must stay verbatim. The `## Reviewer dispatch — canonical preamble` is NOT
+extracted by any command — `harness review` composes its prompt in code
+(`lib/review.mjs`) — so it is duplicated doctrine kept intact (a thinning candidate;
+see the CS `## Follow-ups`). The
 Release / Sync / Cross-repo / Handoff / Plan-vs-implementation-review sections are
 doctrine-dense (ordering traps, policy, invariants) with only partial or read-only
 command equivalents. Per the G-target resolution, the ≈600-line target is a *goal*
