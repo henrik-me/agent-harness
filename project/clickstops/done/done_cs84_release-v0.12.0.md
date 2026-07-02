@@ -1,10 +1,10 @@
 # CS84 — Cut harness v0.12.0
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs84/content
 **Started:** 2026-07-02
-**Closed:** —
+**Closed:** 2026-07-02
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02, at @henrik-me's request ("release"). One distributed-surface clickstop (**CS83** — consumer-doc invocation-form genericity, #370) plus one distributed-surface docs PR (**#369** — workboard auto-merge branch patterns in the composed `OPERATIONS.md` base) have shipped since `v0.11.0` (2026-07-02). CS83 adds a new **optional `templating` config key** (`harness_invoke`) — a **Minor** signal per [OPERATIONS.md § SemVer policy](../../../OPERATIONS.md#semver-policy) — so the pending cut is **v0.12.0**.
 **Depends on:** none (hard). Uses the shipped, validated `harness release` verb (CS67 + CS78; first live use CS77/v0.10.0). `.github/workflows/release.yml` was **deleted by CS80** (single-creator), so the verb is the sole Release creator — **no `release.yml`-vs-verb double-draft** (the CS77 primary finding is now structurally eliminated).
 
@@ -123,4 +123,22 @@ Conclusion: **no published or draft GitHub Release and no git tag exists for `v0
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-02T13:46:17Z
+**Outcome:** GO
+
+All 9 deliverables match; the only remaining release step is the intentional human **G-publish** (draft → Latest), which is the gate, not a gap.
+
+| Deliverable | Outcome | Note |
+|---|---|---|
+| 1 (package.json + lock → 0.12.0) | match | `node -p` reports `0.12.0`; lock root/package versions `0.12.0`. |
+| 2 (CHANGELOG) | match | Fresh empty `[Unreleased]`; `[0.12.0] — 2026-07-02` has #369 Documentation + CS83 Fixed bullets; link refs repointed. |
+| 3 (README sweep) | match | Current-version prose/pins → `v0.12.0`; only historical `Prior: v0.11.0` remains; `check-readme` exit 0. |
+| 4 (validation) | match | `harness lint` 34/0; `node --test` 1612 pass / 0 fail / 1 skipped. |
+| 5 (local review) | match | PR #378 body Model audit + Review log with GPT-5.5 **Go**; Copilot review present + clean. |
+| 6 (annotated tag + draft Release) | match | Remote annotated tag; peeled `^{}` == `3e66461519af7ff314a72097dcea0f06940a67c9`; `cat-file -t` = `tag`. Exactly one `v0.12.0` Release (draft=true); notes normalize-equal to CHANGELOG `[0.12.0]`. |
+| 7 (sub-invaders issue) | match | Issue #139 OPEN, `harness-orchestrator` label; exactly one; body has the v0.12.0 bump + checklist. |
+| 8 (plan file state) | match | `## Plan review` Go-with-amendments row present; PVI recorded before the active→done rename. |
+| 9 (close-out / publish gate) | match | Autonomous cut stops at the draft; G-publish is the human gate, not a gap (C84-9). |
+
+**Test-coverage / release-artifact assessment:** `sufficient` — version files, CHANGELOG, README, annotated tag, single draft Release, release notes, consumer issue, lint (34/0), and tests (1612/0) all match the plan + exit criteria.
