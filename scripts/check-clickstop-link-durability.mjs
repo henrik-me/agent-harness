@@ -98,13 +98,17 @@ function normalizeLF(content) {
 /**
  * Strip inline-code spans from a single line, CommonMark-correctly enough for a
  * doc linter:
- *   - a code span opens with a run of N backticks and closes with a run of
- *     EXACTLY N backticks (a too-long/short run does NOT close — e.g.
+ *   - a code span opens with a run of N backticks and closes with the first run
+ *     of EXACTLY N backticks (a too-long/short run does NOT close — e.g.
  *     `` ``url``` `` is not a 2-span, so its URL stays LIVE and is flagged);
- *   - a backslash-escaped backtick (`` \` ``) is a LITERAL character, never a
- *     delimiter (so `` \`url\` `` is NOT a code span — its URL stays LIVE).
- *     Backslashes bind left-to-right: each `\` consumes the next char as a
- *     literal pair, so `` \\` `` = literal backslash + a real span delimiter.
+ *   - backslash escaping applies ONLY in ordinary text (the main loop): a
+ *     backslash-escaped backtick (`` \` ``) there is a LITERAL char, never an
+ *     opening delimiter (so `` \`url\` `` is NOT a code span — its URL stays
+ *     LIVE). Backslashes bind left-to-right in text (`` \\` `` = literal
+ *     backslash + a real span delimiter). INSIDE a span, per CommonMark,
+ *     backslashes are literal and do NOT escape — so the close scan counts
+ *     every backtick run (a `` \` `` inside a span still closes it, leaving a
+ *     following URL LIVE).
  * Implemented as an explicit forward scan (no regex → no backtracking / ReDoS).
  * A found span is replaced with a space so surrounding text does not fuse.
  * Worst case is a bounded polynomial in line length (a run with no valid close
@@ -120,30 +124,32 @@ function stripInlineCode(line) {
   let i = 0;
   const n = line.length;
   while (i < n) {
-    // Backslash escape: this char + the next are literal; an escaped backtick is
-    // NOT a code-span delimiter.
+    // Backslash escape (text context only): this char + the next are literal, so
+    // an escaped backtick does NOT open a code span.
     if (line[i] === '\\' && i + 1 < n) {
       out += line[i] + line[i + 1];
       i += 2;
       continue;
     }
     if (line[i] !== '`') {
-      out += line[i];
-      i++;
+      // Append the whole run of ordinary chars up to the next backtick/backslash
+      // in one slice (avoids char-by-char string growth).
+      let p = i + 1;
+      while (p < n && line[p] !== '`' && line[p] !== '\\') p++;
+      out += line.slice(i, p);
+      i = p;
       continue;
     }
     // Measure the opening (unescaped) backtick run.
     let j = i;
     while (j < n && line[j] === '`') j++;
     const runLen = j - i;
-    // Find a closing run of EXACTLY runLen UNescaped backticks.
+    // Find the first closing run of EXACTLY runLen backticks. Backslashes are
+    // literal INSIDE a span (CommonMark), so we do NOT skip escaped chars here —
+    // every backtick run counts toward closing.
     let k = j;
     let close = -1;
     while (k < n) {
-      if (line[k] === '\\' && k + 1 < n) {
-        k += 2; // skip an escaped char (an escaped backtick cannot close)
-        continue;
-      }
       if (line[k] !== '`') {
         k++;
         continue;

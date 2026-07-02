@@ -192,6 +192,15 @@ describe('scanTextForViolations (detection rule)', () => {
     assert.deepEqual(scanTextForViolations('pre \\\\`' + BAD_BRANCH + '` post\n'), []);
   });
 
+  it('flags a URL after a span CLOSED by a backtick that follows a backslash', () => {
+    // `foo\` is a valid code span — backslashes are literal INSIDE a span, so the
+    // backtick after `\` closes it. The following URL is therefore LIVE and must
+    // be flagged (regression guard: escapes must not apply in the close scan).
+    const hits = scanTextForViolations('before `foo\\`' + BAD_BRANCH + '` after\n');
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].url, BAD_BRANCH);
+  });
+
   it('does not flag active/ appearing only in a benign URL query string or fragment', () => {
     assert.deepEqual(
       scanTextForViolations('[q](https://github.com/o/r/blob/main/README.md?p=project/clickstops/active/x)\n'),
