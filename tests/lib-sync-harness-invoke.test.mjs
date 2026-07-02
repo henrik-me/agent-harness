@@ -153,6 +153,26 @@ describe('computeHarnessInvokeDefault()', () => {
     );
   });
 
+  it('falls back to <ref> for a version outside the safe ref allowlist (no injection into the rendered command)', () => {
+    for (const bad of ['v1.0.0; rm -rf /', 'v1 2', 'v1$(whoami)', 'v1`id`', 'main branch', 'v1&&x']) {
+      assert.equal(
+        computeHarnessInvokeDefault({ version: bad }),
+        'npx -y github:henrik-me/agent-harness#<ref>',
+        `unsafe version ${JSON.stringify(bad)} must fall back to <ref>`
+      );
+    }
+  });
+
+  it('accepts safe refs — tags, SHAs, and branch paths with slashes/dots/dashes/underscores', () => {
+    for (const good of ['v0.11.0', 'a3f4c8d2e1b0', 'release/1.0', 'feature-x_y', 'v1.2.3-rc.1']) {
+      assert.equal(
+        computeHarnessInvokeDefault({ version: good }),
+        `npx -y github:henrik-me/agent-harness#${good}`,
+        `safe version ${JSON.stringify(good)} must be used as the pin`
+      );
+    }
+  });
+
   it('tolerates a null / undefined config', () => {
     assert.equal(
       computeHarnessInvokeDefault(undefined),

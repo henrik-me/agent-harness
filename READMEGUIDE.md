@@ -314,6 +314,7 @@ Exit codes:
 |---|---|
 | `0` | No errors (warnings are allowed) |
 | `1` | At least one validation error |
+| `2` | Usage error (e.g. an unknown flag) |
 
 CI runs this check automatically as part of the harness lint aggregate. It is
 safe to run locally at any time; it is read-only and makes no changes.
