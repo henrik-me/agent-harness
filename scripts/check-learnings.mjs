@@ -5,12 +5,23 @@
  * Validates every entry in LEARNINGS.md against schemas/learning.schema.json
  * (AJV), checks status/disposition consistency, and emits sequence warnings.
  *
+ * CS65 T4 — archive awareness: when the target file has a sibling
+ * `LEARNINGS-archive.md` (same directory), that archive is validated with the
+ * IDENTICAL check battery (schema, status/disposition, CS69 header↔id, section
+ * headings). An absent archive is a no-op, so consumers with no archive get
+ * byte-for-byte identical output. Heading-only STUBS in `LEARNINGS.md`
+ * (`### LRN-NNN` with no following ```yaml block) are the redirect shape the
+ * archival produces; they carry no frontmatter, so `parseFrontmatterBlocks`
+ * never returns them as entries and every entry check tolerates them. Their
+ * slot is still counted in the sequence/gap universe so a stub is not mistaken
+ * for a missing id.
+ *
  * Usage:
  *   node scripts/check-learnings.mjs [--file <path>] [--quiet]
  *
  * Exit codes:
  *   0 — all entries valid (warnings are printed but do not affect exit code)
- *   1 — at least one validation error
+ *   1 — at least one validation error (in LEARNINGS.md or its sibling archive)
  *
  * @module scripts/check-learnings.mjs
  */
@@ -47,7 +58,8 @@ for (let i = 0; i < argv.length; i++) {
   } else if (a === '--help' || a === '-h') {
     process.stdout.write(
       'Usage: check-learnings.mjs [--file <path>] [--quiet]\n\n' +
-      'Validate all LEARNINGS.md entries against the learning schema.\n\n' +
+      'Validate all LEARNINGS.md entries against the learning schema. When the\n' +
+      'target has a sibling LEARNINGS-archive.md, the archive is validated too.\n\n' +
       'Options:\n' +
       '  --file <path>   Path to the LEARNINGS.md file to lint\n' +
       '                  (default: <repoRoot>/LEARNINGS.md)\n' +
@@ -71,8 +83,315 @@ const ajv = new Ajv2020({ strict: false, validateSchema: false });
 addFormats(ajv);
 const validateLearning = ajv.compile(schema);
 
+// Shared "today" reference for the age-out / deferred-escalation warnings.
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
 // ---------------------------------------------------------------------------
-// Read and parse the target file
+// Core validation — runs the full check battery over one markdown document.
+//
+// Extracted (CS65 T4) so the sibling LEARNINGS-archive.md can be validated with
+// the identical rules. Each call collects its own findings and streams them
+// (respecting --quiet); the caller owns the summary + exit-code decision so
+// the active log and the archive aggregate cleanly. `sourceLabel` prefixes
+// findings for the archive pass; the primary pass passes null so its output is
+// byte-for-byte identical to the pre-CS65 single-file linter.
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {string} markdownText - Raw markdown content of the doc to validate.
+ * @param {{ quiet: boolean, sourceLabel?: (string|null) }} opts
+ * @returns {{ errors: string[], warnings: string[], entryCount: number }}
+ */
+function validateDoc(markdownText, { quiet: isQuiet, sourceLabel = null }) {
+  const errors = [];
+  const warnings = [];
+  const prefix = sourceLabel ? `${sourceLabel}: ` : '';
+
+  /**
+   * Record an error finding and print it unless --quiet is active.
+   *
+   * @param {string} msg - Human-readable error description.
+   */
+  function logError(msg) {
+    errors.push(msg);
+    if (!isQuiet) process.stdout.write(`ERROR: ${prefix}${msg}\n`);
+  }
+
+  /**
+   * Record a warning finding and print it unless --quiet is active.
+   *
+   * @param {string} msg - Human-readable warning description.
+   */
+  function logWarning(msg) {
+    warnings.push(msg);
+    if (!isQuiet) process.stdout.write(`WARNING: ${prefix}${msg}\n`);
+  }
+
+  const blocks = parseFrontmatterBlocks(markdownText);
+
+  // Blocks that parsed cleanly (used for most checks).
+  const validBlocks = blocks.filter((b) => !b.parseError);
+
+  // Normalize once for the line-oriented checks (5/6/7).
+  const normalizedText = markdownText
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+  const normalizedLines = normalizedText.split('\n');
+
+  // -------------------------------------------------------------------------
+  // Check 0 — YAML parse errors (B2)
+  //   Blocks that had an LRN-style id line but whose YAML was malformed are
+  //   treated as hard errors rather than silently skipped.
+  // -------------------------------------------------------------------------
+
+  for (const block of blocks) {
+    if (block.parseError) {
+      const idMatch = block.raw.match(/^\s*id\s*:\s*(\S+)/m);
+      const id = idMatch ? idMatch[1] : `<unknown at line ${block.lineNumber}>`;
+      logError(
+        `${id} (line ${block.lineNumber}): YAML parse error: ${block.parseError.message}`
+      );
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 1 — AJV schema validation for each frontmatter block
+  // -------------------------------------------------------------------------
+
+  for (const block of validBlocks) {
+    const { parsed, lineNumber } = block;
+    const valid = validateLearning(parsed);
+    if (!valid) {
+      for (const err of (validateLearning.errors ?? [])) {
+        const loc = err.instancePath ? err.instancePath.replace(/^\//, '') : err.schemaPath;
+        logError(`${parsed.id} (line ${lineNumber}): ${loc} ${err.message}`);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 2 — status/disposition consistency
+  //   Entries with status "applied" or "obsolete" must have a
+  //   **Disposition:** paragraph in their body text.
+  // -------------------------------------------------------------------------
+
+  for (const block of validBlocks) {
+    const { parsed, bodyAfter, lineNumber } = block;
+    if (parsed.status === 'applied' || parsed.status === 'obsolete') {
+      if (!bodyAfter.includes('**Disposition:**')) {
+        logError(
+          `${parsed.id} (line ${lineNumber}): status "${parsed.status}" requires ` +
+          `a **Disposition:** paragraph in the entry body`
+        );
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 3 — age-out warning
+  //   Entries with status "open" and a date older than 14 days.
+  // -------------------------------------------------------------------------
+
+  for (const block of validBlocks) {
+    const { parsed } = block;
+    if (parsed.status === 'open' && parsed.date) {
+      const entryDate = new Date(parsed.date + 'T00:00:00Z');
+      const ageDays = (today - entryDate) / (1000 * 60 * 60 * 24);
+      if (ageDays > 14) {
+        logWarning(
+          `${parsed.id}: status "open" with date ${parsed.date} is ` +
+          `${Math.floor(ageDays)} days old (>14 days)`
+        );
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 4 — deferred escalation warning
+  //   Entries with status "deferred" whose deferred_until date has passed.
+  // -------------------------------------------------------------------------
+
+  for (const block of validBlocks) {
+    const { parsed } = block;
+    if (parsed.status === 'deferred' && parsed.deferred_until) {
+      const until = new Date(parsed.deferred_until + 'T00:00:00Z');
+      if (until < today) {
+        logWarning(
+          `${parsed.id}: status "deferred" with deferred_until ${parsed.deferred_until} has passed — revisit needed`
+        );
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 5 — ID sequence and duplicate detection
+  //   Duplicate IDs = ERROR.  Non-contiguous LRN-NNN sequence = WARNING.
+  //
+  //   CS65 T4: the gap universe unions frontmatter ids with STUB headings
+  //   (`### LRN-NNN` lines that have no frontmatter — the archive-redirect
+  //   shape). A stub still occupies its slot, so it must NOT be reported as a
+  //   missing gap. Duplicate detection stays on frontmatter ids only (a stub
+  //   is by definition the moved entry's placeholder, not a duplicate).
+  // -------------------------------------------------------------------------
+
+  const allLrnIds = validBlocks
+    .map((b) => b.parsed.id)
+    .filter((id) => typeof id === 'string' && /^LRN-\d+$/.test(id));
+
+  // NB-9: duplicate-ID check.
+  const seenIds = new Set();
+  for (const id of allLrnIds) {
+    if (seenIds.has(id)) {
+      logError(`Duplicate ID: ${id} appears more than once`);
+    }
+    seenIds.add(id);
+  }
+
+  // Collect stub / heading LRN slots for the gap universe (fence-aware so a
+  // `### LRN-NNN` inside an example fence does not inflate the sequence).
+  const headingNums = new Set();
+  {
+    let inFence = false;
+    for (const line of normalizedLines) {
+      if (/^\s*(?:```|~~~)/.test(line)) { inFence = !inFence; continue; }
+      if (inFence) continue;
+      const hm = line.match(/^###\s+LRN-(\d+)\s*$/);
+      if (hm) headingNums.add(parseInt(hm[1], 10));
+    }
+  }
+
+  // Gap check: derive unique numeric set from deduped frontmatter IDs unioned
+  // with stub/heading slots.
+  const lrnNums = [...new Set([
+    ...[...seenIds].map((id) => parseInt(id.slice(4), 10)),
+    ...headingNums,
+  ])].sort((a, b) => a - b);
+
+  for (let i = 1; i < lrnNums.length; i++) {
+    if (lrnNums[i] !== lrnNums[i - 1] + 1) {
+      for (let gap = lrnNums[i - 1] + 1; gap < lrnNums[i]; gap++) {
+        logWarning(`ID gap: LRN-${String(gap).padStart(3, '0')} is missing from the sequence`);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 6 — section heading validation
+  //   Error if entries exist for a status but the matching ## heading is absent.
+  //   Error if an unrecognised ## heading is present.
+  //
+  //   NOTE: section placement does NOT have to match status (per LEARNINGS.md
+  //   bottom note) — we validate the status field, not placement.
+  // -------------------------------------------------------------------------
+
+  const existingH2Headings = new Set();
+  for (const line of normalizedLines) {
+    const m = line.match(/^## (.+)$/);
+    if (m) existingH2Headings.add(m[1].trim());
+  }
+
+  const allowedH2 = new Set(['Open', 'Applied', 'Obsolete', 'Deferred']);
+
+  /** @type {Record<string, string>} */
+  const statusToHeading = {
+    open: 'Open',
+    applied: 'Applied',
+    obsolete: 'Obsolete',
+    deferred: 'Deferred',
+  };
+
+  // Error if entries exist in a category but the heading is missing.
+  for (const [status, heading] of Object.entries(statusToHeading)) {
+    const hasEntries = validBlocks.some((b) => b.parsed.status === status);
+    if (hasEntries && !existingH2Headings.has(heading)) {
+      logError(
+        `Heading "## ${heading}" is missing but entries with status "${status}" exist`
+      );
+    }
+  }
+
+  // Error for any ## heading that is not in the allowed set.
+  for (const h of existingH2Headings) {
+    if (!allowedH2.has(h)) {
+      logError(`Undocumented section heading: "## ${h}"`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 7 — H3 header presence and id↔header match (LRN-154, CS69)
+  //   Every entry with `id: LRN-<n>` must be preceded by a matching
+  //   `### LRN-<n>` H3 header. Per CS69-1, the header sits on the line(s)
+  //   immediately above the opening ```yaml fence, separated from it by only
+  //   blank lines — NOT by intervening prose. The strict adjacency rule
+  //   (skip blanks, require the next nonblank line above the fence to be the
+  //   `### LRN-<n>` candidate) ensures a `### LRN-XXX` that appears anywhere
+  //   inside a previous entry's body (prose or otherwise) cannot be
+  //   misclassified as the current entry's header.
+  //
+  //   The canonical header form is `### LRN-<digits>` with no trailing text
+  //   after the digit token. This matches the actual LEARNINGS.md convention
+  //   (every header is bare) and the assumption baked into
+  //   `lib/doc-schema.mjs assertHeadings()` and other linters that resolve
+  //   `LEARNINGS.md#lrn-<digits>` anchors by exact heading text. Headers
+  //   with trailing descriptive text would break those anchors silently, so
+  //   they are treated as missing.
+  //
+  //   Digit-string comparison (not parseInt): the frontmatter `id` is the
+  //   canonical zero-padded form (e.g. `LRN-001`). A header `### LRN-1`
+  //   that drops leading zeros is NOT a match — it would create a broken
+  //   `#lrn-1` anchor instead of `#lrn-001`. So the captured header digits
+  //   must equal `parsed.id.slice(4)` as an exact string match.
+  //
+  //   NB (CS65 T4): this check iterates frontmatter blocks only, so heading-
+  //   only STUBS (archive redirects) are never inspected here and never
+  //   false-fail — a stub carries no frontmatter to mismatch against.
+  //
+  //   - Missing or non-canonical header → error "missing `### LRN-<n>` H3 header".
+  //   - Present-but-mismatched digit string (e.g. `### LRN-105` precedes
+  //     `id: LRN-106`, or `### LRN-1` precedes `id: LRN-001`) → distinct
+  //     error naming both ids.
+  // -------------------------------------------------------------------------
+
+  for (const block of validBlocks) {
+    const { parsed, lineNumber } = block;
+    if (!/^LRN-\d+$/.test(parsed.id ?? '')) continue;
+
+    const expectedDigits = parsed.id.slice(4); // canonical zero-padded form
+    const openIdx = lineNumber - 1; // convert to 0-indexed
+
+    // Skip blank lines walking backwards from immediately above the fence.
+    let k = openIdx - 1;
+    while (k >= 0 && /^\s*$/.test(normalizedLines[k])) k--;
+
+    // The next nonblank line above the fence must be the canonical H3 header.
+    // Match `### LRN-<digits>` with NO trailing text — bare-header convention.
+    const candidateLine = k >= 0 ? normalizedLines[k] : null;
+    const h3Match = candidateLine
+      ? candidateLine.match(/^###\s+LRN-(\d+)\s*$/)
+      : null;
+
+    if (!h3Match) {
+      logError(
+        `${parsed.id} (line ${lineNumber}): missing \`### ${parsed.id}\` H3 header on the line immediately above the entry's YAML frontmatter block (LRN-154)`
+      );
+      continue;
+    }
+
+    const candidateDigits = h3Match[1];
+    if (candidateDigits !== expectedDigits) {
+      logError(
+        `${parsed.id} (line ${lineNumber}): H3 header "### LRN-${candidateDigits}" (line ${k + 1}) does not match frontmatter id "${parsed.id}" — digit strings differ (anchors must use the canonical zero-padded form, LRN-154)`
+      );
+    }
+  }
+
+  return { errors, warnings, entryCount: blocks.length };
+}
+
+// ---------------------------------------------------------------------------
+// Read and validate the primary target file
 // ---------------------------------------------------------------------------
 
 let markdownText;
@@ -83,263 +402,33 @@ try {
   process.exit(1);
 }
 
-const blocks = parseFrontmatterBlocks(markdownText);
-
-// Blocks that parsed cleanly (used for most checks).
-const validBlocks = blocks.filter((b) => !b.parseError);
+const main = validateDoc(markdownText, { quiet, sourceLabel: null });
 
 // ---------------------------------------------------------------------------
-// Finding collectors
+// CS65 T4 — sibling LEARNINGS-archive.md validation
+//   If the target has a sibling `LEARNINGS-archive.md` (same directory), the
+//   archive's full entries are validated with the identical check battery.
+//   Absent archive → no-op, so consumers with no archive are unaffected and
+//   the output above is byte-for-byte identical to the pre-CS65 linter.
 // ---------------------------------------------------------------------------
 
-const errors = [];
-const warnings = [];
-
-/**
- * Record an error finding and print it unless --quiet is active.
- *
- * @param {string} msg - Human-readable error description.
- */
-function logError(msg) {
-  errors.push(msg);
-  if (!quiet) process.stdout.write(`ERROR: ${msg}\n`);
-}
-
-/**
- * Record a warning finding and print it unless --quiet is active.
- *
- * @param {string} msg - Human-readable warning description.
- */
-function logWarning(msg) {
-  warnings.push(msg);
-  if (!quiet) process.stdout.write(`WARNING: ${msg}\n`);
-}
-
-// ---------------------------------------------------------------------------
-// Check 0 — YAML parse errors (B2)
-//   Blocks that had an LRN-style id line but whose YAML was malformed are
-//   treated as hard errors rather than silently skipped.
-// ---------------------------------------------------------------------------
-
-for (const block of blocks) {
-  if (block.parseError) {
-    const idMatch = block.raw.match(/^\s*id\s*:\s*(\S+)/m);
-    const id = idMatch ? idMatch[1] : `<unknown at line ${block.lineNumber}>`;
-    logError(
-      `${id} (line ${block.lineNumber}): YAML parse error: ${block.parseError.message}`
-    );
+let archive = null;
+const archivePath = path.join(path.dirname(filePath), 'LEARNINGS-archive.md');
+// existsSync() returns false on permission/I/O errors too, so gating the read
+// behind it would fail OPEN (silently skip a present-but-unreadable archive).
+// Read directly and treat only a genuinely absent archive (ENOENT) as a no-op;
+// any other read error fails CLOSED (mirrors readDoc() in check-doc-xref-resolvability).
+let archiveText = null;
+try {
+  archiveText = fs.readFileSync(archivePath, 'utf8');
+} catch (err) {
+  if (err.code !== 'ENOENT') {
+    process.stderr.write(`check-learnings: cannot read archive "${archivePath}": ${err.message}\n`);
+    process.exit(1);
   }
 }
-
-// ---------------------------------------------------------------------------
-// Check 1 — AJV schema validation for each frontmatter block
-// ---------------------------------------------------------------------------
-
-for (const block of validBlocks) {
-  const { parsed, lineNumber } = block;
-  const valid = validateLearning(parsed);
-  if (!valid) {
-    for (const err of (validateLearning.errors ?? [])) {
-      const loc = err.instancePath ? err.instancePath.replace(/^\//, '') : err.schemaPath;
-      logError(`${parsed.id} (line ${lineNumber}): ${loc} ${err.message}`);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 2 — status/disposition consistency
-//   Entries with status "applied" or "obsolete" must have a
-//   **Disposition:** paragraph in their body text.
-// ---------------------------------------------------------------------------
-
-for (const block of validBlocks) {
-  const { parsed, bodyAfter, lineNumber } = block;
-  if (parsed.status === 'applied' || parsed.status === 'obsolete') {
-    if (!bodyAfter.includes('**Disposition:**')) {
-      logError(
-        `${parsed.id} (line ${lineNumber}): status "${parsed.status}" requires ` +
-        `a **Disposition:** paragraph in the entry body`
-      );
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 3 — age-out warning
-//   Entries with status "open" and a date older than 14 days.
-// ---------------------------------------------------------------------------
-
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
-for (const block of validBlocks) {
-  const { parsed } = block;
-  if (parsed.status === 'open' && parsed.date) {
-    const entryDate = new Date(parsed.date + 'T00:00:00Z');
-    const ageDays = (today - entryDate) / (1000 * 60 * 60 * 24);
-    if (ageDays > 14) {
-      logWarning(
-        `${parsed.id}: status "open" with date ${parsed.date} is ` +
-        `${Math.floor(ageDays)} days old (>14 days)`
-      );
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 4 — deferred escalation warning
-//   Entries with status "deferred" whose deferred_until date has passed.
-// ---------------------------------------------------------------------------
-
-for (const block of validBlocks) {
-  const { parsed } = block;
-  if (parsed.status === 'deferred' && parsed.deferred_until) {
-    const until = new Date(parsed.deferred_until + 'T00:00:00Z');
-    if (until < today) {
-      logWarning(
-        `${parsed.id}: status "deferred" with deferred_until ${parsed.deferred_until} has passed — revisit needed`
-      );
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 5 — ID sequence and duplicate detection
-//   Duplicate IDs = ERROR.  Non-contiguous LRN-NNN sequence = WARNING.
-// ---------------------------------------------------------------------------
-
-const allLrnIds = validBlocks
-  .map((b) => b.parsed.id)
-  .filter((id) => typeof id === 'string' && /^LRN-\d+$/.test(id));
-
-// NB-9: duplicate-ID check.
-const seenIds = new Set();
-for (const id of allLrnIds) {
-  if (seenIds.has(id)) {
-    logError(`Duplicate ID: ${id} appears more than once`);
-  }
-  seenIds.add(id);
-}
-
-// Gap check: derive unique numeric set from deduped IDs.
-const lrnNums = [...seenIds]
-  .map((id) => parseInt(id.slice(4), 10))
-  .sort((a, b) => a - b);
-
-for (let i = 1; i < lrnNums.length; i++) {
-  if (lrnNums[i] !== lrnNums[i - 1] + 1) {
-    for (let gap = lrnNums[i - 1] + 1; gap < lrnNums[i]; gap++) {
-      logWarning(`ID gap: LRN-${String(gap).padStart(3, '0')} is missing from the sequence`);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 6 — section heading validation
-//   Warn if entries exist for a status but the matching ## heading is absent.
-//   Error if an unrecognised ## heading is present.
-//
-//   NOTE: section placement does NOT have to match status (per LEARNINGS.md
-//   bottom note) — we validate the status field, not placement.
-// ---------------------------------------------------------------------------
-
-const normalizedText = markdownText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-const normalizedLines = normalizedText.split('\n');
-const existingH2Headings = new Set();
-for (const line of normalizedLines) {
-  const m = line.match(/^## (.+)$/);
-  if (m) existingH2Headings.add(m[1].trim());
-}
-
-const allowedH2 = new Set(['Open', 'Applied', 'Obsolete', 'Deferred']);
-
-/** @type {Record<string, string>} */
-const statusToHeading = {
-  open: 'Open',
-  applied: 'Applied',
-  obsolete: 'Obsolete',
-  deferred: 'Deferred',
-};
-
-// Warn if entries exist in a category but the heading is missing.
-for (const [status, heading] of Object.entries(statusToHeading)) {
-  const hasEntries = validBlocks.some((b) => b.parsed.status === status);
-  if (hasEntries && !existingH2Headings.has(heading)) {
-    logError(
-      `Heading "## ${heading}" is missing but entries with status "${status}" exist`
-    );
-  }
-}
-
-// Error for any ## heading that is not in the allowed set.
-for (const h of existingH2Headings) {
-  if (!allowedH2.has(h)) {
-    logError(`Undocumented section heading: "## ${h}"`);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 7 — H3 header presence and id↔header match (LRN-154, CS69)
-//   Every entry with `id: LRN-<n>` must be preceded by a matching
-//   `### LRN-<n>` H3 header. Per CS69-1, the header sits on the line(s)
-//   immediately above the opening ```yaml fence, separated from it by only
-//   blank lines — NOT by intervening prose. The strict adjacency rule
-//   (skip blanks, require the next nonblank line above the fence to be the
-//   `### LRN-<n>` candidate) ensures a `### LRN-XXX` that appears anywhere
-//   inside a previous entry's body (prose or otherwise) cannot be
-//   misclassified as the current entry's header.
-//
-//   The canonical header form is `### LRN-<digits>` with no trailing text
-//   after the digit token. This matches the actual LEARNINGS.md convention
-//   (every header is bare) and the assumption baked into
-//   `lib/doc-schema.mjs assertHeadings()` and other linters that resolve
-//   `LEARNINGS.md#lrn-<digits>` anchors by exact heading text. Headers
-//   with trailing descriptive text would break those anchors silently, so
-//   they are treated as missing.
-//
-//   Digit-string comparison (not parseInt): the frontmatter `id` is the
-//   canonical zero-padded form (e.g. `LRN-001`). A header `### LRN-1`
-//   that drops leading zeros is NOT a match — it would create a broken
-//   `#lrn-1` anchor instead of `#lrn-001`. So the captured header digits
-//   must equal `parsed.id.slice(4)` as an exact string match.
-//
-//   - Missing or non-canonical header → error "missing `### LRN-<n>` H3 header".
-//   - Present-but-mismatched digit string (e.g. `### LRN-105` precedes
-//     `id: LRN-106`, or `### LRN-1` precedes `id: LRN-001`) → distinct
-//     error naming both ids.
-// ---------------------------------------------------------------------------
-
-for (const block of validBlocks) {
-  const { parsed, lineNumber } = block;
-  if (!/^LRN-\d+$/.test(parsed.id ?? '')) continue;
-
-  const expectedDigits = parsed.id.slice(4); // canonical zero-padded form
-  const openIdx = lineNumber - 1; // convert to 0-indexed
-
-  // Skip blank lines walking backwards from immediately above the fence.
-  let k = openIdx - 1;
-  while (k >= 0 && /^\s*$/.test(normalizedLines[k])) k--;
-
-  // The next nonblank line above the fence must be the canonical H3 header.
-  // Match `### LRN-<digits>` with NO trailing text — bare-header convention.
-  const candidateLine = k >= 0 ? normalizedLines[k] : null;
-  const h3Match = candidateLine
-    ? candidateLine.match(/^###\s+LRN-(\d+)\s*$/)
-    : null;
-
-  if (!h3Match) {
-    logError(
-      `${parsed.id} (line ${lineNumber}): missing \`### ${parsed.id}\` H3 header on the line immediately above the entry's YAML frontmatter block (LRN-154)`
-    );
-    continue;
-  }
-
-  const candidateDigits = h3Match[1];
-  if (candidateDigits !== expectedDigits) {
-    logError(
-      `${parsed.id} (line ${lineNumber}): H3 header "### LRN-${candidateDigits}" (line ${k + 1}) does not match frontmatter id "${parsed.id}" — digit strings differ (anchors must use the canonical zero-padded form, LRN-154)`
-    );
-  }
+if (archiveText !== null) {
+  archive = validateDoc(archiveText, { quiet, sourceLabel: 'LEARNINGS-archive.md' });
 }
 
 // ---------------------------------------------------------------------------
@@ -347,11 +436,20 @@ for (const block of validBlocks) {
 // ---------------------------------------------------------------------------
 
 process.stdout.write('\n=== check-learnings summary ===\n');
-process.stdout.write(`Entries checked: ${blocks.length}\n`);
-process.stdout.write(`Errors: ${errors.length}\n`);
-process.stdout.write(`Warnings: ${warnings.length}\n`);
+process.stdout.write(`Entries checked: ${main.entryCount}\n`);
+process.stdout.write(`Errors: ${main.errors.length}\n`);
+process.stdout.write(`Warnings: ${main.warnings.length}\n`);
 
-if (errors.length > 0) {
+if (archive) {
+  process.stdout.write('\n=== check-learnings summary (LEARNINGS-archive.md) ===\n');
+  process.stdout.write(`Entries checked: ${archive.entryCount}\n`);
+  process.stdout.write(`Errors: ${archive.errors.length}\n`);
+  process.stdout.write(`Warnings: ${archive.warnings.length}\n`);
+}
+
+const totalErrors = main.errors.length + (archive ? archive.errors.length : 0);
+
+if (totalErrors > 0) {
   process.stdout.write('\n❌ Linter FAILED\n');
   process.exit(1);
 } else {

@@ -35,6 +35,24 @@
  *       (C81-1, follow-up R3), so scanning them here would trip the guard on
  *       out-of-scope debt.
  *
+ *   (d) archive/stub integrity (CS65 / C65-3, C65-4) — when a sibling
+ *       `LEARNINGS-archive.md` exists next to `LEARNINGS.md`, the archival
+ *       stub-redirect contract must hold so every `LEARNINGS.md#lrn-nnn` anchor
+ *       still resolves. A full entry is a `### LRN-NNN` heading followed (after
+ *       blank lines) by a ```yaml fence whose `id:` matches; a STUB is a
+ *       `### LRN-NNN` heading NOT so followed. This check enforces:
+ *         1/3. every FULL entry in the archive has a matching heading (stub or
+ *              full) in `LEARNINGS.md` — no orphan, the anchor is preserved;
+ *         2.   every STUB in `LEARNINGS.md` has a matching FULL entry in the
+ *              archive — no dead redirect;
+ *         4.   no id is a FULL entry (with frontmatter) in BOTH files;
+ *         5.   no `open`/`deferred` entry appears in the archive (status-gated
+ *              move — only `applied`/`obsolete` may be archived).
+ *       (The `### LRN-NNN` header↔frontmatter-`id` match — invariant 6 — is
+ *       enforced by check-learnings.mjs, which validates the archive's full
+ *       entries against the CS69/LRN-154 rule.) Absent archive → skipped
+ *       entirely, so this is a no-op pre-migration and for every consumer.
+ *
  * Self-host only. The `harness lint` runner gates this linter by package name
  * (args/target null unless `package.json` `name` is `@henrik-me/agent-harness`,
  * exactly like `check-consumer-template-genericity`). As defence-in-depth for a
@@ -69,6 +87,9 @@ const SELF_HOST_PKG = '@henrik-me/agent-harness';
 // (a) process docs whose LRN tokens must resolve to LEARNINGS.md headings.
 const CHECK_A_DOCS = ['OPERATIONS.md', 'REVIEWS.md'];
 const LEARNINGS_DOC = 'LEARNINGS.md';
+// (d) the archive tier that holds moved full entries (CS65). Optional sibling
+//     of LEARNINGS.md; also a recognized source of LRN-<id> headings for (a).
+const LEARNINGS_ARCHIVE_DOC = 'LEARNINGS-archive.md';
 
 // (b) the onboarding doc whose cross-file anchors must resolve.
 const CHECK_B_DOC = 'INSTRUCTIONS.md';
@@ -124,7 +145,11 @@ for (let i = 0; i < argv.length; i++) {
       '  (b) an INSTRUCTIONS.md "](X.md#anchor)" link whose anchor is not a\n' +
       '      heading in the (existing) sibling doc X.md;\n' +
       '  (c) a relative FILE link in a consumer-onboarding doc (READMEGUIDE +\n' +
-      '      the CS72 onboarding set) whose target ships under no template/ class.\n' +
+      '      the CS72 onboarding set) whose target ships under no template/ class;\n' +
+      '  (d) archive/stub integrity between LEARNINGS.md and (if present)\n' +
+      '      LEARNINGS-archive.md: a stub with no archive entry (dead redirect),\n' +
+      '      an archive entry with no stub (orphan anchor), an id full in both\n' +
+      '      files, or an open/deferred entry in the archive.\n' +
       'Checks (b)/(c) skip fenced code blocks and inline-code spans.\n\n' +
       'Options:\n' +
       '  --cwd <dir>   Repo root the scan paths resolve against (default: cwd)\n' +
@@ -280,6 +305,15 @@ function checkLrnTokens() {
   }
   const ids = learningHeadingIds(learnings);
 
+  // CS65 (d): the archive is a recognized LRN-<id> heading source too. With the
+  // stub-redirect contract every token already resolves against LEARNINGS.md's
+  // stubs, but unioning the archive headings is defense-in-depth so a token
+  // resolves even if a stub were ever dropped.
+  const archive = readDoc(LEARNINGS_ARCHIVE_DOC);
+  if (archive !== null) {
+    for (const id of learningHeadingIds(archive)) ids.add(id);
+  }
+
   for (const rel of CHECK_A_DOCS) {
     const content = readDoc(rel);
     if (content === null) continue; // absent process doc: nothing to validate here
@@ -405,12 +439,119 @@ function checkRelativeLinkDeliverability() {
 }
 
 // ---------------------------------------------------------------------------
+// Check (d) — archive/stub integrity between LEARNINGS.md and the archive
+// ---------------------------------------------------------------------------
+
+/**
+ * Classify every `### LRN-<id>` heading in a LEARNINGS-family document as a
+ * FULL entry or a STUB. A full entry is a heading whose next non-blank line is
+ * a ```yaml fence; the fence's `id:` and `status:` are captured (via regex —
+ * node-builtins only, no js-yaml, per LRN-147). A stub is a heading not so
+ * followed (the archive-redirect shape). Headings inside fenced code blocks are
+ * ignored so an illustrative `### LRN-NNN` in an example does not register.
+ *
+ * @param {string} content - Normalized (LF, no BOM) markdown content.
+ * @returns {{ full: Map<string, { status: (string|null), fmId: (string|null), line: number }>, stubs: Set<string> }}
+ */
+function classifyLrnEntries(content) {
+  const lines = content.split('\n');
+  const full = new Map();
+  const stubs = new Set();
+  let inFence = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*(?:```|~~~)/.test(line)) { inFence = !inFence; continue; }
+    if (inFence) continue;
+
+    const hm = line.match(/^###\s+LRN-(\d+)\s*$/);
+    if (!hm) continue;
+    const id = `LRN-${hm[1]}`;
+
+    // Look ahead: skip blank lines to the heading's first content line.
+    let k = i + 1;
+    while (k < lines.length && /^\s*$/.test(lines[k])) k++;
+
+    if (k < lines.length && /^\s*```yaml\s*$/.test(lines[k])) {
+      // FULL entry — read the fenced frontmatter and extract id + status.
+      let j = k + 1;
+      const yamlLines = [];
+      while (j < lines.length && !/^\s*```\s*$/.test(lines[j])) {
+        yamlLines.push(lines[j]);
+        j++;
+      }
+      const raw = yamlLines.join('\n');
+      const idm = raw.match(/^\s*id\s*:\s*(\S+)/m);
+      const sm = raw.match(/^\s*status\s*:\s*(\S+)/m);
+      full.set(id, { status: sm ? sm[1] : null, fmId: idm ? idm[1] : null, line: i + 1 });
+    } else {
+      stubs.add(id);
+    }
+  }
+
+  return { full, stubs };
+}
+
+function checkArchiveStubIntegrity() {
+  const archiveRaw = readDoc(LEARNINGS_ARCHIVE_DOC);
+  if (archiveRaw === null) return; // absent archive → no-op (pre-migration / consumer)
+
+  const mainRaw = readDoc(LEARNINGS_DOC);
+  if (mainRaw === null) {
+    logError(`${LEARNINGS_DOC}: cannot read file (required to validate archive/stub integrity)`);
+    return;
+  }
+
+  const main = classifyLrnEntries(mainRaw);
+  const arch = classifyLrnEntries(archiveRaw);
+
+  // Invariant 2 — no dead redirect: every stub in LEARNINGS.md must point at a
+  // full entry that actually exists in the archive.
+  for (const id of main.stubs) {
+    if (!arch.full.has(id)) {
+      logError(
+        `${LEARNINGS_DOC}: stub "### ${id}" has no matching full entry in ${LEARNINGS_ARCHIVE_DOC} (dead redirect)`
+      );
+    }
+  }
+
+  // Invariant 1/3 — no orphan: every full entry in the archive must have a
+  // matching heading (stub OR full) in LEARNINGS.md so its anchor still resolves.
+  for (const id of arch.full.keys()) {
+    if (!main.stubs.has(id) && !main.full.has(id)) {
+      logError(
+        `${LEARNINGS_ARCHIVE_DOC}: full entry "### ${id}" has no matching heading in ${LEARNINGS_DOC} (orphan — the ${LEARNINGS_DOC}#${id.toLowerCase()} anchor would not resolve)`
+      );
+    }
+  }
+
+  // Invariant 4 — no id is a FULL entry (with frontmatter) in BOTH files.
+  for (const id of arch.full.keys()) {
+    if (main.full.has(id)) {
+      logError(
+        `${id}: appears as a full entry (with frontmatter) in BOTH ${LEARNINGS_DOC} and ${LEARNINGS_ARCHIVE_DOC}`
+      );
+    }
+  }
+
+  // Invariant 5 — status-gated move: only applied/obsolete may be archived.
+  for (const [id, meta] of arch.full) {
+    if (meta.status === 'open' || meta.status === 'deferred') {
+      logError(
+        `${LEARNINGS_ARCHIVE_DOC}: entry "### ${id}" has status "${meta.status}" — only applied/obsolete entries may be archived`
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 checkLrnTokens();
 checkCrossFileAnchors();
 checkRelativeLinkDeliverability();
+checkArchiveStubIntegrity();
 
 if (errors.length > 0) {
   process.stderr.write(`\n${LINTER_NAME}: ${errors.length} errors, 0 warnings\n`);

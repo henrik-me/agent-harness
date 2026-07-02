@@ -758,14 +758,21 @@ the orchestrator owns the commit message and the PR).
 
 Preflights:
   - Worktree must be clean.
+  - Current branch must be main.
+  - main must be in sync with origin/main (HEAD == origin/main); otherwise run
+    'git pull origin main --rebase' first (no fetch — Session Start owns the
+    network step per INSTRUCTIONS.md).
   - Branch cs<NN>/claim must not already exist.
   - Exactly one matching planned_cs<NN>_*.md (or directory form).
   - This orchestrator has no existing Active CS row in WORKBOARD (per-orchestrator lock).
   - 'harness harvest --claim-area cs<NN>' must pass (unless --skip-harvest).
 
-On --apply: cuts cs<NN>/claim branch, git mv planned→active, edits
-WORKBOARD.md Active Work row. R3 race-aware (re-reads WORKBOARD just
-before write to preserve a sibling clone's intervening edit).
+On --apply: cuts cs<NN>/claim branch, git mv planned→active (use the
+directory form for artifact-bearing CSs), edits the WORKBOARD.md Active Work
+row (CS-Task ID, branch, agent ID, state 🟢 Active, last-updated timestamp).
+R3 race-aware (re-reads WORKBOARD just before write to preserve a sibling
+clone's intervening edit). You own the commit (message \`Claim CS<NN>\` with the
+Co-authored-by: Copilot trailer) and the workboard-only-labelled claim PR.
 
 Options:
   --apply              Execute the plan (default is dry-run)
