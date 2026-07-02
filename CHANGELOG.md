@@ -11,7 +11,11 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS65 (LEARNINGS archive tier):** `LEARNINGS.md` now supports an archive tier — aged `applied`/`obsolete` entries move to a sibling `LEARNINGS-archive.md` while an anchor-stable `### LRN-NNN` stub redirect stays in `LEARNINGS.md`. `check-learnings.mjs` auto-detects and validates the sibling archive (schema + CS69 header↔id + section headings) and tolerates heading-only stubs; `check-doc-xref-resolvability.mjs` gains archive/stub integrity checks and unions archive headings into `LRN-<id>` token resolution. Both no-op when no archive is present, so existing consumers are unaffected.
+
 ### Changed
+
+- **CS65 (process-doc right-sizing):** Right-size the two always-loaded process docs without losing any procedure or breaking any `LRN-###`/heading anchor. `LEARNINGS.md` shrinks ~54% (aged entries archived via stub-redirect; every `LEARNINGS.md#lrn-…` anchor and bare `LRN-###` token still resolves). `OPERATIONS.md` (and its composed base) collapse command-backed executable step-lists (`claim`, `review-output`, `review`, `copilot-engage` recommended invocation) into "what / when / `{{harness_invoke}} <cmd> --help`" pointer stubs, backfilling the executable detail into the command `--help` text — so consumers get the pointer form on the next `harness sync`. All 113 `OPERATIONS.md` headings are preserved; the load-bearing dispatch/reviewer preambles (extracted live by `harness dispatch`/`review`) are left intact.
 
 ### Documentation
 
