@@ -1,9 +1,9 @@
 # CS81 — Fix v0.10.0 shipped-template dangling refs + resolvability guards (#352-F1 + #356)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs81/content
+**Started:** 2026-07-02
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-01 — from the consumer-feedback triage of issues **#352** (Finding 1) and **#356**, filed by the sub-invaders orchestrator (`omni-si`) during the v0.10.0 pin adoption. @henrik-me directed a two-CS split (this CS = doc dangling-ref fixes + guards; CS82 = the sync lock-provenance code fix).
 **Depends on:** none (hard). Adjacent to **CS76** (composed-process-doc cross-ref resolvability, planned R4=Go) which guards a *different* dangling-ref sub-class (non-guaranteed sibling refs in OPERATIONS/REVIEWS); see C81-8 for coordination. No in-flight CS owns these files.
@@ -77,11 +77,27 @@ All three verified against `main` (HEAD `1e129fb`):
 | R1 | gpt-5.5 | claude-opus-4.8 | cs81-plan-review | 196f6f9c1161 | 2026-07-02T00:08:03Z | Needs-Fix | docs/adr pervasive beyond READMEGUIDE (would trip guard); extending check-instructions breaks node-builtins-only (js-yaml via doc-schema). |
 | R2 | gpt-5.5 | claude-opus-4.8 | cs81-plan-review-r2 | 5a5a2582e0d1 | 2026-07-02T00:14:03Z | Go-with-amendments | Both R1 blockers fixed: guard scoped to onboarding docs (excludes process bases); new builtins-only script ⇒ Minor. Amend R3 wording (md-links vs mentions). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | Planned ledger (finalized at close-out). **Minor** SemVer (new linter script, C81-6). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`; Copilot (`claude-sonnet`) alternating. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — Content: `LRN-A/B`→`LRN-164/165` (both OPERATIONS copies), INSTRUCTIONS anchor → `#sub-agent-report-shape-mandatory` (both copies), genericize READMEGUIDE `docs/adr` links (C81-2/3/4) | pending | omni-ah-c2 | Lockstep root ↔ composed; `harness check` no drift. |
+| T2 — New node-builtins-only guard `scripts/check-doc-xref-resolvability.mjs` (LRN-token + cross-file-anchor + relative-link-vs-`template/`-delivery-surface) + `harness lint` wiring (C81-5/6) | pending | omni-ah-c2 | Self-host-only by package name; regex + `fs` only. |
+| T3 — Tests (`os.tmpdir()` only) per C81-5 fixtures; audit REVIEWS.md for placeholder LRN (C81-9) | pending | omni-ah-c2 | Each pass/fail branch. |
+| T4 — `LEARNINGS.md` (gate-gap learning) + `CHANGELOG.md` `[Unreleased]` Fixed + new-linter note (Minor) | pending | omni-ah-c2 | Flip learning `applied` at close-out. |
+| T5 — Validate (`harness lint`, `node --test`, `harness check`) + review (GPT-5.5 rubber-duck + Copilot); content PR → admin-merge (C81-7/9) | pending | omni-ah-c2 | Reviewer `gpt-5.5` ≠ implementer. |
+| Close-out: docs + restart state — rename active→done; WORKBOARD + CONTEXT; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row. |
+| Close-out: learnings — learning finalized; follow-ups (R3: process-base `docs/adr` refs) | pending | omni-ah-c2 | Notes the CS76-adjacent follow-up. |
 
 ## Notes / Learnings
 
