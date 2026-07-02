@@ -146,7 +146,8 @@ Every CS produces exactly three PRs in sequence:
 **Auto-merge branch patterns.** A `workboard-only`-labelled PR auto-merges only
 when its branch matches one of `cs<NN>/(claim|close|close-out)`,
 `workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?`
-(the planned-CS filing PR). A workboard-scoped PR on any other branch — notably a
+(the planned-CS filing PR), where `<NN>` is the CS number plus an optional
+lowercase suffix letter (e.g. `cs64b`). A workboard-scoped PR on any other branch — notably a
 `workboard/cs<NN>-pause` PR — still passes its content gates but is **not**
 auto-approve-eligible and must be admin-merged. Match the pattern exactly (the
 filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`), or the PR
