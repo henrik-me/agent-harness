@@ -1,7 +1,7 @@
 # CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival
 
 **Status:** active
-**Owner:** omni-ah-c2
+**Owner:** omni-ah-c3
 **Branch:** cs65/content
 **Started:** 2026-06-30
 **Closed:** —
@@ -78,29 +78,31 @@ This is explicitly a separate CS from CS63 because aggressive trimming of load-b
 |---|---|
 | Implementer models | claude-opus-4.8 |
 | Reviewer model | gpt-5.5 |
-| Implementer agent | omni-ah-c2 |
-| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
-| Notes | Planned ledger (finalized at close-out). Orchestrator omni-ah-c2 `claude-opus-4.8` (claim, `bin/harness.mjs` --help backfill, CHANGELOG, PRs). Implementation sub-agents dispatched at `claude-opus-4.8` with disjoint file ownership (OPERATIONS thinning + composed mirror; LEARNINGS archival; new repo-wide reference linter + tests). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. |
+| Implementer agent | omni-ah-c3 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c3) |
+| Notes | Planned ledger (finalized at close-out). Orchestrator omni-ah-c3 `claude-opus-4.8` (claim, `bin/harness.mjs` --help backfill, CHANGELOG, PRs). Implementation sub-agents dispatched at `claude-opus-4.8` with disjoint file ownership (OPERATIONS thinning + composed mirror; LEARNINGS archival; new repo-wide reference linter + tests). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ every implementer model. |
 
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T0 — User-approval gates: confirm G-threshold (LEARNINGS archival age/status) + G-target (OPERATIONS line target) + Q1 (single vs per-era archive) | pending | omni-ah-c2 | Blocks T2/T3 implementation. Orchestrator-owned (asks user). |
-| T1 — Recon/baseline: pre-extraction OPERATIONS procedure-heading inventory (C65-5) + repo-wide inventory of every inbound `LRN-###` / `OPERATIONS.md#` / `LEARNINGS.md#` reference (C65-4 baseline) | pending | omni-ah-c2 | agent-id=cs65-recon \| role=explore \| report-status=pending \| learnings=0. Read-only recon; produces the audit baseline. |
-| T2 — OPERATIONS thinning: thin command-backed procedure sections to "what/when/`harness <cmd> --help`" stubs, one section per commit (C65-1/2); backfill any moved step detail into `bin/harness.mjs` --help | pending | omni-ah-c2 | Deliv. 1,2. agent-id=cs65-ops \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `OPERATIONS.md`, `template/composed/OPERATIONS.md`, `bin/harness.mjs`. Lockstep root+composed; depends on T0 G-target. |
-| T3 — LEARNINGS archival: split aged `applied`/`obsolete` entries into `LEARNINGS-archive.md`; keep all `open`/`deferred` in active log; every `LRN-###` anchor resolvable (C65-3) | pending | omni-ah-c2 | Deliv. 3. agent-id=cs65-learnings \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `LEARNINGS.md`, `LEARNINGS-archive.md`. Depends on T0 G-threshold/Q1. |
-| T4 — Repo-wide reference linter (new `scripts/check-*.mjs`) + fixtures/tests; teach `check-instructions`/`check-learnings` about the archive tier; register in `harness lint` (C65-4) | pending | omni-ah-c2 | Deliv. 4. agent-id=cs65-linter \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY the new linter + its tests/fixtures + the recognized-archive edits to `check-instructions.mjs`/`check-learnings.mjs`. Tests under os.tmpdir(). |
-| T5 — Procedure-preservation audit artifact (pre/post heading list + reachability assertion) in this CS's `done_` directory (C65-5) | pending | omni-ah-c2 | Deliv. 5. Orchestrator-owned; built from T1 baseline + final OPERATIONS state. |
-| T6 — `CHANGELOG.md` `[Unreleased]` entries (doc-structure change; note OPERATIONS sections now point at command help) | pending | omni-ah-c2 | Deliv. 6; LRN-101. Orchestrator-owned. |
-| T7 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c2 | Independence: reviewer ≠ implementer. |
-| T8 — Content PR (`cs65/content`); `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c2 | OPERATIONS § Three-PR shape. |
-| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; managed/composed mirrors green; `sync --mode=check` clean | pending | omni-ah-c2 | Mandatory close-out row (OPERATIONS § Claim). |
-| Close-out: learnings + follow-ups — file LEARNINGS; planned follow-up CSs for any deferred scope | pending | omni-ah-c2 | Mandatory close-out row. |
+| T0 — User-approval gates: confirm G-threshold (LEARNINGS archival age/status) + G-target (OPERATIONS line target) + Q1 (single vs per-era archive) | pending | omni-ah-c3 | Blocks T2/T3 implementation. Orchestrator-owned (asks user). |
+| T1 — Recon/baseline: pre-extraction OPERATIONS procedure-heading inventory (C65-5) + repo-wide inventory of every inbound `LRN-###` / `OPERATIONS.md#` / `LEARNINGS.md#` reference (C65-4 baseline) | pending | omni-ah-c3 | agent-id=cs65-recon \| role=explore \| report-status=pending \| learnings=0. Read-only recon; produces the audit baseline. |
+| T2 — OPERATIONS thinning: thin command-backed procedure sections to "what/when/`harness <cmd> --help`" stubs, one section per commit (C65-1/2); backfill any moved step detail into `bin/harness.mjs` --help | pending | omni-ah-c3 | Deliv. 1,2. agent-id=cs65-ops \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `OPERATIONS.md`, `template/composed/OPERATIONS.md`, `bin/harness.mjs`. Lockstep root+composed; depends on T0 G-target. |
+| T3 — LEARNINGS archival: split aged `applied`/`obsolete` entries into `LEARNINGS-archive.md`; keep all `open`/`deferred` in active log; every `LRN-###` anchor resolvable (C65-3) | pending | omni-ah-c3 | Deliv. 3. agent-id=cs65-learnings \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY `LEARNINGS.md`, `LEARNINGS-archive.md`. Depends on T0 G-threshold/Q1. |
+| T4 — Repo-wide reference linter (new `scripts/check-*.mjs`) + fixtures/tests; teach `check-instructions`/`check-learnings` about the archive tier; register in `harness lint` (C65-4) | pending | omni-ah-c3 | Deliv. 4. agent-id=cs65-linter \| role=implementer \| report-status=pending \| learnings=0. Owns ONLY the new linter + its tests/fixtures + the recognized-archive edits to `check-instructions.mjs`/`check-learnings.mjs`. Tests under os.tmpdir(). |
+| T5 — Procedure-preservation audit artifact (pre/post heading list + reachability assertion) in this CS's `done_` directory (C65-5) | pending | omni-ah-c3 | Deliv. 5. Orchestrator-owned; built from T1 baseline + final OPERATIONS state. |
+| T6 — `CHANGELOG.md` `[Unreleased]` entries (doc-structure change; note OPERATIONS sections now point at command help) | pending | omni-ah-c3 | Deliv. 6; LRN-101. Orchestrator-owned. |
+| T7 — Local rubber-duck plan-vs-implementation review (GPT-5.5) before PR | pending | omni-ah-c3 | Independence: reviewer ≠ implementer. |
+| T8 — Content PR (`cs65/content`); `harness copilot-engage`; resolve threads; squash-merge | pending | omni-ah-c3 | OPERATIONS § Three-PR shape. |
+| Close-out: docs + restart state — rename active→done; update WORKBOARD + CONTEXT; managed/composed mirrors green; `sync --mode=check` clean | pending | omni-ah-c3 | Mandatory close-out row (OPERATIONS § Claim). |
+| Close-out: learnings + follow-ups — file LEARNINGS; planned follow-up CSs for any deferred scope | pending | omni-ah-c3 | Mandatory close-out row. |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **2026-07-02 — Ownership takeover (omni-ah-c2 → omni-ah-c3).** Reassigned at the user's direction (omni-ah-c2 is busy on other work). No `cs65/content` branch existed on `origin` — CS65 had stalled at **T0 (user-approval gates)** before any implementation, so the handoff is clean (no WIP to preserve). New owner omni-ah-c3 is seeking the **G-target / G-threshold / Q1** answers to unblock T2/T3. Reclaim landed via a workboard-only PR on `workboard/cs65-takeover`.
+
+(further notes filled during execution)
 
 ## Plan-vs-implementation review
 

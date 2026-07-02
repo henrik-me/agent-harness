@@ -2,7 +2,7 @@
 
 Live coordination file for multi-agent work. Only orchestrating agents update this file.
 
-> **Last updated:** 2026-07-02 (omni-ah-c2 — **CS84 CLOSED** (cut harness **v0.12.0** — Minor, CS83's `harness_invoke` key + #369 docs), content merge `3e66461`; annotated tag `v0.12.0` + **one DRAFT** GitHub Release + sub-invaders pin-bump issue #139. **G-publish pending:** the human runs `gh release edit v0.12.0 --draft=false` to publish to Latest. CS65 stays ⏸️ Paused (blocked on user gates).)
+> **Last updated:** 2026-07-02 (omni-ah-c3 — **CS65 taken over** from omni-ah-c2 (user-directed; c2 busy on other work). CS65 stays ⏸️ Paused — still gated on user-approval gates **G-target / G-threshold / Q1**, now being sought by the new owner omni-ah-c3 to resume. **Prior:** CS84 CLOSED — cut harness **v0.12.0** (draft GitHub Release pending the human's G-publish `gh release edit v0.12.0 --draft=false`).)
 
 ## Orchestrators
 
@@ -12,7 +12,7 @@ Status vocabulary: `🟢 Active` (Last Seen within 24h), `🟡 Idle` (24h-7d), `
 |----------|---------|-------------|--------|-----------|
 | omni-ah  | HENRIKM-OMNI | C:\src\agent-harness | 🟢 Active | 2026-06-24 |
 | omni-ah-c2 | HENRIKM-OMNI | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-10 |
-| omni-ah-c3 | HENRIKM-OMNI | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-10 |
+| omni-ah-c3 | HENRIKM-OMNI | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-07-02 |
 | yoga-ah  | HENRIKM-YOGA | C:\src\agent-harness | 🟢 Active | 2026-06-08 |
 | yoga-ah-c2 | HENRIKM-YOGA | C:\src\agent-harness_copilot2 | 🟢 Active | 2026-06-06 |
 | yoga-ah-c3 | HENRIKM-YOGA | C:\src\agent-harness_copilot3 | 🟢 Active | 2026-06-08 |
@@ -28,7 +28,7 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c2 | cs65/content | 2026-07-02 | Blocked on unanswered user-approval gates (G-target/G-threshold/Q1); CS81+CS82 (#352/#356 remediation) now closed — reclaimable by owner once the gates are answered |
+| CS65 | CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival | ⏸️ Paused | omni-ah-c3 | cs65/content | 2026-07-02 | Taken over from omni-ah-c2 (2026-07-02, user-directed; c2 busy on other work). Still gated on user-approval gates G-target/G-threshold/Q1 — new owner omni-ah-c3 is seeking answers to resume. |
 | CS85 | CS85 — Consumer-doc clickstop-link durability: bootstrap-authoring doctrine + a link-durability guard (fixes #371, harness-side) | 🟢 Active | omni-ah-c2 | cs85/content | 2026-07-02 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
