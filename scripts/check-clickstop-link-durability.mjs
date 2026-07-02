@@ -98,7 +98,11 @@ function normalizeLF(content) {
  * Yield `{ lineNo, text }` for every line OUTSIDE a fenced code block, with
  * inline-code spans stripped — so example URLs inside ``` fences or `backticks`
  * are not treated as live links. A simple fence toggle on ``` / ~~~ lines
- * suffices for these docs (mirrors check-doc-xref-resolvability.mjs).
+ * suffices for these docs (mirrors check-doc-xref-resolvability.mjs). Inline
+ * stripping is delimiter-length-aware (`` `x` ``, ``` ``x`y`` ```, …): a code
+ * span opened by a run of N backticks closes on the next run of N backticks
+ * (CommonMark), so double-backtick spans wrapping a `` ` ``-bearing URL are
+ * also skipped.
  */
 function contentLines(content) {
   const out = [];
@@ -110,7 +114,10 @@ function contentLines(content) {
       continue;
     }
     if (inFence) continue;
-    out.push({ lineNo: i + 1, text: lines[i].replace(/`[^`]*`/g, '') });
+    // Strip inline-code spans: an opening run of N backticks (captured) closes
+    // on the next identical-length run. `.*?` is lazy + line-scoped (no newline
+    // in a single line), so this is linear-bounded (no ReDoS).
+    out.push({ lineNo: i + 1, text: lines[i].replace(/(`+).*?\1/g, '') });
   }
   return out;
 }
@@ -132,7 +139,10 @@ export function scanTextForViolations(text) {
       const rest = m[2];
       // Guard against a zero-length match looping forever.
       if (m.index === BLOB_RE.lastIndex) BLOB_RE.lastIndex++;
-      if (!rest.includes(ACTIVE_PATH)) continue; // not an active/ clickstop path
+      // Only the PATH portion counts — an `active/` substring in a `?query` or
+      // `#fragment` of an otherwise benign blob URL must not trip the guard.
+      const restPath = rest.split(/[?#]/, 1)[0];
+      if (!restPath.includes(ACTIVE_PATH)) continue; // not an active/ clickstop path
       if (SHA_RE.test(seg1)) continue; // SHA-pinned permalink is durable → allow
       violations.push({ lineNo, url: m[0] });
     }

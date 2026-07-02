@@ -164,6 +164,21 @@ describe('scanTextForViolations (detection rule)', () => {
       [],
     );
   });
+
+  it('skips a bad URL inside a double-backtick inline-code span (delimiter-aware)', () => {
+    assert.deepEqual(scanTextForViolations(`prose \`\`${BAD_BRANCH}\`\` more\n`), []);
+  });
+
+  it('does not flag active/ appearing only in a benign URL query string or fragment', () => {
+    assert.deepEqual(
+      scanTextForViolations('[q](https://github.com/o/r/blob/main/README.md?p=project/clickstops/active/x)\n'),
+      [],
+    );
+    assert.deepEqual(
+      scanTextForViolations('[f](https://github.com/o/r/blob/main/README.md#project/clickstops/active/x)\n'),
+      [],
+    );
+  });
 });
 
 // ===========================================================================
