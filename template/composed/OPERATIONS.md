@@ -143,6 +143,18 @@ Every CS produces exactly three PRs in sequence:
    preceded by the plan-vs-implementation review gate (see
    [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
 
+**Auto-merge branch patterns.** A `workboard-only`-labelled PR auto-merges only
+when its branch matches one of `cs<NN>/(claim|close|close-out)`,
+`workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?`
+(the planned-CS filing PR), where `<NN>` is the CS number plus an optional
+lowercase suffix letter (e.g. `cs64b`). A workboard-scoped PR whose branch does
+**not** match — notably a `workboard/cs<NN>-pause` PR — should still carry the
+`workboard-only` label (so the review-evidence gates skip), but its
+`validate-and-approve` job then **fails** the branch-name check, so an admin must
+squash-merge it (`gh pr merge <n> --admin --squash`). Match an eligible pattern
+exactly (the filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`)
+to keep auto-merge.
+
 Every active/done CS file must include explicit `## Tasks` rows for:
 
 - **Close-out: docs + restart state** — update `WORKBOARD.md`, `CONTEXT.md`,
