@@ -168,11 +168,20 @@ function normalizeLF(content) {
   return content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-/** Read a file relative to cwd, or null if it does not exist / cannot be read. */
+/**
+ * Read a file relative to cwd. Returns null only when the file is genuinely
+ * ABSENT (ENOENT) — callers treat that as "nothing to validate here". Any OTHER
+ * read failure (permission, I/O, ...) must NOT fail open: it is logged as an
+ * error so the guard exits non-zero (fail-closed, LRN-033). existsSync/readFile
+ * both report false/throw on permission errors too, so we discriminate on
+ * `e.code === 'ENOENT'` rather than gating on existence.
+ */
 function readDoc(relPath) {
   try {
     return normalizeLF(fs.readFileSync(path.join(cwd, relPath), 'utf8'));
-  } catch {
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return null; // genuinely absent — caller decides
+    logError(`${relPath}: cannot read file: ${e && e.message}`);
     return null;
   }
 }
