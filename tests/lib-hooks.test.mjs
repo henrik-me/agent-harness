@@ -190,6 +190,23 @@ test('installer: a foreign hook without --force is refused and preserved', () =>
   }
 });
 
+test('installer: a foreign hook that only mentions the sentinel as a substring is refused, not skipped', () => {
+  const repo = makeGitRepo();
+  try {
+    const seed = installPrepareCommitMsgHook(repo);
+    // The sentinel text appears, but NOT as an exact whole line — so this is a
+    // foreign hook and must be refused (regression guard for substring vs
+    // exact-line sentinel detection).
+    const foreign = `#!/bin/sh\n# mentions ${HOOK_SENTINEL} inside a longer comment line\necho hi\n`;
+    writeFileSync(seed.path, foreign);
+    const res = installPrepareCommitMsgHook(repo);
+    assert.equal(res.action, 'refused', 'substring-only sentinel is foreign → refused');
+    assert.equal(readFileSync(res.path, 'utf8'), foreign, 'foreign hook untouched');
+  } finally {
+    rm(repo);
+  }
+});
+
 test('installer: --force overwrites a foreign hook (replaced)', () => {
   const repo = makeGitRepo();
   try {
