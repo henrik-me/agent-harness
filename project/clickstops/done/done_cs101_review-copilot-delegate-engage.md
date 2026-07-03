@@ -1,10 +1,10 @@
 # CS101 — harness review: delegate the Copilot leg to the copilot-engage `--add-reviewer` path
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs101/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound bug report #422 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; consumer LRN-006).
 **Depends on:** none. Touches `lib/review.mjs` (+ `schemas/harness.config.schema.json` default, `lib/reviews-policy.mjs` default, tests). Concurrent sibling CS100 (#421, owned by yoga-ah) touches a git hook + `harness init`/scaffold — disjoint from this CS's `lib/review.mjs` surface. Reuses `engageCopilot` from `lib/copilot-engage.mjs` (read-only dependency).
 
