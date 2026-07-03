@@ -91,9 +91,9 @@ Related prior art: LRN-150 (merge commits need the trailer too; rebase-over-merg
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `scripts/check-commit-trailers.mjs`: add `COMMENT_CHAR` const + `stripGitComments()` (drop `#` lines + stop at `>8` scissors), apply to normalised text before empty-check + trailer scan; update module header doc-comment (C97-1/C97-2/C97-3/C97-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 — `tests/check-commit-trailers.test.mjs` + `tests/fixtures/cs07/commit-trailers/` (new fixtures): #420 repro + rebase/merge comments + scissors+diff + empty-after-strip + genuine-missing-still-fails + `#`-body parity + no-regression; `CHANGELOG.md` `[Unreleased]` Fixed bullet (#420) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer \| report-status=pending \| learnings=0 |
-| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| T1 — `scripts/check-commit-trailers.mjs`: add `COMMENT_CHAR` const + `stripGitComments()` (drop `#` lines + stop at `>8` scissors), apply to normalised text before empty-check + trailer scan; update module header doc-comment (C97-1/C97-2/C97-3/C97-4) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs97-impl) \| report-status=complete \| learnings=1 |
+| T2 — `tests/check-commit-trailers.test.mjs` + `tests/fixtures/cs07/commit-trailers/` (new fixtures): #420 repro + rebase/merge comments + scissors+diff + empty-after-strip + genuine-missing-still-fails + `#`-body parity + no-regression; `CHANGELOG.md` `[Unreleased]` Fixed bullet (#420) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs97-impl) \| report-status=complete \| learnings=0 |
+| Independent content review (GPT-5.5) | done | gpt-5.5 | R1 Go @ abc14c9 (cs97-review); R2 Needs-Fix (docstring overclaim) → corrected; R3 Go @ a751b90 (cs97-review3); Copilot COMMENTED, threads resolved; reviewer ≠ implementer per REVIEWS § 2.3 |
 | Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS97 row) + CONTEXT.md; no rendered-mirror change (scripts/tests only). |
 | Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md trailer-detector-vs-comment-lines entry; #420 auto-closes on merge. |
 
@@ -103,4 +103,17 @@ Related prior art: LRN-150 (merge commits need the trailer too; rebase-over-merg
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs97-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T21:44:00Z
+**Outcome:** GO
+
+Reviewed the CS97 plan (§ Decisions C97-1…C97-5, § Deliverables 1–4, § Exit criteria) against the merged content (PR #433, squash `c1d177d`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `scripts/check-commit-trailers.mjs` `stripGitComments` | match | `COMMENT_CHAR` + single-pass `#`-line strip + `>8` scissors truncation applied to the normalised text before the empty-check + from-end trailer scan; `TRAILER_RE`, the scan, and `--required`/`--allow`/`--quiet` unchanged; header doc-comment + caveat added. |
+| 2 — tests + fixtures | match | 6 new fixtures + 6 cases: #420 `# Conflicts:` repro→0, rebase-status comments→0, `--verbose` scissors+diff→0, comment/scissors-only→0, genuine-missing-with-comments→1, `#`-body/commented-trailer→1. |
+| 3 — CHANGELOG | match | `[Unreleased] → Fixed` #420 bullet; no overclaim vs shipped code. |
+| 4 — LEARNINGS | done at close-out | LRN-188 filed in this close-out. |
+
+**Accepted divergence (in-intent hardening):** a docstring caveat clarifying the cleanup is COMMIT_EDITMSG-oriented (`#`-strip is trailer-safe; scissors truncation drops post-`>8` content) was added in response to the Copilot + GPT-5.5 R2 review, which independently caught an overclaim in an intermediate revision — not scope creep. Exit criteria 5/5 met; #420 CLOSED on merge; no overclaims (GPT-5.5 `cs97-pvi`).
