@@ -1,9 +1,9 @@
 # CS100 — Ship an opt-in `prepare-commit-msg` hook that auto-adds the Co-authored-by trailer (incl. merge commits)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs100/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03, from GitHub issue #421 (`enhancement`, `harness-orchestrator`; surfaced from consumer `henrik-me/authzandentitlements` CS10, LRN-018).
 **Depends on:** none
@@ -154,11 +154,27 @@ into a long-running CS branch.
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | 741e93461a48 | 2026-07-03T21:34:00Z | Needs-Fix | Blocking: case-insensitive skip could leave B1-failing noncanonical trailer; amend D3/tests. Also correct D2 (scissors, not plain-#) and D4 (core.commentString) rationale. |
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | 7b0e0530e33f | 2026-07-03T21:38:00Z | Go | R1 findings resolved (D3 exact canonical skip; D2 scissors rationale; D4 commentString; Background reword); F1–F6 reverified; no new findings. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | **Minor** SemVer (new `harness install-hooks` verb + `lib/hooks.mjs`; additive, no breaking change). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Needs-Fix → R2 Go, hash `7b0e0530e33f`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `lib/hooks.mjs`: `PREPARE_COMMIT_MSG_HOOK` (sentinel; comment-marker resolution D4; exact-canonical skip D3; insert-above-comments/scissors else EOF D2) + `installPrepareCommitMsgHook(repoRoot,{force})` (D5/D7) | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `bin/harness.mjs`: `cmdInstallHooks` (`--force`/`--help`, exit 0/1/2) + `SUBCOMMAND_HELP['install-hooks']` + `TOP_HELP` line + `COMMAND_REGISTRY` entry | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — `tests/lib-hooks.test.mjs`: ≥10 `node --test` cases (os.tmpdir only; sh-invocation for hook body, skip if no sh) | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T4 — docs: `template/composed/OPERATIONS.md` + `template/composed/CONVENTIONS.md` (+ rendered roots via `harness sync`), `README.md`, `CHANGELOG.md [Unreleased] Added` | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS100 row) + CONTEXT.md; rendered composed mirrors (OPERATIONS/CONVENTIONS) updated via sync. |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS.md entry (claim-time Model-audit/Tasks gap candidate); #421 auto-closes on merge. |
 
 ## Notes / Learnings
 
