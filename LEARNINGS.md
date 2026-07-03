@@ -19,7 +19,8 @@ id: LRN-183
 date: 2026-07-02
 category: anti-pattern
 source_cs: CS85
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [doc-linters, inline-code, commonmark, guard, consistency-debt, follow-up]
 claim_area: docs-guards
 ```
@@ -31,6 +32,8 @@ claim_area: docs-guards
 **Evidence:** `scripts/check-doc-xref-resolvability.mjs:276` (`lines[i].replace(/`[^`]*`/g, '')` in `contentLines()`); `scripts/check-clickstop-link-durability.mjs` `stripInlineCode` (the correct forward scan, CS85). Surfaced by CS85 review rounds R2/R3/R4 (each a Needs-Fix on exactly this inline-code class) — see `done_cs85_consumer-doc-clickstop-link-durability.md` and [LRN-180](#lrn-180) (point c).
 
 **Disposition:** Open — not yet scheduled. Whoever next touches either doc-link guard (or files a guard-consolidation CS) should unify the inline-code stripper. No consumer impact; self-host guard internals only.
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`). Consistency debt only (both guards green today); unify the `stripInlineCode` helper whoever next touches either doc-link guard, or file a guard-consolidation CS. Filed 0 days ago — deferring out of the immediate open set.
 
 ---
 
@@ -217,7 +220,8 @@ id: LRN-171
 date: 2026-07-01
 category: process
 source_cs: CS67
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [workboard, auto-approve, pause, branch-allowlist, ci-gate]
 claim_area: workflows
 ```
@@ -230,6 +234,8 @@ claim_area: workflows
 
 **Disposition:** Open — candidate: extend `workboard-auto-approve.yml` branch regex to include `pause`/`unclaim`, or document pause admin-merge in OPERATIONS § Claim. Fold into CS71 if claimed.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`). Correction: planned **CS71** does **not** absorb this — CS71 Decision 3 explicitly leaves `workboard-auto-approve.yml` unmodified (it fixes the *evidence-gate* skip, not the `validate-and-approve` **branch allowlist**). The pause/unclaim branch-allowlist gap needs its own home (extend the `validate-and-approve` regex) or a CS when a pause PR is next required; admin-merge is the interim workaround.
+
 ### LRN-172
 
 ```yaml
@@ -237,7 +243,7 @@ id: LRN-172
 date: 2026-07-01
 category: process
 source_cs: CS67
-status: open
+status: obsolete
 tags: [reviews, review-log, a5-ordering, timestamps, copilot]
 claim_area: review-loops
 ```
@@ -249,6 +255,8 @@ claim_area: review-loops
 **Evidence:** CS67 PR #335 — an R5 Go row fabricated at `02:00:00Z` postdated Copilot's real `7f16be1` review (`01:48:07Z`); `read-only-gates` failed on A5 until every local-Go timestamp was corrected to precede its corresponding Copilot review.
 
 **Disposition:** Open — candidate: a one-line note in REVIEWS.md § 2.8 (Review log) documenting the timestamp-ordering rule.
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Obsolete — superseded by [LRN-182](#lrn-182)** (applied at CS65, merge `ef8a545`), which records the identical "the local `Go` row's timestamp must precede the Copilot review's `submittedAt`" rule. The A5 ordering doctrine is already documented/enforced at REVIEWS.md gate **A5** ("the Copilot review's `submittedAt` must ALSO be after the latest local `Go` row's `timestamp`"). No separate action needed.
 
 ### LRN-176
 
@@ -332,6 +340,8 @@ claim_area: harness-cli
 
 **Disposition:** Open — candidate: harden `lib/copilot-engage.mjs` to require `review.commit_id == headRefOid` before declaring success (not just "a review submitted at/after request time"), and add a retry/settle window.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS88** (`project/clickstops/planned/planned_cs88_copilot-engage-reliability-hardening.md`, decision **C88-3**). Note: the poll path *already* enforces `commit.oid === headSha` + a submitted-after floor (`lib/copilot-engage.mjs:336-340`), so CS88 closes the **residual** gap (the `opts.noPoll` early return → explicit `verified: false`) rather than introducing review-at-HEAD from scratch. Status stays `open`; flip to `applied` at CS88 close-out.
+
 ### LRN-170
 
 ```yaml
@@ -405,7 +415,8 @@ id: LRN-166
 date: 2026-06-24
 category: process
 source_cs: CS73
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [sub-agent-dispatch, briefing, changelog, structured-docs, idempotency]
 claim_area: orchestrator
 ```
@@ -417,6 +428,8 @@ claim_area: orchestrator
 **Evidence:** CS73 content PR #319; sub-agent `cs73-impl` DECISIONS-MADE noted the collision and deviated correctly; `CHANGELOG.md [Unreleased]` already had a `### Fixed` subsection when the dispatch said to create one before `### Documentation`.
 
 **Disposition:** Open. Candidate at a future harvest: add a one-line "idempotent section-add" note to `OPERATIONS.md § Sub-agent dispatch` (briefing structure).
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`). A small doctrine note not yet homed to a CS; apply as a one-line `OPERATIONS.md § Sub-agent dispatch` addition at the next harvest or fold into a future dispatch-doc edit.
 
 ---
 
@@ -537,7 +550,8 @@ id: LRN-162
 date: 2026-06-10
 category: anti-pattern
 source_cs: CS64
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [fs, error-handling, existsSync, ENOENT, idempotency, lib]
 claim_area: harness-cli
 ```
@@ -612,6 +626,8 @@ since the pattern is silently wrong in exactly the cases idempotency
 contracts care about. Already-adopted form in CS64 lib/claim.mjs /
 lib/closeout.mjs is the canonical reference. claim_area: harness-cli.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`) per @henrik-me's harvest decision. The `check-existsSync-antipattern.mjs` linter is CS-ready (CS64 `lib/claim.mjs`/`lib/closeout.mjs` is the canonical adopted form) but lower-priority than the copilot-engage reliability work filed this harvest; promote to a CS at the next harvest.
+
 ---
 
 ### LRN-163
@@ -621,7 +637,8 @@ id: LRN-163
 date: 2026-06-10
 category: process
 source_cs: CS64
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [reviews, dual-reviewer, gpt-5.5, claude-sonnet, copilot, convergence, idempotency]
 claim_area: orchestrator
 ```
@@ -674,6 +691,8 @@ substitute for re-engaging the other; possibly thread the
 `harness review` orchestration to auto-alternate based on prior-round
 reviewer-model field. claim_area: orchestrator.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`). Alternate-reviewer-convergence doctrine not yet homed to a CS; apply as a `REVIEWS.md § Review-of-record` note at the next harvest.
+
 ---
 
 ### LRN-160
@@ -695,6 +714,8 @@ claim_area: harness-cli
 **Evidence:** PR #295 (CS69, 2026-06-10, clone `agent-harness_copilot2`, `omni-ah-c2`). First `gh pr edit 295 --add-reviewer copilot-pull-request-reviewer` returned `https://github.com/henrik-me/agent-harness/pull/295` with exit 0; `gh api ... --jq .requested_reviewers` returned `[]`. Re-adding succeeded and Copilot reviewed within ~5 min. Pattern reproduced on the second engage cycle for HEAD `789fc4e` after the typo fix. Tangentially related: `harness copilot-engage 295` failed with GraphQL 401 inside the embedded `gh api graphql` call, so the workaround path (`gh pr edit --add-reviewer`) is the routinely-needed escape hatch.
 
 **Disposition:** Open — candidate work: harden `harness copilot-engage` to (a) detect and recover from GraphQL-401 by retry-with-backoff, (b) post-add verify `requested_reviewers` and re-add on silent no-op, (c) optionally hide the underlying `gh` flakiness by polling for the actual Copilot review submission rather than just trusting the add. claim_area: harness-cli.
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS88** (`project/clickstops/planned/planned_cs88_copilot-engage-reliability-hardening.md`, decision **C88-2**: post-add `requested_reviewers` verify + one bounded re-add + `reviewer-not-requested` fast-fail). Status stays `open`; flip to `applied` at CS88 close-out with the merge SHA.
 
 ---
 
@@ -718,6 +739,8 @@ claim_area: orchestrator
 
 **Disposition:** Open — candidate work: add a retry-with-backoff wrapper to harness CLI commands that internally call `gh api graphql` (especially `harness copilot-engage`, `harness review`); document the pattern in OPERATIONS.md § "When gh GraphQL 401-flakes"; consider an exponential-backoff helper in `lib/` for CI gate scripts to absorb the same flake server-side rather than relying on operators noticing and reissuing `gh run rerun --failed`. claim_area: orchestrator.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS88** (`project/clickstops/planned/planned_cs88_copilot-engage-reliability-hardening.md`, decision **C88-1**: shared `withRetry` + `isTransientGhError` bounded backoff around the `gh` seam calls, retrying only positively-transient errors). Status stays `open`; flip to `applied` at CS88 close-out with the merge SHA.
+
 ---
 
 ### LRN-159
@@ -727,7 +750,7 @@ id: LRN-159
 date: 2026-06-09
 category: tooling
 source_cs: CS70
-status: open
+status: obsolete
 tags: [release-management, release-yml, lrn-121-followup, draft-cleanup, gh-cli]
 claim_area: workflows
 ```
@@ -797,6 +820,8 @@ manual cleanup step that should be mechanical.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** The documentation-side path is **partially landed**: `OPERATIONS.md § State-of-the-world probes` (lines ~2161-2166, landed via CS59 PR #285) already documents the `gh api -X DELETE repos/<owner>/<repo>/releases/<draft-release-id>` step — but **as a pre-cut cleanup** (delete stale drafts before the next cut starts), not as a post-publish cleanup. This addresses the audit-friction symptom but still allows a stale draft to survive between cuts (the v0.7.0 case in Evidence, 6 days). Planned **CS67** (`harness release` verb) remains the primary home for automating the **post-publish** cleanup in `harness release --publish` (decision C67-1): scan for `tag_name==<version> && draft==true && id != <published-id>` siblings and delete idempotently. Path 3 (`release.yml` annotation) deferred unless CS67 slips. Flip status to `applied` at CS67 close-out.
 
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Obsolete — root cause removed.** CS80 **deleted `.github/workflows/release.yml`** ([LRN-176](#lrn-176), applied), so there is no longer an auto-draft-on-tag-push creator to race a manual/verb publish; the `harness release` verb is now the **single** release creator, so no `tag_name==<version> && draft==true` sibling arises. The stale-draft-sibling class this LRN describes is structurally moot (CONTEXT.md CS84 note); no post-publish cleanup step is required.
+
 ---
 
 ### LRN-157
@@ -855,7 +880,8 @@ id: LRN-156
 date: 2026-06-07
 category: process
 source_cs: CS63b
-status: open
+status: deferred
+deferred_until: 2026-09-01
 tags: [git, rename-detection, diff, guards, false-negative]
 claim_area: linters
 ```
@@ -869,6 +895,8 @@ claim_area: linters
 **Disposition:** Open — candidate for a mechanical guard (e.g. a linter that flags `--name-only` in diff-based gate scripts where rename sources matter), or fold into CS58's fact-claim/scope-verification scope. The two in-tree gates are already fixed.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS58 closed** (PR #281) without absorbing this; in-tree gates remain fixed (no new instances surfaced since). Three remaining options: (a) tiny new linter CS that flags bare `--name-only` in `scripts/check-*.mjs` and `.github/workflows/*.yml` where rename sources matter — likely low ROI without a fresh recurrence; (b) include the check in planned **CS66** (`review-doc`/`review-cs` verbs) as a checklist item for diff-consuming scripts; (c) bullet in CONVENTIONS during planned **CS65** (process-doc right-sizing). No new CS recommended yet; revisit if a third instance appears.
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Deferred** (`deferred_until: 2026-09-01`). In-tree gates remain fixed and no third instance has surfaced; a dedicated bare-`--name-only` linter is low-ROI without a fresh recurrence. Revisit at the next harvest or when a new rename-source-dependent diff gate appears.
 
 ### LRN-155
 
@@ -939,6 +967,8 @@ claim_area: review-loops
 **Disposition:** Open — folds into planned CS58. Adds the "deliverable target resolves to a live shipped/loaded surface" check to that scope.
 
 **Disposition update (2026-06-10, `omni-ah-c2`, planned-CS pointer refresh):** **CS58 closed** (PR #281) shipping REVIEWS.md § 2.6c (F1–F6 fact-claim verification on plan reviews) but did not extend the F-checks to "deliverable target resolves to a live shipped/loaded surface". The remaining gap belongs in planned **CS66** (`review-cs` verb checklist; see its C66-3 — local verify-only clickstop-readiness verb). Recommended: surface to the CS66 claimer to add as an F-check item. Flip status to `applied` at CS66 close-out.
+
+**Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** Pointer refresh — **CS66 closed without absorbing this**; the deliverable-target F-check was **re-homed to planned CS75** (`project/clickstops/planned/planned_cs75_check-clickstop-validation-hardening.md`, decisions C75-3/C75-4, which bundle LRN-167 + LRN-152). Status stays `open`; flip to `applied` at **CS75** close-out with the merge SHA.
 
 ### LRN-151
 
