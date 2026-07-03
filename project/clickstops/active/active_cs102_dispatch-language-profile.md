@@ -1,9 +1,9 @@
 # CS102 — harness dispatch: language-agnostic preamble core + consumer-selectable language profile
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs102/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound enhancement #423 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; a .NET 10 / C# consumer). 
 **Depends on:** none. Touches `lib/dispatch.mjs`, `bin/harness.mjs` (cmdDispatch), `schemas/harness.config.schema.json`, `OPERATIONS.md` + `template/composed/OPERATIONS.md` (preamble restructure), tests. Disjoint from the concurrent CS100 (#421, yoga-ah) surfaces.
@@ -74,11 +74,28 @@ The design must preserve `dispatch.mjs`'s "extract from the rendered doc" levera
 | R2 | gpt-5.5 | claude-opus-4.8 | cs102-plan-review2/3/4/5 | ce67a4c07fe8 | 2026-07-03T23:16:00Z | Needs-Fix | Config-load + reorder/completeness + composed-placeholder findings resolved; residual prose contradictions (Background/User-approval byte-identity) + unknown-profile exit 1-vs-2. |
 | R3 | gpt-5.5 | claude-opus-4.8 | cs102-plan-review6 | 1980f8ae68ac | 2026-07-03T23:22:00Z | Go | All resolved: node capability-complete/reordered (not byte-identical); cmdDispatch fail-closed config load (not loadConfig); composed placeholders preserved; unknown-profile exit 2; SemVer Minor. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 (sub-agent cs102-impl) |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | **Minor** SemVer (new optional `dispatch.language_profile` config + `--language-profile` flag + language-profile capability). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R3 Go, hash `1980f8ae68ac`; 6-round review, R1/R2 Needs-Fix resolved). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `schemas/harness.config.schema.json`: add `dispatch.language_profile` (enum node/dotnet, default node, additionalProperties:false) (C102-1) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
+| T2 — `OPERATIONS.md` + `template/composed/OPERATIONS.md`: preamble restructure — agnostic core (markers in Conventions/Self-checks) + `#### Language profiles` node+dotnet fences; composed placeholders preserved (C102-2/C102-5) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
+| T3 — `lib/dispatch.mjs`: `extractLanguageProfile()` + `languageProfile` threading + marker splice + fail-closed (C102-3) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
+| T4 — `bin/harness.mjs` cmdDispatch: fail-closed config load (existsSync+JSON.parse, not loadConfig) + `--language-profile` flag + validate + help (C102-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
+| T5 — tests (`lib-dispatch` + new `cs102-*`: node completeness golden, dotnet, unknown→exit2, flag/config select, malformed-config fail-closed) + `CHANGELOG.md` `[Unreleased]` Added (#423) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS102 row) + CONTEXT.md; OPERATIONS.md is a rendered-doc change (composed lockstep). |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md language-profile-vs-agnostic-core entry; #423 auto-closes on merge. |
 
 ## Notes / Learnings
 
