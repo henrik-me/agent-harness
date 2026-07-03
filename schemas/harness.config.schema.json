@@ -188,9 +188,9 @@
         },
         "copilot_trigger": {
           "type": "string",
-          "description": "How `harness review` requests Copilot review. `mention` posts an @copilot review PR comment via `gh api`; `reviewer` uses the reviewer attachment path where supported.",
+          "description": "Deprecated/no-op selector for how `harness review` requests Copilot. `harness review` always requests the Copilot reviewer via the reviewer-attachment path (the hardened `copilot-engage` REST `--add-reviewer` path, ADR-0004), regardless of this value. `mention` is retained only for backward-compatibility (it once posted an ineffective `@copilot review` comment that never populated `requested_reviewers`, issue #422) and now has no effect.",
           "enum": ["mention", "reviewer"],
-          "default": "mention"
+          "default": "reviewer"
         },
         "review_timeout_minutes": {
           "type": "number",
