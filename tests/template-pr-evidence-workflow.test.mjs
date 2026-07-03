@@ -83,15 +83,44 @@ describe('CS38a — managed pr-evidence-lint workflow template', () => {
     assert.match(onBlock, /^        type:\s*string$/m);
   });
 
+  // #424: Copilot's review lands asynchronously after the push-triggered run,
+  // so re-run read-only-gates when a review is submitted (A5+A16 auto-pass
+  // without a manual `gh run rerun`).
+  it('declares a pull_request_review submitted trigger (#424 auto-rerun)', () => {
+    const onBlock = extractBlock(readWorkflow(), /^on:\s*$/m);
+    assert.match(onBlock, /^  pull_request_review:\s*$/m);
+    assert.match(onBlock, /^    types:\s*\[submitted\]\s*$/m);
+  });
+
   it('declares read-only-gates and mutation-engage jobs', () => {
     const text = readWorkflow();
     assert.match(text, /^  read-only-gates:\s*$/m);
     assert.match(text, /^  mutation-engage:\s*$/m);
   });
 
-  it('guards read-only-gates to pull_request events', () => {
+  it('guards read-only-gates to pull_request and pull_request_review events', () => {
     const job = extractJob(readWorkflow(), 'read-only-gates');
-    assert.match(job, /^    if:\s*github\.event_name == 'pull_request'$/m);
+    // #424: fires on push (pull_request) AND on a submitted review
+    // (pull_request_review), the latter scoped to base.ref == 'main' for parity
+    // with the pull_request: branches: [main] filter.
+    assert.match(
+      job,
+      /^    if:\s*github\.event_name == 'pull_request' \|\| \(github\.event_name == 'pull_request_review' && github\.event\.pull_request\.base\.ref == 'main'\)$/m
+    );
+  });
+
+  it('scopes the read-only-gates pull_request_review run to base.ref main (#424)', () => {
+    const job = extractJob(readWorkflow(), 'read-only-gates');
+    assert.match(
+      job,
+      /if:[^\n]*github\.event_name == 'pull_request_review'/,
+      "read-only-gates if: must reference the pull_request_review event"
+    );
+    assert.match(
+      job,
+      /if:[^\n]*github\.event\.pull_request\.base\.ref == 'main'/,
+      'review-triggered run must be scoped to base.ref == main'
+    );
   });
 
   it('guards mutation-engage to workflow_dispatch events', () => {

@@ -168,6 +168,40 @@ prompt + plan); pass `--strict` to fail on a non-Go verdict. `harness review-cs`
 is **local and verify-only** — no model, no `gh`, no PR — the fast "is this CS
 review-complete? what's missing?" pre-flight before the close-out gate.
 
+### 2.4.3 Leaner review sequencing (issue #424)
+
+Content-PR review churn is minimised by sequencing the rubber-duck and Copilot
+legs deliberately, rather than interleaving them:
+
+1. **Rubber-duck to Go before the first Copilot engage.** Drive the local
+   GPT-5.5 (or approved-fallback) review to an explicit `Go` at the current
+   HEAD *before* requesting the Copilot reviewer. Engaging Copilot on a diff the
+   rubber-duck has not yet cleared produces two independent streams of findings
+   on the same unsettled code.
+2. **Batch review fixes into minimal commits.** Fold all fixes for one review
+   round into a single commit, not one commit per finding — every new HEAD
+   invalidates the A4 stale-diff attestation, re-triggers the gates, and (see
+   below) prompts a fresh Copilot re-review.
+3. **After the final Copilot re-engage, resolve all threads and merge without
+   further commits.** Once Copilot has re-reviewed the fixed HEAD, resolve every
+   remaining thread and merge — do not open another fix→re-attest→re-engage
+   cycle for the cosmetic residue of a converged review.
+4. **A genuinely new *blocking* finding is the one exception.** If a review round
+   surfaces a real new bug, it takes the normal path: fix it, obtain a fresh
+   local `Go` at the new HEAD (A4), and re-engage Copilot. The "no further
+   commits" rule in (3) applies only to **re-raises of already-addressed items
+   and non-blocking style nits** — never to a new real bug.
+5. **Treat Copilot re-raises as "resolve, don't re-fix".** Copilot re-scans the
+   whole diff on every engage and re-emits its full comment set, so already-fixed
+   items reappear as fresh `COMMENTED` threads. Resolve them with a one-line
+   disposition that points at the commit or test already covering them; do not
+   re-edit code that is already correct and test-guarded.
+
+The push-triggered `read-only-gates` job (`.github/workflows/pr-evidence-lint.yml`)
+re-runs **automatically** when a review is submitted — the `pull_request_review`
+trigger added for issue #424 — so the A5+A16 Copilot gate turns green on its own
+once Copilot's asynchronous review lands, with no manual `gh run rerun`.
+
 ### 2.5 What the reviewer examines
 
 The review scope depends on CS type:
