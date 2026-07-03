@@ -1,10 +1,10 @@
 # CS94 — cut harness v0.13.0 (Minor)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs94/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — release CS following the CS93 (#407) close-out, per @henrik-me's "fix issue 407, then release a new version, do so without stopping."
 **Depends on:** CS93 merged to `main` (#411 squash `37b46e2`, close-out #412). Bundles the unreleased CS65 + CS85 + CS92 + CS93 accumulated since v0.12.0. Follows OPERATIONS.md § Release process.
 
@@ -104,4 +104,19 @@ No v0.13.0 release object, no v0.13.0 tag (local or remote), no stale duplicate 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs94-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T07:15:09Z
+**Outcome:** GO
+
+Reviewed the CS94 plan (§ Decisions C94-1…C94-5, § Deliverables 1–6, § Exit criteria) against the **live** v0.13.0 release (content PR #415, squash `5501980`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `package.json`/lock 0.12.0→0.13.0 | match | `version` == `0.13.0` on main; lock in sync. |
+| 2 — `CHANGELOG.md` [Unreleased]→[0.13.0] | match | `## [0.13.0] — 2026-07-03` with CS65/CS85/CS92/CS93; fresh empty `[Unreleased]`; compare links correct. |
+| 3 — README pin sweep | match | current install/quickstart/upgrade pins read `v0.13.0`; Status leads with v0.13.0; remaining `v0.12.0` is historical only. |
+| 4 — tag on squash SHA | match | annotated tag `v0.13.0`, peeled `^{}` == `5501980…` (squash SHA), `cat-file`=`tag`, pushed to origin. |
+| 5 — published Release | match | exactly 1 release for `v0.13.0`; `isDraft=false`; Latest == v0.13.0. Publish-to-Latest per C94-2 (documented override of C84-9). |
+| 6 — consumer notification (issue-only) | match | `authzandentitlements#11` + `sub-invaders#147`, `[harness:cs94]`, `harness-orchestrator` label. |
+
+6/6 deliverables + 6/6 exit criteria met; SemVer Minor correct; no divergences, no overclaims (GPT-5.5 `cs94-pvi` at `5501980`).
