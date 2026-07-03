@@ -851,6 +851,11 @@ Options:
   --task-file <path>    Read the task description from a YAML/JSON file and
                         render the per-task sections (owned files, deliverables,
                         report shape) below the preamble.
+  --language-profile <name>
+                        Language profile whose ecosystem-specific conventions +
+                        self-check commands are spliced into the preamble
+                        (node | dotnet; default: node, or dispatch.language_profile
+                        from harness.config.json). Overrides the config value.
   --no-fence            Omit the surrounding triple-backtick text fence in the output.
   --cwd <path>          Consumer repo path (default: cwd)
   --help                Print this help
@@ -4776,6 +4781,7 @@ async function cmdCloseOut(args, global) {
 async function cmdDispatch(args, global) {
   let taskFile = null;
   let includeFence = true;
+  let languageProfileFlag = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--help' || a === '-h') {
@@ -4786,6 +4792,11 @@ async function cmdDispatch(args, global) {
       i++;
     } else if (a.startsWith('--task-file=')) {
       taskFile = a.slice('--task-file='.length);
+    } else if (a === '--language-profile') {
+      languageProfileFlag = flagValue(args, i, '--language-profile');
+      i++;
+    } else if (a.startsWith('--language-profile=')) {
+      languageProfileFlag = a.slice('--language-profile='.length);
     } else if (a === '--no-fence') {
       includeFence = false;
     } else {
@@ -4793,6 +4804,36 @@ async function cmdDispatch(args, global) {
     }
   }
   const cwd = global?.cwd || process.cwd();
+
+  // Fail-closed config load (LRN-033): mirror readConfigForReviewGates. We must
+  // NOT use loadConfig() here — its readJSONOrNull swallows malformed JSON as
+  // null, which would silently fall through to the 'node' default instead of
+  // failing closed on a corrupt config.
+  let config = null;
+  const configPath = path.join(cwd, 'harness.config.json');
+  if (existsSync(configPath)) {
+    try {
+      config = JSON.parse(stripBOM(readFileSync(configPath, 'utf8')));
+    } catch (err) {
+      die(
+        `harness dispatch: harness.config.json is not valid JSON.\n` +
+          `Path: ${configPath}\nError: ${err.message}`,
+        1
+      );
+    }
+  }
+
+  const { emitBriefingFromFile, LANGUAGE_PROFILES } = await import('../lib/dispatch.mjs');
+  const languageProfile =
+    languageProfileFlag ?? config?.dispatch?.language_profile ?? 'node';
+  if (!LANGUAGE_PROFILES.includes(languageProfile)) {
+    die(
+      `harness dispatch: unknown --language-profile "${languageProfile}" ` +
+        `(known profiles: ${LANGUAGE_PROFILES.join(', ')})\n\n${SUBCOMMAND_HELP['dispatch']}`,
+      2
+    );
+  }
+
   const operationsPath = path.join(cwd, 'OPERATIONS.md');
   if (!existsSync(operationsPath)) {
     die(`harness dispatch: OPERATIONS.md not found at ${operationsPath}`, 1);
@@ -4809,8 +4850,12 @@ async function cmdDispatch(args, global) {
       );
     }
   }
-  const { emitBriefingFromFile } = await import('../lib/dispatch.mjs');
-  const out = emitBriefingFromFile({ operationsPath, task, includeFence });
+  let out;
+  try {
+    out = emitBriefingFromFile({ operationsPath, task, includeFence, languageProfile });
+  } catch (err) {
+    die(`harness dispatch: ${err.message}`, 1);
+  }
   process.stdout.write(out);
   if (!out.endsWith('\n')) process.stdout.write('\n');
   process.exit(0);

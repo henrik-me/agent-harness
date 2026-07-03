@@ -1155,37 +1155,14 @@ need" produces silent gaps that surface as integration failures later.
 
 ## Conventions to follow
 
-- ESM `.mjs` only, Node 20+ stdlib. No CommonJS `require()`, no `.cjs`
-  files, no npm dependencies unless explicitly authorized in this dispatch.
-
-- Fresh git worktrees/checkouts need their own `npm install` before running
-  dependency-backed harness linters; `node_modules` is gitignored and
-  per-checkout, not shared from the parent worktree.
-
 - LF line endings, no BOM. After every file write on Windows, normalize:
   strip BOM if present (first 3 bytes must NOT be 0xEF 0xBB 0xBF), replace
   \r\n with \n. All content comparisons must normalize in the read step.
   (LRN-006, LRN-018, LRN-065)
 
-- `requireValue(args, i, flagName)` guard for every value-taking CLI flag
-  (LRN-040). Must verify args[i+1] exists AND reject tokens starting with
-  `-`, exiting code 2 + usage message. Bare `if (args[i+1])` silently
-  consumes the next flag as a value.
-
-- Schema is source of truth (LRN-039). Read `schemas/*.schema.json` BEFORE
-  writing any field access against harness.config.json, .harness-lock.json,
-  or any other structured config. Do not guess field names.
-
-- Stdout for success output; stderr for errors and warnings (LRN-044).
-  `--quiet` suppresses success stdout only. Errors always go to stderr.
-
 - No dot-notation placeholders (LRN-049). Use flat keys only:
   `{{agent_suffix}}` not `{{project.agent_suffix}}`. Dot-notation is not
   supported by the template engine and will be emitted literally.
-
-- Consumer-root-relative paths (LRN-050). Scripts run from the consumer's
-  cwd, not the harness source location. Never use `import.meta.url` or
-  `process.cwd()` to resolve consumer-repo files.
 
 - Cross-repo path discipline (LRN-105). When a sub-agent operates in a repo
   OTHER than the orchestrator's, every path in the briefing must be rooted
@@ -1199,6 +1176,8 @@ need" produces silent gaps that surface as integration failures later.
   message to stderr + process.exit(1). NEVER silent default. NEVER let a
   stack trace be the only error signal.
 
+<!-- harness:dispatch-language-conventions -->
+
 ## Self-checks before reporting
 
 Run all of the following and include each result in SELF-CHECKS RUN:
@@ -1210,14 +1189,8 @@ Run all of the following and include each result in SELF-CHECKS RUN:
    runs as part of the lint aggregate over the whole cwd (not just
    modified files); it catches CRLF/bare-\r line endings introduced by
    Windows core.autocrlf or stale editor settings.
-4. If tests were added/modified: `node --test` — report count delta
-   (e.g. "23 → 27 tests; all pass").
-5. For any .mjs files authored: `node -c <file>` exits 0.
-6. If template files were modified (anything under `template/`),
-   `{{harness_invoke}} lint` must exit 0 — the lint aggregate includes the
-   templates linter (LRN-049/050/051: no dot-notation placeholders, no
-   relative-up paths, no self-referencing TODO/FIXME tokens in PR-template
-   files).
+
+<!-- harness:dispatch-language-self-checks -->
 
 ## Reporting independence (CS48 / issue #142)
 
@@ -1251,6 +1224,99 @@ missing fields explicitly listed.
     LEARNINGS CANDIDATES: (none) | <category>: <problem>: <finding>: <evidence>
     NEXT STEPS (if partial/blocked):
       - <what's needed to complete>
+```
+
+#### Language profiles
+
+The `## Conventions to follow` and `## Self-checks before reporting` sections
+inside the core fence above each end with an injection marker
+(`<!-- harness:dispatch-language-conventions -->` /
+`<!-- harness:dispatch-language-self-checks -->`). `harness dispatch` replaces
+each marker with the matching part of the language profile selected by
+`dispatch.language_profile` in `harness.config.json` (default `node`) or the
+`--language-profile <name>` override, so a non-Node consumer (e.g. a .NET
+project) no longer has to negate Node/ESM/npm conventions in every dispatch.
+Each profile below lives in its own ```text fence whose first content line is
+`## LANGUAGE PROFILE: <name>`, split by `<!-- harness:profile-self-checks -->`
+into a conventions part and a self-checks part. The language-agnostic core
+(preflight, file ownership, required reading, fail-closed, report shape) is
+emitted for every profile.
+
+```text
+## LANGUAGE PROFILE: node
+
+### conventions
+
+- ESM `.mjs` only, Node 20+ stdlib. No CommonJS `require()`, no `.cjs`
+  files, no npm dependencies unless explicitly authorized in this dispatch.
+
+- Fresh git worktrees/checkouts need their own `npm install` before running
+  dependency-backed harness linters; `node_modules` is gitignored and
+  per-checkout, not shared from the parent worktree.
+
+- `requireValue(args, i, flagName)` guard for every value-taking CLI flag
+  (LRN-040). Must verify args[i+1] exists AND reject tokens starting with
+  `-`, exiting code 2 + usage message. Bare `if (args[i+1])` silently
+  consumes the next flag as a value.
+
+- Schema is source of truth (LRN-039). Read `schemas/*.schema.json` BEFORE
+  writing any field access against harness.config.json, .harness-lock.json,
+  or any other structured config. Do not guess field names.
+
+- Stdout for success output; stderr for errors and warnings (LRN-044).
+  `--quiet` suppresses success stdout only. Errors always go to stderr.
+
+- Consumer-root-relative paths (LRN-050). Scripts run from the consumer's
+  cwd, not the harness source location. Never use `import.meta.url` or
+  `process.cwd()` to resolve consumer-repo files.
+
+<!-- harness:profile-self-checks -->
+
+### self-checks
+
+4. If tests were added/modified: `node --test` — report count delta
+   (e.g. "23 → 27 tests; all pass").
+5. For any .mjs files authored: `node -c <file>` exits 0.
+6. If template files were modified (anything under `template/`),
+   `{{harness_invoke}} lint` must exit 0 — the lint aggregate includes the
+   templates linter (LRN-049/050/051: no dot-notation placeholders, no
+   relative-up paths, no self-referencing TODO/FIXME tokens in PR-template
+   files).
+```
+
+```text
+## LANGUAGE PROFILE: dotnet
+
+### conventions
+
+- C#/.NET 8+ on the .NET SDK toolchain. A new service or library owns its
+  `.csproj` together with its solution `.sln` entry and, once introduced,
+  `Directory.Packages.props` as a single ownership bundle, so the project
+  file, solution registration, and central-package pins move together
+  (issue #423 / the CS10 Aspire-service ownership finding).
+
+- NuGet central package management: declare each package version once in
+  `Directory.Packages.props` (`<PackageVersion Include="..." Version="..." />`)
+  and reference it from a `.csproj` with a version-less
+  `<PackageReference Include="..." />`. Do not pin versions per project.
+
+- Argument parsing, file layout, and tooling follow .NET/C# idioms rather
+  than the Node-profile equivalents; honor the project's established analyzer
+  settings (nullable reference types, warnings-as-errors) instead of
+  introducing new ones.
+
+- Fail-closed parsing still applies (agnostic doctrine restated for the .NET
+  toolchain): malformed JSON/config → a clear stderr error + non-zero exit,
+  never a silent default.
+
+<!-- harness:profile-self-checks -->
+
+### self-checks
+
+4. `dotnet build` — the affected projects/solution build with no errors.
+5. `dotnet test` — report the pass/fail count (e.g. "42 passed, 0 failed").
+6. `dotnet format --verify-no-changes` — formatting + whitespace conform
+   (non-zero exit if any file would be reformatted).
 ```
 
 ### Canonical reviewer preamble (CS35 C35-1)
