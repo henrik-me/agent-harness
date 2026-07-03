@@ -29,5 +29,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS100 | CS100 — Ship an opt-in `prepare-commit-msg` hook that auto-adds the Co-authored-by trailer (incl. merge commits) | 🟢 Active | yoga-ah | cs100/content | 2026-07-03 | — |
+| CS101 | CS101 — harness review: delegate the Copilot leg to the copilot-engage `--add-reviewer` path | 🟢 Active | yoga-ah-c2 | cs101/content | 2026-07-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

@@ -1,9 +1,9 @@
 # CS101 — harness review: delegate the Copilot leg to the copilot-engage `--add-reviewer` path
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs101/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound bug report #422 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; consumer LRN-006).
 **Depends on:** none. Touches `lib/review.mjs` (+ `schemas/harness.config.schema.json` default, `lib/reviews-policy.mjs` default, tests). Concurrent sibling CS100 (#421, owned by yoga-ah) touches a git hook + `harness init`/scaffold — disjoint from this CS's `lib/review.mjs` surface. Reuses `engageCopilot` from `lib/copilot-engage.mjs` (read-only dependency).
@@ -73,11 +73,26 @@ So `harness review` maintains a **divergent, weaker, and (by default) broken** C
 | R2 | gpt-5.5 | claude-opus-4.8 | cs101-plan-review2 | c6455203599d | 2026-07-03T22:10:00Z | Go-with-amendments | A5 reorder resolved; exit strategy OK; one gap: EngageError list/tests still omit real `auth-missing` kind. |
 | R3 | gpt-5.5 | claude-opus-4.8 | cs101-plan-review3 | 1f498b5cac69 | 2026-07-03T22:14:00Z | Go | `auth-missing` added to C101-3 + tests (→transport→exit 2); kind list matches copilot-engage; no omissions. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 (sub-agent cs101-impl) |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | **Patch** SemVer (bug fix; schema default flip + description only, enum kept; internal-export removals). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R3 Go, hash `1f498b5cac69`; R1/R2 Go-with-amendments resolved). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `lib/review.mjs`: delegate Copilot leg to `engageCopilot` (import; reorder after rubber-duck Go with `localGoAt` `submittedAfter`; `toReviewErrorFromEngage` for all `EngageError` kinds incl. `auth-missing`; `describePlannedActions` reviewer-attachment text; `:23` default `reviewer`; remove dead `triggerCopilotReview`/`pollForCopilotReview` if unref) — C101-1/2/3/4 | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
+| T2 — `schemas/harness.config.schema.json` `copilot_trigger` default `mention`→`reviewer` + description; `REVIEWS.md` + `template/composed/REVIEWS.md` `copilot_trigger` prose in lockstep (C101-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
+| T3 — tests: update `cs52`/`cs61`; add delegation + `--copilot-only` request + A5 `localGoAt` floor + all-`EngageError`-kind exit + dry-run `describePlannedActions` regression tests; `CHANGELOG.md` `[Unreleased]` Fixed (#422) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS101 row) + CONTEXT.md; REVIEWS.md is a rendered-doc change (composed lockstep). |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md poll-must-cause-via-verified-path entry; #422 auto-closes on merge. |
 
 ## Notes / Learnings
 
