@@ -286,6 +286,12 @@ const SUBCOMMAND_PLAN = {
     skip: 'CS64 stdout-only preamble emitter; reads OPERATIONS.md and prints the canonical ' +
       'briefing block. No git operations and no filesystem writes (lib/dispatch.mjs).',
   },
+  'install-hooks': {
+    skip: 'CS100 opt-in prepare-commit-msg hook installer; resolves the hooks dir via read-only ' +
+      '`git rev-parse --git-path hooks` and writes only .git/hooks/prepare-commit-msg (inside ' +
+      '.git, not a tracked working-tree file). No working-tree change and no HEAD-moving git operation ' +
+      '(bin/harness.mjs cmdInstallHooks -> lib/hooks.mjs).',
+  },
 };
 
 function git(cwd, args, env) {

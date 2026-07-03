@@ -168,15 +168,36 @@ into a long-running CS branch.
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `lib/hooks.mjs`: `PREPARE_COMMIT_MSG_HOOK` (sentinel; comment-marker resolution D4; exact-canonical skip D3; insert-above-comments/scissors else EOF D2) + `installPrepareCommitMsgHook(repoRoot,{force})` (D5/D7) | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 — `bin/harness.mjs`: `cmdInstallHooks` (`--force`/`--help`, exit 0/1/2) + `SUBCOMMAND_HELP['install-hooks']` + `TOP_HELP` line + `COMMAND_REGISTRY` entry | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T3 — `tests/lib-hooks.test.mjs`: ≥10 `node --test` cases (os.tmpdir only; sh-invocation for hook body, skip if no sh) | active | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| T4 — docs: `template/composed/OPERATIONS.md` + `template/composed/CONVENTIONS.md` (+ rendered roots via `harness sync`), `README.md`, `CHANGELOG.md [Unreleased] Added` | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T1 — `lib/hooks.mjs`: `PREPARE_COMMIT_MSG_HOOK` (sentinel; comment-marker resolution D4; exact-canonical skip D3; insert-above-comments/scissors else EOF D2) + `installPrepareCommitMsgHook(repoRoot,{force})` (D5/D7) | done | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=complete \| learnings=2 |
+| T2 — `bin/harness.mjs`: `cmdInstallHooks` (`--force`/`--help`, exit 0/1/2) + `SUBCOMMAND_HELP['install-hooks']` + `TOP_HELP` line + `COMMAND_REGISTRY` entry | done | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| T3 — `tests/lib-hooks.test.mjs`: ≥10 `node --test` cases (os.tmpdir only; sh-invocation for hook body, skip if no sh) | done | yoga-ah | agent-id=cs100-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| T4 — docs: `template/composed/OPERATIONS.md` + `template/composed/CONVENTIONS.md` (+ rendered roots via `harness sync`), `README.md`, `CHANGELOG.md [Unreleased] Added` | done | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=complete \| learnings=0 (README deferred to release CS — see Notes) |
 | Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
 | Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS100 row) + CONTEXT.md; rendered composed mirrors (OPERATIONS/CONVENTIONS) updated via sync. |
 | Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS.md entry (claim-time Model-audit/Tasks gap candidate); #421 auto-closes on merge. |
 
 ## Notes / Learnings
+
+- **Deviation (README).** The plan's Deliverable 4 lists a `README.md` verb mention.
+  `README.md` has no general verb/usage listing — the `## Status` line is
+  release-narrated (updated only when a version ships) and the `## CLI quick
+  reference` section is cross-repo-specific. The `install-hooks` mention is therefore
+  deferred to the **release CS** (v0.15.0 `## Status` line, cut after #424). The
+  `CHANGELOG.md [Unreleased] → Added` entry is the authoritative interim record.
+- **Learning candidate (claim-time active-file gaps).** `harness claim --apply` renamed
+  `planned→active` and added the WORKBOARD row but left `**Status:** planned` and an empty
+  `## Model audit` / placeholder `## Tasks`. Active files require `**Status:** active`, a
+  `## Model audit` section (else `clickstop-implementer-not-reviewer` errors), and populated
+  `## Tasks` (incl. the two Close-out rows). The orchestrator filled these manually to make
+  the claim PR lint green (evidence: PR #435 `smoke/harness-lint` + `validate` failed until
+  the fix). Consider having `harness claim` scaffold these at claim time.
+- **Learning candidate (verb→CS47 coupling).** Registering a new `COMMAND_REGISTRY` verb
+  deterministically fails the CS47 subcommand-coverage meta-test
+  (`tests/cs47-detached-head-bisect.test.mjs`) until a matching `SUBCOMMAND_PLAN` entry is
+  added — a coupling that crosses the code↔tests ownership split.
+- **Learning candidate (git-for-windows `sh`).** git-for-windows ships two `sh` binaries;
+  only `bin\sh.exe` has coreutils (`awk`/`grep`) on PATH. Hook/shell tests spawning `sh`
+  directly must resolve the coreutils-bearing one or silently no-op.
 
 ## Plan-vs-implementation review
 

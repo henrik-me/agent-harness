@@ -2719,6 +2719,35 @@ argv-injection guard). Never hand-roll an inline `fs.mkdtempSync` + best-effort
 flag any new temp-dir/clone allocation or unguarded `git` ref argument that
 bypasses these helpers.
 
+### Commit-trailer hook (`install-hooks`)
+
+`{{harness_invoke}} install-hooks` installs an **opt-in** git `prepare-commit-msg`
+hook (CS100, [#421](https://github.com/henrik-me/agent-harness/issues/421)) into
+the repository's active hooks directory. The hook appends the canonical
+`Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer to
+a commit message when that exact line is absent — **including on merge commits** —
+so the commit-trailers (B1) gate passes by construction and you no longer need to
+`git commit --amend` a `git merge` that integrates `main` into a long-running CS
+branch (the recurring LRN-018 friction).
+
+- **Opt-in only.** `{{harness_invoke}} init` never installs the hook; it is written
+  solely when you run `install-hooks` explicitly.
+- **Merge-safe placement.** The trailer is inserted **above** git's comment /
+  scissors template (not at end-of-file), so it survives git's message cleanup on
+  every source — normal, template, squash, amend, and merge. The skip condition and
+  the appended line are byte-for-byte identical to what B1 matches (case-sensitive,
+  whole line), so re-runs and amends never duplicate the trailer.
+- **Idempotent + safe.** The hook carries a sentinel, so re-running is a no-op
+  (`skipped`); a pre-existing **non-harness** `prepare-commit-msg` hook is **refused**
+  (exit 1) unless `--force` is passed, which overwrites either.
+- **Exit codes.** `0` created / replaced / already-installed; `1` refused (foreign
+  hook present — re-run with `--force`) or error (not a git repository); `2` usage
+  error (unknown flag).
+
+The harness self-host keeps linear history by rebasing rather than merging, so it
+rarely creates the merge commits this hook targets; the hook is primarily a
+convenience for consumers whose workflow merges `main` into feature branches.
+
 ---
 
 ## Local block
