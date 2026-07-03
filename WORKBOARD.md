@@ -29,5 +29,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS102 | CS102 — harness dispatch: language-agnostic preamble core + consumer-selectable language profile | 🟢 Active | yoga-ah-c2 | cs102/content | 2026-07-03 | — |
+| CS103 | CS103 — Reduce content-PR review churn: auto-rerun read-only-gates on Copilot review + leaner review-sequencing doctrine | 🟢 Active | yoga-ah | cs103/content | 2026-07-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
