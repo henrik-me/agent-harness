@@ -12,6 +12,66 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-192
+
+```yaml
+id: LRN-192
+date: 2026-07-03
+category: tooling
+source_cs: CS100
+status: applied
+tags: [testing, windows, git-for-windows, sh, shell-hooks]
+claim_area: testing
+```
+
+**Problem:** git-for-windows ships two `sh` binaries; only `<Git>\bin\sh.exe` has the coreutils (`awk`/`grep`) a POSIX shell script needs on PATH. A test that spawns bare `sh <script>` on Windows may pick a coreutils-less `sh` and silently no-op (`awk: command not found`), so a shell hook under test appears to "run" but changes nothing — a false pass.
+
+**Finding:** Tests that execute a shell script via `sh` on Windows MUST resolve the coreutils-bearing `sh` (prefer `<Git>\bin\sh.exe`; verify `awk`/`grep` resolve) or `t.skip()` cleanly when none is available — never assume the first `sh` on PATH is usable.
+
+**Evidence:** CS100 (#421) `tests/lib-hooks.test.mjs` hook-body tests; the implementer's initial validation produced unchanged message files until `sh` resolution was fixed. The shipped tests resolve/verify sh and skip cleanly otherwise.
+
+**Disposition:** Applied — `tests/lib-hooks.test.mjs` resolves the coreutils `sh` and skips cleanly when absent.
+
+### LRN-191
+
+```yaml
+id: LRN-191
+date: 2026-07-03
+category: process
+source_cs: CS100
+status: applied
+tags: [cli, verbs, tests, command-registry, coverage-gate]
+claim_area: cli-verbs
+```
+
+**Problem:** Registering a new subcommand in `COMMAND_REGISTRY` (`bin/harness.mjs`) deterministically fails the CS47 subcommand-coverage meta-test (`tests/cs47-detached-head-bisect.test.mjs`), which asserts every registry verb is either exercised or allow-listed in its `SUBCOMMAND_PLAN`. A "code + tests" implementer whose file ownership omits the CS47 file cannot keep the suite green.
+
+**Finding:** Adding a CLI verb is a two-file change: the registry entry AND a matching `SUBCOMMAND_PLAN` entry (a `runs` case, or a `skip` + rationale for HEAD-safe/non-working-tree verbs like `install-hooks`, which only writes `.git/hooks/`). Brief this coupling explicitly, or grant the CS47 file to the verb implementer.
+
+**Evidence:** CS100 (#421) — the full suite went red on `tests/cs47-detached-head-bisect.test.mjs` after the `install-hooks` registry edit; green after a 6-line `skip`+rationale entry.
+
+**Disposition:** Applied — a `SUBCOMMAND_PLAN['install-hooks']` skip entry ships with the verb; convention noted for future verbs.
+
+### LRN-190
+
+```yaml
+id: LRN-190
+date: 2026-07-03
+category: process
+source_cs: CS100
+status: open
+tags: [harness-claim, clickstop, lint, model-audit, workboard]
+claim_area: harness-claim
+```
+
+**Problem:** `harness claim CS<NN> --apply` renames `planned→active` and adds the WORKBOARD row, but leaves the in-file header `**Status:** planned` and does not add a `## Model audit` section or populate `## Tasks`. Active clickstop files REQUIRE `**Status:** active`, a `## Model audit` section (else `clickstop-implementer-not-reviewer` errors), and populated `## Tasks` (incl. the two Close-out rows) — so the workboard-claim PR fails `harness lint` until the orchestrator fills these by hand.
+
+**Finding:** Either `harness claim --apply` should scaffold the active-state requirements (flip Status→active; set Owner/Branch/Started; insert a `## Model audit` skeleton; expand the `## Tasks` placeholder to include the two Close-out rows), or the claim procedure must document these as mandatory manual edits before the claim PR. Today the gap is a silent lint failure discovered only on CI.
+
+**Evidence:** CS100 (#421) claim PR #435 — `smoke/harness-lint` + `validate` failed ("Status is planned but file is in active/"; active clickstop missing Model audit) until the header + Model audit + Tasks were added manually.
+
+**Disposition:** Open — candidate for a `harness claim` scaffolding enhancement CS; workaround (manual fill at claim time) documented here.
+
 ### LRN-189
 
 ```yaml
