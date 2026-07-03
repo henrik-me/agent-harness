@@ -28,6 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| — | no active CS | — | — | — | — | — |
+| CS92 | CS92 — copilot-engage / gh reliability hardening: 401-retry + post-add reviewer verify + review-at-HEAD success semantics | 🟢 Active | omni-ah-c2 | cs92/content | 2026-07-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

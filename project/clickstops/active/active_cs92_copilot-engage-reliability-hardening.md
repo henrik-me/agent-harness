@@ -1,9 +1,9 @@
 # CS92 — copilot-engage / gh reliability hardening: 401-retry + post-add reviewer verify + review-at-HEAD success semantics
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** omni-ah-c2
+**Branch:** cs92/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02 — filed from the weekly open-LRN harvest requested by @henrik-me. Bundles the three `harness copilot-engage` / `gh`-reliability learnings that share one root (transient `gh` GraphQL flakiness + fire-and-forget reviewer add): **LRN-161** (`gh api graphql` random 401), **LRN-160** (`gh pr edit --add-reviewer` silent no-op), and **LRN-173** (engage reports success before a review at HEAD lands). Distinct from planned **CS87** (`copilot-engage --help` *wording* accuracy only — no runtime change).
 **Depends on:** none (hard). Touches `lib/copilot-engage.mjs` (CS37/CS41) and the `copilot-engage` command block in `bin/harness.mjs`. No in-flight CS owns these surfaces (CS87 edits only the help *string*; coordinate the two help edits if claimed concurrently — see Risks R3).
@@ -73,11 +73,25 @@ These three cost repeated real time: LRN-161 forced `gh run rerun --failed` cycl
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (CS92-plan-review-r2) | b38493369713 | 2026-07-02T22:06:00Z | Go | All 4 R1 findings resolved (C92-1 narrowed + error-surface enrichment; Background fix; C92-2 typed/unverified; C92-3/4 exit-0 preserved, verified additive). No new findings. |
 | R3 | gpt-5.5 | claude-opus-4.8 | rubber-duck (cs92-plan-review-r3) | 13c085765b80 | 2026-07-02T22:20:00Z | Go | Re-attest after administrative renumber CS88→CS92 / C88→C92 (collision with merged #401). Renumber clean, R2 findings intact, no substantive change, no new issues. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | omni-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: omni-ah-c2) |
+| Notes | **Patch** SemVer (reliability fix; exit codes unchanged, `verified` output additive; no schema/flag). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R3 Go, hash `13c085765b80`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — lib: enrich `GraphQLError` (http status / exit code / stderr snippet) + `isTransientGhError` predicate + `withRetry` around seam calls incl. in-place retry in `pollForCopilotReview` (C92-1); post-add `requested_reviewers` verify + one bounded re-add w/ `reviewer-not-requested` fast-fail + `reviewer-verify-unavailable` typed error (C92-2); additive `verified` flag, no-poll ⇒ `verified:false` exit 0 (C92-3) | planned | cs92-impl | agent-id=cs92-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `bin/harness.mjs`: `copilot-engage` result rendering/wording (requested-unverified vs verified-at-HEAD) + wire internal retry/verify defaults; exit codes unchanged (C92-3/C92-4) | planned | cs92-impl | agent-id=cs92-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — tests: 7 `__testSeam` cases (C92-5) + `CHANGELOG.md` `[Unreleased]` Fixed (C92-4); `os.tmpdir()` scratch only | planned | cs92-impl | agent-id=cs92-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state | planned | omni-ah-c2 | Update WORKBOARD.md (remove CS92 row) + CONTEXT.md; no rendered-mirror change expected (lib/CLI only). |
+| Close-out: learnings + follow-ups | planned | omni-ah-c2 | Flip LRN-160 / LRN-161 / LRN-173 `open → applied` w/ merge SHA (C92-6); file any new learnings. |
 
 ## Notes / Learnings
 
