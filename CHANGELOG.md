@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.14.0] — 2026-07-03
+
+### Added
+
 - **CS95 (`harness claim --takeover` — #417):** New `--takeover` flag on `harness claim`. When a CS is already `active/` but its WORKBOARD Owner is a **different** agent-id, `--takeover` reassigns the Owner (and Last Updated) to the current agent under `--apply` (dry-run previews; requires a clean worktree so the one-line WORKBOARD edit lands isolated); it is a no-op when you already own the row and never commits. Backward-compatible CLI addition (drives a **Minor** bump).
 
 ### Changed
@@ -555,7 +565,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/henrik-me/agent-harness/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/henrik-me/agent-harness/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...v0.11.0
