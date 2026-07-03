@@ -1,10 +1,10 @@
 # CS93 — harness review: fix non-dry-run clickstop-file lookup (zero-padded + directory-form)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs93/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — from inbound bug report #407 (reported by @henrik-me from consumer repo `henrik-me/authzandentitlements`).
 **Depends on:** none (hard). Touches `lib/review.mjs` only (plus tests); no in-flight CS owns that surface. `lib/review-cs.mjs` `locateClickstop` is the robust reference the fix aligns to (read-only).
 
@@ -95,4 +95,17 @@ Two secondary defects in the same function:
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs93-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T06:47:00Z
+**Outcome:** GO
+
+Reviewed the CS93 plan (§ Decisions C93-1…C93-6, § Deliverables 1–4, § Exit criteria) against the merged content (`dbe4e03`→`d38bfa1`, PR #411, squash `37b46e2`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `lib/review.mjs` rewrite + `export` `findClickstopFile` | match | Exported; padding-insensitive both-sides `normalizeCsId` compare (C93-1); directory-form support (C93-2); ENOENT-discriminating fail-closed `readdir`/`stat` (C93-3); `normalizeCsId` + `high_risk_clickstops` caller left unchanged. |
+| 2 — `tests/cs93-review-clickstop-lookup.test.mjs` | match (over-delivered) | 12 `os.tmpdir()`-only tests incl. the exact #407 repro (`CS02`→`active_cs02_*.md`), padded/unpadded both directions, dir-form, letter-suffix, stages, non-`.md`, distinct-number non-confusion, not-found, ENOENT, and 2 ambiguity cases. |
+| 3 — `CHANGELOG.md` `[Unreleased]` Fixed | match | Accurate #407 bullet; no overclaim vs shipped code. |
+| 4 — `LEARNINGS.md` flip/file | done at close-out | LRN-185 filed in this close-out. |
+
+**Accepted divergence (in-intent hardening):** C93-5 ("first-match ordering preserved") was superseded by a **fail-closed on an ambiguous `>1` match** (adopted from the Copilot R1 review), which better realizes the plan's own stated intent to align with `lib/review-cs.mjs` `locateClickstop` (which rejects ambiguity). Tested (2 new cases); not scope creep. Exit criteria 5/5 met; #407 CLOSED on merge; no overclaims (GPT-5.5 `cs93-pvi`).
