@@ -1,9 +1,9 @@
 # CS95 — harness status/claim: gate active-CS ownership by full agent-id (concurrent same-machine clones)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs95/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — from inbound bug report #417 (filed by the harness orchestrator running in consumer repo `henrik-me/authzandentitlements`).
 **Depends on:** none (hard). Touches `lib/status.mjs`, `lib/claim.mjs`, `bin/harness.mjs` (cmdClaim + help), tests. No in-flight CS owns these surfaces.
@@ -66,11 +66,27 @@ The full agent-id (incl. the `-c<N>` clone suffix) is already derived by `derive
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs95-plan-review | 973dc1086ca1 | 2026-07-03T19:55:22Z | Go | All fact-claims held (status/claim/CLI/test citations); exact full-id equality + refuse-by-default + --takeover sound. Close-out has same gap but is out of CS95 scope (noted follow-up). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | cs95-content-review (gpt-5.5; dispatched by yoga-ah) |
+| Notes | **Minor** SemVer (new `--takeover` CLI flag; ownership annotation + owner-gate are the #417 fix). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go, hash `973dc1086ca1`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `lib/status.mjs`: ownership annotation in `formatStatusReport` (Active Work + On-disk-active join by CS id; owned→`(you)`, not→`(not you: <id>)`; exact full-id match) (C95-1/C95-4) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `lib/claim.mjs`: already-active owner gate (refuse on mismatch) + `--takeover` reassign + `reassignActiveWorkRowOwner` helper (C95-2/C95-3) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — `bin/harness.mjs`: `cmdClaim` `--takeover` flag + result handling; `status`/`claim` `--help` ownership notes (C95-3/C95-5) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T4 — tests (`lib-status`/`lib-claim`, update existing mismatch tests) + `CHANGELOG.md` Added(`--takeover`)/Fixed(#417) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3) |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS95 row) + CONTEXT.md |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS entry; file a planned follow-up CS for the close-out owner-gate (out-of-scope here); #417 auto-closes on merge |
 
 ## Notes / Learnings
 
