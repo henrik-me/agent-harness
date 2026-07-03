@@ -1,9 +1,9 @@
 # CS93 — harness review: fix non-dry-run clickstop-file lookup (zero-padded + directory-form)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs93/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — from inbound bug report #407 (reported by @henrik-me from consumer repo `henrik-me/authzandentitlements`).
 **Depends on:** none (hard). Touches `lib/review.mjs` only (plus tests); no in-flight CS owns that surface. `lib/review-cs.mjs` `locateClickstop` is the robust reference the fix aligns to (read-only).
@@ -69,11 +69,25 @@ Two secondary defects in the same function:
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs93-plan-review | e65ce952ef83 | 2026-07-03T06:10:24Z | Go | Claims verified against lib/review.mjs line-by-line; targets real one-sided normalization bug, scope preserved, resolver regression coverage adequate; SemVer Patch sound. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | **Patch** SemVer (bug fix to `lib/review.mjs`; no CLI flag/subcommand/schema; the added `export` is internal-module API). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go, hash `e65ce952ef83`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `lib/review.mjs`: rewrite + `export` `findClickstopFile` — padding-insensitive CS-number match (C93-1), directory-form support (C93-2), fail-closed `readdir`/`stat` w/ ENOENT discrimination (C93-3), export for unit test (C93-4) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `tests/cs93-review-clickstop-lookup.test.mjs` (new, os.tmpdir only): #407 regression + padding/dir-form/suffix/not-found/ENOENT coverage; `CHANGELOG.md` `[Unreleased]` Fixed bullet | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS93 row) + CONTEXT.md; no rendered-mirror change (lib/tests only). |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS.md padding-divergence / one-sided-normalization entry; #407 auto-closes on merge. |
 
 ## Notes / Learnings
 
