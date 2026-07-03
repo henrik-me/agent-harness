@@ -107,7 +107,7 @@ describe('CS93 findClickstopFile — #407 padding + robustness', () => {
     );
   });
 
-  it('throws not-found (not a crash) when the clickstops tree is entirely absent', () => {
+  it('throws ReviewError bad-input (not a crash) when the clickstops tree is entirely absent', () => {
     // cwd has no project/clickstops/* dirs -> every readdir is ENOENT.
     assert.throws(
       () => findClickstopFile({ cwd, csId: 'CS02' }),
@@ -115,9 +115,25 @@ describe('CS93 findClickstopFile — #407 padding + robustness', () => {
     );
   });
 
-  it('prefers active over planned/done when the same id exists in multiple stages', () => {
-    const active = writeFlat('active', 'active_cs40_active-slug.md');
+  it('fails closed (bad-input, lists paths) on an ambiguous match across stages', () => {
+    writeFlat('active', 'active_cs40_active-slug.md');
     writeFlat('planned', 'planned_cs40_planned-slug.md');
-    assert.strictEqual(findClickstopFile({ cwd, csId: 'CS40' }), active);
+    assert.throws(
+      () => findClickstopFile({ cwd, csId: 'CS40' }),
+      (err) => err instanceof ReviewError
+        && err.kind === 'bad-input'
+        && /Ambiguous/.test(err.message)
+        && /active_cs40/.test(err.message)
+        && /planned_cs40/.test(err.message),
+    );
+  });
+
+  it('fails closed on an ambiguous flat + directory-form match in the same stage', () => {
+    writeFlat('active', 'active_cs41_flat-slug.md');
+    writeDir('active', 'active_cs41_dir-slug');
+    assert.throws(
+      () => findClickstopFile({ cwd, csId: 'CS41' }),
+      (err) => err instanceof ReviewError && err.kind === 'bad-input' && /Ambiguous/.test(err.message),
+    );
   });
 });
