@@ -289,7 +289,7 @@ const SUBCOMMAND_PLAN = {
   'install-hooks': {
     skip: 'CS100 opt-in prepare-commit-msg hook installer; resolves the hooks dir via read-only ' +
       '`git rev-parse --git-path hooks` and writes only .git/hooks/prepare-commit-msg (inside ' +
-      '.git, not a tracked working-tree file). No working-tree change and no HEAD-moving git op ' +
+      '.git, not a tracked working-tree file). No working-tree change and no HEAD-moving git operation ' +
       '(bin/harness.mjs cmdInstallHooks -> lib/hooks.mjs).',
   },
 };

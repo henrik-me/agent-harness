@@ -26,6 +26,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
   mkdtempSync,
+  mkdirSync,
   writeFileSync,
   readFileSync,
   existsSync,
@@ -222,6 +223,26 @@ test('installer: fail-closed — a non-git directory throws', () => {
     assert.throws(() => installPrepareCommitMsgHook(dir), /not a git repository|git/i);
   } finally {
     rm(dir);
+  }
+});
+
+test('installer: fail-closed — a non-ENOENT read error (target is a directory) throws, no overwrite', () => {
+  // Regression guard for the existsSync-gating safety hole: existsSync() also
+  // returns false on EACCES/EISDIR, which would let a foreign hook be silently
+  // overwritten. The installer reads the target directly and rethrows anything
+  // that is not ENOENT. Plant a DIRECTORY at the hook path → readFileSync
+  // throws EISDIR → the installer must throw rather than "create" over it.
+  const repo = makeGitRepo();
+  try {
+    const seed = installPrepareCommitMsgHook(repo); // ensure hooks dir exists
+    rmSync(seed.path); // remove our just-written hook file
+    mkdirSync(seed.path); // put a directory where the hook file would go
+    assert.throws(
+      () => installPrepareCommitMsgHook(repo),
+      /cannot read the existing hook|EISDIR/i
+    );
+  } finally {
+    rm(repo);
   }
 });
 
