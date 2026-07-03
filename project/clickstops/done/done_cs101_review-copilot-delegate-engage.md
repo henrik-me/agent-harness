@@ -1,10 +1,10 @@
 # CS101 — harness review: delegate the Copilot leg to the copilot-engage `--add-reviewer` path
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs101/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound bug report #422 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; consumer LRN-006).
 **Depends on:** none. Touches `lib/review.mjs` (+ `schemas/harness.config.schema.json` default, `lib/reviews-policy.mjs` default, tests). Concurrent sibling CS100 (#421, owned by yoga-ah) touches a git hook + `harness init`/scaffold — disjoint from this CS's `lib/review.mjs` surface. Reuses `engageCopilot` from `lib/copilot-engage.mjs` (read-only dependency).
 
@@ -87,10 +87,10 @@ So `harness review` maintains a **divergent, weaker, and (by default) broken** C
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `lib/review.mjs`: delegate Copilot leg to `engageCopilot` (import; reorder after rubber-duck Go with `localGoAt` `submittedAfter`; `toReviewErrorFromEngage` for all `EngageError` kinds incl. `auth-missing`; `describePlannedActions` reviewer-attachment text; `:23` default `reviewer`; remove dead `triggerCopilotReview`/`pollForCopilotReview` if unref) — C101-1/2/3/4 | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
-| T2 — `schemas/harness.config.schema.json` `copilot_trigger` default `mention`→`reviewer` + description; `REVIEWS.md` + `template/composed/REVIEWS.md` `copilot_trigger` prose in lockstep (C101-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
-| T3 — tests: update `cs52`/`cs61`; add delegation + `--copilot-only` request + A5 `localGoAt` floor + all-`EngageError`-kind exit + dry-run `describePlannedActions` regression tests; `CHANGELOG.md` `[Unreleased]` Fixed (#422) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=pending \| learnings=0 |
-| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| T1 — `lib/review.mjs`: delegate Copilot leg to `engageCopilot` (import; reorder after rubber-duck Go with `localGoAt` `submittedAfter`; `toReviewErrorFromEngage` for all `EngageError` kinds incl. `auth-missing`; `describePlannedActions` reviewer-attachment text; `:23` default `reviewer`; remove dead `triggerCopilotReview`/`pollForCopilotReview` if unref) — C101-1/2/3/4 | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=complete \| learnings=1 |
+| T2 — `schemas/harness.config.schema.json` `copilot_trigger` default `mention`→`reviewer` + description; `REVIEWS.md` + `template/composed/REVIEWS.md` `copilot_trigger` prose in lockstep (C101-4) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=complete \| learnings=0 |
+| T3 — tests: update `cs52`/`cs61`; add delegation + `--copilot-only` request + A5 `localGoAt` floor + all-`EngageError`-kind exit + dry-run `describePlannedActions` regression tests; `CHANGELOG.md` `[Unreleased]` Fixed (#422) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs101-impl) \| report-status=complete \| learnings=0 |
+| Independent content review (GPT-5.5) | done | gpt-5.5 | R1 Go @ 6ec5fe7 (cs101-review); R2 Go @ 9576bc5 (cs101-review2, Copilot timestamp nit fixed); Copilot COMMENTED×2 (1 nit adopted, clean at HEAD), threads resolved; reviewer ≠ implementer per REVIEWS § 2.3 |
 | Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS101 row) + CONTEXT.md; REVIEWS.md is a rendered-doc change (composed lockstep). |
 | Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md poll-must-cause-via-verified-path entry; #422 auto-closes on merge. |
 
@@ -100,4 +100,19 @@ So `harness review` maintains a **divergent, weaker, and (by default) broken** C
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs101-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T22:55:00Z
+**Outcome:** GO
+
+Reviewed the CS101 plan (§ Decisions C101-1…C101-5, § Deliverables 1–6, § Exit criteria) against the merged content (PR #440, squash `f02cd39`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `lib/review.mjs` delegation | match | Imports `engageCopilot`/`EngageError`; delegates noPoll + full Copilot paths via `__testSeam.engageCopilot`/`runEngageLeg`; reorders after the rubber-duck Go with `localGoAt` `submittedAfter`; `toReviewErrorFromEngage` maps all `EngageError` kinds (0/1/2 preserved); `describePlannedActions` + `:23` default `reviewer`; removed divergent `triggerCopilotReview`/`pollForCopilotReview` + dead GraphQL. |
+| 2 — schema | match | `copilot_trigger` default `reviewer`; enum kept; description says reviewer-attachment path always used, `mention` deprecated/no-op. |
+| 3 — REVIEWS.md lockstep | match | Root + `template/composed/REVIEWS.md` `copilot_trigger` block byte-identical (default `reviewer`). |
+| 4 — tests | match | cs52/cs61 updated; new `cs101-review-engage-delegation.test.mjs` covers engage seam (no mention comment), typed exit-2 failures, A5 `submittedAfter`, all `EngageError` kinds, No-Go, noPoll, dry-run wording. |
+| 5 — CHANGELOG | match | `[Unreleased] → Fixed` #422; no overclaim. |
+| 6 — LEARNINGS | done at close-out | LRN-189 filed in this close-out. |
+
+**Accepted divergence (in-intent hardening):** a follow-up commit gates the Review-log row timestamp on a **Go** combined verdict before reusing `localGoAt` (Copilot review of PR #440 flagged a Needs-Fix row being mis-stamped with the Go moment) — not scope creep; the A5 poll floor is unchanged. Exit criteria 5/5 met; #422 CLOSED on merge; no overclaims (GPT-5.5 `cs101-pvi`; `bin/harness.mjs` unchanged).
