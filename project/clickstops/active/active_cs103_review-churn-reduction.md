@@ -1,9 +1,9 @@
 # CS103 — Reduce content-PR review churn: auto-rerun read-only-gates on Copilot review + leaner review-sequencing doctrine
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs103/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03, from GitHub issue #424 (`enhancement`, `harness-orchestrator`; surfaced from consumer `henrik-me/authzandentitlements` CS10, LRN-018/020). First-hand-reproduced during CS100 (#421): the async Copilot review left `read-only-gates` red and required a manual `gh run rerun`, and Copilot re-emitted its full comment set on each re-engage.
 **Depends on:** none
@@ -142,11 +142,26 @@ Reduce the recurring friction of driving a content PR to merge, on two fronts:
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | f687d6d0c07f | 2026-07-03T23:17:00Z | Needs-Fix | Blocking: Background wrongly claimed both workflow files in managed.files (only root); Decision 5 ambiguous re new vs re-raised findings. Trigger premise sound. |
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | a974830378cc | 2026-07-03T23:21:26Z | Go | R1 blockers fixed (managed.files wording; Decision 5(c) carves out new-blocking → fix/re-attest/re-engage); no residual; pull_request_review trigger + payload premise re-verified. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | **Minor** SemVer (consumer-visible managed-workflow trigger change). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Needs-Fix → R2 Go, hash `a974830378cc`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `pr-evidence-lint.yml` (managed template + rendered root): add `pull_request_review: [submitted]` trigger + extend `read-only-gates` `if:` (base=main) (D1/D2/D3) | active | yoga-ah | agent-id=cs103-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `tests/template-pr-evidence-workflow.test.mjs`: assert the new trigger + job-if (D7) | active | yoga-ah | agent-id=cs103-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| T3 — `REVIEWS.md` §2.4.3 leaner review sequencing (composed template + root) + `CHANGELOG.md` (D4/D5) | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS103 row) + CONTEXT.md; rendered composed/managed mirrors updated. |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File the deferred A4 tree-unchanged carry-forward as a follow-up (LEARNINGS or planned CS); #424 auto-closes on merge. |
 
 ## Notes / Learnings
 
