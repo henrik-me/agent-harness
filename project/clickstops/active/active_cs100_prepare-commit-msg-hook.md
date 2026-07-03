@@ -201,4 +201,20 @@ into a long-running CS branch.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-03T23:02:00Z
+**Outcome:** GO
+
+Independent plan-vs-implementation review of the merged content (PR #439, squash on `main`) against the CS100 plan of record.
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1. `lib/hooks.mjs` | match | Implements D2/D3/D4 hook behavior plus D5/D7 installer safety/idempotency. |
+| 2. `bin/harness.mjs` verb/help/registry | match | `install-hooks` help, wrapper, exit mapping, TOP_HELP, and registry entry present. |
+| 3. Tests (`tests/lib-hooks.test.mjs`) | match | 15 cases shipped; use `os.tmpdir()` and `sh` hook-body execution with clean skip. |
+| 4a. OPERATIONS/CONVENTIONS/CHANGELOG docs | match | Hook/convention/changelog documentation exists in roots and composed templates. |
+| 4b. README mention | dropped (deferred) | Deferred to the release CS per plan Notes — README has no general verb listing; its `## Status` line is release-narrated. CHANGELOG `[Unreleased] → Added` is the interim record. |
+| 5. Green gates | match | `install-hooks --help`, `lint --quiet`, `tests/lib-hooks.test.mjs`, and full `node --test tests/*.test.mjs` all pass. |
+| Review-hardening fixes | added | EACCES-safe read-direct installer, exact-line sentinel, and awk warn+idempotency harden beyond the plan (from the GPT-5.5 R2/R3 + Copilot rounds). |
+
+**Test-coverage assessment:** sufficient — 15 targeted cases (14 pass, 1 POSIX-exec-mode skip on Windows); full suite (1720 pass, 0 fail, 2 skip) and `harness lint` (35/0/3) green.
