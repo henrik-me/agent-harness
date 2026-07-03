@@ -17,6 +17,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Fixed
 
+- **harness review (#422):** the Copilot leg now delegates to the hardened `copilot-engage` REST `gh pr edit --add-reviewer` path (was an ineffective `@copilot review` mention comment by default that never populated `requested_reviewers`), so `harness review --copilot-only` actually requests the Copilot reviewer instead of polling one it never requested. Typed engage failures (e.g. `reviewer-not-requested`) now surface as an exit-2 review error rather than a slow timeout, and the full path engages Copilot only after the rubber-duck Go (A5 floor `submittedAfter = localGoAt`). Default `reviews.copilot_trigger` is now `reviewer` (`mention` deprecated/no-op; enum unchanged, existing configs still validate). No CLI or schema-field change (Patch).
 - **check-commit-trailers (#420):** strip git `#` comment lines and the `>8` scissors cut-line before locating the trailer block, so `.git/COMMIT_EDITMSG` no longer false-fails "Missing required trailer" after a rebase/merge that leaves `# Conflicts:` / `# interactive rebase in progress` comments below the real `Co-authored-by:` trailer. Mirrors git's own `strip`/`scissors` cleanup; no CLI change (Patch).
 
 ## [0.14.0] — 2026-07-03

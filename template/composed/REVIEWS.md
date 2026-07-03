@@ -650,10 +650,13 @@ Fields (descriptions adapted from `schemas/harness.config.schema.json`; schema r
 - `copilot_reviewer_slug` (string, default `copilot-pull-request-reviewer[bot]`):
   GitHub login/slug for the Copilot PR reviewer bot. Both the bare slug and
   `[bot]`-suffixed login are accepted by the checker.
-- `copilot_trigger` (`mention` | `reviewer`, default `mention`): How
-  `harness review` requests Copilot review. `mention` posts an `@copilot
-  review` PR comment via `gh api`; `reviewer` uses the reviewer attachment
-  path where supported.
+- `copilot_trigger` (`mention` | `reviewer`, default `reviewer`):
+  Deprecated/no-op. `harness review` always requests the Copilot reviewer via
+  the reviewer-attachment path (the hardened `copilot-engage` REST `gh pr edit
+  --add-reviewer` path), regardless of this value. `mention` is retained only
+  for backward-compatibility — it once posted an ineffective `@copilot review`
+  PR comment that never populated `requested_reviewers` (issue #422) — and now
+  has no effect.
 - `review_timeout_minutes` (number, default `30`): Maximum minutes `harness
   review` waits for required review evidence before returning a
   tooling/transport failure.

@@ -72,6 +72,9 @@ test('schema-default parity: reader all-defaults equals schema declared defaults
 
   const policy = loadReviewsPolicy({ cwd });
   const expected = schemaReviewsDefaults();
+  // CS101 (#422): the ineffective `mention` default was retired; `harness
+  // review` always uses the reviewer-attachment (copilot-engage) path.
+  assert.equal(expected.copilot_trigger, 'reviewer');
   // Every schema-declared default field is present in the reader output.
   for (const key of Object.keys(expected)) {
     assert.deepEqual(policy[key], expected[key], `default mismatch for ${key}`);

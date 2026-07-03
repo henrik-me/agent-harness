@@ -13,7 +13,6 @@ import {
   parseImplementerModels,
   ReviewError,
   runReview,
-  triggerCopilotReview,
 } from '../lib/review.mjs';
 
 const defaultSeam = { ...__testSeam };
@@ -196,30 +195,54 @@ describe('CS52 review library helpers', () => {
     );
   });
 
-  it('triggers Copilot through gh api mention path without network in tests', () => {
-    const calls = [];
-    __testSeam.spawnSync = (cmd, args, options) => {
-      calls.push({ cmd, args, options });
-      return { status: 0, stdout: JSON.stringify({ html_url: 'https://example.test/comment' }), stderr: '' };
+  it('delegates the Copilot leg to the copilot-engage add-reviewer path (no mention comment)', async () => {
+    const prJson = JSON.stringify({
+      body: '',
+      headRefName: 'cs52/harness-review-cli',
+      headRefOid: HEAD,
+      baseRefOid: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      isCrossRepository: false,
+      labels: [],
+      url: 'https://github.com/henrik-me/agent-harness/pull/141',
+    });
+    const ghCalls = [];
+    __testSeam.spawnSync = (cmd, args) => {
+      ghCalls.push({ cmd, args });
+      if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'view') {
+        return { status: 0, stdout: prJson, stderr: '' };
+      }
+      if (cmd === 'git') return { status: 0, stdout: '', stderr: '' };
+      return { status: 1, stdout: '', stderr: `unexpected ${cmd} ${args.join(' ')}` };
     };
 
-    const result = triggerCopilotReview({
-      owner: 'henrik-me',
-      repo: 'agent-harness',
-      repoSlug: 'henrik-me/agent-harness',
-      prNumber: 141,
-      trigger: 'mention',
+    const engageCalls = [];
+    __testSeam.engageCopilot = async ({ owner, repo, prNumber, opts }) => {
+      engageCalls.push({ owner, repo, prNumber, opts });
+      return { requested: true, verified: false, login: 'copilot-pull-request-reviewer', headSha: HEAD };
+    };
+
+    const result = await runReview({
       cwd: process.cwd(),
+      repo: 'henrik-me/agent-harness',
+      prNumber: 141,
+      copilotOnly: true,
+      noPoll: true,
+      actor: 'yoga-ah',
     });
 
-    assert.equal(result.trigger, 'mention');
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].cmd, 'gh');
-    assert.deepEqual(calls[0].args, [
-      'api',
-      'repos/henrik-me/agent-harness/issues/141/comments',
-      '-f',
-      'body=@copilot review',
-    ]);
+    assert.equal(result.status, 'dispatched');
+    // Delegated to the engage seam exactly once with the add-reviewer request.
+    assert.equal(engageCalls.length, 1);
+    assert.deepEqual(
+      { owner: engageCalls[0].owner, repo: engageCalls[0].repo, prNumber: engageCalls[0].prNumber },
+      { owner: 'henrik-me', repo: 'agent-harness', prNumber: 141 },
+    );
+    assert.equal(engageCalls[0].opts.noPoll, true);
+    assert.equal(engageCalls[0].opts.headSha, HEAD);
+    // No `gh api .../comments` @-mention comment is ever posted (issue #422).
+    const mentionCall = ghCalls.find(
+      (call) => call.cmd === 'gh' && call.args[0] === 'api' && String(call.args[1] || '').includes('/comments'),
+    );
+    assert.equal(mentionCall, undefined);
   });
 });
