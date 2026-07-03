@@ -744,6 +744,12 @@ Compact resume/handoff snapshot (CS64 C64-7). Read-only; never spawns git,
 never touches the network. Lists the WORKBOARD ## Active Work rows plus
 planned/active CS file inventories.
 
+Each Active Work / On-disk active row is annotated with its ownership relative
+to your agent-id: ' (you)' when you own it, ' (not you: <your-id>)' otherwise
+(#417). Comparison is exact full-id equality — a base id like 'yoga-ae' is a
+DIFFERENT orchestrator than the suffixed 'yoga-ae-c<N>'. Only '(you)' rows are
+safe to resume/pick up.
+
 Options:
   --cwd <path>   Consumer repo path (default: cwd)
   --help         Print this help
@@ -775,16 +781,26 @@ R3 race-aware (re-reads WORKBOARD just before write to preserve a sibling
 clone's intervening edit). You own the commit (message \`Claim CS<NN>\` with the
 Co-authored-by: Copilot trailer) and the workboard-only-labelled claim PR.
 
+Already-active / resume ownership gate (#417): re-running claim on an
+already-active CS is a clean no-op ONLY when its WORKBOARD Owner equals your
+agent-id (exact match, incl. any -c<N> clone suffix). A different owner is
+another orchestrator's active CS — claim REFUSES (exit 1) rather than silently
+adopting it, unless you pass --takeover.
+
 Options:
   --apply              Execute the plan (default is dry-run)
   --skip-harvest       Skip the pre-claim harvest gate (escape hatch for re-runs)
+  --takeover           When CS<NN> is already active but owned by a DIFFERENT
+                       agent-id, reassign its WORKBOARD Owner to you (mutates
+                       WORKBOARD.md with --apply; dry-run previews). No-op when
+                       you already own it. Never commits.
   --agent-id <id>      Override the derived agent ID (default: 'harness whoami')
   --cwd <path>         Consumer repo path (default: cwd)
   --help               Print this help
 
 Exit codes:
-  0  preflight pass + plan composed (or --apply succeeded)
-  1  preflight failure / apply failure
+  0  preflight pass + plan composed (or --apply succeeded / already-owned no-op / takeover)
+  1  preflight failure / apply failure / already active + owned by a different agent-id (no --takeover)
   2  usage error
 `.trimStart(),
 
@@ -4563,6 +4579,7 @@ async function cmdClaim(args, global) {
   let csId = null;
   let apply = false;
   let skipHarvest = false;
+  let takeover = false;
   let agentIdOverride = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -4573,6 +4590,8 @@ async function cmdClaim(args, global) {
       apply = true;
     } else if (a === '--skip-harvest') {
       skipHarvest = true;
+    } else if (a === '--takeover') {
+      takeover = true;
     } else if (a === '--agent-id') {
       agentIdOverride = flagValue(args, i, '--agent-id');
       i++;
@@ -4604,6 +4623,7 @@ async function cmdClaim(args, global) {
     harnessBin: __filename,
     apply,
     skipHarvest,
+    takeover,
   });
   if (!result.ok) {
     process.stderr.write(`harness claim: preflight failed\n`);
@@ -4617,6 +4637,12 @@ async function cmdClaim(args, global) {
   if (result.alreadyClaimed) {
     // C64-4 idempotency: nothing to do. Print the message and exit 0 so
     // re-runs (e.g. after the claim PR merged) are a clean no-op.
+    process.stdout.write(`${result.message}\n`);
+    process.exit(0);
+  }
+  if (result.takeover) {
+    // #417 --takeover: cross-owner active CS ownership reassigned (--apply) or
+    // previewed (dry-run). Print the message and exit 0.
     process.stdout.write(`${result.message}\n`);
     process.exit(0);
   }

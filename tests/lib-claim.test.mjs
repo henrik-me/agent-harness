@@ -24,6 +24,7 @@ import {
   formatClaimPlan,
   applyClaimPlan,
   runClaimFromDisk,
+  reassignActiveWorkRowOwner,
 } from '../lib/claim.mjs';
 
 // Use the real path separator so Windows + POSIX tests agree on string equality.
@@ -705,7 +706,7 @@ test('findPlannedClickstop: directory-form with inner readdir failure surfaces t
 
 /* ---------- runClaimFromDisk idempotency (C64-4) ------------------------- */
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 /**
@@ -785,7 +786,7 @@ test('runClaimFromDisk: alreadyClaimed succeeds when WORKBOARD row is consistent
       '',
       '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
       '|------------|-------|-------|-------|--------|--------------|----------------|',
-      '| CS64 | Lifecycle | 🟢 Active | omni-ah | cs64/content | 2026-06-10 | — |',
+      '| CS64 | Lifecycle | 🟢 Active | test-agent | cs64/content | 2026-06-10 | — |',
       '',
     ].join('\n');
     writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
@@ -964,7 +965,7 @@ test('runClaimFromDisk: alreadyClaimed message points to project/clickstops/plan
       '',
       '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
       '|------------|-------|-------|-------|--------|--------------|----------------|',
-      '| CS64 | lifecycle | 🟢 Active | a | b | c | — |',
+      '| CS64 | lifecycle | 🟢 Active | test-agent | b | c | — |',
       '',
     ].join('\n');
     writeFileSync(path.join(root, 'WORKBOARD.md'), wb);
@@ -1033,4 +1034,122 @@ test('runClaimFromDisk: alreadyActive + unreadable WORKBOARD (path is a director
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- CS95 (#417): already-active ownership gate + --takeover ---------------
+
+/** WORKBOARD.md with a single Active Work row for `cs` owned by `owner`. */
+function workboardWith(cs, owner, branch = `${cs.toLowerCase()}/content`) {
+  return [
+    '# Work Board',
+    '',
+    '## Active Work',
+    '',
+    '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+    '|------------|-------|-------|-------|--------|--------------|----------------|',
+    `| ${cs} | Work | 🟢 Active | ${owner} | ${branch} | 2026-07-03 | — |`,
+    '',
+  ].join('\n');
+}
+
+test('runClaimFromDisk: refuses an already-active CS owned by a different agent-id (#417)', () => {
+  const { root } = mkAlreadyActiveTree('CS10', 'entitlements');
+  try {
+    writeFileSync(path.join(root, 'WORKBOARD.md'), workboardWith('CS10', 'yoga-ae'));
+    const result = runClaimFromDisk({
+      cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: false, skipHarvest: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.alreadyClaimed, undefined);
+    assert.ok(result.errors.some((e) => /owned by a DIFFERENT orchestrator/.test(e)));
+    assert.ok(result.errors.some((e) => /owner=yoga-ae/.test(e) && /you=yoga-ae-c3/.test(e)));
+    assert.ok(result.errors.some((e) => /--takeover/.test(e)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: owner-match (incl. exact suffix) still returns the alreadyClaimed no-op', () => {
+  const { root, filename } = mkAlreadyActiveTree('CS10', 'entitlements');
+  try {
+    writeFileSync(path.join(root, 'WORKBOARD.md'), workboardWith('CS10', 'yoga-ae-c3'));
+    const result = runClaimFromDisk({
+      cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: false, skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.alreadyClaimed, true);
+    assert.equal(result.activeListing.filename, filename);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: --takeover dry-run previews the reassignment and does NOT mutate WORKBOARD', () => {
+  const { root } = mkAlreadyActiveTree('CS10', 'entitlements');
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, workboardWith('CS10', 'yoga-ae'));
+    const before = readFileSync(wbPath, 'utf8');
+    const result = runClaimFromDisk({
+      cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: false, takeover: true, skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.takeover, true);
+    assert.equal(result.dryRun, true);
+    assert.match(result.message, /Would take over CS10 from yoga-ae/);
+    assert.equal(readFileSync(wbPath, 'utf8'), before, 'dry-run must not mutate WORKBOARD.md');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: --takeover --apply reassigns the WORKBOARD Owner to the current agent-id', () => {
+  const { root } = mkAlreadyActiveTree('CS10', 'entitlements');
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, workboardWith('CS10', 'yoga-ae'));
+    const result = runClaimFromDisk({
+      cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: true, takeover: true, skipHarvest: true,
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.takeover, true);
+    assert.equal(result.dryRun, undefined);
+    const rows = parseActiveWorkRows(readFileSync(wbPath, 'utf8'));
+    const row = rows.find((r) => r.cs === 'CS10');
+    assert.equal(row.owner, 'yoga-ae-c3'); // reassigned
+    assert.equal(row.branch, 'cs10/content'); // preserved (same work continues)
+    assert.match(row.lastUpdated, /^\d{4}-\d{2}-\d{2}$/); // stamped
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('reassignActiveWorkRowOwner: updates only the target row Owner + Last Updated', () => {
+  const wb = [
+    '## Active Work',
+    '',
+    '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+    '|---|---|---|---|---|---|---|',
+    '| CS10 | A | 🟢 Active | yoga-ae | cs10/content | 2026-07-01 | — |',
+    '| CS20 | B | 🟢 Active | omni-ah | cs20/content | 2026-07-02 | — |',
+    '',
+  ].join('\n');
+  const { md, mutated } = reassignActiveWorkRowOwner({
+    workboardMd: wb, csId: 'CS10', newOwner: 'yoga-ae-c3', lastUpdated: '2026-07-03',
+  });
+  assert.equal(mutated, true);
+  const rows = parseActiveWorkRows(md);
+  assert.equal(rows.find((r) => r.cs === 'CS10').owner, 'yoga-ae-c3');
+  assert.equal(rows.find((r) => r.cs === 'CS10').lastUpdated, '2026-07-03');
+  assert.equal(rows.find((r) => r.cs === 'CS20').owner, 'omni-ah'); // untouched
+  assert.equal(rows.find((r) => r.cs === 'CS20').lastUpdated, '2026-07-02');
+});
+
+test('reassignActiveWorkRowOwner: no matching row → mutated:false, text unchanged', () => {
+  const wb = workboardWith('CS10', 'yoga-ae');
+  const { md, mutated } = reassignActiveWorkRowOwner({
+    workboardMd: wb, csId: 'CS99', newOwner: 'x', lastUpdated: '2026-07-03',
+  });
+  assert.equal(mutated, false);
+  assert.equal(md, wb);
 });

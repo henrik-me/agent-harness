@@ -275,3 +275,59 @@ test('getStatusSnapshotFromDisk: tolerates missing WORKBOARD.md', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// --- CS95 (#417): ownership annotation ------------------------------------
+
+const OWNED_BY_YOGA_AE = [
+  '## Active Work',
+  '',
+  '| CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |',
+  '|------------|-------|-------|-------|--------|--------------|----------------|',
+  '| CS10 | Entitlements | 🟢 Active | yoga-ae | cs10/content | 2026-07-03 | — |',
+  '',
+].join('\n');
+
+test('formatStatusReport: annotates a not-owned Active Work row and joins on-disk by CS id', () => {
+  const out = formatStatusReport(getStatusSnapshot({
+    workboardMd: OWNED_BY_YOGA_AE,
+    activeListings: [
+      { stage: 'active', cs: 'CS10', slug: 'entitlements', entry: 'active/active_cs10_entitlements.md', directoryForm: false },
+    ],
+    agentId: 'yoga-ae-c3',
+  }));
+  // Active Work row: owned by yoga-ae, you are yoga-ae-c3 → not you.
+  assert.match(out, /owner=yoga-ae branch=cs10\/content updated=2026-07-03 {2}\(not you: yoga-ae-c3\)/);
+  // On-disk active row (no owner of its own) joins the WORKBOARD owner by CS id.
+  assert.match(out, /→ active\/active_cs10_entitlements\.md {2}\(owner yoga-ae — not you: yoga-ae-c3\)/);
+});
+
+test('formatStatusReport: exact full-id match — a base id is NOT its suffixed clone', () => {
+  // From the base clone yoga-ae → owns it.
+  assert.match(
+    formatStatusReport(getStatusSnapshot({ workboardMd: OWNED_BY_YOGA_AE, agentId: 'yoga-ae' })),
+    /owner=yoga-ae branch=cs10\/content updated=2026-07-03 {2}\(you\)/,
+  );
+  // From the suffixed clone yoga-ae-c3 → does NOT own it (prefix-collision guard).
+  assert.match(
+    formatStatusReport(getStatusSnapshot({ workboardMd: OWNED_BY_YOGA_AE, agentId: 'yoga-ae-c3' })),
+    /owner=yoga-ae branch=cs10\/content updated=2026-07-03 {2}\(not you: yoga-ae-c3\)/,
+  );
+});
+
+test('formatStatusReport: no ownership annotation when agent-id is unknown/null', () => {
+  for (const id of [null, 'unknown', '']) {
+    const out = formatStatusReport(getStatusSnapshot({ workboardMd: OWNED_BY_YOGA_AE, agentId: id }));
+    assert.doesNotMatch(out, /\(you\)|\(not you:|\(owner /);
+  }
+});
+
+test('formatStatusReport: on-disk active with no matching WORKBOARD row is flagged', () => {
+  const out = formatStatusReport(getStatusSnapshot({
+    workboardMd: EMPTY_WORKBOARD,
+    activeListings: [
+      { stage: 'active', cs: 'CS10', slug: 'x', entry: 'active/active_cs10_x.md', directoryForm: false },
+    ],
+    agentId: 'yoga-ae',
+  }));
+  assert.match(out, /→ active\/active_cs10_x\.md {2}\(owner unknown — no WORKBOARD row\)/);
+});
