@@ -1,9 +1,9 @@
 # CS97 — check-commit-trailers: strip git comment/scissors lines before trailer detection
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs97/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound bug report #420 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; LRN-018).
 **Depends on:** none. Touches `scripts/check-commit-trailers.mjs` + its test/fixtures only; no in-flight CS owns that surface. Related but disjoint from #421 (prepare-commit-msg hook) — this CS fixes the *detector*, #421 adds a *hook*.
@@ -77,11 +77,25 @@ Related prior art: LRN-150 (merge commits need the trailer too; rebase-over-merg
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs97-plan-review | f89f80641103 | 2026-07-03T20:52:00Z | Go | No blocking findings; line citations, current-behaviour claims, fix correctness, edge cases, SemVer Patch, and deliverables/tests all verified against shipped code + #420. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | **Patch** SemVer (bug fix to `scripts/check-commit-trailers.mjs`; no CLI flag/subcommand/schema). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go, hash `f89f80641103`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `scripts/check-commit-trailers.mjs`: add `COMMENT_CHAR` const + `stripGitComments()` (drop `#` lines + stop at `>8` scissors), apply to normalised text before empty-check + trailer scan; update module header doc-comment (C97-1/C97-2/C97-3/C97-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `tests/check-commit-trailers.test.mjs` + `tests/fixtures/cs07/commit-trailers/` (new fixtures): #420 repro + rebase/merge comments + scissors+diff + empty-after-strip + genuine-missing-still-fails + `#`-body parity + no-regression; `CHANGELOG.md` `[Unreleased]` Fixed bullet (#420) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS97 row) + CONTEXT.md; no rendered-mirror change (scripts/tests only). |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md trailer-detector-vs-comment-lines entry; #420 auto-closes on merge. |
 
 ## Notes / Learnings
 
