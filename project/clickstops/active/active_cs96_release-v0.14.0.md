@@ -1,9 +1,9 @@
 # CS96 — cut harness v0.14.0 (Minor)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs96/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — release CS following the CS95 (#417) close-out, per @henrik-me's "claim issue 417, fix it, when done ship a release the owning repo is waiting for it."
 **Depends on:** CS95 merged to `main` (#425 squash `9b18745`, close-out #426). Bundles CS95 — the only distributed-surface change since v0.13.0. Follows OPERATIONS.md § Release process.
@@ -76,11 +76,26 @@ No v0.14.0 release object, no v0.14.0 tag (local or remote), no stale duplicate 
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs96-plan-review | 04d3d47a7bcb | 2026-07-03T20:44:34Z | Go | v0.14.0 Minor correct (CS95 --takeover Added); LRN-101 audit complete (CS95 only since v0.13.0); F6 live probes match; publish + issue-only notify sound. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | cs96-release-review (gpt-5.5; dispatched by yoga-ah) |
+| Notes | **Minor** SemVer release (v0.14.0; ships CS95 — #417 owner gate + new `--takeover` flag). Publish-to-Latest per @henrik-me's "ship a release the owning repo is waiting for it" (C96-2). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go, hash `04d3d47a7bcb`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Phase A cut (content): `npm version 0.14.0`, `CHANGELOG.md` `[Unreleased]→[0.14.0]` + fresh skeleton + compare links, README pin sweep (C96-1; D1-3) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — Post-merge Phase B: annotated tag `v0.14.0` on squash SHA + push; create + publish Release `--draft=false`; verify single release + Latest (C96-2/C96-4; D4-5) | pending | yoga-ah | after content merge |
+| T3 — Consumer notification (issue-only): `authzandentitlements` (#417 reporter, waiting) + `sub-invaders` (C96-3; D6) | pending | yoga-ah | `harness cross-repo open-issue`; Hard Rule §6 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3) |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS96 row) + CONTEXT.md |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File any release learnings; none expected on a clean cut |
 
 ## Notes / Learnings
 
