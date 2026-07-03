@@ -1,0 +1,12 @@
+fix: resolve rebase conflict in workboard
+
+Resolved the WORKBOARD conflict during git rebase --continue.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+# Conflicts:
+#	WORKBOARD.md
+#
+# It looks like you may be committing a merge.
+# If this is not correct, please run
+#     git update-ref -d MERGE_HEAD
+# and try again.

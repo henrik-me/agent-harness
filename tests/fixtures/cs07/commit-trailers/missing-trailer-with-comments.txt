@@ -1,0 +1,9 @@
+fix: patch a bug during merge
+
+This commit patches a bug that surfaced during a merge.
+
+Reviewed-by: Bob <bob@example.com>
+# Conflicts:
+#	src/foo.js
+#
+# It looks like you may be committing a merge.

@@ -17,6 +17,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Fixed
 
+- **check-commit-trailers (#420):** strip git `#` comment lines and the `>8` scissors cut-line before locating the trailer block, so `.git/COMMIT_EDITMSG` no longer false-fails "Missing required trailer" after a rebase/merge that leaves `# Conflicts:` / `# interactive rebase in progress` comments below the real `Co-authored-by:` trailer. Mirrors git's own `strip`/`scissors` cleanup; no CLI change (Patch).
+
 ## [0.14.0] — 2026-07-03
 
 ### Added
