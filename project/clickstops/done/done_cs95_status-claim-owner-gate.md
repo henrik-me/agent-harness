@@ -1,10 +1,10 @@
 # CS95 — harness status/claim: gate active-CS ownership by full agent-id (concurrent same-machine clones)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs95/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — from inbound bug report #417 (filed by the harness orchestrator running in consumer repo `henrik-me/authzandentitlements`).
 **Depends on:** none (hard). Touches `lib/status.mjs`, `lib/claim.mjs`, `bin/harness.mjs` (cmdClaim + help), tests. No in-flight CS owns these surfaces.
 
@@ -94,4 +94,19 @@ The full agent-id (incl. the `-c<N>` clone suffix) is already derived by `derive
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs95-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T20:37:36Z
+**Outcome:** GO
+
+Reviewed the CS95 plan (§ Decisions C95-1…C95-6, § Deliverables 1–6, § Exit criteria) against the merged content (`be13ae2`→`bbcb185`, PR #425, squash `9b18745`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `lib/status.mjs` ownership annotation | match | Exact full-id match (prefix-collision-safe); owned `(you)` / not `(not you: <id>)`; On-disk join by CS id; unknown-id skip. |
+| 2 — `lib/claim.mjs` owner gate + `--takeover` + `reassignActiveWorkRowOwner` | match | Already-active refuses on owner mismatch (exit 1, names owner); `--takeover` reassigns under `--apply` behind a **clean-worktree guard** (added from Copilot R2 — justified in-scope hardening) via an injectable `runnerFactory` seam. |
+| 3 — `bin/harness.mjs` `cmdClaim --takeover` + help | match | Flag parsed/threaded; `status`/`claim` `--help` ownership notes + exit codes accurate. |
+| 4 — tests | match (over-delivered) | +11 os.tmpdir-only tests covering each branch; the two pre-existing `alreadyClaimed` tests updated for the gate. |
+| 5 — `CHANGELOG.md` Added(`--takeover`)/Fixed(#417) | match | Accurate; no overclaim vs shipped code. |
+| 6 — `LEARNINGS.md` | done at close-out | LRN-186 (applied) + LRN-187 (open follow-up) filed in this close-out. |
+
+Exit criteria 5/5 met; SemVer Minor correct (new `--takeover` flag); no divergences, no overclaims (GPT-5.5 `cs95-pvi` at `9b18745`). **Follow-up (out of #417 scope):** `lib/closeout.mjs` has the same CS-id-only pattern with no agent-id gate — tracked as **LRN-187** (`open`, architectural).
