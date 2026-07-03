@@ -11,11 +11,15 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **CS95 (`harness claim --takeover` — #417):** New `--takeover` flag on `harness claim`. When a CS is already `active/` but its WORKBOARD Owner is a **different** agent-id, `--takeover` reassigns the Owner (and Last Updated) to the current agent under `--apply` (dry-run previews; requires a clean worktree so the one-line WORKBOARD edit lands isolated); it is a no-op when you already own the row and never commits. Backward-compatible CLI addition (drives a **Minor** bump).
+
 ### Changed
 
 ### Documentation
 
 ### Fixed
+
+- **CS95 (status/claim ownership gate — #417):** `harness status` and `harness claim` never compared a clickstop's **Owner** to the current **agent-id**, so an orchestrator in a concurrent same-machine clone (`yoga-ae-c3`) could mistake another orchestrator's active CS (owned by `yoga-ae`) for its own and adopt it — worsened because the base id is a **prefix** of the suffixed id. `harness status` now annotates every Active Work / On-disk active row with its ownership relative to your agent-id (` (you)` vs ` (not you: <id>)`; On-disk rows are joined to the WORKBOARD rows by CS id). `harness claim`'s already-active/resume no-op now **refuses** (exit 1, naming the owner) when the WORKBOARD Owner ≠ your agent-id, unless `--takeover` is passed. All comparisons are **exact full-id equality** (including any `-c<N>` clone suffix) — never a prefix match, so `yoga-ae` and `yoga-ae-c3` are correctly distinct orchestrators.
 
 ## [0.13.0] — 2026-07-03
 
