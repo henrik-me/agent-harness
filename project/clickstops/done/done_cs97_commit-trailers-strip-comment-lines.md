@@ -1,10 +1,10 @@
 # CS97 — check-commit-trailers: strip git comment/scissors lines before trailer detection
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs97/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound bug report #420 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; LRN-018).
 **Depends on:** none. Touches `scripts/check-commit-trailers.mjs` + its test/fixtures only; no in-flight CS owns that surface. Related but disjoint from #421 (prepare-commit-msg hook) — this CS fixes the *detector*, #421 adds a *hook*.
 
