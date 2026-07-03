@@ -6,6 +6,17 @@
  * `git log --format=%B -n 1`). Checks that required trailers are present and
  * that trailer values match optional allowlist patterns.
  *
+ * Note: the pre-scan cleanup below (git `#` comment lines + scissors truncation)
+ * is intentionally tuned for `.git/COMMIT_EDITMSG` under git's default `strip`
+ * cleanup. For an already-committed message that intentionally retains literal
+ * `#` lines or a `>8` scissors marker (e.g. committed with
+ * `--cleanup=whitespace`/`verbatim`), the cleanup still applies and may differ
+ * from that message's raw text: `#`-line stripping is trailer-safe (a trailer
+ * key starts with `[A-Za-z]`, never `#`), but scissors truncation drops
+ * everything after a `>8` marker, so a trailer placed below such a marker would
+ * not be seen. This linter targets `COMMIT_EDITMSG`, where that shape does not
+ * occur.
+ *
  * Trailer block detection:
  *   Git comment lines (those whose first character is `#`, git's default
  *   `core.commentChar`) and everything from the scissors cut-line
