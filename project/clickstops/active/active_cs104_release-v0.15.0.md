@@ -1,9 +1,9 @@
 # CS104 — Cut harness release v0.15.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs104/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03. Cuts the aggregate release of everything merged since v0.14.0 — the #420–#424 arc's merged work. Directed by @henrik-me ("deliver 424 → make a release; you should release the harness").
 **Depends on:** none
@@ -110,11 +110,27 @@ notifications.
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | a8791a9a8390 | 2026-07-03T23:53:32Z | Go-with-amendments | No blocking. F6: no v0.15.0 tag/release (empty ls-remote, 0/[], v0.14.0 Latest). Minor/scope/draft-gate sound; amendment applied (verbatim release-list + [] probe). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | **Minor** SemVer (v0.14.0 → v0.15.0; new `install-hooks` verb + managed-workflow trigger). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go-with-amendments, hash `a8791a9a8390`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Phase A: `harness release --version 0.15.0 --apply` (bump `package.json`+lock; CHANGELOG `[Unreleased]→[0.15.0]` + fresh skeleton + link refs; README pin sweep + Status rewrite) | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T2 — Content PR: GPT-5.5 review-of-record + Copilot engage + admin-squash-merge | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T3 — Phase B (post-merge): annotated tag `v0.15.0` on squash SHA + **draft** GitHub Release | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T4 — Consumer notifications: issue-only pin-bump to authzandentitlements + sub-invaders | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS104 row) + CONTEXT.md. |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File learnings if any; publish-draft left to @henrik-me. |
 
 ## Notes / Learnings
 
