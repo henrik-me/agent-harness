@@ -11,6 +11,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **`harness install-hooks` (#421):** a new opt-in verb that installs a git `prepare-commit-msg` hook into the repository's active hooks directory. The hook auto-appends the canonical `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer when that exact line is absent — **including on merge commits** (inserted *above* git's comment/scissors template so it survives git's message cleanup) — making the commit-trailers (B1) gate pass by construction and removing the recurring manual `git commit --amend` on a `git merge` that integrates `main` into a long-running branch. Opt-in (never installed by `init`), idempotent (a sentinel makes re-runs a no-op), and refuses to clobber a pre-existing non-harness hook without `--force`. Ships a new dependency-free `lib/hooks.mjs` (Minor).
+
 ### Changed
 
 ### Documentation

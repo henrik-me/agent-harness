@@ -30,6 +30,7 @@ import { engageCopilot, EngageError } from '../lib/copilot-engage.mjs';
 import { runReview, ReviewError, parseImplementerModels } from '../lib/review.mjs';
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
 import { openIssue as crossRepoOpenIssue, CrossRepoError } from '../lib/cross-repo.mjs';
+import { installPrepareCommitMsgHook } from '../lib/hooks.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -132,6 +133,8 @@ Subcommands:
   dispatch          Emit the canonical sub-agent briefing preamble (CS64)
   release           Mechanize the release cut — Phase A prepare (dry-run) +
                     Phase B publish (verify SHA → tag+release → notify; CS67)
+  install-hooks     Install the opt-in prepare-commit-msg hook that adds the
+                    Co-authored-by: Copilot trailer (incl. merge commits; CS100)
   version           Print package version
   whoami            Derive and print the agent ID
 
@@ -926,6 +929,32 @@ Exit codes:
   0  preview composed / --apply succeeded
   1  validation failure (bad version, SemVer-inconsistent, SHA unverified, publish failure)
   2  usage error
+`.trimStart(),
+
+  'install-hooks': `
+Usage: harness install-hooks [options]
+
+Install the opt-in git prepare-commit-msg hook into this repository's active
+hooks directory. The hook appends the canonical
+"Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" trailer
+to a commit message when that exact line is absent — INCLUDING on merge commits
+— so the commit-trailers (B1) gate passes by construction and you no longer need
+to 'git commit --amend' a merge that integrates main into a long-running branch.
+
+Opt-in only: 'harness init' does NOT install this hook; it is written solely when
+you run this command. The hook carries a sentinel, so re-running is a no-op
+(skipped); a pre-existing non-harness hook is refused unless --force is given.
+The trailer is inserted above git's comment/scissors template so it survives
+message cleanup on every commit source (normal, template, squash, amend, merge).
+
+Options:
+  --force         Overwrite an existing prepare-commit-msg hook (harness or foreign)
+  --help          Print this help
+
+Exit codes:
+  0  hook created, replaced, or already installed (skipped)
+  1  refused (a foreign hook exists — re-run with --force) or error (not a git repo)
+  2  usage error (unknown flag)
 `.trimStart(),
 };
 
@@ -3229,6 +3258,51 @@ async function cmdVersion(args, _global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: install-hooks (CS100 — opt-in prepare-commit-msg hook, issue #421)
+// ---------------------------------------------------------------------------
+//
+// Opt-in only: `harness init` does NOT install the hook (Decision 6). This verb
+// writes the prepare-commit-msg hook into the repo's active hooks directory and
+// maps the installer's structured result to exit codes: 0 for
+// created/replaced/skipped, 1 for a refused foreign hook or a thrown error
+// (e.g. not a git repository), 2 for a usage error. The hook body + installer
+// are the single source of truth in lib/hooks.mjs (Decision 7).
+
+async function cmdInstallHooks(args, global) {
+  let force = false;
+  for (const a of args) {
+    if (a === '--help' || a === '-h') {
+      process.stdout.write(SUBCOMMAND_HELP['install-hooks']);
+      process.exit(0);
+    } else if (a === '--force') {
+      force = true;
+    } else {
+      die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['install-hooks']}`, 2);
+    }
+  }
+
+  const repoRoot = global.cwd ?? process.cwd();
+
+  let result;
+  try {
+    result = installPrepareCommitMsgHook(repoRoot, { force });
+  } catch (err) {
+    die(`harness install-hooks: ${err.message}`, 1);
+  }
+
+  if (result.action === 'refused') {
+    die(`harness install-hooks: refused — ${result.reason}`, 1);
+  }
+
+  const summary = {
+    created: `installed prepare-commit-msg hook at ${result.path}`,
+    replaced: `replaced prepare-commit-msg hook at ${result.path}`,
+    skipped: `prepare-commit-msg hook already installed at ${result.path} (no change)`,
+  };
+  process.stdout.write(`harness install-hooks: ${summary[result.action]}\n`);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: plan-review-hash (CS35b decision C35b-2)
 // ---------------------------------------------------------------------------
 
@@ -4913,6 +4987,7 @@ export const COMMAND_REGISTRY = {
   dispatch: cmdDispatch,
   release: cmdRelease,
   doctor: cmdDoctor,
+  'install-hooks': cmdInstallHooks,
   version: cmdVersion,
   whoami: cmdWhoami,
 };
