@@ -792,8 +792,9 @@ Options:
   --skip-harvest       Skip the pre-claim harvest gate (escape hatch for re-runs)
   --takeover           When CS<NN> is already active but owned by a DIFFERENT
                        agent-id, reassign its WORKBOARD Owner to you (mutates
-                       WORKBOARD.md with --apply; dry-run previews). No-op when
-                       you already own it. Never commits.
+                       WORKBOARD.md with --apply, requires a clean worktree;
+                       dry-run previews). No-op when you already own it. Never
+                       commits.
   --agent-id <id>      Override the derived agent ID (default: 'harness whoami')
   --cwd <path>         Consumer repo path (default: cwd)
   --help               Print this help

@@ -1110,6 +1110,7 @@ test('runClaimFromDisk: --takeover --apply reassigns the WORKBOARD Owner to the 
     writeFileSync(wbPath, workboardWith('CS10', 'yoga-ae'));
     const result = runClaimFromDisk({
       cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: true, takeover: true, skipHarvest: true,
+      runnerFactory: () => ({ worktreeClean: () => true }),
     });
     assert.equal(result.ok, true);
     assert.equal(result.takeover, true);
@@ -1119,6 +1120,25 @@ test('runClaimFromDisk: --takeover --apply reassigns the WORKBOARD Owner to the 
     assert.equal(row.owner, 'yoga-ae-c3'); // reassigned
     assert.equal(row.branch, 'cs10/content'); // preserved (same work continues)
     assert.match(row.lastUpdated, /^\d{4}-\d{2}-\d{2}$/); // stamped
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runClaimFromDisk: --takeover --apply refuses on a dirty worktree, leaving WORKBOARD unchanged', () => {
+  const { root } = mkAlreadyActiveTree('CS10', 'entitlements');
+  try {
+    const wbPath = path.join(root, 'WORKBOARD.md');
+    writeFileSync(wbPath, workboardWith('CS10', 'yoga-ae'));
+    const before = readFileSync(wbPath, 'utf8');
+    const result = runClaimFromDisk({
+      cwd: root, csId: 'CS10', agentId: 'yoga-ae-c3', harnessBin: 'unused', apply: true, takeover: true, skipHarvest: true,
+      runnerFactory: () => ({ worktreeClean: () => false }),
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.takeover, undefined);
+    assert.ok(result.errors.some((e) => /requires a clean worktree/.test(e)));
+    assert.equal(readFileSync(wbPath, 'utf8'), before, 'refusal must not mutate WORKBOARD.md');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

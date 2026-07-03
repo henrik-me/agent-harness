@@ -11,7 +11,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
-- **CS95 (`harness claim --takeover` — #417):** New `--takeover` flag on `harness claim`. When a CS is already `active/` but its WORKBOARD Owner is a **different** agent-id, `--takeover` reassigns the Owner (and Last Updated) to the current agent under `--apply` (dry-run previews); it is a no-op when you already own the row and never commits. Backward-compatible CLI addition (drives a **Minor** bump).
+- **CS95 (`harness claim --takeover` — #417):** New `--takeover` flag on `harness claim`. When a CS is already `active/` but its WORKBOARD Owner is a **different** agent-id, `--takeover` reassigns the Owner (and Last Updated) to the current agent under `--apply` (dry-run previews; requires a clean worktree so the one-line WORKBOARD edit lands isolated); it is a no-op when you already own the row and never commits. Backward-compatible CLI addition (drives a **Minor** bump).
 
 ### Changed
 
