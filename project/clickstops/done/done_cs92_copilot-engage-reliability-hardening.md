@@ -1,10 +1,10 @@
 # CS92 — copilot-engage / gh reliability hardening: 401-retry + post-add reviewer verify + review-at-HEAD success semantics
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c2
 **Branch:** cs92/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** omni-ah-c2 (Claude Opus 4.8), 2026-07-02 — filed from the weekly open-LRN harvest requested by @henrik-me. Bundles the three `harness copilot-engage` / `gh`-reliability learnings that share one root (transient `gh` GraphQL flakiness + fire-and-forget reviewer add): **LRN-161** (`gh api graphql` random 401), **LRN-160** (`gh pr edit --add-reviewer` silent no-op), and **LRN-173** (engage reports success before a review at HEAD lands). Distinct from planned **CS87** (`copilot-engage --help` *wording* accuracy only — no runtime change).
 **Depends on:** none (hard). Touches `lib/copilot-engage.mjs` (CS37/CS41) and the `copilot-engage` command block in `bin/harness.mjs`. No in-flight CS owns these surfaces (CS87 edits only the help *string*; coordinate the two help edits if claimed concurrently — see Risks R3).
 
