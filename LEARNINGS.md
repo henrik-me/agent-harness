@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-193
+
+```yaml
+id: LRN-193
+date: 2026-07-03
+category: process
+source_cs: CS103
+status: open
+tags: [review-gates, a4, stale-diff, review-log-evidence, churn]
+claim_area: review-gates
+```
+
+**Problem:** The A4 stale-diff gate invalidates a `Go` attestation on **every** new HEAD SHA, even when the *tree* is unchanged (a trailer-only `git commit --amend`, or a clean rebase/merge that changes the SHA but not the content). This forces a fresh rubber-duck `Go` + Copilot re-engage for a content-identical HEAD — a churn source distinct from the async-Copilot rerun that CS103 fixed.
+
+**Finding:** A4 could carry a prior `Go` forward when the branch **tree** (not just the HEAD SHA) matches the tree the `Go` row attested — e.g. compare `git rev-parse HEAD^{tree}` (or a diff-of-diffs) rather than the commit SHA. This is the optional third bullet of issue #424, deferred from CS103 (Decision D6) to keep that CS to the trigger + doctrine (lower risk); it touches `scripts/checks/check-review-log-evidence.mjs` and the C35-3 stale-diff doctrine.
+
+**Evidence:** Issue #424 ("Optional: let A4 carry forward a Go attestation when the tree (not just HEAD) is unchanged"). CS103 shipped #424(a)+(b) and explicitly deferred this.
+
+**Disposition:** Open — candidate for a follow-up CS against the A4 logic in `check-review-log-evidence.mjs`. Not yet actioned.
+
 ### LRN-192
 
 ```yaml
