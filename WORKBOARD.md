@@ -28,7 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS96 | CS96 — cut harness v0.14.0 (Minor) | 🟢 Active | yoga-ah | cs96/content | 2026-07-03 | — |
 | CS97 | CS97 — check-commit-trailers: strip git comment/scissors lines before trailer detection | 🟢 Active | yoga-ah-c2 | cs97/content | 2026-07-03 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

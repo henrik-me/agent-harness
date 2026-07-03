@@ -1,10 +1,10 @@
 # CS96 — cut harness v0.14.0 (Minor)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs96/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — release CS following the CS95 (#417) close-out, per @henrik-me's "claim issue 417, fix it, when done ship a release the owning repo is waiting for it."
 **Depends on:** CS95 merged to `main` (#425 squash `9b18745`, close-out #426). Bundles CS95 — the only distributed-surface change since v0.13.0. Follows OPERATIONS.md § Release process.
 
@@ -103,4 +103,19 @@ No v0.14.0 release object, no v0.14.0 tag (local or remote), no stale duplicate 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs96-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T21:01:49Z
+**Outcome:** GO
+
+Reviewed the CS96 plan (§ Decisions C96-1…C96-5, § Deliverables 1–6, § Exit criteria) against the **live** v0.14.0 release (content PR #429, squash `f2e7a8b`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `package.json`/lock 0.13.0→0.14.0 | match | `version` == `0.14.0` on main; lock in sync. |
+| 2 — `CHANGELOG.md` [Unreleased]→[0.14.0] | match | `## [0.14.0] — 2026-07-03` with CS95 Added(`--takeover`)+Fixed(#417); fresh empty `[Unreleased]`; compare links correct. |
+| 3 — README pin sweep | match | current install/quickstart/upgrade pins read `v0.14.0`; Status leads with v0.14.0; remaining `v0.13.0` historical only. |
+| 4 — tag on squash SHA | match | annotated tag `v0.14.0`, peeled `^{}` == `f2e7a8b` (squash SHA), `cat-file`=`tag`, pushed to origin. |
+| 5 — published Release | match | exactly 1 release for `v0.14.0`; `isDraft=false`; Latest == v0.14.0. Publish-to-Latest per C96-2 ("ship … waiting for it"). |
+| 6 — consumer notification (issue-only) | match | `authzandentitlements#26` (the #417 reporter) + `sub-invaders#149`, `[harness:cs96]`, `harness-orchestrator` label. |
+
+6/6 deliverables + 6/6 exit criteria met; SemVer Minor correct (CS95's new `--takeover` flag); no divergences, no overclaims (GPT-5.5 `cs96-pvi` at `f2e7a8b`).
