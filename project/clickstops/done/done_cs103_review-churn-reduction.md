@@ -1,10 +1,10 @@
 # CS103 — Reduce content-PR review churn: auto-rerun read-only-gates on Copilot review + leaner review-sequencing doctrine
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs103/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03, from GitHub issue #424 (`enhancement`, `harness-orchestrator`; surfaced from consumer `henrik-me/authzandentitlements` CS10, LRN-018/020). First-hand-reproduced during CS100 (#421): the async Copilot review left `read-only-gates` red and required a manual `gh run rerun`, and Copilot re-emitted its full comment set on each re-engage.
 **Depends on:** none
 
