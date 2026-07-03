@@ -17,7 +17,7 @@ This file captures durable, project-applicable insights surfaced by completing C
 ```yaml
 id: LRN-192
 date: 2026-07-03
-category: environment
+category: tooling
 source_cs: CS100
 status: applied
 tags: [testing, windows, git-for-windows, sh, shell-hooks]

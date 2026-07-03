@@ -1,10 +1,10 @@
 # CS100 — Ship an opt-in `prepare-commit-msg` hook that auto-adds the Co-authored-by trailer (incl. merge commits)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs100/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-03
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03, from GitHub issue #421 (`enhancement`, `harness-orchestrator`; surfaced from consumer `henrik-me/authzandentitlements` CS10, LRN-018).
 **Depends on:** none
 
