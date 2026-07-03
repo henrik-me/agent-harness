@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.13.0] — 2026-07-03
+
+### Added
+
 - **CS65 (LEARNINGS archive tier):** `LEARNINGS.md` now supports an archive tier — aged `applied`/`obsolete` entries move to a sibling `LEARNINGS-archive.md` while an anchor-stable `### LRN-NNN` stub redirect stays in `LEARNINGS.md`. `check-learnings.mjs` auto-detects and validates the sibling archive (schema + CS69 header↔id + section headings) and tolerates heading-only stubs; `check-doc-xref-resolvability.mjs` gains archive/stub integrity checks and unions archive headings into `LRN-<id>` token resolution. Both no-op when no archive is present, so existing consumers are unaffected.
 - **CS85 (consumer-doc clickstop-link durability — #371):** New `scripts/check-clickstop-link-durability.mjs` lint guard (registered in `harness lint` as `clickstop-link-durability`). It fails on a **branch-pinned** absolute GitHub permalink into a transient `project/clickstops/active/` path in a durable doc — links that 404 the moment a clickstop closes out and is `git mv`'d to `project/clickstops/done/` — while allowing **commit-SHA-pinned** permalinks (the SHA pins the historical tree, so it keeps resolving). Fenced code blocks and inline-code spans are skipped so illustrative examples do not false-positive. Unlike the self-host-only genericity/xref guards, this guard **runs in both the harness self-host and consumer repos** (the `package.json` name selects the scan mode, not a consumer no-op), since #371's defect class lives in consumer repos: self-host scans repo-root `*.md` + `template/**/*.md`; a consumer scans repo-root `*.md` + `.github/copilot-instructions.md` + `.github/pull_request_template.md`; both exclude `project/clickstops/**`. Adding a new linter script drives a **Minor** bump.
 
@@ -541,7 +551,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/henrik-me/agent-harness/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/henrik-me/agent-harness/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/henrik-me/agent-harness/compare/v0.9.0...v0.10.0
