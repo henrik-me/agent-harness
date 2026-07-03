@@ -97,4 +97,20 @@ These three cost repeated real time: LRN-161 forced `gh run rerun --failed` cycl
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agent `cs92-pvi`, independent of the claude-opus-4.8 implementer per REVIEWS § 2.3)
+**Date:** 2026-07-03T01:39:00Z
+**Outcome:** GO
+
+Reviewed the CS92 plan (§ Decisions C92-1…C92-6, § Deliverables 1–5) against the merged content diff `bfaa3e6..45e4e9b` (PR #405).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — `lib/copilot-engage.mjs` + `lib/github-graphql.mjs` | match | Enriched `GraphQLError` (httpStatus/exitCode/stderr/transport) + `isTransientGhError` predicate + `withRetry` (incl. in-place poll retry); post-add `requested_reviewers` verify + one bounded re-add; typed `reviewer-not-requested` / `reviewer-verify-unavailable`; additive `verified` flag. |
+| 2 — `bin/harness.mjs` | match | CLI distinguishes `requested (unverified)` vs verified-at-HEAD; existing error-kind exit codes preserved, new typed kinds mapped (`reviewer-not-requested`→6, `reviewer-verify-unavailable`→4). |
+| 3 — `tests/*.test.mjs` | match | CS92 test file covers all seven C92-5 seam cases (a–g) + `isTransientGhError` truth table + unreadable-list edges; `os.tmpdir()` scratch only. |
+| 4 — `CHANGELOG.md` | match | `[Unreleased]` → Fixed/Patch entry; explicitly states the poll-at-HEAD guarantee pre-existed/unchanged (no § 2.6a overclaim). |
+| 5 — `LEARNINGS.md` (flip LRN-160/161/173) | deferred-to-closeout | Expected — the LRN flips are close-out work performed after this gate, not a content-PR defect. |
+
+**Test-coverage assessment:** sufficient — non-vacuous coverage for (a) transient-401 retry, (b) auth-missing no-retry, (c) add no-op self-heal, (d) add no-op fast-fail, (e) no-poll `verified:false` exit 0, (f) verified-at-HEAD-after-floor, (g) permission/scope not retried. Validation: `node --test tests/*.test.mjs` → 1678 tests, 1677 pass, 0 fail, 1 skip; `node bin/harness.mjs lint --quiet` → 35 passed, 0 failed, 3 skipped.
+
+No scope creep (no schema change, no new CLI flag, CS87 `requestReviews` help wording untouched). Review rounds: rubber-duck R1 (`6a5f76b`) Go + R2 re-attest (`04cdedf`) Go; Copilot review attached at final HEAD.

@@ -12,6 +12,28 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-184
+
+```yaml
+id: LRN-184
+date: 2026-07-03
+category: process
+source_cs: CS92
+status: applied
+tags: [testing, test-seam, mocks, graphql, fixtures]
+claim_area: harness-cli
+```
+
+**Problem:** A test that mocks an injectable network seam with a FIXED-ORDER response queue (e.g. `graphqlResponses = [prNode, identityNode, reviewsAt]` consumed positionally) silently breaks the moment the shared library flow under test gains one more seam call. The extra call shifts the queue, so an unrelated sibling test throws "unexpected call" / starves — a failure that surfaces only in the FULL `node --test` run, not the changed test's own file.
+
+**Finding:** Prefer a DISPATCH-BY-QUERY mock over a positional queue: classify each call by its query/argument shape and return a per-type handler (static or call-index-aware), so adding a new call to the shared flow does not perturb existing tests. CS92 added a post-add `requested_reviewers` read to `engageCopilot`; the new CS92 test used a `classifyQuery()` / `makeGraphqlFn(handlers)` dispatcher and was unaffected, while the pre-existing positional-queue test `tests/cs60-copilot-engage-head.test.mjs` starved and needed a hand-inserted `reviewRequests` entry. Corollary: when a change adds a call to a shared flow, run the FULL suite (not just the changed file) — the break lands in a sibling.
+
+**Evidence:** CS92 (PR #405, merge `45e4e9b`). `tests/cs92-copilot-engage-reliability.test.mjs` `makeGraphqlFn` / `classifyQuery` (dispatch-by-query, robust) vs `tests/cs60-copilot-engage-head.test.mjs` (positional `graphqlResponses` array that required a manual `reviewRequests()` insert). Surfaced by the `cs92-impl` sub-agent as a learning candidate and confirmed at orchestrator integration.
+
+**Disposition:** Applied — the dispatch-by-query pattern is demonstrated in the CS92 test suite; adopt it for any test mocking a multi-call injectable seam. No tooling change required (convention).
+
+---
+
 ### LRN-183
 
 ```yaml
@@ -327,7 +349,7 @@ id: LRN-173
 date: 2026-07-01
 category: process
 source_cs: CS67
-status: open
+status: applied
 tags: [copilot-engage, api-lag, verification, review-at-head]
 claim_area: harness-cli
 ```
@@ -341,6 +363,8 @@ claim_area: harness-cli
 **Disposition:** Open — candidate: harden `lib/copilot-engage.mjs` to require `review.commit_id == headRefOid` before declaring success (not just "a review submitted at/after request time"), and add a retry/settle window.
 
 **Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS92** (`project/clickstops/planned/planned_cs92_copilot-engage-reliability-hardening.md`, decision **C92-3**). Note: the poll path *already* enforces `commit.oid === headSha` + a submitted-after floor (`lib/copilot-engage.mjs:336-340`), so CS92 closes the **residual** gap (the `opts.noPoll` early return → explicit `verified: false`) rather than introducing review-at-HEAD from scratch. Status stays `open`; flip to `applied` at CS92 close-out.
+
+**Applied (2026-07-03, omni-ah-c2, CS92 close-out):** Shipped in CS92 (merge `45e4e9b`, PR #405). The poll path's `commit.oid === headSha` + submitted-after-floor guarantee was already present and is **unchanged**; CS92 closed only the **residual** `opts.noPoll` gap via an additive `verified` flag (no-poll ⇒ `verified: false`, poll success ⇒ `verified: true`, exit codes unchanged) plus the LRN-160 fast-fail that removes the misleading success-worded timeout.
 
 ### LRN-170
 
@@ -702,7 +726,7 @@ id: LRN-160
 date: 2026-06-10
 category: tooling
 source_cs: CS69
-status: open
+status: applied
 tags: [gh-cli, copilot-engage, reviewer-bot, idempotency, silent-no-op]
 claim_area: harness-cli
 ```
@@ -717,6 +741,8 @@ claim_area: harness-cli
 
 **Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS92** (`project/clickstops/planned/planned_cs92_copilot-engage-reliability-hardening.md`, decision **C92-2**: post-add `requested_reviewers` verify + one bounded re-add + `reviewer-not-requested` fast-fail). Status stays `open`; flip to `applied` at CS92 close-out with the merge SHA.
 
+**Applied (2026-07-03, omni-ah-c2, CS92 close-out):** Shipped in CS92 (merge `45e4e9b`, PR #405). `engageCopilot` now reads back `requested_reviewers` after the add and, on a silent no-op, re-adds exactly once then re-verifies — a still-absent reviewer fails fast as typed `reviewer-not-requested` (exit 6) instead of a slow poll timeout, and an unreadable list surfaces as `reviewer-verify-unavailable` rather than a silent pass.
+
 ---
 
 ### LRN-161
@@ -726,7 +752,7 @@ id: LRN-161
 date: 2026-06-10
 category: process
 source_cs: CS69
-status: open
+status: applied
 tags: [gh-cli, graphql, 401-flake, retry-with-backoff, ci-stability]
 claim_area: orchestrator
 ```
@@ -740,6 +766,8 @@ claim_area: orchestrator
 **Disposition:** Open — candidate work: add a retry-with-backoff wrapper to harness CLI commands that internally call `gh api graphql` (especially `harness copilot-engage`, `harness review`); document the pattern in OPERATIONS.md § "When gh GraphQL 401-flakes"; consider an exponential-backoff helper in `lib/` for CI gate scripts to absorb the same flake server-side rather than relying on operators noticing and reissuing `gh run rerun --failed`. claim_area: orchestrator.
 
 **Disposition update (2026-07-02, omni-ah-c2, weekly harvest):** **Filed as planned CS92** (`project/clickstops/planned/planned_cs92_copilot-engage-reliability-hardening.md`, decision **C92-1**: shared `withRetry` + `isTransientGhError` bounded backoff around the `gh` seam calls, retrying only positively-transient errors). Status stays `open`; flip to `applied` at CS92 close-out with the merge SHA.
+
+**Applied (2026-07-03, omni-ah-c2, CS92 close-out):** Shipped in CS92 (merge `45e4e9b`, PR #405). `lib/github-graphql.mjs` enriches `GraphQLError` (httpStatus/exitCode/stderr/transport) + exports `isTransientGhError`; `lib/copilot-engage.mjs` wraps every `gh` seam call (PR resolve, identity, reviewer add + re-add, requested-reviewers read, in-place poll read) in a `withRetry` (default 5 attempts, ~3s linear backoff) that retries ONLY positively-transient 401/≥500/transport errors and fails fast on `auth-missing`/permission-scope. The CI-gate `gh run rerun --failed` half remains an operator escalation (server-side gate hardening was out of CS92 scope).
 
 ---
 
