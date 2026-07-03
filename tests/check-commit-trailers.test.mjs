@@ -222,4 +222,88 @@ describe('check-commit-trailers linter', () => {
       `Expected "unknown flag" in stderr; got:\n${r.stderr}`
     );
   });
+
+  // -------------------------------------------------------------------------
+  // CS97 (#420) — git comment / scissors lines stripped before trailer scan
+  // -------------------------------------------------------------------------
+
+  // 12. #420 repro: trailer followed by a `# Conflicts:` comment block → exit 0
+  it('12. trailer followed by # Conflicts: comments exits 0 (#420 repro)', () => {
+    const r = runLinter(['--file', fixture('trailer-then-conflicts-comments.txt')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 when trailer precedes # Conflicts: comments; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('commit trailers: 0 errors'),
+      `Expected "commit trailers: 0 errors"; got:\n${r.stdout}`
+    );
+  });
+
+  // 13. Trailer followed by interactive-rebase status comments → exit 0
+  it('13. trailer followed by rebase-status # comments exits 0', () => {
+    const r = runLinter(['--file', fixture('trailer-then-rebase-status-comments.txt')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 when trailer precedes rebase-status comments; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('✅'),
+      `Expected success indicator; got:\n${r.stdout}`
+    );
+  });
+
+  // 14. `git commit --verbose` scissors line + trailing diff → exit 0
+  //     (the diff below the >8 cut-line must not be mistaken for body/trailer)
+  it('14. scissors cut-line + trailing diff exits 0', () => {
+    const r = runLinter(['--file', fixture('trailer-then-scissors-diff.txt')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 when a diff follows the scissors line; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.ok(
+      r.stdout.includes('commit trailers: 0 errors'),
+      `Expected "commit trailers: 0 errors"; got:\n${r.stdout}`
+    );
+  });
+
+  // 15. Comment-only / scissors-only buffer → exit 0, "0 errors" (C97-4)
+  it('15. comment/scissors-only buffer exits 0 with 0 errors', () => {
+    const r = runLinter(['--file', fixture('comment-only.txt')]);
+    assert.equal(
+      r.status, 0,
+      `Expected exit 0 for a comment/scissors-only buffer; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('commit trailers: 0 errors'),
+      `Expected "commit trailers: 0 errors"; got:\n${r.stdout}`
+    );
+  });
+
+  // 16. Genuinely trailer-less message WITH # comments → still exit 1 (no false pass)
+  it('16. missing required trailer with # comments still exits 1', () => {
+    const r = runLinter(['--file', fixture('missing-trailer-with-comments.txt')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 when the required trailer is genuinely absent; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('Co-authored-by'),
+      `Expected "Co-authored-by" in error; got:\n${r.stdout}`
+    );
+  });
+
+  // 17. A `#`-commented-out Co-authored-by line does NOT satisfy the requirement
+  //     (body `#` line stripped like git; commented trailer never counts) → exit 1
+  it('17. commented-out (#) trailer does not satisfy the requirement (exits 1)', () => {
+    const r = runLinter(['--file', fixture('hash-body-line.txt')]);
+    assert.equal(
+      r.status, 1,
+      `Expected exit 1 when the only Co-authored-by is on a # comment line; got ${r.status}\nstdout: ${r.stdout}`
+    );
+    assert.ok(
+      r.stdout.includes('Co-authored-by'),
+      `Expected "Co-authored-by" in error; got:\n${r.stdout}`
+    );
+  });
 });

@@ -6,11 +6,33 @@
  * `git log --format=%B -n 1`). Checks that required trailers are present and
  * that trailer values match optional allowlist patterns.
  *
+ * Note: the pre-scan cleanup below (git `#` comment lines + scissors truncation)
+ * is intentionally tuned for `.git/COMMIT_EDITMSG` under git's default `strip`
+ * cleanup. For an already-committed message that intentionally retains literal
+ * `#` lines or a `>8` scissors marker (e.g. committed with
+ * `--cleanup=whitespace`/`verbatim`), the cleanup still applies and may differ
+ * from that message's raw text: `#`-line stripping is trailer-safe (a trailer
+ * key starts with `[A-Za-z]`, never `#`), but scissors truncation drops
+ * everything after a `>8` marker, so a trailer placed below such a marker would
+ * not be seen. This linter targets `COMMIT_EDITMSG`, where that shape does not
+ * occur.
+ *
  * Trailer block detection:
- *   The trailer block is the trailing run of consecutive lines (after a blank
- *   line) that match `<Key>: <Value>` (RFC 5322 style). A line that does NOT
- *   match this pattern in what would be the trailer block breaks the block back
- *   to body. An empty file exits 0 immediately.
+ *   Git comment lines (those whose first character is `#`, git's default
+ *   `core.commentChar`) and everything from the scissors cut-line
+ *   (`# ------------------------ >8 ------------------------`, emitted by
+ *   `git commit --verbose`) onward are stripped first, mirroring git's own
+ *   `strip`/`scissors` message cleanup. This ensures a post-rebase/merge
+ *   `.git/COMMIT_EDITMSG` — where the real trailer is followed by
+ *   `# Conflicts:` / `# interactive rebase in progress` comment lines — is
+ *   inspected as the same message git will actually commit. A trailer key must
+ *   start with `[A-Za-z]`, so stripping `#` lines can never remove a trailer.
+ *
+ *   The trailer block is then the trailing run of consecutive lines (after a
+ *   blank line) that match `<Key>: <Value>` (RFC 5322 style). A line that does
+ *   NOT match this pattern in what would be the trailer block breaks the block
+ *   back to body. An empty file — or a comment/scissors-only buffer that
+ *   becomes empty after stripping — exits 0 immediately.
  *
  * Usage:
  *   node scripts/check-commit-trailers.mjs --file <path>
@@ -45,6 +67,40 @@ function requireValue(args, i, flagName) {
     process.stderr.write(`check-commit-trailers: missing value for ${flagName}\n`);
     process.exit(2);
   }
+}
+
+/** Git's default `core.commentChar`. */
+const COMMENT_CHAR = '#';
+
+/**
+ * Strip git comment lines and truncate at the scissors cut-line, mirroring
+ * git's own message cleanup, so the trailer block we inspect is the same one
+ * git will commit.
+ *
+ * Single forward pass over the (already BOM-stripped, LF-normalised) text:
+ *   - On the first scissors marker line (`^<commentChar>\s*-{2,}\s*>8\s*-{2,}`,
+ *     e.g. `# ------------------------ >8 ------------------------`), STOP —
+ *     dropping that line and everything after it. Mirrors `--cleanup=scissors`,
+ *     where `git commit --verbose` appends the full diff below the cut-line.
+ *   - Else if a line's first character is `commentChar`, drop it. Mirrors git's
+ *     default `strip` cleanup. A trailer key must start with `[A-Za-z]`, so a
+ *     real trailer is never `#`-prefixed and can never be removed here.
+ *   - Else keep the line.
+ *
+ * @param {string} text - already BOM-stripped, LF-normalised message text
+ * @param {string} [commentChar]
+ * @returns {string}
+ */
+function stripGitComments(text, commentChar = COMMENT_CHAR) {
+  const escaped = commentChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const scissorsRe = new RegExp('^' + escaped + '\\s*-{2,}\\s*>8\\s*-{2,}');
+  const out = [];
+  for (const line of text.split('\n')) {
+    if (scissorsRe.test(line)) break; // --cleanup=scissors: drop cut-line onward
+    if (line.startsWith(commentChar)) continue; // strip cleanup: drop comment line
+    out.push(line);
+  }
+  return out.join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -129,9 +185,15 @@ try {
 // Strip UTF-8 BOM if present (per LRN-018)
 if (rawText.charCodeAt(0) === 0xFEFF) rawText = rawText.slice(1);
 // Normalise line endings (per LRN-006)
-const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+const normalised = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+// Strip git `#` comment lines + the scissors cut-line before locating the
+// trailer block (C97-1/C97-2), so a post-rebase/merge COMMIT_EDITMSG whose
+// trailer is followed by `# Conflicts:` / rebase-status comments is inspected
+// the way git commits it. Must run before the empty check so a comment-only
+// buffer collapses to empty and keeps the exit-0 behaviour (C97-4).
+const text = stripGitComments(normalised);
 
-// Empty file → clean
+// Empty file (or empty after comment/scissors stripping) → clean
 if (text.trim() === '') {
   process.stdout.write('\ncommit trailers: 0 errors\n✅ Linter passed\n');
   process.exit(0);

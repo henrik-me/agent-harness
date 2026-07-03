@@ -1,0 +1,7 @@
+docs: update setup guide
+
+Explain the setup steps in detail.
+# TODO: mention the optional cache flag before release
+
+Signed-off-by: Alice <alice@example.com>
+# Co-authored-by: Ghost <ghost@example.com>
