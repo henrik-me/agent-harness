@@ -82,6 +82,24 @@ function reviews(nodes) {
   };
 }
 
+// CS92 C92-2: engageCopilot reads requested_reviewers (via graphqlFn) after the
+// add mutation to verify the Copilot reviewer landed. Full-path engage
+// sequences must include this response between identity resolution and the
+// review poll. Default includes the Copilot login so verification passes.
+function reviewRequests(logins = [COPILOT_LOGIN]) {
+  return {
+    repository: {
+      pullRequest: {
+        reviewRequests: {
+          nodes: logins.map((login) => ({
+            requestedReviewer: { __typename: 'Bot', login },
+          })),
+        },
+      },
+    },
+  };
+}
+
 function installGraphqlSequence(responses) {
   const calls = [];
   __testSeam.graphqlFn = async (query, vars) => {
@@ -104,6 +122,7 @@ describe('copilot-engage library', () => {
     const graphqlCalls = installGraphqlSequence([
       prNode(),
       identityNode(),
+      reviewRequests(),
       reviews([review({ submittedAt: '2026-05-13T09:42:30Z' })]),
     ]);
     const requests = [];
@@ -120,6 +139,7 @@ describe('copilot-engage library', () => {
     });
 
     assert.equal(result.requested, true);
+    assert.equal(result.verified, true);
     assert.equal(result.login, COPILOT_LOGIN);
     assert.equal(result.review.state, 'COMMENTED');
     assert.equal(result.review.commit.oid, HEAD_SHA);
@@ -128,8 +148,8 @@ describe('copilot-engage library', () => {
     assert.deepEqual(requests[0].repo, { owner: OWNER, repo: REPO });
     assert.equal(requests[0].prNumber, PR_NUMBER);
     assert.equal(requests[0].opts.login, COPILOT_LOGIN);
-    assert.equal(graphqlCalls.length, 3);
-    assert.deepEqual(graphqlCalls[2].vars, { owner: OWNER, name: REPO, num: PR_NUMBER });
+    assert.equal(graphqlCalls.length, 4);
+    assert.deepEqual(graphqlCalls[3].vars, { owner: OWNER, name: REPO, num: PR_NUMBER });
   });
 
   it('rejects stale Copilot review on same HEAD that predates the engage request (A5 ordering — CS41 R1 #1)', async () => {
@@ -146,6 +166,7 @@ describe('copilot-engage library', () => {
     installGraphqlSequence([
       prNode(),
       identityNode(),
+      reviewRequests(),
       reviews([stale]),
       reviews([stale]),
       reviews([stale]),
@@ -181,6 +202,7 @@ describe('copilot-engage library', () => {
     installGraphqlSequence([
       prNode(),
       identityNode(),
+      reviewRequests(),
       reviews([review({ submittedAt: '2026-05-13T10:30:00Z' })]),
       reviews([review({ submittedAt: '2026-05-13T10:30:00Z' })]),
       reviews([review({ submittedAt: '2026-05-13T10:30:00Z' })]),
@@ -222,6 +244,7 @@ describe('copilot-engage library', () => {
     installGraphqlSequence([
       prNode(),
       identityNode(),
+      reviewRequests(),
       reviews([]),
       reviews([review({ state: 'PENDING' })]),
       reviews([review({ oid: OLD_SHA })]),
@@ -251,6 +274,7 @@ describe('copilot-engage library', () => {
     const graphqlCalls = installGraphqlSequence([
       prNode(),
       identityNode(),
+      reviewRequests(),
     ]);
     let requestCount = 0;
     __testSeam.requestFn = async (_repo, _prNumber, opts) => {
@@ -266,10 +290,11 @@ describe('copilot-engage library', () => {
     });
 
     assert.equal(result.requested, true);
+    assert.equal(result.verified, false);
     assert.equal(result.review, undefined);
     assert.equal(result.polledMs, 0);
     assert.equal(requestCount, 1);
-    assert.equal(graphqlCalls.length, 2, 'PR resolution + identity only; no review poll');
+    assert.equal(graphqlCalls.length, 3, 'PR resolution + identity + reviewer-verify; no review poll');
   });
 
   it('fork-source PRs are rejected before requesting review', async () => {

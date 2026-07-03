@@ -73,6 +73,23 @@ function reviewsAt(oid) {
   };
 }
 
+// CS92 C92-2: engageCopilot verifies requested_reviewers (via graphqlFn) after
+// the add mutation, so full-path engage sequences include this response between
+// identity resolution and the review poll.
+function reviewRequests(logins = [COPILOT_LOGIN]) {
+  return {
+    repository: {
+      pullRequest: {
+        reviewRequests: {
+          nodes: logins.map((login) => ({
+            requestedReviewer: { __typename: 'Bot', login },
+          })),
+        },
+      },
+    },
+  };
+}
+
 describe('CS60 copilot-engage HEAD selection', () => {
   it('accepts --head <sha> as an explicit poll override', () => {
     const parsed = parse(['123', '--repo', `${OWNER}/${REPO}`, '--head', OVERRIDE_HEAD]);
@@ -102,7 +119,7 @@ describe('CS60 copilot-engage HEAD selection', () => {
   it('defaults the library poll HEAD to the PR headRefOid when headSha is undefined', async () => {
     let now = Date.parse('2026-06-04T12:00:00Z');
     const resolvedHeads = [];
-    const graphqlResponses = [prNode(PR_HEAD), identityNode(), reviewsAt(PR_HEAD)];
+    const graphqlResponses = [prNode(PR_HEAD), identityNode(), reviewRequests(), reviewsAt(PR_HEAD)];
 
     __testSeam.now = () => now;
     __testSeam.sleep = async (ms) => { now += ms; };

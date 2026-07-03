@@ -532,8 +532,9 @@ Exit codes:
   0  Copilot review found at the polled HEAD (or --no-poll: mutation accepted)
   2  bad usage (bad arguments, fork-source PR)
   3  poll timeout (mutation accepted but no review within --poll-timeout)
-  4  auth or GraphQL error
+  4  auth or GraphQL error (incl. requested-reviewer verify unavailable)
   5  identity cache write failed (use --cache-dir to override; CS45)
+  6  reviewer add did not land (silent no-op even after one re-add; CS92/LRN-160)
 `.trimStart(),
 
   version: `
@@ -3766,11 +3767,14 @@ async function cmdCopilotEngage(args, global) {
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } else if (result.review) {
       process.stdout.write(
-        `copilot-engage: ${result.login} review ${result.review.state} at ` +
+        `copilot-engage: ${result.login} verified review ${result.review.state} at ` +
           `${shortDisplaySha(result.review.commit.oid)} submitted ${result.review.submittedAt}\n`,
       );
     } else {
-      process.stdout.write(`copilot-engage: ${result.login} review requested; polling skipped\n`);
+      process.stdout.write(
+        `copilot-engage: ${result.login} review requested (unverified) — ` +
+          `reviewer requested but no review confirmed at HEAD (polling skipped)\n`,
+      );
     }
     process.exit(0);
   } catch (err) {
@@ -3990,10 +3994,15 @@ function parseRepoSlug(slug) {
 function copilotEngageExitCode(err) {
   if (err.kind === 'fork-source' || err.kind === 'bad-input') return 2;
   if (err.kind === 'timeout') return 3;
-  if (err.kind === 'auth-missing' || err.kind === 'network') return 4;
+  // CS92 C92-2: transient-read-unavailable reviewer verify is an upstream
+  // read failure, grouped with the network/auth family (4).
+  if (err.kind === 'auth-missing' || err.kind === 'network' || err.kind === 'reviewer-verify-unavailable') return 4;
   // CS45 C45-3: dedicated exit code for filesystem cache-write failures,
   // distinct from network/auth (kind=4) so consumers can branch on it.
   if (err.kind === 'cache-write-failed') return 5;
+  // CS92 C92-2 (LRN-160): the reviewer add returned success but the reviewer
+  // never landed even after one re-add — a definitive, non-transient failure.
+  if (err.kind === 'reviewer-not-requested') return 6;
   return 4;
 }
 
