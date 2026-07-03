@@ -1,9 +1,9 @@
 # CS94 — cut harness v0.13.0 (Minor)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs94/content
+**Started:** 2026-07-03
 **Closed:** —
 **Filed by:** yoga-ah (Claude Opus 4.8), 2026-07-03 — release CS following the CS93 (#407) close-out, per @henrik-me's "fix issue 407, then release a new version, do so without stopping."
 **Depends on:** CS93 merged to `main` (#411 squash `37b46e2`, close-out #412). Bundles the unreleased CS65 + CS85 + CS92 + CS93 accumulated since v0.12.0. Follows OPERATIONS.md § Release process.
@@ -77,11 +77,26 @@ No v0.13.0 release object, no v0.13.0 tag (local or remote), no stale duplicate 
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs94-plan-review | 588f9c11d99b | 2026-07-03T06:55:36Z | Go | v0.13.0 Minor correct (CS85 linter+CS65 archive force Minor); LRN-101 audit complete; F6 live probes match; publish override + issue-only notify documented. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | cs94-release-review (gpt-5.5; dispatched by yoga-ah) |
+| Notes | **Minor** SemVer release (v0.13.0; aggregate of unreleased CS65+CS85+CS92+CS93). Publish-to-Latest overrides the default C84-9 human-publish gate per @henrik-me's explicit "release … without stopping". Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go, hash `588f9c11d99b`). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Phase A cut (content): `npm version 0.13.0`, `CHANGELOG.md` `[Unreleased]→[0.13.0]` + fresh skeleton + compare links, README pin sweep (C94-1; D1-3) | active | yoga-ah | agent-id=yoga-ah \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — Post-merge Phase B: annotated tag `v0.13.0` on squash SHA + push; create + publish Release `--draft=false`; verify single release + Latest (C94-2/C94-4; D4-5) | pending | yoga-ah | after content merge |
+| T3 — Consumer notification (issue-only): `authzandentitlements` + `sub-invaders` (C94-3; D6) | pending | yoga-ah | `harness cross-repo open-issue`; Hard Rule §6 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3) |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS94 row) + CONTEXT.md |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File any release learnings; none expected on a clean cut |
 
 ## Notes / Learnings
 
