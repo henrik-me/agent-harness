@@ -365,6 +365,19 @@
         ["README.md", "LICENSE", "package.json", ".gitignore", ".editorconfig"],
         ["bin/", "lib/", "scripts/", "docs/", "examples/"]
       ]
+    },
+    "dispatch": {
+      "type": "object",
+      "description": "Optional configuration for the 'harness dispatch' subcommand (issue #423). Selects the language profile whose ecosystem-specific conventions and self-check commands are spliced into the canonical sub-agent briefing preamble (OPERATIONS.md § Mandatory briefing preamble). The language-agnostic core of the preamble (preflight, file ownership, required reading, fail-closed, report shape) is always emitted regardless of profile. Absent this block, dispatch behaves as if language_profile is 'node' (backward-compatible).",
+      "additionalProperties": false,
+      "properties": {
+        "language_profile": {
+          "type": "string",
+          "description": "Name of the language profile supplying the language-specific conventions + self-check commands for emitted sub-agent briefings. 'node' (default) yields the ESM/Node/npm toolchain conventions plus 'node --test'/'node -c' self-checks; 'dotnet' yields C#/.NET conventions (.csproj/.sln/Directory.Packages.props ownership bundles, NuGet central package management) plus 'dotnet build'/'dotnet test'/'dotnet format' self-checks. A '--language-profile <name>' CLI flag on 'harness dispatch' overrides this value per invocation.",
+          "enum": ["node", "dotnet"],
+          "default": "node"
+        }
+      }
     }
   },
   "$defs": {

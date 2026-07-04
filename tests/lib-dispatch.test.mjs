@@ -42,6 +42,80 @@ const MINIMAL_OPS_MD = [
   'Other content.',
 ].join('\n');
 
+// A structurally-complete fixture for the CS102 profile-splicing path:
+// core fence with both injection markers + a node and a dotnet profile fence.
+// emitBriefing() now splices a language profile into the core, so it requires
+// these markers/fences (MINIMAL_OPS_MD above intentionally lacks them and is
+// reserved for the pure extractPreamble tests).
+const PROFILE_OPS_MD = [
+  '# OPERATIONS',
+  '',
+  '### Mandatory briefing preamble (copy verbatim into every dispatch)',
+  '',
+  'Some prose explaining the discipline.',
+  '',
+  '```text',
+  '## CRITICAL PREFLIGHT (LRN-021)',
+  '',
+  '1. Record the SHA.',
+  '2. No commits.',
+  '',
+  '## Conventions to follow',
+  '',
+  '- Agnostic core convention (LF, no BOM).',
+  '<!-- harness:dispatch-language-conventions -->',
+  '',
+  '## Self-checks before reporting',
+  '',
+  '1. `git status --short`.',
+  '<!-- harness:dispatch-language-self-checks -->',
+  '',
+  '## Mandatory report shape',
+  '',
+  'STATUS: complete | partial | blocked',
+  '```',
+  '',
+  '#### Language profiles',
+  '',
+  'Intro prose.',
+  '',
+  '```text',
+  '## LANGUAGE PROFILE: node',
+  '',
+  '### conventions',
+  '',
+  '- ESM `.mjs` only, Node 20+ stdlib.',
+  '- Run `npm install` in fresh worktrees.',
+  '- `requireValue` guard for value-taking CLI flags.',
+  '',
+  '<!-- harness:profile-self-checks -->',
+  '',
+  '### self-checks',
+  '',
+  '2. `node --test` count delta.',
+  '3. `node -c` on authored `.mjs`.',
+  '```',
+  '',
+  '```text',
+  '## LANGUAGE PROFILE: dotnet',
+  '',
+  '### conventions',
+  '',
+  '- C#/.NET 8+; a service owns its `.csproj`.',
+  '',
+  '<!-- harness:profile-self-checks -->',
+  '',
+  '### self-checks',
+  '',
+  '2. `dotnet build`.',
+  '3. `dotnet test`.',
+  '```',
+  '',
+  '### Next section',
+  '',
+  'Other content.',
+].join('\n');
+
 test('extractPreamble returns the body of the ```text fence verbatim', () => {
   const body = extractPreamble(MINIMAL_OPS_MD);
   assert.equal(
@@ -164,22 +238,30 @@ test('renderTaskSections renders Do NOT touch / Required reading / Deliverables 
   assert.match(out, /## Decision authority[\s\S]*You may decide JSDoc style/);
 });
 
-test('emitBriefing wraps preamble in ```text fence by default', () => {
-  const out = emitBriefing({ operationsMd: MINIMAL_OPS_MD });
+test('emitBriefing wraps preamble in ```text fence by default (node profile spliced)', () => {
+  const out = emitBriefing({ operationsMd: PROFILE_OPS_MD });
   assert.ok(out.startsWith('```text\n## CRITICAL PREFLIGHT'), 'starts with text fence + preamble');
-  // The fence content ends with the last preamble line followed by closing fence.
-  assert.match(out, /2\. No commits\.\n```\n/);
+  // The default (node) profile is spliced in place of the core markers.
+  assert.match(out, /ESM `\.mjs`/);
+  assert.match(out, /node --test/);
+  // No injection/split markers survive in the emitted briefing.
+  assert.ok(!out.includes('<!-- harness:dispatch-language-conventions -->'));
+  assert.ok(!out.includes('<!-- harness:dispatch-language-self-checks -->'));
+  assert.ok(!out.includes('<!-- harness:profile-self-checks -->'));
+  // The core fence closes after the (spliced) preamble, before any appendix.
+  assert.match(out, /STATUS: complete \| partial \| blocked\n```\n/);
 });
 
 test('emitBriefing emits bare preamble body when includeFence is false', () => {
-  const out = emitBriefing({ operationsMd: MINIMAL_OPS_MD, includeFence: false });
+  const out = emitBriefing({ operationsMd: PROFILE_OPS_MD, includeFence: false });
   assert.ok(out.startsWith('## CRITICAL PREFLIGHT'), 'starts with bare preamble');
   assert.ok(!out.includes('```text'));
+  assert.match(out, /ESM `\.mjs`/); // node profile spliced by default
 });
 
 test('emitBriefing appends task-specific sections below the preamble', () => {
   const out = emitBriefing({
-    operationsMd: MINIMAL_OPS_MD,
+    operationsMd: PROFILE_OPS_MD,
     task: {
       cs: 'CS64',
       role: 'implementer',
@@ -195,7 +277,7 @@ test('emitBriefing appends task-specific sections below the preamble', () => {
 
 test('emitBriefing always ends with a trailing newline', () => {
   for (const includeFence of [true, false]) {
-    const out = emitBriefing({ operationsMd: MINIMAL_OPS_MD, includeFence });
+    const out = emitBriefing({ operationsMd: PROFILE_OPS_MD, includeFence });
     assert.ok(out.endsWith('\n'), `includeFence=${includeFence} must end with \\n`);
   }
 });

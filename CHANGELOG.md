@@ -11,6 +11,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **`harness dispatch` language profiles (#423):** the canonical sub-agent briefing preamble (`OPERATIONS.md § Mandatory briefing preamble`) is now split into a language-**agnostic** managed core (preflight, file ownership, required reading, fail-closed, report shape) plus selectable **language profiles** that inject the ecosystem-specific conventions + self-checks. A new optional top-level `dispatch.language_profile` key in `harness.config.json` (enum `node` | `dotnet`, default `node`) and a `--language-profile <name>` CLI override select the profile; `harness dispatch` splices the chosen profile into the core so a .NET consumer no longer has to negate Node/ESM/npm conventions in every dispatch. Config is parsed **fail-closed** (a malformed `harness.config.json` exits non-zero rather than silently defaulting) and an unknown profile exits 2. Backward-compatible — existing configs and dispatches resolve to the Node profile (Minor).
+
 ### Changed
 
 ### Documentation
