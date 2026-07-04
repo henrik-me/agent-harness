@@ -49,10 +49,35 @@ describe('CS63 C63-7 — workboard-only bypass is confined to the path allowlist
     assert.match(src, /outside-allowlist/, 'guard must report offending out-of-allowlist files');
   });
 
-  it('the four review gates still skip on the workboard-only label', () => {
-    const doc = yaml.load(read('.github/workflows/review-gates.yml'));
+  it('the four review gates always execute and short-circuit via a path-derived skip', () => {
+    const src = read('.github/workflows/review-gates.yml');
+    const doc = yaml.load(src);
     for (const name of ['review-log-evidence', 'copilot-review-attached', 'independence-invariant', 'review-threads-resolved']) {
-      assert.match(String(doc.jobs[name].if), /!contains\(github\.event\.pull_request\.labels\.\*\.name, 'workboard-only'\)/, `${name} keeps its label skip`);
+      const job = doc.jobs[name];
+      assert.ok(job, `${name} job must exist`);
+      // CS71 D71-3: the job-level label gate is REMOVED so the job always runs
+      // and its required-status-check context is always reported (no transient red).
+      assert.ok(
+        job.if === undefined || !String(job.if).includes('workboard-only'),
+        `${name} must not have a job-level workboard-only gate (always execute)`
+      );
+      // The FIRST step derives the skip; every OTHER step is gated by it.
+      assert.equal(job.steps[0].id, 'wb', `${name}: first step must compute the skip`);
+      for (let i = 1; i < job.steps.length; i++) {
+        assert.match(
+          String(job.steps[i].if),
+          /steps\.wb\.outputs\.skip != 'true'/,
+          `${name}: step ${i} must be gated by steps.wb.outputs.skip`
+        );
+      }
+      // The skip is path-derived from the allowlist regex, and fail-closed:
+      // skip=true is set ONLY in the allowlist-confined success branch.
+      assert.match(String(job.steps[0].run), ALLOWLIST_RE, `${name}: wb step must use the allowlist regex`);
+      assert.equal(
+        (String(job.steps[0].run).match(/skip=true/g) || []).length,
+        1,
+        `${name}: skip=true must be set exactly once (success branch only)`
+      );
     }
   });
 

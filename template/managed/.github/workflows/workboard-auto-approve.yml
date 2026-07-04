@@ -169,6 +169,7 @@ jobs:
           }
           # Allowed paths (exact OR prefix). Each line either an exact filename
           # or a path-prefix ending in `/`.
+          # harness:workboard-allowlist
           cat > allowed-paths.txt <<'EOF'
           WORKBOARD.md
           CONTEXT.md

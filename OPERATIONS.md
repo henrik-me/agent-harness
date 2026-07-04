@@ -213,6 +213,15 @@ live in `node bin/harness.mjs claim --help`; use the directory form for
 artifact-bearing CSs (see
 [TRACKING.md § Clickstop lifecycle](TRACKING.md#clickstop-lifecycle)).
 
+**Opening the claim PR — label at creation (CS71).** Open the workboard-only
+claim PR with `--label workboard-only` supplied in the `gh pr create` command
+itself: `gh pr create --base main --label workboard-only --title "..." --body-file ...`.
+Do **not** add the label post-hoc via `gh pr edit --add-label` — that fires a
+separate `labeled` event and creates a race (PR #305 green vs PR #306 red on
+the same command; see CS71 Background). Since CS71, evidence gates are also
+**path-derived** (a correctly-shaped workboard PR is green without the label),
+but the label is **still required** for `workboard-auto-approve.yml` to auto-merge.
+
 ### Pre-claim harvest gate (CS04+)
 
 Run `harness harvest` before claiming. `harness claim CS<NN>` (CS64) invokes
@@ -257,6 +266,14 @@ preflight: it refuses to proceed unless the active CS file's
 rename and the WORKBOARD row removal, and refuses to mark the close-out
 PR-ready until `CONTEXT.md` has also been updated (freshness gate). The
 verb NEVER commits — you own the commit message and the PR.
+
+**Opening the close-out PR — label at creation (CS71).** Same rule as the claim
+PR: open with `--label workboard-only` in the `gh pr create` command itself;
+do **not** add it post-hoc via `gh pr edit --add-label` (that fires a separate
+`labeled` event and creates the same race as the claim PR). Since CS71, evidence
+gates are also **path-derived** (a correctly-shaped close-out PR is green without
+the label), but the label is **still required** for `workboard-auto-approve.yml`
+to auto-merge.
 
 This gate is **mandatory** before opening the close-out PR and before
 the `active → done` rename. Run it against the merged content HEAD (or the
@@ -1823,6 +1840,17 @@ skip applicability and passes via `--skip-reasons <csv>`:
 | `workboard-only` | skip | skip | skip | skip | Short-circuits to exit 0; used for workboard-only PRs (claim/close-out) per CS35-7. |
 | `bot-author` | skip | skip | skip | run | A6 still runs because plan attestation is not author-dependent. |
 | `fork-source` | run | run | run | run | Read-only gates remain in force; A16 (CS41) is the gate this reason will skip. |
+
+**Path-derived skip (CS71).** Since CS71, the `workboard-only` evidence-gate
+skip is also **path-derived**: a PR whose entire diff is confined to the
+workboard path allowlist (`WORKBOARD.md`, `CONTEXT.md`, `LEARNINGS.md`,
+`project/clickstops/(planned|active|done)/`) skips the `review-gates` and
+`pr-evidence-lint` evidence gates **regardless of label presence**. The
+`workboard-only` label is therefore **not required to keep gates green** — a
+correctly-shaped, unlabelled workboard PR produces a green first run. The label
+**is still required** for `workboard-auto-approve.yml` to auto-merge; a
+correctly-shaped, unlabelled workboard PR is green yet will not auto-merge
+until labelled (intended).
 
 The harness MUST NOT call `gh pr view` or any other authenticated API to
 determine skip applicability — caller computes and passes the CSV. This
