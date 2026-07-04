@@ -11,13 +11,18 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+- **Bounded `workboard/maint-*` auto-merge branch pattern (CS91, [#395](https://github.com/henrik-me/agent-harness/issues/395) Rec C):** the managed `workboard-auto-approve.yml` `validate-and-approve` gate now also auto-approves `workboard-only` PRs whose branch matches `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` — ad-hoc workboard-allowlist **maintenance** PRs (e.g. a standalone `CONTEXT.md`/`LEARNINGS.md` correction) that are not claim/close/close-out or CS-filing PRs and previously failed the branch-name check. The pattern is anchored and slash-free so it cannot broaden into a `workboard/*` wildcard, and the `is_allowed()` path allowlist still constrains *which* files may change. Consumers adopt on the next `harness sync` (Minor).
+
 ### Changed
 
 ### Documentation
 
 - **copilot-engage --help wording (CS87):** corrected three help lines that described the engagement as a GraphQL `requestReviews mutation` / "mutation accepted"; the shipped primitive is the REST `gh pr edit --add-reviewer` request (CS37 / ADR-0004 proved `requestReviews` rejects the Copilot Bot). Help-string only — no flag, behavior, or exit-code change (Patch).
+- **Workboard merge-posture reframe (CS91, [#395](https://github.com/henrik-me/agent-harness/issues/395) Rec A):** `OPERATIONS.md § Workboard-only PR admin-bypass fallback` now frames maintainer **admin-override** (`gh pr merge <n> --admin --squash`) as the sanctioned **zero-secret default** for merging `workboard-only` PRs (available when the repo's `main-protection` ruleset grants repo admins an explicit bypass actor — the self-host ruleset does; the harness-generated minimal ruleset ships with `bypass_actors: []`, so consumers add the repo-admin bypass themselves, per [LRN-080](LEARNINGS.md#lrn-080)) — and presents the workboard GitHub App / `WORKBOARD_MERGE_TOKEN` PAT as **optional** automation for higher-volume/multi-maintainer setups, not a required or intended path. The new `workboard/maint-*` pattern is documented alongside the existing auto-merge branch patterns. Doc-only (Patch).
 
 ### Fixed
+
+- **`workboard-auto-approve.yml` hardening (CS91, [#394](https://github.com/henrik-me/agent-harness/issues/394)):** the privileged `pull_request_target` gate now (1) trims leading/trailing whitespace from each `allowed-paths.txt` entry in `is_allowed()` **before** the empty-line skip, so the path allowlist matches by construction rather than relying on YAML block-scalar dedent (a future indent/tab change can no longer silently leak whitespace and break the check); and (2) runs its `git diff` with `-c diff.external= --no-ext-diff --no-textconv`, disabling config- and `.gitattributes`-driven external/textconv diff drivers (defense-in-depth on a write-token/secrets workflow). Consumers adopt on the next `harness sync` (Patch).
 
 ## [0.16.0] — 2026-07-04
 

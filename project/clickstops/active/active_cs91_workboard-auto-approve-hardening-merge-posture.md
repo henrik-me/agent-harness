@@ -90,19 +90,20 @@ Verified at HEAD `3b20d0a` in `template/managed/.github/workflows/workboard-auto
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Harden `is_allowed()` whitespace-trim + `git diff` (`-c diff.external= --no-ext-diff --no-textconv`) in `template/managed/.github/workflows/workboard-auto-approve.yml` (C91-1, C91-2) | planned | — | Dominant deliverable; heredoc layout unchanged (R3). |
-| T2 — Mirror the hardening to the self-host `.github/workflows/workboard-auto-approve.yml`, byte-consistent (C91-6) | planned | — | Confirm copy provenance first (R5). |
-| T3 — Bounded maintenance-branch pattern `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` in the validate-and-approve regex + mirrored prose (C91-4) | planned | — | Gated by G91-1; no wildcard (R1). |
-| T4 — Merge-posture reframe in `template/composed/OPERATIONS.md` (+ root mirror): admin-override = zero-secret default, PAT/App optional (C91-3, C91-4) | planned | — | Coordinate with CS88, same block (R4). |
-| T5 — File #395 Rec B as a cross-linked planned follow-up CS (C91-5) | planned | — | Cross-link CS90. |
-| T6 — Tests: allowlist whitespace guard + maintenance-regex accept/reject + TSV parser on plain edit + rename `R` entry (R2) | planned | — | `node --test tests/*.test.mjs` green. |
-| T7 — `CHANGELOG.md` `[Unreleased]` entry; reference #394 for auto-close | planned | — | SemVer per OPERATIONS § SemVer policy. |
+| T1 — Harden `is_allowed()` whitespace-trim + `git diff` (`-c diff.external= --no-ext-diff --no-textconv`) in `template/managed/.github/workflows/workboard-auto-approve.yml` (C91-1, C91-2) | done | cs91-workflow | Applied to both copies; heredoc layout unchanged (R3). |
+| T2 — Mirror the hardening to the self-host `.github/workflows/workboard-auto-approve.yml`, byte-consistent (C91-6) | done | cs91-workflow | Both copies byte-identical (16295 bytes). |
+| T3 — Bounded maintenance-branch pattern `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` in the validate-and-approve regex + mirrored prose (C91-4) | done | cs91-workflow | G91-1 Option A; final alternation in `^(...)$`, slash-free (R1). |
+| T4 — Merge-posture reframe in `template/composed/OPERATIONS.md` (+ root mirror): admin-override = zero-secret default, PAT/App optional (C91-3, C91-4) | done | cs91-docs | Base↔root lockstep (sync-check clean); #369 prose left for CS88 (R4). |
+| T5 — File #395 Rec B as a cross-linked planned follow-up CS (C91-5) | done | yoga-ah | Filed planned CS106 (hash 257384654a2e); R1 Needs-Fix→R2 Go-with-amendments (gpt-5.5); cross-links CS90 + #402. |
+| T6 — Tests: allowlist whitespace guard + maintenance-regex accept/reject + TSV parser on plain edit + rename `R` entry (R2) | done | cs91-workflow | `tests/cs91-workboard-auto-approve-hardening.test.mjs` (29 tests). |
+| T7 — `CHANGELOG.md` `[Unreleased]` entry; reference #394 for auto-close | done | cs91-docs | 3 bullets (maint pattern=Minor, reframe+hardening=Patch); refs #394/#395. |
 | Close-out: docs + restart state | planned | — | Update WORKBOARD.md + CONTEXT.md + relevant docs so a fresh agent can restart from actual state. |
 | Close-out: learnings + follow-ups | planned | — | File LEARNINGS.md entries + ensure the #395 Rec B follow-up CS is planned. |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **G91-1 resolved → Option A (bounded widen).** Approved by @henrik-me on 2026-07-04. Add the bounded, anchored, slash-free `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` alternation to the `validate-and-approve` branch-name regex (C91-4) so ad-hoc workboard-allowlist maintenance PRs auto-merge like claim/close PRs; the `is_allowed()` path allowlist still constrains *which* files may change. Plan R2 (gpt-5.5, Go) already vetted this as safe. Closes #395 Rec C.
+- Implementation dispatched to two disjoint-ownership background sub-agents: `cs91-workflow` (both `workboard-auto-approve.yml` copies + a new `tests/cs91-*.test.mjs`) and `cs91-docs` (`template/composed/OPERATIONS.md` + root mirror + `CHANGELOG.md`). #395 Rec B follow-up CS (C91-5) authored orchestrator-side.
 
 ## Plan-vs-implementation review
 
