@@ -12,6 +12,46 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-199
+
+```yaml
+id: LRN-199
+date: 2026-07-04
+category: process
+source_cs: CS91
+status: open
+tags: [sub-agent, file-ownership, decision-scope, pvi-gate, ownership-seam]
+claim_area: dispatch
+```
+
+**Problem:** CS91 Decision C91-3 read "reframe merge-posture docs ... In composed OPERATIONS.md **(+ the workflow header)**". The orchestrator split implementation into two disjoint-ownership sub-agents: `cs91-docs` owned `OPERATIONS.md`/`CHANGELOG.md`; `cs91-workflow` owned the `workboard-auto-approve.yml` copies. The "+ the workflow header" clause landed in `cs91-workflow`'s files but was listed under `cs91-docs`'s deliverable — so neither sub-agent's explicit deliverable list included it, and the workflow header was left contradicting the reframed docs.
+
+**Finding:** When a single Decision's scope **spans two sub-agents' file ownership** (here: reframe X in a doc file AND a header comment in a workflow file owned by a different sub-agent), the cross-file half falls through the ownership seam unless it is explicitly assigned to exactly one owner's deliverable list. Disjoint file ownership (LRN-016) prevents write races but does NOT guarantee decision coverage — a decision can end up owned by no one. At dispatch time, decompose each Decision into per-file tasks and ensure every touched file is named in some sub-agent's deliverables; a Decision whose file set crosses ownership boundaries must name the cross-file part in one specific sub-agent's deliverables (or the orchestrator retains it).
+
+**Evidence:** CS91, 2026-07-04. C91-3 named "OPERATIONS.md + the workflow header"; `cs91-docs` deliverable 3 said "template/composed/OPERATIONS.md (+ root mirror)" (no header); `cs91-workflow` deliverables D1–D5 covered trim/git-diff/regex/tests (no header reframe). The merged content left both `workboard-auto-approve.yml` headers calling the App the "Primary merge path". `cs91-pvi` returned NEEDS-FIX; fixed in fast-follow PR #466 (`86c97f2`).
+
+**Disposition:** Open — recommend a dispatch-time check: map every Decision's touched files to a single owning sub-agent deliverable and flag any Decision whose file set crosses ownership boundaries. Fold into OPERATIONS.md § Sub-agent dispatch at the next process-doc CS.
+
+### LRN-198
+
+```yaml
+id: LRN-198
+date: 2026-07-04
+category: process
+source_cs: CS91
+status: open
+tags: [sub-agent, parallel-dispatch, harness-lint, aggregate, shared-worktree, self-check]
+claim_area: dispatch
+```
+
+**Problem:** During CS91's parallel wave, both `cs91-workflow` and `cs91-docs` sub-agents reported their briefed `node bin/harness.mjs lint` self-check as FAIL — not because of their own owned files, but because the orchestrator-authored `planned_cs106_*.md` (a peer's in-progress file, not yet carrying its plan-review attestation) failed the whole-cwd `clickstop-plan-review` linter. `harness lint` scans the entire working tree, so a sub-agent's "lint exit 0" self-check is blocked by files it is explicitly forbidden to touch.
+
+**Finding:** The `harness lint` aggregate is **not sub-agent-scoped** — it validates the whole cwd, not just a sub-agent's owned files. In a shared-working-tree parallel dispatch, one agent's (or the orchestrator's) in-progress un-owned file can fail the aggregate even when every owned-file check is green, so a briefed "harness lint must exit 0" self-check is not a reliable owned-work signal during a parallel wave. Briefings should either (a) scope the lint expectation to owned files and treat a failure isolated to a non-owned file as an escalation (not the sub-agent's bug), or (b) the orchestrator should sequence attestation-completing edits (e.g. pin a planned CS's plan-review row) before dispatching parallel sub-agents whose self-checks run the aggregate.
+
+**Evidence:** CS91, 2026-07-04. Both `cs91-workflow` and `cs91-docs` final reports flagged `harness lint` FAIL solely on `clickstop-plan-review` for the untracked `planned_cs106_workboard-review-evidence-required-check-posture.md` (empty `## Plan review` table at the time), while composed-blocks / text-encoding / templates / workflow-pins / xref and all owned-file checks passed. The failure cleared once the orchestrator pinned CS106's R2 attestation row.
+
+**Disposition:** Open — recommend a dispatch-briefing doctrine note (interpret a lint failure isolated to a non-owned file as an escalation, not an owned-work failure) and/or an ownership-scoped lint mode. Fold into OPERATIONS.md § Self-checks at the next process-doc CS.
+
 ### LRN-197
 
 ```yaml

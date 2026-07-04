@@ -1,10 +1,10 @@
 # CS91 — `workboard-auto-approve.yml` hardening (#394) + workboard-merge posture doc reframe & maintenance-branch pattern (#395)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs91/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** Triage of two coupled open inbound issues — [#394](https://github.com/henrik-me/agent-harness/issues/394) (bug) + [#395](https://github.com/henrik-me/agent-harness/issues/395) (design) (2026-07-02 by `omni-ah-c3`). Both surfaced from `henrik-me/sub-invaders` adopting v0.12.0's `workboard-auto-approve.yml`; grouped because both touch that one workflow + its surrounding docs (edit-collision avoidance).
 **Depends on:** none. (Distinct from CS71, which fixes the *label-timing race* in evidence-gate skipping — a different concern in a different file.)
 
@@ -107,4 +107,10 @@ Verified at HEAD `3b20d0a` in `template/managed/.github/workflows/workboard-auto
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck; `cs91-pvi` R1, `cs91-pvi2` R2)
+**Date:** 2026-07-04T03:36:00Z
+**Outcome:** GO
+
+R1 (`cs91-pvi`, at merged content `916e7e7`) returned **NEEDS-FIX** on two divergences: (1) C91-3's "+ the workflow header" reframe was dropped — both `workboard-auto-approve.yml` headers still called the App the "Primary merge path" (a decision that spanned the `cs91-docs`/`cs91-workflow` ownership seam; see [LRN-199](../../../LEARNINGS.md#lrn-199)); (2) T6/R2's promised TSV-parser test (hardened vs plain `git diff --name-status -M` on a plain edit + rename `R` entry) was missing. Both were fixed in fast-follow **PR #466** (`86c97f2`): the header comment (both copies, byte-identical) now frames maintainer `gh pr merge <n> --admin --squash` as the zero-secret default with App/PAT optional (LRN-080 bypass qualification), and a real temp-repo git test asserts the `--name-status -M` TSV contract holds under the hardened flags.
+
+R2 (`cs91-pvi2`, at `86c97f2`) → **GO**: all 5 deliverables and decisions C91-1..C91-6 `match`; both R1 findings resolved; test coverage **sufficient** (structural/content guards + behavioral tests for the C91-1 trim, C91-2/R2 TSV preservation, C91-4 regex accept/reject, and byte-lockstep). `harness lint` 35/0/3; `sync --mode=check` no drift; cs91 tests 30 (28 pass / 2 skip / 0 fail). #395 Rec B deferred to planned CS106; #369/CS88 prose untouched.
