@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-202
+
+```yaml
+id: LRN-202
+date: 2026-07-04
+category: architectural
+source_cs: CS26
+status: open
+tags: [harness-lint, init, config-placeholders, issue-146, first-run-experience, plan-review]
+claim_area: harness-cli
+```
+
+**Problem:** CS26 Finding #3 added a `config-placeholders` linter, registered as a hard `cmdLint` check, that flags un-replaced `REPLACE_ME` identity placeholders in a consumer's `harness.config.json`. But a FRESH `harness init` intentionally ships those placeholders (`project.repo`, `templating.*`) for the consumer to fill in — so the linter fails on a pristine fresh init, directly conflicting with issue #146 AC #1 ("a freshly-init'd consumer passes `harness lint --quiet` exit 0", enforced strict by `tests/cs46-*.test.mjs` test 5). Two GPT-5.5 plan-review rounds (R2/R3) did NOT catch this cross-CS contract conflict; the implementer sub-agent surfaced it and escalated rather than silently gating the linter.
+
+**Finding:** A new hard `harness lint` check that flags a scaffold's INTENTIONAL not-yet-configured state is in tension with the "fresh init is lint-clean" quality bar. Plan reviews scoped to a CS's own deliverables miss conflicts with contracts owned by OTHER CSs' tests. The reconciliation chosen (CS26 plan R6, Option A): treat the linter's failure on a pristine config as intended and refine #146 to "structurally lint-clean (`harness lint --skip config-placeholders`) PLUS a directive fill-identity reminder" — cs46 test 5 asserts structural cleanliness with `--skip config-placeholders` and separately asserts the linter flags the unfilled config (mirrored in cs09 test 7). A documented alternative (Option C) relocates the check to a `harness sync --mode=check` gate so `harness lint` stays strictly #146-clean while enforcement happens at the sync harm-point (placeholders propagate into rendered docs at sync).
+
+**Evidence:** CS26, 2026-07-04. `tests/cs46-empty-state-and-review-discoverability.test.mjs` test 5 (`--skip config-placeholders` structural check + `--only config-placeholders` flag assertion); `tests/cs09-init.test.mjs` test 7 (same pattern); CS26 plan R6. The conflict was invisible to R2/R3 (both scoped to CS26 deliverables) and only appeared when the implementer ran the full suite (`cs46`/`cs15d` broke).
+
+**Disposition:** Open — recommend (a) a plan-review checklist item: "does a new hard lint check interact with any existing 'fresh-init lint-clean' / consumer-scaffold contract?"; and (b) evaluate the Option C sync-gate relocation as a follow-up if the strict letter of #146 is preferred over a hard lint reminder. claim_area: harness-cli.
+
 ### LRN-201
 
 ```yaml
