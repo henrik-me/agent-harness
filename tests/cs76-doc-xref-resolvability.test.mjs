@@ -235,6 +235,13 @@ describe('check-doc-xref-resolvability check (e) — composed-process-base xref'
     assert.match(stderr, /harness-internal "docs\/adr" reference must be genericized/);
   });
 
+  it('(e) fails (exit 1) on a mixed-case `Docs/ADR` reference (case-insensitive ban)', () => {
+    const dir = buildTree(opsBase('See the project ADR under Docs/ADR/0004-x.md for the transcript.'));
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /harness-internal "docs\/adr" reference must be genericized/);
+  });
+
   // ----- (e): fenced code blocks are skipped -------------------------------
 
   it('(e) does NOT flag a `docs/adr` link inside a fenced code block', () => {

@@ -605,10 +605,11 @@ const QUALIFIER_WINDOW = 80;
 // every form -- a relative markdown link `](docs/adr/...)`, an inline-code path
 // `docs/adr/...`, a bare `docs/adr/` directory token, and a hardcoded
 // henrik-me/agent-harness slug URL `https://github.com/.../docs/adr/...` --
-// contains this literal substring. There is deliberately NO allowlist: the
-// composed bases carry the ADR rationale as link-free prose (READMEGUIDE
-// precedent from CS81).
-const DOCS_ADR_RE = /docs\/adr/;
+// contains this literal substring (matched case-INSENSITIVELY so a future
+// `Docs/adr` / `docs/ADR` spelling cannot slip a dangling ADR path past the
+// guard). There is deliberately NO allowlist: the composed bases carry the ADR
+// rationale as link-free prose (READMEGUIDE precedent from CS81).
+const DOCS_ADR_RE = /docs\/adr/i;
 
 // Audited DESCRIPTIVE mentions (C76-1): lines that merely NAME a sibling as data
 // (an example doc-set list; the genericity-invariant doc set) rather than cross-
