@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-194
+
+```yaml
+id: LRN-194
+date: 2026-07-04
+category: tooling
+source_cs: CS104
+status: open
+tags: [review-gates, ci, pull_request_review, copilot, github-actions, async]
+claim_area: review-gates
+```
+
+**Problem:** CS103 (#424a) added a `pull_request_review: [submitted]` trigger to `pr-evidence-lint.yml` so `read-only-gates` would auto-re-run when the async Copilot review lands. Observed during the **v0.15.0 release cut (PR #452)**: the `copilot-pull-request-reviewer` bot's review submission did **NOT** fire a workflow-triggering `pull_request_review` event — no review-triggered `read-only-gates` run appeared (`gh run list` showed only `pull_request` runs), and the gate still needed a manual `gh run rerun`. Separately, `copilot-review-attached` lives in `review-gates.yml`, which CS103 did not touch at all.
+
+**Finding:** GitHub does not run `pull_request_review`-triggered workflows for the Copilot reviewer **bot**'s review the way it does for a human review, so CS103's auto-rerun helps only for HUMAN review submissions — it does **not** eliminate the manual rerun for the async **Copilot** case, which is the actual #424a pain. A robust fix likely needs a different mechanism (a `workflow_run`-chained rerun keyed on the Copilot review, a short-interval `schedule` re-check while a PR is open, or `repository_dispatch`) AND must also cover `copilot-review-attached` in `review-gates.yml`.
+
+**Evidence:** v0.15.0 release PR #452 — after Copilot's `COMMENTED` review at HEAD `516c8c0`, `gh run list --workflow pr-evidence-lint.yml --branch cs104/content` showed only `pull_request`-triggered runs (no `pull_request_review`); `read-only-gates` + `copilot-review-attached` both stayed red until a manual `gh run rerun --failed`.
+
+**Disposition:** Open — #424a is only **partially** resolved (human reviews auto-rerun; Copilot's bot review does not). Candidate for a follow-up CS: find a mechanism that fires on the Copilot bot review, and extend it to `review-gates.yml`'s `copilot-review-attached`.
+
 ### LRN-193
 
 ```yaml
