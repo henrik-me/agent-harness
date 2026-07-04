@@ -1,10 +1,10 @@
 # CS24 — Apply LRN-101: mechanically enforce CHANGELOG-touch task on distributed-surface CSs
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs24/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** Pre-CS16 disposition of [LRN-101](../../../LEARNINGS.md#lrn-101) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. The LRN's recommended fix is two-pronged: (a) **pilot** CHANGELOG-on-every-CS-close-out in CS16 + CS21 (CS16's close-out added a CHANGELOG-touch row to its `## Tasks` table; **CS21 was later closed obsolete on 2026-06-09 without implementation** — see Status update below, so no pilot run was produced from CS21), and (b) **enforce** mechanically by extending `scripts/check-clickstop.mjs`. This CS handles part (b). Until CS24 lands, the convention is honour-system only.
 **Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. **CS16 closed 2026-05-11** (one pilot satisfied); **CS21 closed obsolete 2026-06-09** per the disposition pass below (no pilot run produced). The "at least one pilot close-out" gate is satisfied by CS16 alone. May claim earlier if any pilot LRNs from CS16 invalidate the design here, in which case re-author this plan first.
 
