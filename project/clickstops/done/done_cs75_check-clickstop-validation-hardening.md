@@ -1,10 +1,10 @@
 # CS75 — check-clickstop validation hardening: directory-form recursion + fence-aware PVI gate + deliverable-target F-check
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs75/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** omni-ah-c3 (Claude Opus 4.8), 2026-06-30 — filed from the open-LRN harvest triage requested by @henrik-me. Bundles **LRN-167** (`check-clickstop.mjs` directory-form + fence-aware-PVI gaps, surfaced while building `review-cs` at CS66) and **LRN-152** (plan-review deliverable-target-resolves-to-live-surface check, orphaned when its designated home CS66 closed without absorbing it).
 **Depends on:** none (hard). Touches `scripts/check-clickstop.mjs` (CS03b/CS70), `lib/doc-schema.mjs`, `lib/review-cs.mjs` (CS66 — the fence-aware reference), and `REVIEWS.md` plan-review doctrine (CS58 § 2.6c). No in-flight CS owns these surfaces.
 
@@ -104,4 +104,10 @@ Separately, **LRN-152** recorded that plan reviews must verify a "modify file X"
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** gpt-5.5 (independent of the claude-opus-4.8 implementers)
+**Date:** 2026-07-04
+**Outcome:** GO
+
+**R1 — NEEDS-FIX (analyzed the merged squash `d6ce218`):** every deliverable Present/Correct EXCEPT **D6** (the LEARNINGS-log flip), which is itself a close-out task. Confirmed on main: D1 (dir-form recursion + fence-aware PVI presence/body via the shared helper; `DIRNAME_RE` derived from `FILENAME_RE`; missing/stray inner file = structure error), D2 (`lib/markdown-fence.mjs` — zero-dep `fenceMask`/`findHeadingIndex`/`extractHeadingSectionBody`, fence-aware start+end, whitespace-tolerant), D3 (`review-cs` shared helper + best-effort advisory, private `findPviHeadingIndex` gone), D4 (`REVIEWS.md` § 2.6c F2 + composed lockstep byte-identical, `sync --mode=check` no drift), D5 (tests pass), D7 (CHANGELOG `[Unreleased]` Fixed+Changed), D8 (`done_cs01`/`done_cs22`/`done_cs65` repairs), and all exit criteria. Both orchestrator decisions assessed sound: folding LRN-152 into the existing F2 row (vs a new F7 — avoids stale F1–F6 cross-doc refs, within LRN-152's scope) and the in-band `done_cs65` repair (same class as the declared `done_cs22` fix, required by the "lint green over the live tree" exit criterion).
+
+**R2 — GO (D6 re-attest on the close-out branch):** D6 closed — **LRN-167 + LRN-152** flipped `open → applied` (citing `d6ce218`), **LRN-204** filed (the directory-form close-out inner-file-rename/status-flip gap `done_cs65` surfaced), and `CONTEXT.md`'s top entry updated to **CS75 CLOSED**; LEARNINGS + CONTEXT lint-clean. Overall gate re-confirmed green (`harness lint` 36/0/3 on the close-out branch, `node --test` 1882 pass / 0 fail, `check-clickstop --dir project/clickstops` 128 files / 0 errors). No remaining gaps.
