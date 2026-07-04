@@ -1,10 +1,10 @@
 # CS102 — harness dispatch: language-agnostic preamble core + consumer-selectable language profile
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs102/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound enhancement #423 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; a .NET 10 / C# consumer). 
 **Depends on:** none. Touches `lib/dispatch.mjs`, `bin/harness.mjs` (cmdDispatch), `schemas/harness.config.schema.json`, `OPERATIONS.md` + `template/composed/OPERATIONS.md` (preamble restructure), tests. Disjoint from the concurrent CS100 (#421, yoga-ah) surfaces.
 
@@ -88,12 +88,12 @@ The design must preserve `dispatch.mjs`'s "extract from the rendered doc" levera
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `schemas/harness.config.schema.json`: add `dispatch.language_profile` (enum node/dotnet, default node, additionalProperties:false) (C102-1) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
-| T2 — `OPERATIONS.md` + `template/composed/OPERATIONS.md`: preamble restructure — agnostic core (markers in Conventions/Self-checks) + `#### Language profiles` node+dotnet fences; composed placeholders preserved (C102-2/C102-5) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
-| T3 — `lib/dispatch.mjs`: `extractLanguageProfile()` + `languageProfile` threading + marker splice + fail-closed (C102-3) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
-| T4 — `bin/harness.mjs` cmdDispatch: fail-closed config load (existsSync+JSON.parse, not loadConfig) + `--language-profile` flag + validate + help (C102-4) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
-| T5 — tests (`lib-dispatch` + new `cs102-*`: node completeness golden, dotnet, unknown→exit2, flag/config select, malformed-config fail-closed) + `CHANGELOG.md` `[Unreleased]` Added (#423) | active | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=pending \| learnings=0 |
-| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| T1 — `schemas/harness.config.schema.json`: add `dispatch.language_profile` (enum node/dotnet, default node, additionalProperties:false) (C102-1) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=complete \| learnings=0 |
+| T2 — `OPERATIONS.md` + `template/composed/OPERATIONS.md`: preamble restructure — agnostic core (markers in Conventions/Self-checks) + `#### Language profiles` node+dotnet fences; composed placeholders preserved (C102-2/C102-5) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=complete \| learnings=0 |
+| T3 — `lib/dispatch.mjs`: `extractLanguageProfile()` + `languageProfile` threading + marker splice + fail-closed (C102-3) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=complete \| learnings=0 |
+| T4 — `bin/harness.mjs` cmdDispatch: fail-closed config load (existsSync+JSON.parse, not loadConfig) + `--language-profile` flag + validate + help (C102-4) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=complete \| learnings=0 |
+| T5 — tests (`lib-dispatch` + new `cs102-*`: node completeness golden, dotnet, unknown→exit2, flag/config select, malformed-config fail-closed) + `CHANGELOG.md` `[Unreleased]` Added (#423) | done | yoga-ah-c2 | agent-id=yoga-ah-c2 \| role=implementer (sub-agent cs102-impl) \| report-status=complete \| learnings=0 |
+| Independent content review (GPT-5.5) | done | gpt-5.5 | R1 Go @ 182f931 (cs102-review); R2 Go @ dd47370; R3 Go @ 6a8f0f8 (post-v0.15.0 rebase); +golden fast-follow PR #454 (R1-R4 Go); Copilot COMMENTED (nits adopted, clean at HEAD); reviewer ≠ implementer per REVIEWS § 2.3 |
 | Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS102 row) + CONTEXT.md; OPERATIONS.md is a rendered-doc change (composed lockstep). |
 | Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File LEARNINGS.md language-profile-vs-agnostic-core entry; #423 auto-closes on merge. |
 
@@ -103,4 +103,21 @@ The design must preserve `dispatch.mjs`'s "extract from the rendered doc" levera
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck; background agents `cs102-pvi` → `cs102-pvi2`, independent of the claude-opus implementer per REVIEWS § 2.3)
+**Date:** 2026-07-04T00:45:00Z
+**Outcome:** GO
+
+Reviewed the CS102 plan (§ Decisions C102-1…C102-6, § Deliverables 1–8, § Exit criteria) against the merged content (PR #451 squash `35c1f59` + the D6a golden fast-follow PR #454 squash `3100b58`).
+
+| Deliverable | Outcome | Assessment |
+|---|---|---|
+| 1 — schema `dispatch.language_profile` | match | Optional top-level, enum `node`/`dotnet`, default `node`, `additionalProperties:false`. |
+| 2 — OPERATIONS.md core + profiles | match | Agnostic core (PREFLIGHT/ownership/reading/independence/report-shape + agnostic conventions) with 2 injection markers + `#### Language profiles` node/dotnet fences. |
+| 3 — composed lockstep | match | `template/composed/OPERATIONS.md` mirrors the restructure preserving `{{harness_invoke}}`/`{{agent_suffix}}` placeholders; `sync --mode=check` no drift. |
+| 4 — `lib/dispatch.mjs` | match | `extractLanguageProfile` + `spliceLanguageProfile` + `languageProfile` threading; fail-closed on unknown/missing profile. |
+| 5 — `cmdDispatch` | match | Fail-closed config load (`existsSync`+`JSON.parse`, NOT `loadConfig`); `--language-profile` flag; `die 2` on unknown; help updated. |
+| 6 — tests | match | +23 functional tests (splice/no-dangling-markers, node completeness, dotnet exclusion, unknown→exit2, flag/config select, malformed-config fail-closed) **+ 2 LF-normalized golden regression tests** freezing the full node/dotnet briefing (D6a, filed as fast-follow #454). |
+| 7 — CHANGELOG | match | `[Unreleased] → Added` #423 (correctly NOT under `[0.15.0]`, since CS102 merged after the v0.15.0 tag). |
+| 8 — LEARNINGS | done at close-out | LRN-195 filed in this close-out. |
+
+**Accepted divergence (remediated):** the initial content PR (#451) implemented D6's node golden as token-**completeness** assertions but not an exact-output **stable** golden (C102-2a). The close-out PVI (`cs102-pvi`) returned NEEDS-FIX on this; it was remediated by the golden fast-follow PR #454 (LF-normalized golden fixtures + `assert.equal`), and the re-run PVI (`cs102-pvi2`) returned **GO** (5/5 exit criteria; D6 resolved). The `node` output is capability-complete but reordered (agnostic bullets grouped ahead of the language block) — accepted per C102-2/C102-2a. #423 CLOSED on merge; no overclaims.
