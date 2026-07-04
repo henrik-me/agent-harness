@@ -1,10 +1,10 @@
 # CS102 — harness dispatch: language-agnostic preamble core + consumer-selectable language profile
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs102/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** yoga-ah-c2 (Claude Opus 4.8), 2026-07-03 — from inbound enhancement #423 (filed by the harness orchestrator from consumer repo `henrik-me/authzandentitlements`, CS10; a .NET 10 / C# consumer). 
 **Depends on:** none. Touches `lib/dispatch.mjs`, `bin/harness.mjs` (cmdDispatch), `schemas/harness.config.schema.json`, `OPERATIONS.md` + `template/composed/OPERATIONS.md` (preamble restructure), tests. Disjoint from the concurrent CS100 (#421, yoga-ah) surfaces.
 
