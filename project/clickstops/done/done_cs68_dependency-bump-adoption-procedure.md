@@ -1,10 +1,10 @@
 # CS68 — Dependency-bump adoption procedure + non-CS review-tooling support
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs68/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** Out-of-CS `js-yaml` dependency-bump adoption (2026-06-07 by `yoga-ah-c2`). Surfaced while adopting Dependabot #226 as PR #262 (`js-yaml` 4.1.1→4.2.0, a DoS-hardening bump): the harness has no written procedure for adopting a Dependabot/dependency PR, and the review-evidence tooling is clickstop-centric so the bot/deps PR could not use it.
 **Depends on:** None hard from prior CSs. Cross-references CS59 (content/release-PR admin-merge doctrine) — coordinate to avoid duplicating that section. May claim independently of prior CSs. **CS64b** (hard, added 2026-06-10) — the dep-bump branch flow (`deps/<pkg>-<ver>`) allocates a clone for re-creation + lockfile regen and must use the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2); the adoption procedure references those primitives as the required pattern.
 
@@ -95,8 +95,25 @@ Already-adequate doctrine (NOT in scope to restate): the owner-override `gh pr m
 
 ## Notes / Learnings
 
-Genesis: PR #262 (`deps/js-yaml-4.2.0`, merged `e151fa6`) adopted Dependabot #226 through the review-evidence gates with hand-authored evidence; the hand-authoring + missing procedure is what this CS removes. Full execution notes filled at claim time.
+Genesis: PR #262 (`deps/js-yaml-4.2.0`, merged `e151fa6`) adopted Dependabot #226 through the review-evidence gates with hand-authored evidence; the hand-authoring + missing procedure is what this CS removes.
+
+**Execution (2026-07-04, yoga-ah-c2):** Content **PR #475** (squash `30d626f`) admin-squash-merged. Two disjoint background sub-agents (`cs68-docs`, `cs68-code` — both `claude-opus-4.8`) + orchestrator integration. Review-of-record: **gpt-5.5 rubber-duck R1 Needs-Fix → R2/R3 Go** (R1 caught a real Blocking bug — `validateContentPr`'s fork gate was dead because `PR_VIEW_FIELDS` never requested `isCrossRepository`; fixed + regression-tested) + **Copilot COMMENTED** (2 nits applied — non-CS prompt label + branch-error `|`→`or`; 1 nit resolved-not-refixed — `MAINTENANCE_BRANCH_RE`'s `/` is intentional for scoped npm packages `deps/@scope/pkg-ver` + dependabot nested branches). Scope additions beyond the literal C68-3 enumeration (both justified + test-covered): `MAINTENANCE_BRANCH_RE` in `validateContentPr` (the non-CS reject fired one gate before `extractCsIdFromBranch`) and the `isCrossRepository` fork-gate fix.
+
+**Deviation — LRN-157 → LRN-203 (per LRN-143):** C68-4 / Deliverable 4 / Exit criterion 4 name "LRN-157", but that id was concurrently claimed by **CS63c/CS64b** (the temp-dir/clone disposer pattern; `LEARNINGS.md#lrn-157`, referenced by `lib/disposers.mjs`, `OPERATIONS.md`, tests) when the CS68 plan was authored (2026-06-08). The highest existing LRN is 202, so the CS68 close-out learning is filed as **LRN-203** (`process`, `applied`, `source_cs: CS68`), cross-referencing LRN-081 + LRN-153 + CS59 as planned. The hashed `## Decisions`/`## Deliverables` rows are left intact; this note records the number correction.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (`cs68-pvi`, background rubber-duck; independent of implementer `claude-opus-4.8`)
+**Analyzed HEAD:** `30d626f0932d97ca77c2e7cc1f934014de67976b` (merged content PR #475)
+**Date:** 2026-07-04
+**Outcome:** GO
+
+Deliverable / exit-criterion mapping:
+- **D1 (C68-1)** — met. `OPERATIONS.md § Dependency-bump adoption` (root + byte-identical composed mirror), 8 ordered steps, cross-links CS59 C59-3 + LRN-081 (not restating); anchors resolve.
+- **D2 (C68-2)** — met. `deps/<pkg>-<ver>` in the INSTRUCTIONS.md branch-naming bullet + byte-identical composed mirror. Plan's `template/managed/INSTRUCTIONS.md` target corrected to the live composed mirror (accepted).
+- **D3 (C68-3)** — met. Non-CS routing + `resolveNonCsImplementerModels` union/superset invariant + independence guard preserved + clickstop path unchanged; 17 tests cover flag/body/union/conflict/missing-source/independence/fork-gate.
+- **D4 (C68-4)** — the close-out learning is filed at close-out as **LRN-203** (see the LRN-157 deviation above).
+- **D5 (C68-5)** — met. CHANGELOG `[Unreleased]` Added + Documentation entries.
+- **Exit criteria 1-7** — 1 met; 2 met (composed-mirror correction accepted); 3 met (tests green); 4 satisfied by LRN-203; 5 met (`harness lint --quiet` 36/0/3); 6 met; 7 met (this gate).
+
+Rationale: all content-PR deliverables (D1/D2/D3/D5) met, mirrored surfaces in lockstep, C68-3/R4 sufficiently test-covered; the only close-out item was the CS68 learning (LRN-203). No NEEDS-FIX.
