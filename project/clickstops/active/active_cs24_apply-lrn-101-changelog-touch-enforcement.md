@@ -127,24 +127,65 @@ CS24 close-out is permitted only when **all** of the following are true and reco
 | Reviewer model | gpt-5.5 |
 | Implementer agent | yoga-ah-c2 |
 | Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
-| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer confirmed at close-out (new date-grandfathered `check-clickstop` enforcement). |
+| Notes | **Minor** SemVer — a new date-grandfathered enforcement added to the `check-clickstop` linter (OPERATIONS.md SemVer table: "new linter ⇒ Minor"; can newly fail a consumer's `active/` CI). Independence per REVIEWS § 2.3 — review-of-record `gpt-5.5` ≠ implementer `claude-opus-4.8`. Implementer sub-agent `cs24-changelog-enforce` (claude-opus-4.8). |
 
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — Linter extension: add `checkChangelogTouchTask` + `CHANGELOG_TOUCH_ENFORCEMENT_DATE` to `scripts/check-clickstop.mjs` (Deliverable 1; helper `lib/distributed-surface-globs.mjs` per Deliverable 2 only if >40 lines) | pending | yoga-ah-c2 | C24-1/C24-2/C24-3/C24-4; model on `checkCloseoutTasks` |
-| T2 — Fixture set: 8 fixtures under `tests/fixtures/cs24/` (4 valid, 4 invalid) | pending | yoga-ah-c2 | Deliverable 3 / C24-5 |
-| T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | pending | yoga-ah-c2 | Deliverable 4 |
-| T4 — Template doc: `template/composed/OPERATIONS.md § Harvest`, then `harness sync --mode=apply --resolved-sha <sha>` to refresh root `OPERATIONS.md` + `.harness-lock.json` | pending | yoga-ah-c2 | Deliverable 5 / C24-6 / LRN-070 |
-| T5 — CHANGELOG.md `[Unreleased] / Changed` entry for the enforcement | pending | yoga-ah-c2 | Deliverable 6 |
-| T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | pending | yoga-ah-c2 | Deliverable 7 / C24-7 |
+| T1 — Linter extension: add `checkChangelogTouchTask` + `CHANGELOG_TOUCH_ENFORCEMENT_DATE` to `scripts/check-clickstop.mjs` (Deliverable 1; helper `lib/distributed-surface-globs.mjs` per Deliverable 2 only if >40 lines) | done | cs24-changelog-enforce | C24-1/C24-2/C24-3/C24-4; check 6, modeled on `checkCloseoutTasks`; helper module created (>40 lines, unit-tested) |
+| T2 — Fixture set: 9 fixtures under `tests/fixtures/cs24/` (4 valid, 5 invalid) | done | cs24-changelog-enforce | Deliverable 3 / C24-5; each a complete otherwise-valid clickstop in its own case dir (the 5th invalid is the R1 scripts-glob regression) |
+| T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | done | cs24-changelog-enforce | Deliverable 4; 34 tests (fixture e2e + extraction/matching unit + R1–R4 rubber-duck convergence matrix) |
+| T4 — Template doc: `template/composed/OPERATIONS.md § Harvest`, then refresh rendered root `OPERATIONS.md` | done | cs24-changelog-enforce | Deliverable 5 / C24-6; doc added to template + rendered root; `.harness-lock.json` intentionally kept at `main` (stale-lock resync deferred — see Notes); `sync --mode=check` clean |
+| T5 — CHANGELOG.md `[Unreleased] / Changed` entry for the enforcement | done | cs24-changelog-enforce | Deliverable 6; classified **Minor** |
+| T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | pending | yoga-ah-c2 | Deliverable 7 / C24-7 — CLOSE-OUT task |
 | Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and the rendered root OPERATIONS.md so a fresh agent can restart from actual state |
 | Close-out: learnings + follow-ups | pending | yoga-ah-c2 | Disposition learnings in LEARNINGS.md (flip LRN-101); file a planned follow-up CS if OQ1 (content-vs-deliverable check) proves worthwhile |
 
 ## Notes / Learnings
 
-(filled during execution)
+**Implementation (2026-07-04, `cs24/content`).** Deliverables 1–6 by sub-agent
+`cs24-changelog-enforce` (claude-opus-4.8) + orchestrator `yoga-ah-c2`.
+`scripts/check-clickstop.mjs` gains check 6 `checkChangelogTouchTask` (backed by
+new `lib/distributed-surface-globs.mjs`); 9 fixtures + 34 tests; OPERATIONS.md
+§ Harvest `### CHANGELOG-on-every-CS-close-out`; CHANGELOG `[Unreleased]/Changed`
+bullet. Verified: `check-clickstop --dir project/clickstops` 0 errors,
+`node --test tests/*.test.mjs` 0 fail (+34 tests from CS24), `harness lint` 35/0/3,
+`sync --mode=check` no drift. (Fixture/test counts grew across the 5-round
+rubber-duck review — R1–R4 each added token-parser regression coverage.)
+
+**Key decisions:**
+- **Enforcement cutoff `2026-07-05`** (C24-4): strictly after the latest existing
+  done-CS `**Closed:**` date (2026-07-04), mirroring `MODEL_AUDIT_ENFORCEMENT_DATE`,
+  so the entire closed backlog is grandfathered and CI stays green. `active/`
+  files are always checked; CS24's own active file passes via its T5 CHANGELOG row.
+- **SemVer = Minor** (corrected from the sub-agent's initial "Patch"): a new
+  mechanical lint enforcement is new functionality per the OPERATIONS.md SemVer
+  table and can newly fail a consumer's `active/` CI.
+- **`.harness-lock.json` kept at `main`'s version** (NOT a full `sync --mode=apply`
+  regeneration). The committed lock has been stale since **cs55/content
+  (2026-05-28)**; a plain apply regenerated ~90 lines of unrelated bookkeeping
+  (INSTRUCTIONS.md + `.github/copilot-instructions.md` `managed→composed` class
+  migrations, workflow/hash refreshes, `excluded[]` gaining `LEARNINGS-archive.md`)
+  accumulated across ~50 CSs. Bundling those into CS24 would violate the mid-CS
+  sync prohibition (harness updates land in their own CS). Reverting the lock and
+  keeping only the OPERATIONS.md prose render still yields `sync --mode=check` →
+  "No drift detected" (drift-check validates rendered content, not lock
+  bookkeeping). Stale-lock resync deferred to a follow-up CS.
+
+**Learning candidates (disposition into `LEARNINGS.md` at close-out):**
+- *tooling:* `sync --mode=check` reports "No drift detected" on a lock whose
+  bookkeeping (`harness_ref`, `synced_at`, per-file class/hashes,
+  `template_prose_hash`) is stale — it compares rendered file *content* only. A
+  stale `template_prose_hash` stays dormant until the next composed-template edit,
+  then fail-closes `sync --mode=apply` with `EMERGE_LEGACY_UNMAPPED`. Evidence:
+  lock pinned at cs55 (2026-05-28) yet check green across ~50 CSs.
+- *process:* C24-1 lists `package.json`/`package-lock.json` as distributed-surface
+  globs, but the self-host `excluded[]` lists both; per C24-1's excluded-subtraction
+  they are therefore NOT distributed surface here — a CS touching only package
+  metadata is exempt from CHANGELOG enforcement on the self-host. Implemented as
+  written; a follow-up may want package metadata enforced independently of
+  sync-exclusion.
 
 ## Plan-vs-implementation review
 

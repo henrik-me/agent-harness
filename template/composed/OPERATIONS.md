@@ -2303,6 +2303,29 @@ Each `open` entry needs a status flip to `applied` / `obsolete` / `deferred`
 (with `deferred_until: <date>`) before any future public-facing release gate
 per the bounded-before-claim invariant above.
 
+### CHANGELOG-on-every-CS-close-out
+
+A CS whose deliverables touch the **distributed harness surface** — the files
+that ship to consumers on `harness sync`: `template/`, `lib/`, `scripts/*.mjs`,
+`bin/`, `scaffolds/`, `schemas/`, `package.json`, `package-lock.json` — adds
+its `[Unreleased]` `CHANGELOG.md` bullet as part of its own close-out, rather
+than deferring reconciliation to a retroactive sweep at release-cut time
+(LRN-101). CSs that touch only repo-internal artefacts (e.g. `LEARNINGS.md`,
+`CONTEXT.md`, `WORKBOARD.md`, clickstop files) are exempt.
+
+`check-clickstop` enforces this mechanically: for an `active/` or (post-cutoff)
+`done/` clickstop whose `## Deliverables` section names a distributed-surface
+path, the `## Tasks` table must include an explicit CHANGELOG-touch row (a row
+mentioning `changelog` together with a verb such as
+`touch`/`update`/`entry`/`bullet`/`append`/`add`). Distributed-surface
+detection consults the `excluded[]` list in `harness.config.json`: a path that
+matches a surface glob but is also an explicit sync exclusion is **not** treated
+as distributed surface (it does not ship), so a consumer that excludes, say,
+`lib/` will not get CHANGELOG enforcement on `lib/`-touching CSs (intended).
+The check is date-grandfathered — `done/` CSs closed before the enforcement
+cutoff are never flagged — so it locks in the convention going forward without
+retroactively tripping the closed backlog.
+
 ---
 
 ## SemVer policy
