@@ -1,9 +1,9 @@
 # CS105 — Cut harness release v0.16.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs105/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-04. Cuts the follow-up release bundling #423 (CS102) now that it is delivered + closed out. Directed by @henrik-me ("when issue 423 gets delivered, release with those changes included").
 **Depends on:** none
@@ -115,11 +115,27 @@ tag + **published** GitHub Release, then issue-only consumer notifications.
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | 2b4d3bf2113d | 2026-07-04T01:18:00Z | Needs-Fix | Publish flip (draft→publish-to-Latest, per @henrik-me "release fully") is sound, but stale "draft" contradictions remained (Goal, F6 prose, Decision 3/5, Mechanized bullet). |
 | R3 | gpt-5.5 | claude-opus-4.8 | rubber-duck dispatched | 219aef7d9642 | 2026-07-04T01:19:52Z | Go | R2 contradictions resolved — posture uniformly publish-to-Latest; draft mentions are directive/history/--no-draft only. Facts reconfirmed; --no-draft supported; v0.15.0 now Latest. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | **Minor** SemVer (v0.15.0 → v0.16.0; bundles #423). Published to Latest (not draft) per @henrik-me. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go → R2 Needs-Fix → R3 Go, hash `219aef7d9642`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Phase A: `harness release --version 0.16.0 --apply` (bump + CHANGELOG `[Unreleased]→[0.16.0]` + link refs; README pin sweep) + manual README `## Status` rewrite (headline #423) | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T2 — Content PR: GPT-5.5 review-of-record + Copilot engage + admin-squash-merge | active | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T3 — Phase B (post-merge): annotated tag `v0.16.0` + **published** (Latest) Release (`--no-draft`) | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| T4 — Consumer notifications: issue-only pin-bump to authzandentitlements + sub-invaders | pending | yoga-ah | agent-id=yoga-ah \| role=orchestrator \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md (remove CS105 row) + CONTEXT.md. |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File learnings if any; v0.16.0 published to Latest (not draft). |
 
 ## Notes / Learnings
 
