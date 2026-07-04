@@ -1,9 +1,9 @@
 # CS87 — `copilot-engage --help` accuracy: "requestReviews mutation" → REST review-request wording
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs87/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** CS87 filed at CS65 close-out (2026-07-02 by `omni-ah-c3`) — the GPT-5.5 plan-vs-implementation review's 1 non-blocking finding, re-homed from the closed CS65 file into a visible planned CS per the "follow-ups must be a planned CS or a learning" convention.
 **Depends on:** none.
@@ -54,11 +54,25 @@ Surfaced by the GPT-5.5 plan-vs-implementation review of CS65 (recorded in `done
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah-c3) | 735219bc47ce | 2026-07-02T20:15:00Z | Go-with-amendments | Premise sound (help self-contradicts; runtime uses REST add-reviewer). Amendments applied: targeted stale-help grep (R1) + regression assertion in cli-copilot-engage.test (C87-2). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | **Patch** SemVer (help-text wording fix in `bin/harness.mjs` + regression assertion + CHANGELOG; no flag/behavior/schema change). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Plan reviewed by gpt-5.5 (R1 Go-with-amendments, hash `735219bc47ce`). Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — `bin/harness.mjs`: correct `copilot-engage` help wording (C87-1) — `--no-poll` description + two exit-code descriptions: "requestReviews mutation" / "mutation accepted" → REST review-request (`gh pr edit --add-reviewer`) / "request accepted". Help-string only, no runtime change | active | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=pending \| learnings=0 |
+| T2 — `tests/cli-copilot-engage.test.mjs`: extend the help-output test with a regression assertion (C87-2) — help does NOT contain `requestReviews` / `mutation accepted`, DOES reference `gh pr edit --add-reviewer`; `CHANGELOG.md` `[Unreleased]` help-accuracy entry | active | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=pending \| learnings=0 |
+| Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS87 row) + CONTEXT.md; no rendered-mirror change (bin/tests/CHANGELOG only). |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File any LEARNINGS.md entry (or none) + disposition follow-ups; no open issue tied to CS87. |
 
 ## Notes / Learnings
 
