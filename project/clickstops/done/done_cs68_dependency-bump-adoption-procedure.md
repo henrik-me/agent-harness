@@ -1,10 +1,10 @@
 # CS68 — Dependency-bump adoption procedure + non-CS review-tooling support
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs68/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** Out-of-CS `js-yaml` dependency-bump adoption (2026-06-07 by `yoga-ah-c2`). Surfaced while adopting Dependabot #226 as PR #262 (`js-yaml` 4.1.1→4.2.0, a DoS-hardening bump): the harness has no written procedure for adopting a Dependabot/dependency PR, and the review-evidence tooling is clickstop-centric so the bot/deps PR could not use it.
 **Depends on:** None hard from prior CSs. Cross-references CS59 (content/release-PR admin-merge doctrine) — coordinate to avoid duplicating that section. May claim independently of prior CSs. **CS64b** (hard, added 2026-06-10) — the dep-bump branch flow (`deps/<pkg>-<ver>`) allocates a clone for re-creation + lockfile regen and must use the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2); the adoption procedure references those primitives as the required pattern.
 
