@@ -124,7 +124,14 @@ describe('CS15d scaffold aggregator integration', () => {
   it('consumer without scaffolds field does not dispatch optional scaffold policy linters', () => {
     const result = lint(path.join(FIXTURES, 'consumer-no-scaffolds'));
     assert.equal(result.status, 0, `expected lint exit 0; stderr:\n${result.stderr}\nstdout:\n${result.stdout}`);
-    const rows = summaryRows(result.stdout);
+    // `closeout-freshness` is a git-state-dependent dynamic linter: it registers
+    // only when the CURRENT branch's diff carries a same-id active_→done_ rename
+    // (bin/harness.mjs). Because these consumer fixtures live INSIDE the harness
+    // repo, its detector reads the harness branch — so on a branch that carries a
+    // close-out rename (a CS close-out, or CS75's done_cs65 repair) it leaks in and
+    // perturbs this fixed count. Exclude it so the assertion stays about the
+    // consumer's stable linter set, deterministic regardless of branch state.
+    const rows = summaryRows(result.stdout).filter((row) => row.name !== 'closeout-freshness');
     assert.equal(rows.filter((row) => /migration.*policy|feature.*flag.*policy|feature-flags.*policy/.test(row.name)).length, 0);
     assert.equal(rows.length, beta9AggregatorLanded() ? 26 : 18, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
   });

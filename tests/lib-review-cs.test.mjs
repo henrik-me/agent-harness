@@ -31,6 +31,7 @@ const CWD = path.join(path.sep, 'repo');
  * @param {Error}  [cfg.spawnError]
  * @param {string[]} [cfg.extraStages] - other stage dirs that exist but are empty.
  * @param {string} [cfg.fileContent]   - content returned by seam.readFile (B4).
+ * @param {string[]} [cfg.trackedFiles] - files returned by `git ls-files` (C75-4).
  */
 function makeSeam(cfg) {
   const {
@@ -44,6 +45,7 @@ function makeSeam(cfg) {
     spawnError = null,
     extraStages = [],
     fileContent = '',
+    trackedFiles = [],
   } = cfg;
 
   const clickstopsDir = path.join(CWD, 'project', 'clickstops');
@@ -89,6 +91,13 @@ function makeSeam(cfg) {
     stderr: (s) => err.push(s),
     spawnSync: (cmd, args) => {
       if (spawnError) return { error: spawnError, status: null, stdout: '', stderr: '' };
+      // C75-4: the deliverable-path advisory resolves tracked files via
+      // `git ls-files`. Return the fixture's tracked-file list for THAT call
+      // only (narrowed so other git usage isn't masked, and so spawnError above
+      // still applies to git).
+      if (cmd === 'git' && args.includes('ls-files')) {
+        return { status: 0, stdout: trackedFiles.join('\n'), stderr: '' };
+      }
       const isPlan = args.some((a) => a.includes('plan-review'));
       return isPlan
         ? { status: planStatus, stdout: planStdout, stderr: '' }
@@ -705,4 +714,60 @@ test('N5: plan linter exits 0 but emits an ERROR line for this CS → planReview
   const rs = await runReviewCs({ cwd: CWD, csId: 'CS66', strict: true, seam: strictSeam.seam });
   assert.equal(rs.status, 'incomplete');
   assert.equal(rs.exitCode, 1); // strict
+});
+
+/* ---------- C75-4: deliverable-path existence advisory ------------------- */
+
+const DELIV_PVI =
+  '# CS\n\n' +
+  '## Deliverables\n\n' +
+  '1. `lib/real-thing.mjs` (edit) — an existing module.\n' +
+  '2. `lib/ghost-module.mjs` (new) — does NOT exist in the tree yet.\n\n' +
+  '## Plan-vs-implementation review\n\nReviewer notes.\n';
+
+test('deliverable advisory: flags a deliverable path not tracked in git', async () => {
+  const { seam } = makeSeam({
+    stage: 'active',
+    fileName: 'active_cs66_x.md',
+    fileContent: DELIV_PVI,
+    trackedFiles: ['lib/real-thing.mjs', 'README.md'],
+  });
+  const r = await runReviewCs({ cwd: CWD, csId: 'CS66', seam });
+  // Advisory is non-blocking: it never changes the verdict/exit code.
+  assert.equal(r.exitCode, 0);
+  assert.equal(r.advisories.length, 1);
+  assert.match(r.advisories[0], /lib\/ghost-module\.mjs/);
+  assert.ok(!r.advisories.some((a) => a.includes('lib/real-thing.mjs')));
+  assert.match(r.report, /Deliverable-path advisories \(non-blocking\)/);
+  assert.match(r.report, /lib\/ghost-module\.mjs/);
+});
+
+test('deliverable advisory: no advisory when every deliverable path is tracked', async () => {
+  const { seam } = makeSeam({
+    stage: 'active',
+    fileName: 'active_cs66_x.md',
+    fileContent: DELIV_PVI,
+    trackedFiles: ['lib/real-thing.mjs', 'lib/ghost-module.mjs'],
+  });
+  const r = await runReviewCs({ cwd: CWD, csId: 'CS66', seam });
+  assert.equal(r.advisories.length, 0);
+  assert.ok(!/Deliverable-path advisories/.test(r.report));
+});
+
+test('deliverable advisory: no false positive on prose/glob/bare-word tokens', async () => {
+  const content =
+    '# CS\n\n' +
+    '## Deliverables\n\n' +
+    '- Update the module at lib/prose-only.mjs so it loads (no backticks — illustrative).\n' +
+    '- Add `tests/*.test.mjs` coverage (a glob — must not be flagged).\n' +
+    '- Touch the `harness` CLI verb (bare word — not a path).\n\n' +
+    '## Plan-vs-implementation review\n\nReviewer notes.\n';
+  const { seam } = makeSeam({
+    stage: 'active',
+    fileName: 'active_cs66_x.md',
+    fileContent: content,
+    trackedFiles: [], // even with an empty tree, none of the tokens qualify
+  });
+  const r = await runReviewCs({ cwd: CWD, csId: 'CS66', seam });
+  assert.equal(r.advisories.length, 0);
 });

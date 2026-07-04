@@ -35,6 +35,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertHeadings, extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
 import { matchesDistributedSurface, extractDeliverablePathTokens } from '../lib/distributed-surface-globs.mjs';
+import { findHeadingIndex, extractHeadingSectionBody } from '../lib/markdown-fence.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -52,6 +53,20 @@ const FILENAME_RE = {
   done:   /^done_cs\d+[a-z]*_.*\.md$/,
   planned: /^planned_cs\d+[a-z]*_.*\.md$/,
 };
+
+/**
+ * Directory-name regex for each subdirectory, DERIVED from FILENAME_RE by
+ * dropping the trailing `\.md$` (C75-1). Deriving from one source keeps the
+ * canonical clickstop stem — including the multi-letter suffix class `[a-z]*`
+ * (e.g. `cs63c`) — in a single place so the flat-file and directory-form
+ * matchers can never drift.
+ */
+const DIRNAME_RE = Object.fromEntries(
+  Object.entries(FILENAME_RE).map(([subdir, re]) => [
+    subdir,
+    new RegExp(re.source.replace(/\\\.md\$$/, '$')),
+  ])
+);
 
 /** Close-out task enforcement applies from CS15a close-out onward. */
 const CLOSEOUT_TASK_ENFORCEMENT_DATE = '2026-05-10';
@@ -434,19 +449,22 @@ function checkFile(filePath, subdir) {
 
   // 4. Plan-vs-implementation review gate (CS03b)
   // active/ and done/ must have the H2; done/ must have content or grandfathering.
-  // Anchored multi-line regex (CS03b R1 review fix): inline mention of the H2
-  // in prose or fenced code must NOT satisfy the check.
+  // CS75 (C75-2): BOTH presence detection AND (for done/) the field-body scope
+  // are fence-aware via the shared lib/markdown-fence.mjs locator — a
+  // `## Plan-vs-implementation review` line that exists ONLY inside a fenced code
+  // block (or in prose) does NOT satisfy the gate, and a fenced fake PVI section
+  // with fields cannot mis-scope the done-stage Reviewer/Date/Outcome check away
+  // from the real (possibly empty) PVI H2. This replaces the fence-naive
+  // `hasMarkdownHeading` + `/m` regex + `extractSectionBody` triple.
   if (subdir === 'active' || subdir === 'done') {
-    const GATE_H2_RE = /^## Plan-vs-implementation review\s*$/m;
-    const hasGateHeading = hasMarkdownHeading(content, 'Plan-vs-implementation review');
-    const headingMatch = content.match(GATE_H2_RE);
-    if (!hasGateHeading || !headingMatch) {
+    const hasGateHeading = findHeadingIndex(content, 'Plan-vs-implementation review') !== -1;
+    if (!hasGateHeading) {
       logError(
         `${subdir}/${basename}: missing required H2 section ` +
         `"## Plan-vs-implementation review" (CS03b gate)`
       );
     } else if (subdir === 'done') {
-      const body = extractSectionBody(content, headingAnchor('Plan-vs-implementation review'));
+      const body = extractHeadingSectionBody(content, 'Plan-vs-implementation review');
 
       const GRANDFATHERING = '> Grandfathered: closed before plan-vs-implementation review gate was introduced (CS03b).';
       const hasGrandfathering = body.includes(GRANDFATHERING);
@@ -687,24 +705,70 @@ let filesChecked = 0;
 for (const subdir of ['active', 'done', 'planned']) {
   const dirPath = path.join(clickstopsDir, subdir);
 
-  // Skip subdirectory if it doesn't exist (graceful — useful for partial fixture trees)
-  if (!fs.existsSync(dirPath)) continue;
-
+  // Read directly rather than gating on fs.existsSync() first: existsSync() also
+  // returns false on permission errors, so it would silently skip a
+  // present-but-unreadable dir. Discriminate ENOENT (benign — a partial fixture
+  // tree may omit a subdir) from real I/O errors, which are surfaced (repo
+  // convention; mirrors lib/claim.mjs / lib/closeout.mjs readdirSafe).
   let entries;
   try {
     entries = fs.readdirSync(dirPath, { withFileTypes: true });
   } catch (err) {
-    logError(`cannot read directory ${subdir}/: ${err.message}`);
+    if (err.code !== 'ENOENT') {
+      logError(`cannot read directory ${subdir}/: ${err.message}`);
+    }
     continue;
   }
 
   for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    if (!entry.name.endsWith('.md')) continue;
     if (entry.name === '.gitkeep') continue;
 
-    checkFile(path.join(dirPath, entry.name), subdir);
-    filesChecked++;
+    // Flat-form: a direct `<state>_csNN_<slug>.md` file.
+    if (entry.isFile()) {
+      if (!entry.name.endsWith('.md')) continue;
+      checkFile(path.join(dirPath, entry.name), subdir);
+      filesChecked++;
+      continue;
+    }
+
+    // Directory-form (CS70): `<state>/<state>_csNN_<slug>/<state>_csNN_<slug>.md`.
+    // The stem regex is DERIVED from FILENAME_RE[subdir] (drop the trailing
+    // `\.md$`) so the suffix class stays `[a-z]*` and matches multi-letter
+    // suffixes like `cs63c` without hand-rolling a fresh pattern (C75-1).
+    if (entry.isDirectory() && DIRNAME_RE[subdir].test(entry.name)) {
+      const innerDir = path.join(dirPath, entry.name);
+      const innerName = `${entry.name}.md`;
+      let innerEntries;
+      try {
+        innerEntries = fs.readdirSync(innerDir, { withFileTypes: true });
+      } catch (err) {
+        logError(`${subdir}/${entry.name}: cannot read directory-form CS directory: ${err.message}`);
+        continue;
+      }
+
+      const hasInner = innerEntries.some((e) => e.isFile() && e.name === innerName);
+      if (hasInner) {
+        checkFile(path.join(innerDir, innerName), subdir);
+        filesChecked++;
+      } else {
+        logError(
+          `${subdir}/${entry.name}: directory-form CS is missing its inner plan file ` +
+          `"${innerName}" (expected <dir>/<dirname>.md)`
+        );
+      }
+
+      // A stray, differently-named `<state>_csNN_*.md` inside the CS directory is
+      // a structure error — the inner plan file must match the directory name.
+      for (const e of innerEntries) {
+        if (!e.isFile() || e.name === innerName) continue;
+        if (FILENAME_RE[subdir].test(e.name)) {
+          logError(
+            `${subdir}/${entry.name}: stray clickstop file "${e.name}" — a directory-form CS ` +
+            `must contain exactly one plan file named "${innerName}" (<dir>/<dirname>.md)`
+          );
+        }
+      }
+    }
   }
 }
 
