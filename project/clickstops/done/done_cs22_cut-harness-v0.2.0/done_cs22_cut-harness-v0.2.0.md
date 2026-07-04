@@ -1,6 +1,6 @@
 # CS22 — Cut harness v0.2.0 (refresh pin target before CS16 bootstrap)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah (HENRIKM-YOGA)
 **Branch:** `cs22/cut-v0.2.0`
 **Started:** 2026-05-10

@@ -1,10 +1,10 @@
 # CS65 — Process-doc right-sizing: OPERATIONS.md extraction + LEARNINGS.md archival
 
-**Status:** active
+**Status:** done
 **Owner:** omni-ah-c3
 **Branch:** cs65/content
 **Started:** 2026-06-30
-**Closed:** —
+**Closed:** 2026-07-02
 **Filed by:** CS63 (2026-06-06 by `yoga-ah-c3`) as the deferred follow-up for decision **C63-9** (doc right-sizing). CS63 did the safe `CONTEXT.md` history cap and deferred the high-risk `OPERATIONS.md` extraction and `LEARNINGS.md` archival to this dedicated CS, to ride with the CS64 CLI-commands work.
 **Depends on:** **CS64** (hard, for the OPERATIONS.md half) — the procedure-body extraction thins `OPERATIONS.md` sections to pointers at the new `harness claim`/`close-out` command help, so those commands must exist first. The `LEARNINGS.md` archival half is independent and may proceed alone. **CS64b** (hard, added 2026-06-10) — the verb reliability primitives (LRN-151/155/157 applied) land before the prose backups are removed; thinning load-bearing docs without the hardened verbs underneath compounds CS63 R10.
 

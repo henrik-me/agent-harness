@@ -5,6 +5,7 @@
 **Branch:** `cs01/close-out` (post-bootstrap close-out PR)
 **Started:** 2026-05-02T22:00Z
 **Closed:** 2026-05-03T05:00Z
+**Depends on:** none
 
 ## Goal
 

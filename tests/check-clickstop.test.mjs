@@ -100,9 +100,66 @@ function writeGeneratedDoneFixture(name, gateSection) {
   return root;
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+/**
+ * Create a directory-form CS fixture tree under os.tmpdir() (never REPO_ROOT).
+ * Returns the root that should be passed to the linter via --dir.
+ *
+ * @param {string} name       - unique fixture name (subdir of the scratch root).
+ * @param {string} stage      - 'active' | 'done' | 'planned'.
+ * @param {string} csDirName  - the CS directory name (e.g. 'done_cs99_x').
+ * @param {Array<{name: string, body: string}>} files - files to write inside it.
+ * @returns {string} the scratch root (contains the <stage>/ directory).
+ */
+function writeDirFormFixture(name, stage, csDirName, files) {
+  const root = path.join(os.tmpdir(), 'check-clickstop-test-output', name);
+  fs.rmSync(root, { recursive: true, force: true });
+  const csDir = path.join(root, stage, csDirName);
+  fs.mkdirSync(csDir, { recursive: true });
+  for (const f of files) {
+    fs.writeFileSync(path.join(csDir, f.name), f.body, 'utf8');
+  }
+  return root;
+}
+
+/**
+ * Build a valid done-CS plan body (Closed BEFORE the close-out-task and
+ * CHANGELOG-touch enforcement dates, so only the core + PVI checks apply).
+ *
+ * @param {string} title
+ * @param {object} [opts]
+ * @param {boolean} [opts.pvi=true]         - include the real PVI H2 + fields.
+ * @param {boolean} [opts.fencedPvi=false]  - place the PVI H2 inside a ``` fence.
+ * @param {boolean} [opts.dependsOn=true]   - include the **Depends on:** field.
+ * @returns {string}
+ */
+function validDoneBody(title, opts = {}) {
+  const { pvi = true, fencedPvi = false, dependsOn = true } = opts;
+  const lines = [
+    `# ${title}`,
+    '',
+    '**Status:** done',
+    '**Owner:** test',
+    '**Branch:** test',
+    '**Started:** 2026-05-01',
+    '**Closed:** 2026-05-01',
+  ];
+  if (dependsOn) lines.push('**Depends on:** none');
+  lines.push('');
+  const pviBlock = [
+    '## Plan-vs-implementation review',
+    '',
+    '**Reviewer:** gpt-5.5',
+    '**Date:** 2026-05-01',
+    '**Outcome:** Go',
+  ];
+  if (pvi && fencedPvi) {
+    lines.push('```', ...pviBlock, '```');
+  } else if (pvi) {
+    lines.push(...pviBlock);
+  }
+  lines.push('');
+  return lines.join('\n');
+}
 
 describe('check-clickstop linter', () => {
 
@@ -405,6 +462,162 @@ describe('check-clickstop linter', () => {
         `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
       );
       assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // CS75 — directory-form recursion + fence-aware PVI gate
+  // -------------------------------------------------------------------------
+
+  // 20. valid directory-form CS is validated and passes
+  it('20. valid directory-form CS exits 0', () => {
+    const root = writeDirFormFixture('dirform-valid', 'done', 'done_cs99_valid', [
+      { name: 'done_cs99_valid.md', body: validDoneBody('CS99') },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(r.stdout.includes('1 files checked'), `Expected the inner plan file counted; got:\n${r.stdout}`);
+      assert.ok(r.stdout.includes('✅'), `Expected ✅; got:\n${r.stdout}`);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 21. directory-form CS missing the PVI H2 → exit 1
+  it('21. directory-form CS missing PVI H2 exits 1', () => {
+    const root = writeDirFormFixture('dirform-no-pvi', 'done', 'done_cs99_nopvi', [
+      { name: 'done_cs99_nopvi.md', body: validDoneBody('CS99', { pvi: false }) },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('missing required H2 section'),
+        `Expected missing-H2 error; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 22. directory-form CS missing a required field → exit 1
+  it('22. directory-form CS missing a required field exits 1', () => {
+    const root = writeDirFormFixture('dirform-missing-field', 'done', 'done_cs99_missing', [
+      { name: 'done_cs99_missing.md', body: validDoneBody('CS99', { dependsOn: false }) },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('missing required field') && r.stdout.includes('Depends on'),
+        `Expected missing Depends-on field error; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 23. directory-form CS whose inner <dirname>.md is absent → structure error
+  it('23. directory-form CS missing its inner plan file exits 1', () => {
+    const root = writeDirFormFixture('dirform-no-inner', 'done', 'done_cs99_noinner', [
+      { name: 'notes.md', body: '# stray notes, not the plan file\n' },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('missing its inner plan file') &&
+          r.stdout.includes('done_cs99_noinner.md'),
+        `Expected missing-inner-plan-file error; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 24. directory-form CS with a stray differently-named clickstop file → error
+  it('24. directory-form CS with a stray inner clickstop file exits 1', () => {
+    const root = writeDirFormFixture('dirform-stray', 'done', 'done_cs99_stray', [
+      { name: 'done_cs99_stray.md', body: validDoneBody('CS99') },
+      { name: 'done_cs98_other.md', body: validDoneBody('CS98') },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('stray clickstop file') && r.stdout.includes('done_cs98_other.md'),
+        `Expected stray-file structure error; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 25. a fenced PVI H2 in a directory-form CS no longer satisfies the gate
+  it('25. fenced PVI heading (directory-form) does not satisfy the gate', () => {
+    const root = writeDirFormFixture('dirform-fenced-pvi', 'done', 'done_cs99_fenced', [
+      { name: 'done_cs99_fenced.md', body: validDoneBody('CS99', { fencedPvi: true }) },
+    ]);
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('missing required H2 section'),
+        `Expected a fenced PVI heading to be treated as MISSING; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 26. a fenced PVI H2 in a flat file no longer satisfies the gate
+  it('26. fenced PVI heading (flat file) does not satisfy the gate', () => {
+    const root = writeGeneratedDoneFixture(
+      'flat-fenced-pvi',
+      ['```', '## Plan-vs-implementation review', '', '**Reviewer:** x', '**Date:** y', '**Outcome:** Go', '```'].join('\n')
+    );
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('missing required H2 section'),
+        `Expected a fenced PVI heading to be treated as MISSING; got:\n${r.stdout}`
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // 27. CS75 review R1 (gpt-5.5) blocking finding: a fenced fake PVI section
+  // carrying Reviewer/Date/Outcome fields must NOT satisfy the done-stage field
+  // check when the REAL (non-fenced) PVI H2 is empty. Both presence AND the
+  // field-body scope are fence-aware, so the body is taken from the real (empty)
+  // heading, not the earlier fenced one (which the old extractSectionBody used).
+  it('27. fenced PVI fields before a real empty PVI H2 still fail the done field check', () => {
+    const root = writeGeneratedDoneFixture(
+      'done-fenced-fields-before-real-empty-pvi',
+      [
+        '```text',
+        '## Plan-vs-implementation review',
+        '',
+        '**Reviewer:** gpt-5.5',
+        '**Date:** 2026-05-01',
+        '**Outcome:** Go',
+        '```',
+        '',
+        '## Plan-vs-implementation review',
+      ].join('\n')
+    );
+    try {
+      const r = runLinter(['--dir', root]);
+      assert.equal(r.status, 1, `Expected exit 1 (real PVI body empty); got ${r.status}\nstdout: ${r.stdout}`);
+      assert.ok(
+        r.stdout.includes('must contain Reviewer/Date/Outcome'),
+        `Expected the done-stage field error (fenced fields must not count); got:\n${r.stdout}`
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

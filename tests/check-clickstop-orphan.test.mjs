@@ -130,6 +130,9 @@ describe('check-clickstop directory-form orphan check (CS70)', () => {
       git(r, ['mv',
         `project/clickstops/done/done_${slug}/active_${slug}.md`,
         `project/clickstops/done/done_${slug}/done_${slug}.md`]);
+      // Realistic close-out also flips the inner plan file's Status active→done
+      // (CS75: the hardened gate now recurses into dir-form inner files).
+      write(r, `project/clickstops/done/done_${slug}/done_${slug}.md`, planFile(slug, 'done'));
     });
     const r = runLinter(root);
     assert.equal(r.status, 0, `expected exit 0, got ${r.status}\n${r.stdout}`);
@@ -159,6 +162,8 @@ describe('check-clickstop directory-form orphan check (CS70)', () => {
       git(r, ['mv',
         `project/clickstops/active/active_${slug}/active_${slug}.md`,
         `project/clickstops/done/done_${slug}/done_${slug}.md`]);
+      // Realistic close-out flips the inner plan file's Status active→done (CS75).
+      write(r, `project/clickstops/done/done_${slug}/done_${slug}.md`, planFile(slug, 'done'));
       git(r, ['rm', '-q', `project/clickstops/active/active_${slug}/artifact.md`]);
       write(r, `project/clickstops/done/done_${slug}/.harness-closeout-allow-drop`,
         '# intentional drop\nartifact.md\n');
@@ -184,6 +189,8 @@ describe('check-clickstop directory-form orphan check (CS70)', () => {
       git(r, ['mv',
         `project/clickstops/active/active_${slug}/active_${slug}.md`,
         `project/clickstops/done/done_${slug}/done_${slug}.md`]);
+      // Realistic close-out flips the inner plan file's Status active→done (CS75).
+      write(r, `project/clickstops/done/done_${slug}/done_${slug}.md`, planFile(slug, 'done'));
       git(r, ['mv',
         `project/clickstops/active/active_${slug}/artifact.md`,
         `project/clickstops/done/done_${slug}/artifact.md`]);
