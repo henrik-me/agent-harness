@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-196
+
+```yaml
+id: LRN-196
+date: 2026-07-04
+category: process
+source_cs: CS105
+status: applied
+tags: [release, publish, draft, gh-release, human-publish-gate]
+claim_area: release
+```
+
+**Problem:** The `harness release` verb (Phase B) creates the GitHub Release as a **draft** by default (the C84-9 / LRN-121 human-publish gate), leaving `gh release edit <tag> --draft=false` to the maintainer. v0.15.0 (CS104) was closed out with its Release still a **draft**, which the maintainer flagged as an incomplete release.
+
+**Finding:** @henrik-me's standing directive is that harness releases MUST be **fully published to Latest** as part of the cut — not left as drafts. Cut releases with `harness release --publish … --no-draft` (or `gh release edit <tag> --draft=false` immediately after), and verify `gh release view <tag> --json isDraft` → `false` AND `gh release list` shows the new tag as `Latest` before closing out the release CS. A release CS is NOT "done" while its GitHub Release is a draft.
+
+**Evidence:** @henrik-me: "release fully don't stop at draft! release 0.15 stopped at the draft stage.... ensure that is not happening going forward." v0.15.0 was then published (`gh release edit v0.15.0 --draft=false`), and CS105 published v0.16.0 with `--no-draft` (verified `isDraft:false`, `Latest`).
+
+**Disposition:** Applied — releases are published to Latest (`--no-draft`), not left as drafts; verify `isDraft:false` before close-out. Standing user directive; consider flipping the `harness release` publish default (or adding a close-out guard) in a follow-up.
+
 ### LRN-195
 
 ```yaml

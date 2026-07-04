@@ -141,4 +141,22 @@ tag + **published** GitHub Release, then issue-only consumer notifications.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-04T01:35:00Z
+**Outcome:** GO
+
+Independent plan-vs-implementation review of the merged release (PR #459, squash `1a15ad8`) + the post-merge tag/Release state.
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| 1. `package.json` + lock → 0.16.0 | match | package + lock root `0.16.0`. |
+| 2. CHANGELOG `[Unreleased] → [0.16.0]` | match | `## [0.16.0] — 2026-07-04` with the #423 entry; fresh `[Unreleased]`; compare refs OK. |
+| 3. README pins + Status | match | Status leads v0.16.0/#423; pins v0.16.0; only the historical "Prior: v0.15.0" remains. |
+| 4. Content PR | match | PR #459 admin-squash-merged at `1a15ad8` (GPT-5.5 R1 Go + Copilot COMMENTED 0 findings). |
+| 5. Tag + **published** Release | match | annotated tag `v0.16.0`; Release **isDraft:false** (published to Latest per Decision 4); exactly one; **Latest**. |
+| 6. Consumer notifications | match | one `[harness:cs105]` v0.16.0 pin-bump issue in authzandentitlements (#47) + sub-invaders (#151). |
+| 7. Close-out | match | in progress; gate satisfied. |
+
+**Publish posture (Decision 4):** the Release is **published to Latest** (isDraft:false) — the intended posture per @henrik-me's "release fully — don't stop at draft" directive (the opposite of the v0.15.0 cut, which wrongly stopped at draft and was subsequently published).
+
+**Test-coverage assessment:** sufficient — `harness lint` 35/0/3; content-only release (version/CHANGELOG/README + tag/published Release).
