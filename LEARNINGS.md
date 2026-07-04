@@ -806,7 +806,7 @@ id: LRN-170
 date: 2026-06-24
 category: architectural
 source_cs: CS72
-status: open
+status: applied
 tags: [consumer-templates, composed, cross-references, genericity, issue-229, follow-up]
 claim_area: templates
 ```
@@ -818,6 +818,8 @@ claim_area: templates
 **Evidence:** Issue **#229** (composed templates reference non-synced `INSTRUCTIONS.md` / `.github/copilot-instructions.md`); CS72 plan C72-3 out-of-scope carve-out; the session's #229-vs-CS72 boundary analysis. The genericity guard's scope set is the 5 onboarding docs, not the process-doc bases.
 
 **Disposition:** Open. File a follow-up CS to add the cross-ref-resolvability invariant + guard for the OPERATIONS/REVIEWS composed bases and close issue #229. Distinct from CS72's anchor-genericity guard.
+
+**Applied (2026-07-04, yoga-ah, CS76 close-out):** Shipped in **CS76** (merge `750352f`, PR #483). Extended CS81's `scripts/check-doc-xref-resolvability.mjs` with a composed-process-base check class (e) over `template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md` that fails on any unqualified not-guaranteed-sibling ref (`INSTRUCTIONS.md` / `.github/copilot-instructions.md` — qualified in place with "*(if your consumer syncs it/them)*") or any harness-internal `docs/adr` ref (case-insensitive; genericized to link-free prose). Also closed **#229** (A/B/C) and CS81's deferred **R3** `docs/adr` gap. Invariant (b) — cross-refs resolve against the guaranteed-synced set — is now mechanically enforced for the process-doc bases.
 
 ---
 
