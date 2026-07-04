@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DISTRIBUTED_SURFACE_GLOBS,
   matchesDistributedSurface,
+  extractDeliverablePathTokens,
 } from '../lib/distributed-surface-globs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -234,5 +235,41 @@ describe('matchesDistributedSurface (unit)', () => {
     assert.equal(matchesDistributedSurface('', []), false);
     assert.equal(matchesDistributedSurface(undefined, []), false);
     assert.equal(matchesDistributedSurface(null, []), false);
+  });
+});
+
+describe('extractDeliverablePathTokens (unit)', () => {
+  it('16. extracts package.json whole, not truncated to package.js', () => {
+    // Regression (GPT-5.5 rubber-duck R2, CS24): the extension alternative must
+    // prefer full extensions over prefixes so `package.json` is not read as
+    // `package.js` (which is NOT distributed surface).
+    const tokens = extractDeliverablePathTokens('- `package.json`\n');
+    assert.ok(tokens.includes('package.json'), `expected package.json in ${JSON.stringify(tokens)}`);
+    assert.ok(!tokens.includes('package.js'), `unexpected package.js in ${JSON.stringify(tokens)}`);
+  });
+
+  it('17. extracts package-lock.json whole', () => {
+    const tokens = extractDeliverablePathTokens('- `package-lock.json`\n');
+    assert.ok(tokens.includes('package-lock.json'), JSON.stringify(tokens));
+    assert.ok(!tokens.includes('package-lock.js'), JSON.stringify(tokens));
+  });
+
+  it('18. extracts concrete and glob .mjs tokens', () => {
+    assert.ok(extractDeliverablePathTokens('- `scripts/foo.mjs`\n').includes('scripts/foo.mjs'));
+    assert.ok(extractDeliverablePathTokens('- `scripts/*.mjs`\n').includes('scripts/*.mjs'));
+  });
+
+  it('19. extracts full .yaml / .md extensions whole', () => {
+    assert.ok(extractDeliverablePathTokens('- `config.yaml`\n').includes('config.yaml'));
+    assert.ok(extractDeliverablePathTokens('- `notes.md`\n').includes('notes.md'));
+  });
+
+  it('20. ignores paths mentioned in non-list, non-table prose', () => {
+    assert.deepEqual(extractDeliverablePathTokens('See package.json for details.'), []);
+  });
+
+  it('21. pipeline: extracted package.json matches distributed surface when not excluded', () => {
+    const first = extractDeliverablePathTokens('- `package.json`\n')[0];
+    assert.equal(matchesDistributedSurface(first, []), true);
   });
 });

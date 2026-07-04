@@ -34,7 +34,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertHeadings, extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
-import { matchesDistributedSurface } from '../lib/distributed-surface-globs.mjs';
+import { matchesDistributedSurface, extractDeliverablePathTokens } from '../lib/distributed-surface-globs.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -318,39 +318,6 @@ function requiresChangelogTouchTask(content, subdir) {
   if (subdir !== 'done') return false;
   const closedMatch = content.match(/\*\*Closed:\*\*\s*(\d{4}-\d{2}-\d{2})/);
   return Boolean(closedMatch && closedMatch[1] >= CHANGELOG_TOUCH_ENFORCEMENT_DATE);
-}
-
-/**
- * Extract candidate path/glob tokens from a `## Deliverables` section body.
- *
- * To mitigate R1 (false positives from illustrative prose mentioning paths),
- * only list-item lines (`- `, `* `, `N. `) and table rows (lines starting with
- * `|`) are scanned; other prose lines are ignored. Surrounding backticks are
- * stripped before matching. Three token shapes are recognised (C24-2):
- *   - glob-file tokens where a `*`/`**` segment carries an extension, e.g.
- *     `scripts/*.mjs`, `template/**.md`, `scripts/*.sh` — captured INTACT so
- *     the trailing extension survives (the leading alternative below); and
- *   - file paths ending in a code/config extension
- *     (`.mjs`/`.js`/`.json`/`.md`/`.yml`/`.yaml`), e.g. `scripts/foo.mjs`; and
- *   - directory-like tokens ending in `/` or `/*`/`/**`, e.g.
- *     `tests/fixtures/cs24/`, `template/**`.
- *
- * @param {string} deliverablesBody
- * @returns {string[]} candidate tokens (may contain duplicates).
- */
-function extractDeliverablePathTokens(deliverablesBody) {
-  const PATH_TOKEN_RE = /[\w./-]+\/\*{1,2}\.[\w]+|[\w./-]+\.(?:m?js|json|md|yml|yaml)|[\w./-]+\/(?:\*{1,2})?/g;
-  const tokens = [];
-  for (const rawLine of deliverablesBody.split('\n')) {
-    const line = rawLine.trim();
-    const isListItem = /^([-*]\s|\d+\.\s)/.test(line);
-    const isTableRow = line.startsWith('|');
-    if (!isListItem && !isTableRow) continue;
-    const stripped = line.replace(/`/g, ' ');
-    const matches = stripped.match(PATH_TOKEN_RE);
-    if (matches) tokens.push(...matches);
-  }
-  return tokens;
 }
 
 /**
