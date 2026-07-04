@@ -1,9 +1,9 @@
 # CS91 — `workboard-auto-approve.yml` hardening (#394) + workboard-merge posture doc reframe & maintenance-branch pattern (#395)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs91/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** Triage of two coupled open inbound issues — [#394](https://github.com/henrik-me/agent-harness/issues/394) (bug) + [#395](https://github.com/henrik-me/agent-harness/issues/395) (design) (2026-07-02 by `omni-ah-c3`). Both surfaced from `henrik-me/sub-invaders` adopting v0.12.0's `workboard-auto-approve.yml`; grouped because both touch that one workflow + its surrounding docs (edit-collision avoidance).
 **Depends on:** none. (Distinct from CS71, which fixes the *label-timing race* in evidence-gate skipping — a different concern in a different file.)
@@ -76,11 +76,29 @@ Verified at HEAD `3b20d0a` in `template/managed/.github/workflows/workboard-auto
 | R1 | gpt-5.5 | claude-opus-4.8 | cs91-plan-review (omni-ah-c3) | bdea751c0728 | 2026-07-02T23:51:00Z | Needs-Fix | git-diff hardening incomplete: -c diff.external= misses a .gitattributes-set external driver — need --no-ext-diff. Other F1-F6 pass (workflow facts, CS71 distinct, CS88 same-block). |
 | R2 | gpt-5.5 | claude-opus-4.8 | cs91-review-r2 (omni-ah-c3) | f66c54bd60f8 | 2026-07-03T00:12:00Z | Go | Blocker resolved: --no-ext-diff added (covers config + gitattributes vectors); trim-before-empty-skip valid Bash; bounded maint regex safe in the anchored alternation. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | Planned assignment per INSTRUCTIONS.md § Every CS (orchestrator + implementer sub-tasks: claude-opus-4.8; local review: gpt-5.5). Independence per REVIEWS § 2.3 — reviewer gpt-5.5 ≠ implementer claude-opus-4.8. Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — Harden `is_allowed()` whitespace-trim + `git diff` (`-c diff.external= --no-ext-diff --no-textconv`) in `template/managed/.github/workflows/workboard-auto-approve.yml` (C91-1, C91-2) | planned | — | Dominant deliverable; heredoc layout unchanged (R3). |
+| T2 — Mirror the hardening to the self-host `.github/workflows/workboard-auto-approve.yml`, byte-consistent (C91-6) | planned | — | Confirm copy provenance first (R5). |
+| T3 — Bounded maintenance-branch pattern `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` in the validate-and-approve regex + mirrored prose (C91-4) | planned | — | Gated by G91-1; no wildcard (R1). |
+| T4 — Merge-posture reframe in `template/composed/OPERATIONS.md` (+ root mirror): admin-override = zero-secret default, PAT/App optional (C91-3, C91-4) | planned | — | Coordinate with CS88, same block (R4). |
+| T5 — File #395 Rec B as a cross-linked planned follow-up CS (C91-5) | planned | — | Cross-link CS90. |
+| T6 — Tests: allowlist whitespace guard + maintenance-regex accept/reject + TSV parser on plain edit + rename `R` entry (R2) | planned | — | `node --test tests/*.test.mjs` green. |
+| T7 — `CHANGELOG.md` `[Unreleased]` entry; reference #394 for auto-close | planned | — | SemVer per OPERATIONS § SemVer policy. |
+| Close-out: docs + restart state | planned | — | Update WORKBOARD.md + CONTEXT.md + relevant docs so a fresh agent can restart from actual state. |
+| Close-out: learnings + follow-ups | planned | — | File LEARNINGS.md entries + ensure the #395 Rec B follow-up CS is planned. |
 
 ## Notes / Learnings
 
