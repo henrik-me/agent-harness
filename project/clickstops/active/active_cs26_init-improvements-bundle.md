@@ -61,92 +61,94 @@
 >   that's stale — the next release post-`v0.8.0` (currently Latest) is
 >   `v0.8.1` or `v0.9.0` depending on the apply set's SemVer level.
 >
-> Plan body below is preserved verbatim for traceability against the
-> original CS16 sub-invaders-bootstrap-summary (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) citations (Findings #2,
-> #3, #4, #5, #6, #9).
+> **Re-authored 2026-07-04 (`yoga-ah`, Path B).** Per the disposition
+> above, the `## Decisions`, `## Deliverables`, `## Sub-agent fan-out`,
+> `## Exit criteria`, and `## Risks` sections below were re-authored down
+> to the four remaining findings (#2/#3/#6/#9); the obsolete C26-4/C26-5
+> decisions and the #4/#5 deliverables were dropped. This invalidated the
+> R1 plan-review hash, so a fresh **R2** GPT-5.5 plan review re-attests the
+> narrowed body (see `## Plan review`). The original six-finding framing is
+> retained in this Status-update note (and the CS16
+> `sub-invaders-bootstrap-summary.md`) for traceability.
 
 ## Goal
 
-Fix six `harness init` defects observed during the first downstream-consumer init (CS16, sub-invaders bootstrap, 2026-05-11). All six leave a fresh consumer in a partially-broken state that requires manual cleanup before the consumer can productively use the harness. Together they represent a poor first-run experience for the consumer onboarding flow.
+Fix the `harness init` defects observed during the first downstream-consumer init (CS16, sub-invaders bootstrap, 2026-05-11). CS16 surfaced six findings; **four remain real against `main`** and are in scope here (#2/#3/#6/#9), while #4/#5 were dispositioned obsolete (see the Status-update note). Each in-scope finding leaves a fresh consumer in a partially-broken state requiring manual cleanup — together a poor first-run onboarding experience.
 
 ## Background
 
-The CS16 sub-invaders bootstrap was the first end-to-end exercise of `harness init` against a freshly-created public consumer repo (not self-host). The 6 findings dispositioned here are documented in detail in [`sub-invaders-bootstrap-summary.md`](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md). Each is reproducible from any fresh public repo by running `npx -y "github:henrik-me/agent-harness#v0.2.0" init` (after CS25's ajv hotfix lands).
+The CS16 sub-invaders bootstrap was the first end-to-end exercise of `harness init` against a freshly-created public consumer repo (not self-host). The original six findings are documented in detail in [`sub-invaders-bootstrap-summary.md`](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md); the four in scope here (#2/#3/#6/#9) were re-confirmed against `main` at claim time.
 
-These are bundled into a single CS because (a) all six touch the init flow, (b) they share validation surface (the same end-to-end smoke probe verifies all of them), and (c) sub-agent fan-out across them is natural and parallelisable.
+These are bundled into a single CS because (a) all four touch the `harness init` flow, (b) they share validation surface (one end-to-end smoke probe verifies all of them), and (c) the work splits cleanly across two disjoint sub-agents.
 
 ## Decisions
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| C26-1 | Bundle vs. split | Bundle all 6 in one CS | All touch the same init code path + share end-to-end smoke validation. Splitting would require 6 separate close-out PRs with redundant smoke runs. |
-| C26-2 | Version-detect strategy (Finding #2) | Read invocation ref from `process.argv[1]` resolution to the npx cache + parse `node_modules/.package-lock.json` for the resolved git ref; fall back to `package.json` `version` field if not running under npx | Most reliable across npx, npm-global, and self-host invocation modes. The npx cache stores the resolved ref in its own lock file. |
-| C26-3 | `check-config-placeholders` linter scope (Finding #3) | New `scripts/check-config-placeholders.mjs` scans `harness.config.json` for literal `REPLACE_ME` strings AND scans rendered composed files (CONVENTIONS.md, OPERATIONS.md, REVIEWS.md) for the same. Fails with actionable error per occurrence | Catches both the source (config) and the propagation (rendered composed files); single pass. |
-| C26-4 | Lock-file resolved-ref population (Finding #4) | When running from npx git ref, read the npx cache's `.package-lock.json` for the resolved commit SHA and the requested ref; record both in `.harness-lock.json` `harness_ref` + `resolved_sha`. Fall back to `git rev-parse HEAD` when self-host | npx caches the ref→SHA mapping in `.package-lock.json`'s `packages.""."resolved"` field. Self-host runs have a real git working tree to query. |
-| C26-5 | Seeded `flags.json` content (Finding #5) | Empty `flags: []` array with comment string explaining the consumer should populate at first feature-flag use. NO example flags with dates | Avoids the date-rot problem entirely. The example flags were never actually useful — consumers never customise them in place; they delete and replace. |
-| C26-6 | Stray root `.gitkeep` (Finding #6) | Remove the unconditional `Created .gitkeep` line in `bin/harness.mjs cmdInit`. `.gitkeep` files only inside subdirectories that are otherwise empty | One-line fix. The root `.gitkeep` is meaningless because the root is never empty after init (it has README, ARCHITECTURE, etc.). |
-| C26-7 | `.gitattributes` seed shape (Finding #9) | Seed `* text=auto eol=lf` + override patterns matching what agent-harness itself uses (binary patterns for `*.png`, `*.jpg`, `*.ico`; LF for `*.md`, `*.mjs`, `*.json`, `*.yml`) | Mirrors agent-harness's own LF discipline; eliminates the Windows CRLF round-trip warnings consumers hit on first commit. |
-| C26-8 | Backwards compatibility | All 6 changes are additive or replace defective behaviour. No CS26 change breaks existing consumers (their root `.gitkeep` stays if already committed; their existing `flags.json` is not overwritten; their existing `.gitattributes` is not overwritten) | Sync semantics: init only runs once per consumer. Existing consumers are unaffected. |
-| C26-9 | Test approach | Each of the 6 fixes gets at least 1 test. Add new `tests/cs26-init-improvements.test.mjs` that consolidates them, plus extend `tests/cs09-init.test.mjs` with assertion that smoke-init produces zero `Cannot find package` warnings (validates CS25 fix), the correct seeded version, no REPLACE_ME placeholders, no root `.gitkeep`, and a `.gitattributes` file | Mirrors CS15e pattern of consolidating CS-scoped fixture tests in one file. |
+| C26-1 | Bundle vs. split | Bundle the four remaining findings (#2/#3/#6/#9) in one CS | All touch the `harness init` flow and share one end-to-end smoke validation; splitting would mean four close-out PRs with redundant smoke runs. (#4/#5 dropped as obsolete — see the 2026-06-09 Status-update note.) |
+| C26-2 | Version-detect strategy (Finding #2) | In `cmdInit`, for a FRESH init only (`!configExists`), derive provenance via `lib/sync.mjs` `resolveHarnessProvenance()` and NORMALIZE before writing the consumer `harness.config.json` `version`: (1) if `harness_ref` is a SemVer (`/^v?\d+\.\d+\.\d+/`, with or without a `v` — `resolveFromNpxCache` can derive a bare `0.16.0` from `entry.version`, whereas git yields the `v`-prefixed release tag), write it normalized to a `v` prefix (prepend `v` when absent) → `v0.16.0`; (2) else if `resolved_sha` is a real 40-hex SHA (not the all-zero placeholder), write the full `resolved_sha`; (3) else write `v${harness package.json version}`. Replaces the seeded `v0.1.0`. | `resolveFromGit` returns `harness_ref` = exact-tag → branch → short-SHA and `resolved_sha` = the full 40-char HEAD SHA, so writing `harness_ref` verbatim could persist a mutable branch name or a short SHA. Normalizing to tag-or-full-SHA-or-package-version keeps the pin schema-clean (`version` accepts a SemVer tag or a full Git SHA) and stable. FRESH-init-only preserves the LRN-057 / C41-8 "init never mutates an existing config" invariant. |
+| C26-3 | `check-config-placeholders` linter (Finding #3) | New `scripts/check-config-placeholders.mjs` scans the consumer-root `harness.config.json` ONLY (never `template/seeded/…`, which legitimately ships placeholders). It PARSES the file as JSON (fail-closed on malformed, per LRN-033) and reports one error per string VALUE, under a non-`_`-prefixed key, that contains a standalone `\bREPLACE_ME\b` token — so the seeded `_comment` meta key (whose instructional text legitimately contains "REPLACE_ME") is ignored, and a consumer who replaced every real placeholder passes even with the comment retained. Full linter interface: `--file <path>` (default `<cwd>/harness.config.json`), `--quiet`, exit 0/1/2, a `<basename>: N errors, M warnings` summary line, and a final `✅ Linter passed` / `❌ Linter FAILED` line. Register in the `cmdLint` aggregator (`args: ['--file', <cwd>/harness.config.json]`, `target: <cwd>/harness.config.json`). | Catches a consumer who ran `init` but forgot to replace placeholders before `sync`. The config is the single source of truth (rendered composed docs merely propagate it), so scanning the config alone is sufficient and avoids the composed-doc false-positive surface. Skipping `_`-prefixed keys eliminates the `_comment` false positive (R2 finding). The self-host root config has no `REPLACE_ME` in scanned positions today (verified), so the linter is green on self-host. |
+| C26-6 | Stray sentinel `.gitkeep` (Finding #6) | Delete BOTH `template/seeded/.gitkeep` (root) AND `template/seeded/.github/.gitkeep` — meaningless sentinels in dirs that are non-empty after a fresh init (the root always has README/config/…; `.github/` holds `workflows/` created earlier in `cmdInit`). RETAIN `template/seeded/project/clickstops/{active,done,planned}/.gitkeep` (those dirs stay empty; `tests/cs09-init.test.mjs` asserts them). Removing the sole file under `template/seeded/.github/` drops that empty dir from the seed tree — consumers still get `.github/` via the fresh-init workflow copies, so nothing is lost. | The disposition note's guidance is "delete the root sentinel and any sub-dir `.gitkeep` whose target dir is now non-empty"; both the root and `.github/` sentinels qualify. No `cmdInit` code change; grep confirms no test or code depends on either sentinel. |
+| C26-7 | `.gitattributes` seed shape (Finding #9) | New `template/seeded/.gitattributes` mirroring the harness's own root `.gitattributes`: `* text=auto eol=lf` plus the binary overrides (`*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.gz *.tar`). The existing seeded-copy loop (create-if-missing) ships it automatically — no `cmdInit` change. Must be committed LF-encoded (the file itself asserts `eol=lf`). | Mirrors the repo's own LF discipline (CS11b), eliminating the Windows CRLF round-trip warnings a fresh consumer hits on first commit. The global `* text=auto eol=lf` already forces LF for all text, so per-extension LF overrides are unnecessary. |
+| C26-8 | Backwards compatibility | The version-set is FRESH-init-only (guarded by `!configExists`), so re-running `init` never mutates an existing consumer's config (LRN-057 / C41-8). The seeded-copy loop runs unconditionally and is create-if-missing, so a re-init on an existing consumer that lacks `.gitattributes` will CREATE it — additive; it never overwrites an existing `.gitattributes`/`.gitkeep`. | Distinguishes config mutation (fresh-only) from additive create-if-missing seeding (always) — matching the actual `cmdInit` control flow (seed loop at ~1629 is unconditional; config writes are `!configExists`-gated). Adding a missing file is the behaviour every seed file already has; no existing file is modified. |
+| C26-9 | Test approach | Each of the four fixes gets ≥1 test in a new `tests/cs26-init-improvements.test.mjs` (consolidated per the CS15e pattern). Version-detect tests cover the three normalization branches via seam-injected provenance: SemVer (`v`-prefixed OR bare npx-cache version) → `v`-normalized; non-tag git ref (branch/short-SHA) → full `resolved_sha`; unresolved → `v${pkg.version}`. Placeholder-linter tests include "every real placeholder replaced but `_comment` retained → exit 0" and "a real `REPLACE_ME` value → exit 1". Extend `tests/cs09-init.test.mjs` to assert a fresh init yields: a `version` that is NOT `v0.1.0`; NEITHER a root `.gitkeep` NOR `.github/.gitkeep`; a `.gitattributes` containing `eol=lf`; and (retained) the clickstops `.gitkeep` sentinels. | Consolidates CS-scoped fixtures in one file; the cs09 extension is the end-to-end guardrail. Test minimums (≥4), not exact counts — over-delivery welcome. |
 
 ## Deliverables
 
-1. **Finding #2 fix:** `bin/harness.mjs cmdInit` — detect invocation ref + seed `harness.config.json` `version` field with the actual ref. Per Decision C26-2.
-2. **Finding #3 fix:** new `scripts/check-config-placeholders.mjs` linter per Decision C26-3. Wire into `bin/harness.mjs cmdLint` aggregator. Add to `harness.config.json:scaffolds[].linters` mapping if applicable.
-3. **Finding #4 fix:** `lib/sync.mjs` (or wherever `.harness-lock.json` is written) — populate `harness_ref` + `resolved_sha` per Decision C26-4. Also populate per-scaffold `version` strings (currently `"unknown"`).
-4. **Finding #5 fix:** `template/seeded/flags/flags.json` — replace example flags with empty array per Decision C26-5.
-5. **Finding #6 fix:** `bin/harness.mjs cmdInit` — remove the line that creates `.gitkeep` at the consumer root per Decision C26-6.
-6. **Finding #9 fix:** new `template/seeded/.gitattributes` per Decision C26-7. Wire into `cmdInit`'s seeded-file copy loop.
-7. **Tests:** new `tests/cs26-init-improvements.test.mjs` covering all 6 fixes. Extend `tests/cs09-init.test.mjs` end-to-end smoke per Decision C26-9.
-8. **End-to-end fresh-install smoke validation:** during close-out, repeat the CS25 smoke probe (fresh throwaway repo + npx init) and confirm: zero `Cannot find package` warnings; `harness.config.json` `version` matches invocation ref; no `REPLACE_ME` strings appear in rendered composed files; no root `.gitkeep` was created; `flags.json` is empty `flags: []`; `.gitattributes` exists with `eol=lf`. Capture transcript in active CS file Notes.
-9. **CHANGELOG.md:** add `## [v0.2.2]` (or whatever is next after CS25's `v0.2.1`) entry listing the 6 init improvements.
-10. **`sub-invaders-bootstrap-summary.md` update** (in agent-harness CS16 active or done dir, depending on CS16 close-out timing): add resolution notes to Findings #2, #3, #4, #5, #6, #9 pointing at CS26 close-out commit + tag.
+1. **Finding #2 fix:** `bin/harness.mjs` `cmdInit` — on FRESH init (`!configExists`), derive provenance via `resolveHarnessProvenance()` and write a NORMALIZED value into the consumer `harness.config.json` `version` (SemVer `harness_ref` → `v`-normalized `vX.Y.Z`; else real 40-hex `resolved_sha` → full SHA; else `v${package.json version}`), replacing the seeded `v0.1.0`. Per Decision C26-2.
+2. **Finding #3 fix:** new `scripts/check-config-placeholders.mjs` per Decision C26-3 — JSON-parse the consumer-root `harness.config.json` (fail-closed), flag standalone `\bREPLACE_ME\b` in string values under non-`_` keys (ignores `_comment`); `--file`/`--quiet`, exit 0/1/2, `<basename>: N errors, M warnings` summary + final `✅/❌` line. Wire into the `bin/harness.mjs` `cmdLint` aggregator registry.
+3. **Finding #6 fix:** delete BOTH `template/seeded/.gitkeep` and `template/seeded/.github/.gitkeep`. RETAIN the `template/seeded/project/clickstops/{active,done,planned}/.gitkeep` sentinels. Per Decision C26-6.
+4. **Finding #9 fix:** new `template/seeded/.gitattributes` (`* text=auto eol=lf` + binary overrides, LF-encoded) per Decision C26-7. Shipped automatically by the existing `cmdInit` seeded-copy loop (create-if-missing).
+5. **Tests:** new `tests/cs26-init-improvements.test.mjs` covering all four fixes (≥4 tests; incl. seam-injected version-detect branch tests + the `_comment`-retained linter-pass case). Extend `tests/cs09-init.test.mjs` end-to-end smoke per Decision C26-9.
+6. **End-to-end fresh-install smoke validation:** during close-out, run `harness init` into a throwaway temp dir and confirm: `harness.config.json` `version` is NOT `v0.1.0` (a tag or full SHA); no root `.gitkeep` and no `.github/.gitkeep`; `.gitattributes` exists and contains `eol=lf`; the clickstops `.gitkeep` sentinels are present; and `check-config-placeholders` flags a deliberately-reintroduced `REPLACE_ME` value while passing on the retained `_comment`. Capture the transcript in the active CS file Notes.
+7. **CHANGELOG.md:** add a `## [Unreleased]` entry listing the four init improvements, citing the 2026-06-09 Status-update note as the reason the scope is four findings (not the original six). The versioned release is a separate CS.
+8. **`sub-invaders-bootstrap-summary.md` update** (archived under `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`): add resolution notes to Findings #2, #3, #6, #9 pointing at the CS26 close-out commit; note that #4 and #5 were dispositioned obsolete (not fixed in CS26).
 
 ## Sub-agent fan-out
 
-CS26 is sized for ≥4 parallel sub-agents to validate the harness's own dispatch pattern AGAIN (recursive validation — CS26 fixes harness init defects observed during sub-invaders' fan-out exercise; CS26 itself uses fan-out).
+Scoped to a **2-way split with disjoint file ownership** (the 2026-06-09 note allows one orchestrator session; this optional split honours the "dispatch background sub-agents" preference while keeping write scopes non-overlapping). Ownership below is exclusive — no file is written by more than one agent.
 
-| # | Sub-agent | Owned files |
+| Agent | Owned files (OWN only) | Findings |
 |---|---|---|
-| 1 | `cs26-init-version-and-gitkeep` | `bin/harness.mjs` (cmdInit edits for Findings #2 + #6); test edits in `tests/cs26-init-improvements.test.mjs` for those 2 |
-| 2 | `cs26-config-placeholders-linter` | `scripts/check-config-placeholders.mjs` (new); wiring into `bin/harness.mjs` cmdLint aggregator (escalate to sub-agent #1 to coordinate cmdInit/cmdLint co-edits if conflict); test edits for Finding #3 |
-| 3 | `cs26-lock-file-resolved-ref` | `lib/sync.mjs` (or wherever lock-file is written; sub-agent must verify); test edits for Finding #4 |
-| 4 | `cs26-seeded-flags-and-gitattributes` | `template/seeded/flags/flags.json`, `template/seeded/.gitattributes` (new); cmdInit copy-loop wiring (coordinate with sub-agent #1); test edits for Findings #5 + #9 |
-| (orchestrator-owned) | — | active CS file Tasks population, end-to-end smoke probe (Deliverable #8), CHANGELOG.md, sub-invaders-bootstrap-summary (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) cross-reference, `tests/cs09-init.test.mjs` end-to-end extension |
+| A — `cs26-init-and-seeds` | `bin/harness.mjs`, `template/seeded/.gitkeep` (delete), `template/seeded/.github/.gitkeep` (delete), `template/seeded/.gitattributes` (new), `tests/cs26-init-improvements.test.mjs`, `tests/cs09-init.test.mjs` | #2 (cmdInit version-set, normalized), #6 (delete BOTH stray sentinels), #9 (new seed), the `cmdLint` registry wiring for #3's linter (by the agreed path/contract), and ALL tests |
+| B — `cs26-placeholder-linter` | `scripts/check-config-placeholders.mjs` (new) | #3 — the standalone linter body only: JSON-parse `harness.config.json` (fail-closed), flag standalone `\bREPLACE_ME\b` in string values under non-`_` keys (ignore `_comment`); `--file`/`--quiet`, exit 0/1/2, `<basename>: N errors, M warnings` summary + final `✅/❌` line |
+| (orchestrator-owned) | active CS file, `CHANGELOG.md`, `sub-invaders-bootstrap-summary.md`, end-to-end smoke probe | Deliverables 6–8 + integration verification |
 
-The 4 sub-agents have disjoint owned files except the cmdInit copy-loop. The orchestrator MUST resolve the cmdInit ownership choice up-front (recommend: sub-agent #1 owns all `bin/harness.mjs` cmdInit edits; sub-agents #2 and #4 hand patches to #1 if needed; OR: split cmdInit into smaller helpers that each sub-agent can extend independently).
+**Integration contract:** Agent A references Agent B's script by the fixed path `scripts/check-config-placeholders.mjs` and the CLI contract above; Agent B implements exactly that. Because A owns all of `bin/harness.mjs` and both test files, and B owns only the new standalone script, the write scopes are disjoint. The orchestrator runs the combined `node --test tests/*.test.mjs` + `harness lint` **after both agents land** (A's #3 test exercises B's script), and falls back to completing any failed sub-agent's scope itself.
 
 ## User-approval gates
 
-- **G-release:** confirm release-promote step. Standard CS14/CS22/CS25 pattern.
+- **No release in CS26.** This CS lands the four init fixes and a `## [Unreleased]` CHANGELOG entry only; promoting a versioned release is a separate release CS with its own G-release gate.
 
 ## Exit criteria
 
-1. All 6 findings have at least 1 corresponding code change committed.
-2. `tests/cs26-init-improvements.test.mjs` exists with ≥6 tests (one per finding) and `node --test` exits 0 with all passing.
+1. All four findings (#2/#3/#6/#9) have ≥1 corresponding change committed.
+2. `tests/cs26-init-improvements.test.mjs` exists with ≥4 tests (one per finding) and `node --test tests/*.test.mjs` exits 0 with all passing.
 3. `tests/cs09-init.test.mjs` end-to-end smoke extended per Decision C26-9 and passing.
 4. `harness lint --quiet` passes (full suite, including the new `check-config-placeholders`).
-5. End-to-end fresh-install smoke per Deliverable #8 passes all 6 assertions; transcript captured.
-6. `CHANGELOG.md` `## [v0.2.2]` (or successor) section present.
-7. CS16's `sub-invaders-bootstrap-summary.md` (now archived at `project/clickstops/done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md`) Findings #2, #3, #4, #5, #6, #9 each have resolution notes pointing at CS26 close-out SHA.
-8. All 4 sub-agent reports collected with STATUS: complete + correct PREFLIGHT/FINAL SHA invariants.
+5. End-to-end fresh-install smoke per Deliverable 6 passes all assertions; transcript captured in the CS Notes.
+6. `CHANGELOG.md` `## [Unreleased]` entry present listing the four init improvements.
+7. CS16's `sub-invaders-bootstrap-summary.md` Findings #2, #3, #6, #9 each have resolution notes pointing at the CS26 close-out SHA (and #4/#5 noted obsolete).
+8. All implementation sub-agent reports collected with STATUS: complete + correct PREFLIGHT/FINAL SHA invariants.
 9. Plan-vs-implementation review (GPT-5.5 gate) returns GO.
 
 ## Risks + open questions
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | Version-detect from npx cache (Finding #2 fix) is fragile if npm changes the cache layout | Per-platform fallback chain: try npx-cache lookup → fall back to package.json reading → fall back to writing literal `unknown` (better than silent `v0.1.0`). Add a test asserting the fallback chain works when the npx cache files are absent. |
-| R2 | `check-config-placeholders` may produce noisy false positives if a consumer legitimately uses the string `REPLACE_ME` somewhere | Use case-sensitive match; require it to appear as a STANDALONE token (regex `\bREPLACE_ME\b`); allow opt-out via comment marker (e.g. `<!-- placeholder-allowed -->` on a line) for CONVENTIONS.md sections that intentionally show example placeholders. |
-| R3 | Removing root `.gitkeep` (Finding #6) may delete one that an existing consumer has committed deliberately | The fix is to STOP creating it in init. Existing consumers' committed `.gitkeep` stays untouched. Sync does not delete files. |
-| R4 | Seeded `.gitattributes` (Finding #9) may conflict with consumer's pre-existing `.gitattributes` | Init's seeded-file copy loop already has the `if file exists, skip` invariant (verified during CS09 close-out). New seeded files inherit this invariant. |
-| R5 | The 4-way sub-agent fan-out has shared cmdInit ownership | Resolve by orchestrator at dispatch time per Decision C26-9 + the fan-out table notes. Either sub-agent #1 owns ALL cmdInit edits (others hand patches), or cmdInit is refactored into smaller helpers FIRST (Wave 0) before fan-out. |
+| R1 | Version-detect (Finding #2) writes a non-tag branch name or short SHA into `version` | Normalize before writing (C26-2): SemVer `harness_ref` → `v`-normalized `vX.Y.Z` (npx-cache may yield a bare `0.16.0`); any other git ref (branch/short-SHA) → full 40-hex `resolved_sha`; unresolved → `v${package.json version}`. Never write a bare branch name or short SHA. Seam-injected tests cover all three branches. |
+| R2 | `check-config-placeholders` false-positives on the seeded `_comment` (which contains "REPLACE_ME") | JSON-parse the config and scan only string VALUES under non-`_`-prefixed keys, so `_comment` is ignored; a consumer who replaced every real placeholder passes even with the comment retained. Scope is the consumer-root `harness.config.json` only (never `template/seeded/…`). A dedicated test covers "all real placeholders replaced + `_comment` retained → exit 0". |
+| R3 | Deleting the seeded root `.gitkeep` (Finding #6) affects a consumer that committed one deliberately | The fix only STOPS seeding it; `sync` never deletes consumer files, so an existing committed `.gitkeep` stays. `tests/cs09-init.test.mjs` guards that the clickstops sentinels are retained. |
+| R4 | Seeded `.gitattributes` (Finding #9) conflicts with a consumer's pre-existing one | The seeded-copy loop is create-if-missing (`bin/harness.mjs` line ~1642 `if (!existsSync(dest))`); an existing consumer `.gitattributes` is preserved. |
+| R5 | 2-way split shares `bin/harness.mjs` write scope | NO — ownership is disjoint: Agent A owns ALL of `bin/harness.mjs` + both test files; Agent B owns ONLY the standalone new linter script. Integration is via the agreed CLI contract; the orchestrator runs the combined test+lint after both land. |
 
 ## Plan review
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 2d48e031198c | 2026-05-14T04:50:00Z | Go-with-amendments | CS26 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
+| R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah) | 14d1c9d5c353 | 2026-07-04T04:26:47Z | Needs-Fix | Path-B re-author review: linter would flag seeded `_comment` REPLACE_ME; provenance may write branch/short-SHA into `version`; compat + linter-interface claims need tightening. |
+| R3 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah) | e9ad7e211bed | 2026-07-04T04:44:47Z | Go-with-amendments | R2 blockers resolved (JSON value-scan skips `_comment`; provenance normalized to tag/full-SHA/pkg-version). Amendment folded in: v-normalize bare npx-cache versions. |
 
 ## Model audit
 
@@ -162,13 +164,13 @@ The 4 sub-agents have disjoint owned files except the cmdInit copy-loop. The orc
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T0 — Finalize scope + path: implement findings #2/#3/#6/#9 per the 2026-06-09 disposition note; choose Path A (leave Decisions/Deliverables untouched — plan-review hash `2d48e031198c` stays valid) vs Path B (re-author body → fresh R2 GPT-5.5 plan review) | in-progress | yoga-ah | #4/#5 obsolete; re-authoring Decisions/Deliverables invalidates the plan-review hash |
-| T1 — Finding #2: `bin/harness.mjs` cmdInit detects invocation ref + seeds a real `version` into `harness.config.json` (C26-2; fallback chain per R1) | pending | — | impl; sub-agent A candidate |
-| T2 — Finding #3: new `scripts/check-config-placeholders.mjs` (standalone `REPLACE_ME` token match) + wire into cmdLint aggregator; verify no seeded-token propagation (C26-3; risk R2) | pending | — | impl; sub-agent B candidate; 8 tokens across 6 fields today |
-| T3 — Finding #6: stop shipping a root `.gitkeep` — delete `template/seeded/.gitkeep` and/or skip it in the cmdInit seeded-copy loop (C26-6, mechanism updated per disposition) | pending | — | impl; sub-agent A candidate |
-| T4 — Finding #9: new `template/seeded/.gitattributes` (`* text=auto eol=lf` + binary/LF overrides) + copy-loop wiring (C26-7) | pending | — | impl; sub-agent A candidate |
+| T0 — Scope + path: **Path B chosen** — re-authored Decisions/Deliverables to #2/#3/#6/#9 (#4/#5 dropped); R1 hash invalidated; R2 GPT-5.5 review returned Needs-Fix (linter `_comment` false-positive + provenance normalization), both addressed in-plan; R3 re-attests | done | yoga-ah | plan-review hash recomputed after revision (see `## Plan review` R3) |
+| T1 — Finding #2: `bin/harness.mjs` cmdInit derives + NORMALIZES the harness ref (SemVer tag → full SHA → `v${pkg.version}`) into `harness.config.json` `version` (C26-2) | pending | — | impl; sub-agent A |
+| T2 — Finding #3: new `scripts/check-config-placeholders.mjs` — JSON-parse config, flag `\bREPLACE_ME\b` in non-`_`-key string values (ignore `_comment`); basename summary + `✅/❌`; wire into cmdLint (C26-3) | pending | — | impl; sub-agent B (linter body) + A (registry wiring) |
+| T3 — Finding #6: delete BOTH `template/seeded/.gitkeep` and `template/seeded/.github/.gitkeep`; retain the clickstops sentinels (C26-6) | pending | — | impl; sub-agent A |
+| T4 — Finding #9: new `template/seeded/.gitattributes` (`* text=auto eol=lf` + binary overrides, LF-encoded); shipped by the existing copy loop (C26-7) | pending | — | impl; sub-agent A |
 | T5 — Tests: `tests/cs26-init-improvements.test.mjs` (≥4, one per finding) + extend `tests/cs09-init.test.mjs` end-to-end smoke (C26-9) | pending | — | over-delivery on tests encouraged |
-| T6 — End-to-end fresh-install smoke probe (Deliverable #8) + `CHANGELOG.md [Unreleased]` entry (Deliverable #9) | pending | yoga-ah | orchestrator-owned |
+| T6 — End-to-end fresh-install smoke probe (Deliverable #6) + `CHANGELOG.md [Unreleased]` entry (Deliverable #7) | pending | yoga-ah | orchestrator-owned |
 | T7 — Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | independence: reviewer model ≠ every implementer model |
 | Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
 | Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS.md entries; add resolution notes to CS16 `sub-invaders-bootstrap-summary.md` findings #2/#3/#6/#9; file planned follow-up CSs as needed |
