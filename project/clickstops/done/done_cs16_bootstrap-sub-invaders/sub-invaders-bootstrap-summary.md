@@ -73,6 +73,8 @@ The init template seeds `harness.config.json` with `"version": "v0.1.0"` regardl
 
 **Recommended fix:** at init time, detect the invocation ref (from `process.argv` parsing or `__dirname` resolution back to the git ref) and seed the actually-invoked version. Or, render `"version"` as a placeholder `REPLACE_ME` and require the user to set it.
 
+**✅ Resolved — CS26 (2026-07-04).** `cmdInit` now derives the running install's provenance via `resolveHarnessProvenance()` and writes a normalized `version` (SemVer tag → full 40-hex `resolved_sha` → `v${package.json version}`) into the fresh consumer config, replacing the seeded `v0.1.0`. Fresh-init-only (preserves LRN-057/C41-8). See `project/clickstops/done/done_cs26_init-improvements-bundle/`.
+
 ### Finding #3 — HIGH: `harness.config.json` seeded with `REPLACE_ME` placeholders that lint does not detect
 
 Init seeds:
@@ -85,6 +87,8 @@ Init seeds:
 These placeholders pass through composed-block rendering and end up as literal text in CONVENTIONS.md, OPERATIONS.md, REVIEWS.md. `harness lint` does not flag them.
 
 **Recommended fix:** add a `check-config-placeholders` linter that scans `harness.config.json` (and rendered composed files) for literal `REPLACE_ME` and fails. SI-CS01 will replace these for sub-invaders, but the gap is real.
+
+**✅ Resolved — CS26 (2026-07-04).** New `scripts/check-config-placeholders.mjs`, registered in `harness lint`, flags standalone `REPLACE_ME` in string values under non-`_` keys of the consumer-root `harness.config.json` (JSON-aware, so the instructional `_comment` is ignored). Scoped to the config (the source of truth), not the rendered composed docs. A fresh init intentionally ships placeholders, so the linter flags them by design until filled — a fresh scaffold is *structurally* clean (`harness lint --skip config-placeholders`) plus this "fill in your identity" reminder (issue #146 refined accordingly; see CS26 R6).
 
 ### Finding #4 — HIGH: `.harness-lock.json` records `"unknown"` and `"0000..."` for npx-git-ref invocations
 
@@ -100,17 +104,23 @@ This defeats the entire pin-integrity verification mechanism. Consumers can't va
 
 **Recommended fix:** when sync runs from an npx-installed package, read the package's git ref from the npx cache metadata (`npm-cache/_npx/<hash>/node_modules/.package-lock.json` typically records the ref) and populate `harness_ref` + `resolved_sha` accordingly.
 
+**⊘ Obsolete (not fixed in CS26).** Addressed independently by the CS82 provenance chain: `lib/sync.mjs` `resolveHarnessProvenance()` (npx-cache → git → fail-closed) populates `.harness-lock.json` `harness_ref` + `resolved_sha`, and `validateResolvedProvenance` refuses to persist the `unknown`/all-zero placeholder. Dispositioned obsolete during the CS26 re-author (2026-07-04).
+
 ### Finding #5 — MEDIUM: Seeded `flags/flags.json` has expired example dates causing day-1 lint fail
 
 The seeded template ships with `"expires": "2025-12-31"` and `"expires": "2025-06-30"` example flags. By the time any consumer runs init in 2026+, the policy linter immediately fails with `STALE — "expires" date YYYY-MM-DD is in the past`.
 
 **Recommended fix:** either (a) seed with all-future dates auto-computed at init time (e.g. `today + 90 days`), (b) seed with `expires: null`, or (c) seed with a comment-only file (no example flags). Stubbed to empty for sub-invaders.
 
+**⊘ Obsolete (not fixed in CS26).** Obsolete by elimination — the entire `template/seeded/flags/` subtree no longer exists, so no `flags.json` is seeded and the expired-dates defect cannot occur. Dispositioned obsolete during the CS26 re-author (2026-07-04).
+
 ### Finding #6 — MEDIUM: Stray `.gitkeep` created at repo root by harness init
 
 Init created a file literally named `.gitkeep` at the consumer repo root. `.gitkeep` files are conventionally only used inside otherwise-empty subdirectories to force git to track them. A root-level `.gitkeep` is meaningless and clutter.
 
 **Recommended fix:** remove the `Created .gitkeep` line in init's file-creation script (the loop is likely seeding `.gitkeep` inside `./`).
+
+**✅ Resolved — CS26 (2026-07-04).** Removed at the source: `template/seeded/.gitkeep` and `template/seeded/.github/.gitkeep` are deleted (both land in dirs that are non-empty after init). The legitimately-empty `project/clickstops/{planned,active,done}/.gitkeep` sentinels are retained. (The old unconditional `Created .gitkeep` line was already gone; the residual defect was the seeded-copy loop propagating the seed files.)
 
 ### Finding #7 — LOW: Sync warns "WORKBOARD.md has active CS rows" on fresh consumer
 
@@ -129,6 +139,8 @@ Lint skipped: `instructions`, `fixtures`, `templates`, `pack`, `scaffold-readme`
 Sub-invaders has no `.gitattributes`. Windows `git` with default `core.autocrlf=true` immediately surfaces 32 `LF will be replaced by CRLF the next time Git touches it` warnings at first commit. Confusing for new consumers.
 
 **Recommended fix:** harness init should seed a `.gitattributes` with `* text=auto eol=lf` (matching the harness's own LF discipline). SI-CS01 will add this for sub-invaders.
+
+**✅ Resolved — CS26 (2026-07-04).** `harness init` now seeds `template/seeded/.gitattributes` (`* text=auto eol=lf` + binary overrides, mirroring the harness's own root file), shipped create-if-missing by the seeded-copy loop.
 
 ## Recommended follow-up agent-harness CSs (for the workboard)
 

@@ -1,0 +1,20 @@
+# Force LF line endings for all text files.
+#
+# Harness-rendered and composed files are produced with LF endings. On Windows,
+# git's core.autocrlf=true would otherwise convert LF -> CRLF on checkout,
+# causing `harness sync --mode=check` to report false drift (working tree vs the
+# LF-normalized templating output). Forcing LF keeps the working-tree state
+# consistent cross-platform and silences first-commit CRLF round-trip warnings.
+
+* text=auto eol=lf
+
+# Explicit binary types — never normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary

@@ -338,19 +338,36 @@ describe('CS46 — workboard empty-state + Plan-vs-impl review discoverability',
         `Expected "0 errors"; got:\n${wbLintResult.stdout}`
       );
 
-      // 5b. Run the full harness lint --quiet against the freshly init'd
-      // consumer dir. The fresh-init scaffold MUST satisfy `harness lint`
-      // out of the box — partial pass weakens issue #146 AC #1.
-      // Skip the public-artifact check (it requires --public-artifact-dir
-      // which fresh init does not provide).
+      // 5b. Run harness lint --quiet against the freshly init'd consumer dir.
+      // Post-CS26, "lint-clean out of the box" (issue #146 AC #1) means the
+      // fresh scaffold is STRUCTURALLY clean: all seeded doc skeletons +
+      // clickstop/composed-blocks/workboard/etc. linters pass. The CS26
+      // config-placeholders linter is EXCLUDED here because it intentionally
+      // flags the seeded REPLACE_ME identity placeholders (project.repo,
+      // templating.*) the consumer must fill before sync — a directive
+      // onboarding reminder, not a structural error (asserted separately in 5c).
+      // (public-artifact self-skips: no --public-artifact-dir on fresh init.)
       const fullLintResult = spawnSync(
         NODE,
-        [HARNESS_BIN, '--cwd', targetDir, 'lint', '--quiet'],
+        [HARNESS_BIN, '--cwd', targetDir, 'lint', '--quiet', '--skip', 'config-placeholders'],
         { encoding: 'utf8' }
       );
       assert.equal(
         fullLintResult.status, 0,
-        `Freshly-init'd consumer must pass "harness lint --quiet" with exit 0 (issue #146 AC #1 strict); got ${fullLintResult.status}\nstdout: ${fullLintResult.stdout}\nstderr: ${fullLintResult.stderr}`
+        `Freshly-init'd consumer must be STRUCTURALLY lint-clean (issue #146 AC #1, modulo the CS26 config-placeholders identity reminder asserted in 5c); got ${fullLintResult.status}\nstdout: ${fullLintResult.stdout}\nstderr: ${fullLintResult.stderr}`
+      );
+
+      // 5c. (CS26) config-placeholders correctly flags the fresh-init config's
+      // un-replaced REPLACE_ME identity placeholders — the consumer's one
+      // remaining setup step before sync (exit 1 by design).
+      const cpResult = spawnSync(
+        NODE,
+        [HARNESS_BIN, '--cwd', targetDir, 'lint', '--only', 'config-placeholders', '--quiet'],
+        { encoding: 'utf8' }
+      );
+      assert.equal(
+        cpResult.status, 1,
+        `config-placeholders must flag the fresh-init config's unfilled REPLACE_ME identity placeholders (CS26 Finding #3); got ${cpResult.status}\nstdout: ${cpResult.stdout}`
       );
     } finally {
       fs.rmSync(targetDir, { recursive: true, force: true });

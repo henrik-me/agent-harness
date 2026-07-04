@@ -145,16 +145,29 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
     }
   });
 
-  it('7. harness lint --quiet against init-produced repo passes (or skips missing targets gracefully)', () => {
+  it('7. harness lint --quiet against init-produced repo passes for all structural linters (config-placeholders flags the unfilled identity placeholders, CS26)', () => {
     const dir = makeTmpDir();
     try {
       runHarness(['--cwd', dir, 'init']);
-      const r = runHarness(['--cwd', dir, 'lint', '--quiet']);
+      // The seeded config intentionally ships REPLACE_ME identity placeholders
+      // (project.repo, templating.*) that the consumer must fill before sync; the
+      // CS26 config-placeholders linter flags them by design, so it is asserted
+      // separately and excluded from the structural-clean check below (the seeded
+      // doc skeletons + clickstop/composed-blocks/etc. must still lint cleanly).
+      const r = runHarness(['--cwd', dir, 'lint', '--quiet', '--skip', 'config-placeholders']);
       assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
       // The seeded skeletons cover the core 5; clickstop/composed-blocks/etc. should pass or skip
       assert.ok(
         r.stdout.includes('Total:') && r.stdout.includes('0 failed'),
         `Expected "0 failed" in summary; got:\n${r.stdout}`
+      );
+      // config-placeholders correctly flags the fresh-init config's un-replaced
+      // REPLACE_ME identity placeholders (exit 1 by design).
+      const cp = runHarness(['--cwd', dir, 'lint', '--only', 'config-placeholders', '--quiet']);
+      assert.equal(
+        cp.status,
+        1,
+        `config-placeholders must flag the fresh-init config's unfilled REPLACE_ME placeholders; got exit ${cp.status}\nstdout: ${cp.stdout}`
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -276,5 +289,40 @@ ${syncCheck.stdout}`);
 
     const after = snapshotTree(dir);
     assert.deepEqual(after, before, 'sync --mode=check must not mutate the init-produced repo');
+  });
+
+  it('11. CS26: fresh init writes a real version pin, seeds .gitattributes, drops stray sentinels, retains clickstops sentinels', () => {
+    const dir = makeTmpDir();
+    try {
+      const r = runHarness(['--cwd', dir, 'init']);
+      assert.equal(r.status, 0, `Expected exit 0; got ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+
+      // Finding #2: version is no longer the seeded v0.1.0 placeholder
+      const cfg = JSON.parse(readFileSync(path.join(dir, 'harness.config.json'), 'utf8'));
+      assert.notEqual(cfg.version, 'v0.1.0', 'fresh init must overwrite the seeded v0.1.0 placeholder');
+      assert.ok(
+        /^v\d+\.\d+\.\d+/.test(cfg.version) || /^[0-9a-f]{40}$/.test(cfg.version),
+        `version must be a SemVer tag or a full 40-hex SHA; got ${cfg.version}`,
+      );
+
+      // Finding #6: neither stray sentinel is seeded
+      assert.ok(!existsSync(path.join(dir, '.gitkeep')), 'root .gitkeep must NOT be seeded');
+      assert.ok(!existsSync(path.join(dir, '.github', '.gitkeep')), '.github/.gitkeep must NOT be seeded');
+
+      // Finding #9: .gitattributes is seeded and forces LF
+      const gaPath = path.join(dir, '.gitattributes');
+      assert.ok(existsSync(gaPath), '.gitattributes must be seeded');
+      assert.match(readFileSync(gaPath, 'utf8'), /eol=lf/, '.gitattributes must contain eol=lf');
+
+      // Retained: the clickstops .gitkeep sentinels (C26-6)
+      for (const sub of ['planned', 'active', 'done']) {
+        assert.ok(
+          existsSync(path.join(dir, 'project', 'clickstops', sub, '.gitkeep')),
+          `project/clickstops/${sub}/.gitkeep must be retained`,
+        );
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

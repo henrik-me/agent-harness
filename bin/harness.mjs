@@ -988,6 +988,39 @@ function readPackageJSON() {
 }
 
 /**
+ * Normalize a running-install provenance record into a schema-clean
+ * `harness.config.json` `version` pin (CS26 / C26-2, Finding #2).
+ *
+ * Precedence:
+ *   1. A SemVer `harness_ref` (`/^v?\d+\.\d+\.\d+/`, with or without a `v`
+ *      prefix — `resolveFromNpxCache` can derive a bare `0.16.0`, git yields
+ *      the `v`-prefixed release tag) → normalized to a `v` prefix (`v0.16.0`).
+ *   2. Else a real 40-hex `resolved_sha` (not the all-zero placeholder) → the
+ *      full SHA verbatim (never a mutable branch name or short SHA, per R1).
+ *   3. Else `v${pkgVersion}` (the harness package.json fallback), `v`-normalized.
+ *
+ * Pure and defensively tolerant of missing/undefined fields so a partial
+ * provenance object never throws.
+ *
+ * @param {{ harness_ref?: string, resolved_sha?: string }} [provenance]
+ * @param {string} [pkgVersion]
+ * @returns {string}
+ */
+export function normalizeInitVersion(provenance, pkgVersion) {
+  const withVPrefix = (s) => (/^v/.test(s) ? s : `v${s}`);
+  const ref = provenance && typeof provenance.harness_ref === 'string' ? provenance.harness_ref : '';
+  const sha = provenance && typeof provenance.resolved_sha === 'string' ? provenance.resolved_sha : '';
+  if (/^v?\d+\.\d+\.\d+/.test(ref)) {
+    return withVPrefix(ref);
+  }
+  if (/^[0-9a-f]{40}$/.test(sha) && !/^0{40}$/.test(sha)) {
+    return sha;
+  }
+  const pkg = typeof pkgVersion === 'string' && pkgVersion.length > 0 ? pkgVersion : '0.0.0';
+  return withVPrefix(pkg);
+}
+
+/**
  * Derive machine-short from hostname.
  * Splits on `-` or `_`, returns the last segment lowercased.
  * Per Decision #20: "first segment after splitting, skipping user/owner prefix segments".
@@ -1537,6 +1570,27 @@ async function cmdInit(args, global) {
         writeFileSync(configDest, JSON.stringify(scaffold, null, 2) + '\n', 'utf8');
         process.stdout.write(`Created harness.config.json at ${configDest}\n`);
       }
+    }
+  }
+
+  // CS26 / C26-2 (Finding #2): on FRESH init only, replace the seeded placeholder
+  // `version` (v0.1.0) with the running harness install's real provenance,
+  // normalized to a schema-clean pin (SemVer tag → full 40-hex SHA → package
+  // version). Fresh-init-only (`!configExists`) preserves the LRN-057 / C41-8
+  // "init never mutates an existing config" invariant and keeps re-running init
+  // idempotent. Fail-soft: a provenance/read error leaves the seeded value.
+  if (!configExists) {
+    try {
+      const { resolveHarnessProvenance } = await import('../lib/sync.mjs');
+      const version = normalizeInitVersion(resolveHarnessProvenance(), readPackageJSON().version);
+      const cfg = JSON.parse(stripBOM(readFileSync(configDest, 'utf8')));
+      if (cfg.version !== version) {
+        cfg.version = version;
+        writeFileSync(configDest, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+        process.stdout.write(`Set harness.config.json version to ${version}\n`);
+      }
+    } catch (err) {
+      process.stderr.write(`Warning: could not set harness.config.json version: ${err.message}\n`);
     }
   }
 
@@ -2716,6 +2770,16 @@ async function cmdLint(args, _global) {
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
       ],
       target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
+    },
+    {
+      // CS26 / C26-3 (Finding #3): flag un-replaced REPLACE_ME placeholder tokens
+      // left in the consumer-root harness.config.json after `harness init`. The
+      // root config exists in both self-host and consumer, so this always runs;
+      // on the self-host root config (no REPLACE_ME in scanned positions) it exits 0.
+      name: 'config-placeholders',
+      script: 'check-config-placeholders.mjs',
+      args: ['--file', path.join(cwd, 'harness.config.json')],
+      target: path.join(cwd, 'harness.config.json'),
     },
     (() => {
       // CS72 (C72-3/C72-4): consumer-template genericity guard. Scans the
