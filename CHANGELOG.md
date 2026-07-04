@@ -15,7 +15,7 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Changed
 
-- **`check-clickstop` CHANGELOG-touch enforcement (LRN-101):** `check-clickstop` now requires a CHANGELOG-touch task row on clickstops whose deliverables touch the distributed harness surface (`template/`, `lib/`, `scripts/*.mjs`, `bin/`, `scaffolds/`, `schemas/`), date-grandfathered from 2026-07-05. Distributed-surface detection consults `harness.config.json` `excluded[]` (excluded paths do not ship, so they are exempt); `active/` files are always checked, `done/` files only when closed on/after the cutoff, so the closed backlog is unaffected (Minor).
+- **`check-clickstop` CHANGELOG-touch enforcement (LRN-101):** `check-clickstop` now requires a CHANGELOG-touch task row on clickstops whose deliverables touch the distributed harness surface (`template/`, `lib/`, `scripts/*.mjs`, `bin/`, `scaffolds/`, `schemas/`, `package.json`, `package-lock.json`), date-grandfathered from 2026-07-05. Distributed-surface detection consults `harness.config.json` `excluded[]` (excluded paths do not ship, so they are exempt); `active/` files are always checked, `done/` files only when closed on/after the cutoff, so the closed backlog is unaffected (Minor).
 
 ### Documentation
 

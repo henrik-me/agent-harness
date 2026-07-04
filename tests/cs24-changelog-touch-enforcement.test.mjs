@@ -125,10 +125,11 @@ describe('CS24 CHANGELOG-touch enforcement (fixtures)', () => {
 describe('CS24 CHANGELOG-touch enforcement (no Deliverables section)', () => {
   it('9. done recent with no ## Deliverables section → cannot determine → skipped', () => {
     // LRN-094: transient fixtures must NOT be written under REPO_ROOT (a
-    // concurrent text-encoding walk would ENOENT-race on them).
-    const root = path.join(os.tmpdir(), 'cs24-no-deliverables', 'tree');
+    // concurrent text-encoding walk would ENOENT-race on them). Use a UNIQUE
+    // temp root per run (mkdtempSync) so concurrent `node --test` files cannot
+    // collide on a fixed path.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cs24-no-deliverables-'));
     const doneDir = path.join(root, 'done');
-    fs.rmSync(root, { recursive: true, force: true });
     fs.mkdirSync(doneDir, { recursive: true });
     fs.writeFileSync(
       path.join(doneDir, 'done_cs24099_no-deliverables.md'),

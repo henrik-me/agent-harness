@@ -134,8 +134,8 @@ CS24 close-out is permitted only when **all** of the following are true and reco
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T1 — Linter extension: add `checkChangelogTouchTask` + `CHANGELOG_TOUCH_ENFORCEMENT_DATE` to `scripts/check-clickstop.mjs` (Deliverable 1; helper `lib/distributed-surface-globs.mjs` per Deliverable 2 only if >40 lines) | done | cs24-changelog-enforce | C24-1/C24-2/C24-3/C24-4; check 6, modeled on `checkCloseoutTasks`; helper module created (>40 lines, unit-tested) |
-| T2 — Fixture set: 8 fixtures under `tests/fixtures/cs24/` (4 valid, 4 invalid) | done | cs24-changelog-enforce | Deliverable 3 / C24-5; each a complete otherwise-valid clickstop in its own case dir |
-| T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | done | cs24-changelog-enforce | Deliverable 4; 15 tests (8 fixture + no-Deliverables skip + 6 helper unit) |
+| T2 — Fixture set: 9 fixtures under `tests/fixtures/cs24/` (4 valid, 5 invalid) | done | cs24-changelog-enforce | Deliverable 3 / C24-5; each a complete otherwise-valid clickstop in its own case dir (the 5th invalid is the R1 scripts-glob regression) |
+| T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | done | cs24-changelog-enforce | Deliverable 4; 34 tests (fixture e2e + extraction/matching unit + R1–R4 rubber-duck convergence matrix) |
 | T4 — Template doc: `template/composed/OPERATIONS.md § Harvest`, then refresh rendered root `OPERATIONS.md` | done | cs24-changelog-enforce | Deliverable 5 / C24-6; doc added to template + rendered root; `.harness-lock.json` intentionally kept at `main` (stale-lock resync deferred — see Notes); `sync --mode=check` clean |
 | T5 — CHANGELOG.md `[Unreleased] / Changed` entry for the enforcement | done | cs24-changelog-enforce | Deliverable 6; classified **Minor** |
 | T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | pending | yoga-ah-c2 | Deliverable 7 / C24-7 — CLOSE-OUT task |
@@ -147,11 +147,12 @@ CS24 close-out is permitted only when **all** of the following are true and reco
 **Implementation (2026-07-04, `cs24/content`).** Deliverables 1–6 by sub-agent
 `cs24-changelog-enforce` (claude-opus-4.8) + orchestrator `yoga-ah-c2`.
 `scripts/check-clickstop.mjs` gains check 6 `checkChangelogTouchTask` (backed by
-new `lib/distributed-surface-globs.mjs`); 8 fixtures + 15 tests; OPERATIONS.md
+new `lib/distributed-surface-globs.mjs`); 9 fixtures + 34 tests; OPERATIONS.md
 § Harvest `### CHANGELOG-on-every-CS-close-out`; CHANGELOG `[Unreleased]/Changed`
 bullet. Verified: `check-clickstop --dir project/clickstops` 0 errors,
-`node --test tests/*.test.mjs` 1777 pass / 0 fail (+15), `harness lint` 35/0/3,
-`sync --mode=check` no drift.
+`node --test tests/*.test.mjs` 0 fail (+34 tests from CS24), `harness lint` 35/0/3,
+`sync --mode=check` no drift. (Fixture/test counts grew across the 5-round
+rubber-duck review — R1–R4 each added token-parser regression coverage.)
 
 **Key decisions:**
 - **Enforcement cutoff `2026-07-05`** (C24-4): strictly after the latest existing
