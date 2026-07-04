@@ -1,9 +1,9 @@
 # CS76 — Composed process-doc cross-ref resolvability: close #229 + fold in CS81-R3 docs/adr links, via an extended guard
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs76/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** omni-ah-c3 (Claude Opus 4.8), 2026-06-30 — filed from the open-LRN harvest triage requested by @henrik-me, adopting **LRN-170** (the second, distinct consumer-doc-cleanliness invariant CS72 deliberately carved out) and closing the consumer→harness feedback issue **#229**.
 **Updated by:** yoga-ah (Claude Opus 4.8), 2026-07-01 — relevance refresh after CS81/CS82 shipped (v0.11.0), rebased onto HEAD `67f3b5d` (v0.12.0; picks up CS83/CS84 — see Notes). Retargets the guard to **extend** CS81's `scripts/check-doc-xref-resolvability.mjs` (not a new script), folds in CS81's deferred R3 `docs/adr` process-base class (now incl. `CONVENTIONS.md`), corrects SemVer **Minor→Patch**, resolves **G-xref-approach** (qualify-in-place) and **G-issue-close** (user closes), decides the `docs/adr` tactic (C76-8), and refreshes all drifted line citations. Re-reviewed at **R5**.
@@ -86,11 +86,26 @@ Because the repo self-hosts, every composed-base edit propagates to the rendered
 | R4 | gpt-5.5 | claude-opus-4.8 | cs76-review-r4 | c414a4892321 | 2026-06-30T21:09:00Z | Go | Renumber confirmation CS74->CS76 (sibling-orchestrator CS74 collision); decision IDs C74->C76; content otherwise unchanged from R3; substance + #229 citations intact. |
 | R5 | gpt-5.5 | claude-opus-4.8 | cs76-review-r5 | 488dedac0c06 | 2026-07-02T15:29:09Z | Go | R5 relevance refresh @0a4eff8: guard extends CS81 (not new script); docs/adr folded in (+CONVENTIONS, C76-8); SemVer Minor->Patch; qualify-in-place; F1-F6 verified incl. SI syncs both siblings. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Patch** (C76-7) — the guard is *extended* (not added) and self-host-only; the only consumer-visible delta is doc-content corrections. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — D1+D2+D3: #229 + `docs/adr` remediation across the three composed process-doc bases + root regeneration. `template/composed/OPERATIONS.md` (qualify #229-A sibling cross-refs with the standard phrase "*(if your consumer syncs it)*" per C76-1; fix #229-B "non-mutating to consumer labels" → "non-destructive / non-overwriting (no `--force`)" per C76-5; genericize the 6 `docs/adr` refs to link-free prose per C76-8), `template/composed/REVIEWS.md` (qualify the § 2.6a/2.6c F3 "Source of truth" sibling refs; fix #229-C bare `pr-evidence-lint.yml` → full `template/managed/.github/workflows/pr-evidence-lint.yml`), `template/composed/CONVENTIONS.md` (genericize the 3 `docs/adr` refs; reword the convention-illustrating example to a non-dangling form); then re-render the three roots via `harness sync` (C76-4). Audit EVERY occurrence, not just #229's drifted line numbers; spare the allowlisted descriptive mentions (R1). | pending | — | agent-id=cs76-docs \| role=impl \| report-status=pending \| learnings=0 — owns template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md + the three regenerated roots (via harness sync); shares the C76-1 qualifier-phrase + C76-3 allowlist contract with cs76-guard |
+| T2 — D4+D5: extend CS81's `scripts/check-doc-xref-resolvability.mjs` with a composed-process-base check class (C76-3) over `template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md` failing on (i) any unqualified not-guaranteed-sibling token (`INSTRUCTIONS.md`, `.github/copilot-instructions.md`) that is neither qualified by the documented phrase nor in a commented in-script allowlist, and (ii) any harness-internal `docs/adr/*` ref (relative link, inline-code path, or hardcoded-slug URL); reuse the guard's node-builtins-only, self-host-by-package-name, `harness lint`-registered (`doc-xref-resolvability`) wiring. Tests (`os.tmpdir()` only, min 8 fixtures) — unqualified sibling prose (fail), F3 table-cell ref (fail), qualified sibling (pass), allowlisted descriptive mention (pass), dangling `docs/adr` link (fail), hardcoded-slug ADR URL (fail), genericized prose (pass), new unqualified ref (fail). | pending | — | agent-id=cs76-guard \| role=impl \| report-status=pending \| learnings=0 — owns scripts/check-doc-xref-resolvability.mjs + tests/cs76-doc-xref-resolvability.test.mjs; shares the C76-1 qualifier-phrase + C76-3 allowlist contract with cs76-docs |
+| T3 — Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint` incl. `doc-xref-resolvability`/`check-composed-blocks`/`text-encoding`, `node --test tests/*.test.mjs`, `harness sync --mode=check` zero drift) | pending | yoga-ah | independence: reviewer model ≠ every implementer model |
+| CHANGELOG — D7: `CHANGELOG.md` `[Unreleased]` → **Fixed** entry (consumer-doc cross-ref + `docs/adr` correctness; guard extended). Patch (C76-7). | pending | yoga-ah | orchestrator-owned; distributed-surface CS (LRN-101) |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah | D6: flip LRN-170 `open → applied` with the merge SHA; record that this CS closes CS81's deferred R3 `docs/adr` gap; cross-ref #229 (user closes); file any new LEARNINGS.md entries + follow-up CSs |
 
 ## Notes / Learnings
 
