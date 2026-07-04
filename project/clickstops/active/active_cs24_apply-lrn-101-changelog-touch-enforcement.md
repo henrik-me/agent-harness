@@ -1,9 +1,9 @@
 # CS24 — Apply LRN-101: mechanically enforce CHANGELOG-touch task on distributed-surface CSs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs24/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** Pre-CS16 disposition of [LRN-101](../../../LEARNINGS.md#lrn-101) (CS22 close-out, 2026-05-10) per the [INSTRUCTIONS.md § Pre-claim gate](../../../INSTRUCTIONS.md#claiming-a-cs). Authored 2026-05-11 by `yoga-ah`. The LRN's recommended fix is two-pronged: (a) **pilot** CHANGELOG-on-every-CS-close-out in CS16 + CS21 (CS16's close-out added a CHANGELOG-touch row to its `## Tasks` table; **CS21 was later closed obsolete on 2026-06-09 without implementation** — see Status update below, so no pilot run was produced from CS21), and (b) **enforce** mechanically by extending `scripts/check-clickstop.mjs`. This CS handles part (b). Until CS24 lands, the convention is honour-system only.
 **Depends on:** Should land **after** at least one pilot CS close-out (CS16 or CS21) so the convention has been exercised before the linter starts requiring it. **CS16 closed 2026-05-11** (one pilot satisfied); **CS21 closed obsolete 2026-06-09** per the disposition pass below (no pilot run produced). The "at least one pilot close-out" gate is satisfied by CS16 alone. May claim earlier if any pilot LRNs from CS16 invalidate the design here, in which case re-author this plan first.
@@ -118,11 +118,29 @@ CS24 close-out is permitted only when **all** of the following are true and reco
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | b450ce05374c | 2026-05-14T04:50:00Z | Go-with-amendments | CS24 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer confirmed at close-out (new date-grandfathered `check-clickstop` enforcement). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per [OPERATIONS.md § Claim](../../../OPERATIONS.md#claim)) | planned | — | — |
+| T1 — Linter extension: add `checkChangelogTouchTask` + `CHANGELOG_TOUCH_ENFORCEMENT_DATE` to `scripts/check-clickstop.mjs` (Deliverable 1; helper `lib/distributed-surface-globs.mjs` per Deliverable 2 only if >40 lines) | pending | yoga-ah-c2 | C24-1/C24-2/C24-3/C24-4; model on `checkCloseoutTasks` |
+| T2 — Fixture set: 8 fixtures under `tests/fixtures/cs24/` (4 valid, 4 invalid) | pending | yoga-ah-c2 | Deliverable 3 / C24-5 |
+| T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | pending | yoga-ah-c2 | Deliverable 4 |
+| T4 — Template doc: `template/composed/OPERATIONS.md § Harvest`, then `harness sync --mode=apply --resolved-sha <sha>` to refresh root `OPERATIONS.md` + `.harness-lock.json` | pending | yoga-ah-c2 | Deliverable 5 / C24-6 / LRN-070 |
+| T5 — CHANGELOG.md `[Unreleased] / Changed` entry for the enforcement | pending | yoga-ah-c2 | Deliverable 6 |
+| T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | pending | yoga-ah-c2 | Deliverable 7 / C24-7 |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and the rendered root OPERATIONS.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | Disposition learnings in LEARNINGS.md (flip LRN-101); file a planned follow-up CS if OQ1 (content-vs-deliverable check) proves worthwhile |
 
 ## Notes / Learnings
 
