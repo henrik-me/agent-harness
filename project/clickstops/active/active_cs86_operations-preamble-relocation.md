@@ -1,9 +1,9 @@
 # CS86 — Deeper OPERATIONS.md right-sizing: relocate the extracted preamble source + thin the reviewer-preamble section
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs86/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** CS65 close-out (2026-07-02 by `omni-ah-c3`) — the documented `## Follow-ups` "deeper OPERATIONS.md thinning" item, re-homed from the closed CS file into a visible planned CS per the "follow-ups must be a planned CS or a learning" convention.
 **Depends on:** **CS65** (soft — builds on CS65's OPERATIONS thinning + the C65-5 anchor-preservation invariant and its recon that identified which sections are load-bearing).
@@ -62,11 +62,26 @@ CS65's recon (see `done_cs65_process-doc-right-sizing`) established: (1) `lib/di
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: omni-ah-c3) | b32302ad4578 | 2026-07-02T20:20:00Z | Go-with-amendments | Premises verified (dispatch extracts from OPERATIONS.md; review composes in code). Amendments applied: retarget reviewer-preamble test + REVIEWS refs; explicit consumer new-file fallback (C86-4). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Minor** (provisional): C86-2 adds a new shipped preamble-source template file + `lib/dispatch.mjs` resolution/fallback plumbing while keeping `harness dispatch` output byte-identical; drops to **Patch** if C86-2 is descoped to C86-1 alone (reviewer-preamble doc thinning) per Q2. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — D1: dispatch-preamble source relocation (C86-2/C86-4). Create the new single-source sub-agent briefing preamble file (shipped template — default `template/managed/`, file-class pending **G-preamble-home**) carrying the verbatim preamble body currently inlined in `OPERATIONS.md`; re-point `lib/dispatch.mjs` `extractPreamble` to resolve + extract from it in BOTH self-host and consumer modes, consumer-root-relative (LRN-050), with a fall-back to legacy `OPERATIONS.md` extraction when the new file is absent (pre-`sync --apply-new`) and a clear error when neither source resolves; register the new file for `harness sync`. Tests: CLI-level `harness dispatch` emitted-preamble byte-equality before/after for default fenced output AND `--no-fence`, self-host + consumer; consumer-mode dispatch fixtures (synced success, root-relative resolution, missing-new-file fallback/error). | pending | — | agent-id=cs86-dispatch \| role=impl \| report-status=pending \| learnings=0 — owns the new preamble-source template file, `lib/dispatch.mjs`, dispatch/consumer-mode tests + fixtures; does NOT touch OPERATIONS.md/REVIEWS.md prose (cs86-docs owns those). Must land the re-point BEFORE T2 thins the OPERATIONS section. |
+| T2 — D2+D3: doc thinning (C86-1/C86-3). Thin `OPERATIONS.md` `### Mandatory briefing preamble` + `## Reviewer dispatch — canonical preamble` to pointer stubs (+ `template/composed/OPERATIONS.md` lockstep + root regen via `harness sync`); move the reviewer-preamble verbatim body to its authoritative home in `REVIEWS.md` (+ composed lockstep) and drop any claim it lives in `OPERATIONS.md`; **retarget `tests/operations-reviewer-preamble.test.mjs`** to the new home. Preserve EVERY pre-existing `OPERATIONS.md` heading anchor (reuse the CS65 C65-5 pre/post audit tooling). | pending | — | agent-id=cs86-docs \| role=impl \| report-status=pending \| learnings=0 — owns `OPERATIONS.md` (+composed), `REVIEWS.md` (+composed), `tests/operations-reviewer-preamble.test.mjs`, the regenerated roots; does NOT touch `lib/dispatch.mjs` or the new preamble-source file (cs86-dispatch owns those). Depends on T1 landing the dispatch re-point first. |
+| T3 — Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint`, `node --test tests/*.test.mjs`, `harness sync --mode=check` zero drift, composed-blocks lockstep) | pending | yoga-ah-c2 | independence: reviewer model ≠ every implementer model |
+| CHANGELOG — D5: `CHANGELOG.md` `[Unreleased]` entry (doc/CLI-plumbing: sub-agent preamble source relocated but `harness dispatch` output unchanged; note consumers adopt via `harness sync --apply-new`). | pending | yoga-ah-c2 | orchestrator-owned; distributed-surface CS (LRN-101) |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File any new LEARNINGS.md entries + follow-up CSs (e.g. if C86-2 is descoped per Q2, file the residual as a planned CS); note this closes CS65's deferred "deeper OPERATIONS.md thinning" follow-up |
 
 ## Notes / Learnings
 
