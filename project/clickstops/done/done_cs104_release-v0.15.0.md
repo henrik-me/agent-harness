@@ -1,10 +1,10 @@
 # CS104 — Cut harness release v0.15.0
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs104/content
 **Started:** 2026-07-03
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-03. Cuts the aggregate release of everything merged since v0.14.0 — the #420–#424 arc's merged work. Directed by @henrik-me ("deliver 424 → make a release; you should release the harness").
 **Depends on:** none
 
