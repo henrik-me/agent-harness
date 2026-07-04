@@ -1,10 +1,10 @@
 # CS26 — `harness init` improvements bundle (6 findings from CS16 sub-invaders bootstrap)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs26/content
 **Started:** 2026-07-04T04:06:11Z
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** [CS25](../done/done_cs25_hotfix-runtime-deps.md) (**closed 2026-05-11**; ajv/ajv-formats/js-yaml moved to runtime dependencies so the init flow has a working ajv — dependency satisfied; CS25 is on `main`). No remaining blocker. (Note: no `v0.2.1` tag was cut — the patch-release step was reframed; `v0.2.0` remains the latest `v0.2.x` tag.)
 
