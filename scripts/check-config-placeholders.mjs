@@ -92,16 +92,18 @@ if (!filePath) {
 // Read + parse the target config (fail-closed, LRN-033)
 // ---------------------------------------------------------------------------
 
-if (!fs.existsSync(filePath)) {
-  process.stderr.write(`${LINTER_NAME}: config file not found: "${filePath}"\n`);
-  process.exit(1);
-}
-
 let rawText;
 try {
   rawText = fs.readFileSync(filePath, 'utf8');
 } catch (err) {
-  process.stderr.write(`${LINTER_NAME}: cannot read file "${filePath}": ${err.message}\n`);
+  // Do NOT gate the read behind existsSync(): it also returns false on
+  // permission errors, which would misreport an unreadable-but-present config
+  // as "not found" and silently mask EACCES/EPERM. Read directly and
+  // discriminate err.code === 'ENOENT' (cf. scripts/check-clickstop.mjs).
+  const detail = err.code === 'ENOENT'
+    ? `config file not found: "${filePath}"`
+    : `cannot read file "${filePath}": ${err.message}`;
+  process.stderr.write(`${LINTER_NAME}: ${detail}\n`);
   process.exit(1);
 }
 
