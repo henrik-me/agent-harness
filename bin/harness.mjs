@@ -487,6 +487,13 @@ Options:
   --dry-run               Print planned actions without dispatching/commenting
   --no-poll               Dispatch only (print prompt / trigger Copilot), then exit
   --timeout-minutes <n>   Max wait for review evidence (default: reviews.review_timeout_minutes or 30)
+  --implementer-models <csv>
+                          Implementer model id(s), comma-separated, for a non-CS
+                          branch (deps/maintenance PRs with no cs<NN>/ id, e.g.
+                          deps/<pkg>-<ver>). Unioned with any PR-body ## Model
+                          audit and must be a superset of it (never shrinks the
+                          audited implementer set). Ignored on cs<NN>/ branches,
+                          which read implementer models from the clickstop file.
   --help                  Print this help text
 
 Manual rubber-duck MVP:
@@ -3489,6 +3496,7 @@ async function cmdReview(args, global) {
       actor,
       reviewerAgent: actor,
       promptRubberDuck,
+      implementerModelsFlag: parsed.implementerModels,
     });
 
     if (result.status === 'dry-run') {
@@ -3533,6 +3541,7 @@ function parseReviewArgs(args, cwd) {
   let dryRun = false;
   let noPoll = false;
   let timeoutMinutes = null;
+  let implementerModels = null;
 
   const requireValue = (i, flagName) => {
     if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
@@ -3571,6 +3580,11 @@ function parseReviewArgs(args, cwd) {
       i++;
     } else if (a.startsWith('--timeout-minutes=')) {
       timeoutMinutes = Number(a.slice('--timeout-minutes='.length));
+    } else if (a === '--implementer-models') {
+      implementerModels = requireValue(i, '--implementer-models');
+      i++;
+    } else if (a.startsWith('--implementer-models=')) {
+      implementerModels = a.slice('--implementer-models='.length);
     } else if (!a.startsWith('-') && prRaw === null) {
       prRaw = a;
     } else if (!a.startsWith('-')) {
@@ -3601,7 +3615,7 @@ function parseReviewArgs(args, cwd) {
     throw new ReviewError(`--repo must be 'owner/repo'; got '${repo}'`, 'bad-input');
   }
 
-  return { prNumber, repo, rubberDuckOnly, copilotOnly, model, round, dryRun, noPoll, timeoutMinutes };
+  return { prNumber, repo, rubberDuckOnly, copilotOnly, model, round, dryRun, noPoll, timeoutMinutes, implementerModels };
 }
 
 function deriveReviewActor(cwd, configOverride) {
