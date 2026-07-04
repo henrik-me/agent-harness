@@ -53,6 +53,39 @@ const DANGLING_MARKER_RE =
 const NODE_TOKENS = ['.mjs', 'npm install', 'requireValue', 'node --test', 'node -c'];
 
 // ---------------------------------------------------------------------------
+// Golden briefings — freeze the EXACT spliced node/dotnet output (CS102 C102-2a:
+// the node profile is reordered vs the pre-CS102 monolith, so a stable golden
+// guards against any silent drift beyond the token-completeness checks below).
+//
+// Regenerate after an intentional OPERATIONS.md § Mandatory briefing preamble
+// edit, from the repo root:
+//   node --input-type=module -e "import('./lib/dispatch.mjs').then(m=>{for(const p of ['node','dotnet'])require('node:fs').writeFileSync('tests/fixtures/cs102/'+p+'-briefing.golden.txt',m.emitBriefingFromFile({operationsPath:'OPERATIONS.md',includeFence:false,languageProfile:p}).replace(/\\r\\n/g,'\\n'))})"
+// ---------------------------------------------------------------------------
+
+const GOLDEN_DIR = path.join(__dirname, 'fixtures', 'cs102');
+
+for (const profile of ['node', 'dotnet']) {
+  test(`golden: ${profile} profile briefing is byte-stable (C102-2a)`, () => {
+    const expected = readFileSync(
+      path.join(GOLDEN_DIR, `${profile}-briefing.golden.txt`),
+      'utf8'
+    ).replace(/\r\n/g, '\n');
+    const actual = emitBriefingFromFile({
+      operationsPath: OPERATIONS_MD,
+      includeFence: false,
+      languageProfile: profile,
+    }).replace(/\r\n/g, '\n');
+    assert.equal(
+      actual,
+      expected,
+      `${profile} briefing drifted from the golden. If the OPERATIONS.md preamble ` +
+        `changed intentionally, regenerate tests/fixtures/cs102/${profile}-briefing.golden.txt ` +
+        `(see the header comment).`
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
 // exports / constants
 // ---------------------------------------------------------------------------
 
