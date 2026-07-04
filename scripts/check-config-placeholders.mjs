@@ -39,6 +39,12 @@ const LINTER_NAME = 'check-config-placeholders';
 // "REPLACE_ME/REPLACE_ME" yields two matches.
 const TOKEN = 'REPLACE_ME';
 
+// Standalone matcher derived from TOKEN so the constant and the regex cannot
+// drift (Copilot review). `String.prototype.match` with a /g regex is stateless
+// (it ignores lastIndex), so reusing this module-level regex across scan() calls
+// is safe.
+const TOKEN_RE = new RegExp(`\\b${TOKEN}\\b`, 'g');
+
 // ---------------------------------------------------------------------------
 // CLI argument parsing
 // ---------------------------------------------------------------------------
@@ -146,7 +152,7 @@ function logError(msg) {
  */
 function scan(value, jsonPath) {
   if (typeof value === 'string') {
-    const matches = value.match(/\bREPLACE_ME\b/g);
+    const matches = value.match(TOKEN_RE);
     if (matches) {
       const where = jsonPath || '<root>';
       for (let n = 0; n < matches.length; n++) {
