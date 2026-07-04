@@ -1,9 +1,9 @@
 # CS75 — check-clickstop validation hardening: directory-form recursion + fence-aware PVI gate + deliverable-target F-check
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs75/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** omni-ah-c3 (Claude Opus 4.8), 2026-06-30 — filed from the open-LRN harvest triage requested by @henrik-me. Bundles **LRN-167** (`check-clickstop.mjs` directory-form + fence-aware-PVI gaps, surfaced while building `review-cs` at CS66) and **LRN-152** (plan-review deliverable-target-resolves-to-live-surface check, orphaned when its designated home CS66 closed without absorbing it).
 **Depends on:** none (hard). Touches `scripts/check-clickstop.mjs` (CS03b/CS70), `lib/doc-schema.mjs`, `lib/review-cs.mjs` (CS66 — the fence-aware reference), and `REVIEWS.md` plan-review doctrine (CS58 § 2.6c). No in-flight CS owns these surfaces.
@@ -72,11 +72,29 @@ Separately, **LRN-152** recorded that plan reviews must verify a "modify file X"
 | R2 | gpt-5.5 | claude-opus-4.8 | cs75-review-r2 | ad84b49e31f5 | 2026-06-30T20:28:00Z | Needs-Fix | Recursion also newly errors done_cs22 (stale Status:active in done/); 'close-out-task date-grandfathered' wording inaccurate (CS16/63c/64 satisfy via rows). |
 | R3 | gpt-5.5 | claude-opus-4.8 | cs75-review-r3 | 46a713be3802 | 2026-06-30T20:36:00Z | Go | Definitive newly-failing set verified exactly two: done_cs01 (+Depends on), done_cs22 (Status active->done); wording accurate; no new findings. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Patch** per C75-6 (stricter internal lint + doctrine F-check; no new CLI surface). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — D1+D2: new `lib/markdown-fence.mjs` (zero-dep fence-aware heading locator extracted from `review-cs`'s run-length `findPviHeadingIndex`) + `scripts/check-clickstop.mjs` directory-form recursion (suffix regex derived from `FILENAME_RE`) + fence-aware PVI heading via the shared helper (C75-1/C75-2) | pending | — | agent-id=cs75-linter-core \| role=impl \| report-status=pending \| learnings=0 — owns lib/markdown-fence.mjs, scripts/check-clickstop.mjs |
+| T2 — D8: repair the two legacy directory-form defects the recursion surfaces — `done_cs01` add `**Depends on:** none`; `done_cs22` `**Status:** active`→`done`; record the pre-flight audit in this CS's `done_` dir (C75-5) | pending | — | agent-id=cs75-linter-core \| role=impl \| report-status=pending \| learnings=0 |
+| T3 — D3: `lib/review-cs.mjs` consumes the shared `lib/markdown-fence.mjs` (drops private `findPviHeadingIndex`) + best-effort deliverable-path existence advisory (C75-2/C75-4) | pending | — | agent-id=cs75-review-cs \| role=impl \| report-status=pending \| learnings=0 — Wave 2 (depends on T1 helper) |
+| T4 — D4: add the LRN-152 deliverable-target-resolves F-check to `REVIEWS.md` § 2.6c + `template/composed/REVIEWS.md` (lockstep) (C75-3) | pending | — | agent-id=cs75-reviews-doctrine \| role=impl \| report-status=pending \| learnings=0 |
+| T5 — D5: tests (`os.tmpdir()` only) — `tests/lib-markdown-fence.test.mjs` (new), `tests/check-clickstop.test.mjs` (dir-form + fenced-PVI), `tests/lib-review-cs.test.mjs` (advisory); cover each new branch, over-delivery welcome | pending | — | split by owning sub-agent per test file (no shared test file) |
+| T6 — Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | independence: reviewer model ≠ every implementer model |
+| CHANGELOG — D7: `CHANGELOG.md` `[Unreleased]` Fixed (linter hardening) + Changed (REVIEWS.md doctrine) entries (C75-6, Patch) | pending | yoga-ah | orchestrator-owned |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah | D6: flip LRN-167 + LRN-152 `open → applied` with the merge SHA; file any new LEARNINGS.md entries + follow-up CSs |
 
 ## Notes / Learnings
 

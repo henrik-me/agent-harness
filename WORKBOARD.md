@@ -29,5 +29,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS68 | CS68 — Dependency-bump adoption procedure + non-CS review-tooling support | 🟢 Active | yoga-ah-c2 | cs68/content | 2026-07-04 | — |
+| CS75 | CS75 — check-clickstop validation hardening: directory-form recursion + fence-aware PVI gate + deliverable-target F-check | 🟢 Active | yoga-ah | cs75/content | 2026-07-04 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
