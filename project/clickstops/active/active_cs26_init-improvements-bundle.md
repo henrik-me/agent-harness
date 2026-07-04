@@ -211,4 +211,29 @@ A real npx-from-release consumer resolves `version` to the release tag (e.g. `v0
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, independent — differs from every implementer model `claude-opus-4.8`)
+**Date:** 2026-07-04
+**Outcome:** GO
+
+Reviewed the merged CS26 changes (squash commit `533d8bb`) against the plan's `## Deliverables` and `## Decisions`.
+
+**Per-deliverable outcome:**
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| 1. #2 fresh-init normalized `version` | match | `normalizeInitVersion` (SemVer `v`-norm → full-SHA → pkg fallback) applied only under `!configExists` (`bin/harness.mjs`) |
+| 2. #3 `config-placeholders` linter + cmdLint wiring | match | JSON-parse, skips `_` keys, standalone-token, correct interface + registry entry |
+| 3. #6 sentinel deletion/retention | match | root + `.github/.gitkeep` gone; clickstops `.gitkeep` retained |
+| 4. #9 seeded `.gitattributes` | match | `* text=auto eol=lf` + binary overrides |
+| 5. Tests | match | cs26 tests (version branches, linter `_comment`/real-flag, init e2e, fresh-only guard) + cs09 extension; spot-run 11/0 |
+| 6. End-to-end smoke | match | transcript in CS Notes covers all assertions |
+| 7. CHANGELOG `[Unreleased]` | match | linter/`.gitattributes` + version-pin bullets incl. narrowed-scope note |
+| 8. CS16-summary resolution notes | match | notes on #2/#3/#6/#9 + #4/#5 obsolete, referencing CS26 |
+
+**Decision fidelity:** C26-2/C26-3/C26-6/C26-7/C26-8 all match.
+
+**Test coverage:** sufficient (four findings + cs09 e2e; spot-run `node --test tests/cs26-init-improvements.test.mjs` = 11 pass / 0 fail).
+
+**#146 reconciliation (R6, Option A):** sound and internally consistent — cs46 test 5 asserts structural cleanliness via `--skip config-placeholders` + separately asserts the linter flags the unfilled config (mirrored in cs09 test 7); cs15d row count bumped for the new linter.
+
+**Overall: GO.** No plan-vs-implementation divergence.
