@@ -145,15 +145,28 @@ Every CS produces exactly three PRs in sequence:
 
 **Auto-merge branch patterns.** A `workboard-only`-labelled PR auto-merges only
 when its branch matches one of `cs<NN>/(claim|close|close-out)`,
-`workboard/cs<NN>-(claim|close|close-out)`, or `docs/file-planned-cs<NN>(-<slug>)?`
-(the planned-CS filing PR), where `<NN>` is the CS number plus an optional
-lowercase suffix letter (e.g. `cs64b`). A workboard-scoped PR whose branch does
-**not** match — notably a `workboard/cs<NN>-pause` PR — should still carry the
-`workboard-only` label (so the review-evidence gates skip), but its
-`validate-and-approve` job then **fails** the branch-name check, so an admin must
-squash-merge it (`gh pr merge <n> --admin --squash`). Match an eligible pattern
-exactly (the filing branch is `docs/file-planned-cs<NN>…`, not `docs/file-cs<NN>…`)
-to keep auto-merge.
+`workboard/cs<NN>-(claim|close|close-out)`, `docs/file-planned-cs<NN>(-<slug>)?`
+(the planned-CS filing PR), or `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` (an
+ad-hoc workboard-allowlist maintenance PR — see below), where `<NN>` is the CS
+number plus an optional lowercase suffix letter (e.g. `cs64b`). A workboard-scoped
+PR whose branch does **not** match — notably a `workboard/cs<NN>-pause` PR —
+should still carry the `workboard-only` label (so the review-evidence gates skip),
+but its `validate-and-approve` job then **fails** the branch-name check, so an
+admin must squash-merge it (`gh pr merge <n> --admin --squash`). Match an eligible
+pattern exactly (the filing branch is `docs/file-planned-cs<NN>…`, not
+`docs/file-cs<NN>…`) to keep auto-merge.
+
+**Maintenance-PR branch pattern.** The `workboard/maint-<name>` pattern
+(`workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*`) covers ad-hoc workboard-allowlist
+**maintenance** PRs — a standalone `CONTEXT.md` or `LEARNINGS.md` correction, say
+— that are not claim/close/close-out or CS-filing PRs and so would otherwise fail
+the branch-name check. It is deliberately bounded: anchored and slash-free (the
+character class after `maint-` excludes `/`, so it cannot broaden into a
+`workboard/*` wildcard), and it requires at least one name character after
+`maint-`. The `is_allowed()` path allowlist still constrains **which** files such
+a PR may change, so a `workboard/maint-context-typo` PR that touches only
+allowlisted paths auto-merges like a claim/close PR while the auto-approve surface
+stays tightly bounded.
 
 Every active/done CS file must include explicit `## Tasks` rows for:
 
@@ -521,24 +534,45 @@ Example Active Work row for a downstream hotfix:
 
 #### Workboard-only PR admin-bypass fallback
 
-Consumer repos that have not installed the G3 workboard GitHub App may instead
-configure a per-repo secret named `WORKBOARD_MERGE_TOKEN`. The token should be
-a fine-grained PAT with repository permissions `contents: write` and
-`pull-requests: write`; the token owner must also be allowed to bypass the
-`main-protection` ruleset (typically by being a `RepositoryAdmin` bypass actor,
-per [LRN-080](LEARNINGS.md#lrn-080)). If you manage ruleset bypass actors via
-`gh`/API, refresh your local auth first with `gh auth refresh -s admin:org`;
-otherwise create the fine-grained PAT in GitHub's developer settings UI and add
-it to the consumer repo as the `WORKBOARD_MERGE_TOKEN` Actions secret.
+**The zero-secret default is maintainer admin-override.** The sanctioned way to
+merge a `workboard-only` PR — whether or not its branch matched an auto-merge
+pattern — is for a maintainer to squash-merge it directly with
+`gh pr merge <n> --admin --squash`. This needs **no** secret, App, or PAT — but
+it does require the repo's `main-protection` ruleset to grant repo admins an
+explicit bypass actor (`actor_type: RepositoryRole`, `actor_id: 5`,
+`bypass_mode: always`); GitHub rulesets do **not** exempt admins automatically
+(per [LRN-080](LEARNINGS.md#lrn-080)). The self-host ruleset carries this bypass;
+the harness-generated minimal ruleset (`minimalReviewRuleset()` /
+`infra/main-protection-ruleset.json`) ships with `bypass_actors: []`, so a
+consumer that wants this zero-secret admin path must first add the repo-admin
+bypass to its `main-protection` ruleset (verify with
+`gh api repos/<owner>/<repo>/rulesets/<id>`). The `validate-and-approve` workflow only
+*auto-approves* eligible PRs — it is a convenience, not a prerequisite for
+merging. Treat the App/PAT automation below as **optional** — worthwhile for
+higher-volume or multi-maintainer setups that want hands-off merges — not as a
+required or intended path.
 
-The fallback degrades gracefully. When the secret is absent, the workflow keeps
-running the label/branch/actor/path validation and then either uses the existing
-GitHub App path (if `WORKBOARD_BOT_APP_ID` + `WORKBOARD_BOT_PRIVATE_KEY` are
-configured) or logs `validation-only` so the owner knows a manual admin merge is
-still required. The PAT cannot expand the workboard-only surface: the workflow
-uses it only after the same actor allowlist, same-repository, immutable-head,
-and path-allowlist gates pass, and the admin merge re-checks the PR head plus
-reported non-workboard status checks before invoking `gh pr merge --admin`.
+Consumer repos that want that hands-off automation but have not installed the G3
+workboard GitHub App may instead configure a per-repo secret named
+`WORKBOARD_MERGE_TOKEN`. The token should be a fine-grained PAT with repository
+permissions `contents: write` and `pull-requests: write`; the token owner must
+also be allowed to bypass the `main-protection` ruleset (typically by being a
+`RepositoryAdmin` bypass actor, per [LRN-080](LEARNINGS.md#lrn-080)). If you
+manage ruleset bypass actors via `gh`/API, refresh your local auth first with
+`gh auth refresh -s admin:org`; otherwise create the fine-grained PAT in GitHub's
+developer settings UI and add it to the consumer repo as the
+`WORKBOARD_MERGE_TOKEN` Actions secret.
+
+The automation degrades to that default gracefully. When neither the App nor the
+PAT is configured, the workflow keeps running the label/branch/actor/path
+validation and then either uses the existing GitHub App path (if
+`WORKBOARD_BOT_APP_ID` + `WORKBOARD_BOT_PRIVATE_KEY` are configured) or logs
+`validation-only` — signalling that the maintainer finishes the merge with the
+zero-secret admin-override above. The PAT cannot expand the workboard-only
+surface: the workflow uses it only after the same actor allowlist,
+same-repository, immutable-head, and path-allowlist gates pass, and the admin
+merge re-checks the PR head plus reported non-workboard status checks before
+invoking `gh pr merge --admin`.
 
 ---
 

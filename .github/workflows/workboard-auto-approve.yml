@@ -79,7 +79,7 @@ jobs:
           #   workboard/cs<NN>-(claim|close|close-out)
           #   cs<NN>/(claim|close-out|close)
           #   docs/file-planned-cs<NN>(-...)?
-          if ! printf '%s' "$PR_BRANCH" | grep -Eq '^(workboard/cs[0-9]+[a-z]?-(claim|close|close-out)|cs[0-9]+[a-z]?/(claim|close|close-out)|docs/file-planned-cs[0-9]+[a-z]?(-.+)?)$'; then
+          if ! printf '%s' "$PR_BRANCH" | grep -Eq '^(workboard/cs[0-9]+[a-z]?-(claim|close|close-out)|cs[0-9]+[a-z]?/(claim|close|close-out)|docs/file-planned-cs[0-9]+[a-z]?(-.+)?|workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*)$'; then
             fail "branch name '$PR_BRANCH' does not match the workboard-only branch pattern."
           fi
 
@@ -137,7 +137,7 @@ jobs:
           echo "changed-files=$changed_files" >> "$GITHUB_OUTPUT"
 
           git fetch --no-tags --depth=1 origin "$base_sha" "$head_sha"
-          git diff --name-status -M "$base_sha" "$head_sha" > pr-files.tsv
+          git -c diff.external= diff --no-ext-diff --no-textconv --name-status -M "$base_sha" "$head_sha" > pr-files.tsv
           echo "Files in PR from immutable git diff (status/path[/previous path]):"
           cat pr-files.tsv
           files_count="$(wc -l < pr-files.tsv | tr -d ' ')"
@@ -176,6 +176,7 @@ jobs:
             [ -z "$f" ] && return 0
             local ok=0
             while IFS= read -r p; do
+              p="${p#"${p%%[![:space:]]*}"}"; p="${p%"${p##*[![:space:]]}"}"
               [ -z "$p" ] && continue
               if [ "${p%/}" != "$p" ]; then
                 # Prefix match
