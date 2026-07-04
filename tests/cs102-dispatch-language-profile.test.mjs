@@ -59,7 +59,7 @@ const NODE_TOKENS = ['.mjs', 'npm install', 'requireValue', 'node --test', 'node
 //
 // Regenerate after an intentional OPERATIONS.md § Mandatory briefing preamble
 // edit, from the repo root:
-//   node --input-type=module -e "import('./lib/dispatch.mjs').then(m=>{for(const p of ['node','dotnet'])require('node:fs').writeFileSync('tests/fixtures/cs102/'+p+'-briefing.golden.txt',m.emitBriefingFromFile({operationsPath:'OPERATIONS.md',includeFence:false,languageProfile:p}).replace(/\\r\\n/g,'\\n'))})"
+//   node --input-type=module -e "const fs=await import('node:fs');const m=await import('./lib/dispatch.mjs');for(const p of ['node','dotnet'])fs.writeFileSync('tests/fixtures/cs102/'+p+'-briefing.golden.txt',m.emitBriefingFromFile({operationsPath:'OPERATIONS.md',includeFence:false,languageProfile:p}).replace(/\r\n/g,'\n'))"
 // ---------------------------------------------------------------------------
 
 const GOLDEN_DIR = path.join(__dirname, 'fixtures', 'cs102');
