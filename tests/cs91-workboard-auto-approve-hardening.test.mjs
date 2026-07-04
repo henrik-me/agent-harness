@@ -29,8 +29,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync, renameSync } from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 
@@ -219,5 +220,54 @@ describe('CS91 — workboard-auto-approve.yml hardening (#394 / #395)', () => {
         assert.equal(r.stdout, '[]');
       },
     );
+  });
+});
+
+// C91-2 / R2: the hardened `git diff` flags must not alter the `--name-status -M`
+// TSV columns that the workflow's is_allowed() loop parses (status | path[ | path2]).
+// Exercise a real git repo with BOTH a plain edit (M) and a rename (R) and assert
+// the hardened invocation yields byte-identical output to the plain one.
+describe('CS91 C91-2 — hardened git diff preserves the --name-status -M TSV contract (T6/R2)', () => {
+  const git = (dir, args) => {
+    const r = spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+    assert.equal(r.status, 0, `git ${args.join(' ')} failed: ${r.stderr}`);
+    return r.stdout;
+  };
+
+  it('hardened and plain `git diff --name-status -M` produce identical output for a plain edit + a rename', () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'cs91-tsv-'));
+    try {
+      git(dir, ['init', '-q']);
+      git(dir, ['config', 'user.email', 'cs91@test.local']);
+      git(dir, ['config', 'user.name', 'cs91-test']);
+      git(dir, ['config', 'commit.gpgsign', 'false']);
+
+      writeFileSync(path.join(dir, 'keep.txt'), 'a\nb\nc\n');
+      writeFileSync(path.join(dir, 'old.txt'), 'line1\nline2\nline3\nline4\nline5\n');
+      git(dir, ['add', '-A']);
+      git(dir, ['commit', '-q', '-m', 'base']);
+      const base = git(dir, ['rev-parse', 'HEAD']).trim();
+
+      // Plain edit (surfaces as an `M` row) ...
+      writeFileSync(path.join(dir, 'keep.txt'), 'a\nb\nc\nd\n');
+      // ... and a content-preserving rename (so `-M` detects it as an `R` row).
+      renameSync(path.join(dir, 'old.txt'), path.join(dir, 'new.txt'));
+      git(dir, ['add', '-A']);
+      git(dir, ['commit', '-q', '-m', 'edit-and-rename']);
+      const head = git(dir, ['rev-parse', 'HEAD']).trim();
+
+      const norm = (s) => s.replace(/\r/g, '');
+      const plain = norm(git(dir, ['diff', '--name-status', '-M', base, head]));
+      const hardened = norm(
+        git(dir, ['-c', 'diff.external=', 'diff', '--no-ext-diff', '--no-textconv', '--name-status', '-M', base, head]),
+      );
+
+      assert.equal(hardened, plain, 'hardened git diff must yield byte-identical --name-status -M output');
+      // Sanity: the fixture actually exercises BOTH statuses the loop parses.
+      assert.match(plain, /^M\tkeep\.txt$/m, 'plain edit must appear as an M row');
+      assert.match(plain, /^R\d*\told\.txt\tnew\.txt$/m, 'rename must appear as an R row carrying old + new paths');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
