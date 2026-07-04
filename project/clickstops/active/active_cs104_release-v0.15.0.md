@@ -136,4 +136,22 @@ notifications.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-04T00:16:00Z
+**Outcome:** GO
+
+Independent plan-vs-implementation review of the merged release (PR #452, squash `db2a8ef`) + the post-merge tag/Release state.
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| 1. `package.json` + lock → 0.15.0 | match | both `0.15.0`. |
+| 2. CHANGELOG `[Unreleased] → [0.15.0]` | match | `## [0.15.0] — 2026-07-03` with #420/#421/#422/#424 entries, fresh `[Unreleased]` skeleton, `[0.15.0]`/`[Unreleased]` compare refs. |
+| 3. README pins + Status | match | Status leads v0.15.0; pins updated; only the historical "Prior: v0.14.0" remains. |
+| 4. Content PR | match | PR #452 admin-squash-merged at `db2a8ef` (GPT-5.5 R1 Go + Copilot COMMENTED 0 findings). |
+| 5. Tag + draft Release | match | annotated tag `v0.15.0` targets `db2a8ef`; exactly one **draft** Release (isDraft true). |
+| 6. Consumer notifications | match | one `[harness:cs104]` pin-bump issue in each of authzandentitlements (#39) + sub-invaders (#150). |
+| 7. Close-out | match | in progress; gate satisfied. |
+
+**Publish posture (Decision 4):** the Release is a **draft** — publishing to Latest is intentionally deferred to @henrik-me (user away at cut time); the tag is live and installable. Not a defect.
+
+**Test-coverage assessment:** sufficient — `harness lint` 35/0/3; the release is content-only (version/CHANGELOG/README + tag/Release).
