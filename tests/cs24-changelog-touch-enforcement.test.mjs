@@ -107,6 +107,14 @@ describe('CS24 CHANGELOG-touch enforcement (fixtures)', () => {
     assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\n${r.stdout}\n${r.stderr}`);
     assert.ok(r.stdout.includes(CHANGELOG_ERROR), `Expected CHANGELOG error; got:\n${r.stdout}`);
   });
+
+  it('8a. active + scripts glob deliverable (scripts/*.mjs) + no CHANGELOG row → fails', () => {
+    // Regression (GPT-5.5 rubber-duck, CS24): a glob-form deliverable token
+    // must be extracted intact and recognised as distributed surface.
+    const r = runCase('invalid-active-scripts-glob-no-changelog');
+    assert.equal(r.status, 1, `Expected exit 1; got ${r.status}\n${r.stdout}\n${r.stderr}`);
+    assert.ok(r.stdout.includes(CHANGELOG_ERROR), `Expected CHANGELOG error; got:\n${r.stdout}`);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -190,6 +198,18 @@ describe('matchesDistributedSurface (unit)', () => {
 
   it('12. restricts scripts/ to *.mjs files', () => {
     assert.equal(matchesDistributedSurface('scripts/foo.mjs', []), true);
+    assert.equal(matchesDistributedSurface('scripts/foo.sh', []), false);
+    assert.equal(matchesDistributedSurface('scripts/README.md', []), false);
+  });
+
+  it('12a. matches broad scripts glob/dir tokens; exempts non-.mjs glob/file', () => {
+    // Regression (GPT-5.5 rubber-duck, CS24): glob-form scripts tokens must
+    // count as distributed surface so a `scripts/**` or `scripts/*.mjs`
+    // deliverable cannot skip the CHANGELOG-touch row.
+    assert.equal(matchesDistributedSurface('scripts/**', []), true);
+    assert.equal(matchesDistributedSurface('scripts/*.mjs', []), true);
+    assert.equal(matchesDistributedSurface('scripts/*', []), true);
+    assert.equal(matchesDistributedSurface('scripts/', []), true);
     assert.equal(matchesDistributedSurface('scripts/foo.sh', []), false);
     assert.equal(matchesDistributedSurface('scripts/README.md', []), false);
   });
