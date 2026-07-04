@@ -423,6 +423,9 @@ test('formatClaimPlan: includes all three steps and the never-commits notice', (
   assert.match(out, /Insert WORKBOARD ## Active Work row/);
   assert.match(out, /Re-run with --apply/);
   assert.match(out, /Commit is NEVER performed by harness claim/);
+  assert.match(out, /--label workboard-only/);
+  assert.match(out, /gh pr create --base main --label workboard-only/);
+  assert.match(out, /do NOT add it post-hoc via/);
 });
 
 /* ---------- applyClaimPlan ---------------------------------------------- */

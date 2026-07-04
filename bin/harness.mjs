@@ -2837,6 +2837,31 @@ async function cmdLint(args, _global) {
         target: isSelfHost ? path.join(cwd, 'template') : null,
       };
     })(),
+    (() => {
+      // CS71 (D71-4): workboard-allowlist consistency guard. Asserts every
+      // allowlist occurrence (regex form in review-gates.yml/pr-evidence-lint.yml
+      // + list form in workboard-auto-approve.yml, across BOTH the rendered
+      // .github/ copies and their template/managed mirrors) parses to the
+      // identical token set, so the "workboard-only" skip decision cannot drift
+      // between gates. Self-host-guarded by package name (like the genericity /
+      // xref guards): it reads template/managed/.github/workflows paths that
+      // exist only in the self-host, so target=null emits a clean "skipped" row
+      // in a consumer that merely has its own template/ dir.
+      let isSelfHost = false;
+      try {
+        const pkgPath = path.join(cwd, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          if (pkg && pkg.name === '@henrik-me/agent-harness') isSelfHost = true;
+        }
+      } catch { /* fail-soft: skip allowlist-consistency linter on parse error */ }
+      return {
+        name: 'workboard-allowlist-consistency',
+        script: 'check-workboard-allowlist-consistency.mjs',
+        args: isSelfHost ? ['--cwd', cwd] : null,
+        target: isSelfHost ? path.join(cwd, 'template') : null,
+      };
+    })(),
     {
       // CS85 (C85-2/C85-3): clickstop-link durability guard. Fails on a
       // BRANCH-pinned GitHub permalink into a transient project/clickstops/active/

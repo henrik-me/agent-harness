@@ -133,7 +133,9 @@ describe('CS15d scaffold aggregator integration', () => {
     // consumer's stable linter set, deterministic regardless of branch state.
     const rows = summaryRows(result.stdout).filter((row) => row.name !== 'closeout-freshness');
     assert.equal(rows.filter((row) => /migration.*policy|feature.*flag.*policy|feature-flags.*policy/.test(row.name)).length, 0);
-    assert.equal(rows.length, beta9AggregatorLanded() ? 26 : 18, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
+    // CS71 D71-4: the self-host-gated `workboard-allowlist-consistency` linter
+    // adds one row (skipped in a consumer), so the total grew by 1 (26->27, 18->19).
+    assert.equal(rows.length, beta9AggregatorLanded() ? 27 : 19, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
   });
 
   it('self-host scaffold-readme walk does not run for non-self-host consumers', (t) => {

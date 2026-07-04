@@ -657,6 +657,33 @@ test('formatApplyReport: not-ready run lists freshness reason', () => {
   assert.match(out, /CONTEXT\.md was not modified/);
 });
 
+test('formatApplyReport: ready run includes label-at-creation guidance', () => {
+  const { plan } = planCloseout({
+    csId: 'CS64',
+    listing: makeListing(false),
+    activeDir: ACTIVE,
+    doneDir: DONE,
+    workboardPath: P(ROOT, 'WORKBOARD.md'),
+    contextPath: P(ROOT, 'CONTEXT.md'),
+  });
+  const out = formatApplyReport({
+    plan,
+    applied: {
+      renamed: true,
+      workboardEdited: true,
+      contextChanged: true,
+      prReady: true,
+      actions: ['git mv x → y'],
+      skipped: [],
+      freshness: [],
+    },
+  });
+  assert.match(out, /Ready to commit close-out PR/);
+  assert.match(out, /Commit is NEVER performed by harness close-out/);
+  assert.match(out, /gh pr create --base main --label workboard-only/);
+  assert.match(out, /do NOT add it post-hoc via/);
+});
+
 /* ---------- runCloseoutFromDisk idempotency (C64-5) ---------------------- */
 
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';

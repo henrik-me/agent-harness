@@ -43,12 +43,29 @@ describe('CS51 review-gates workflow template', () => {
     }
   });
 
-  it('skips all four jobs for workboard-only PRs', () => {
+  it('runs all four jobs unconditionally and short-circuits internally for workboard-only PRs', () => {
+    const doc = parseWorkflow();
     const text = readWorkflow();
     for (const job of EXPECTED_JOBS) {
-      const pattern = new RegExp(`${job}:[\\s\\S]*?if:.*workboard-only`);
-      assert.match(text, pattern, `${job} must have a workboard-only skip condition`);
+      const j = doc.jobs[job];
+      // CS71 D71-3: no job-level label gate -> the job always executes so its
+      // required-status-check context is always reported (no transient red).
+      assert.ok(
+        j.if === undefined || !String(j.if).includes('workboard-only'),
+        `${job} must not have a job-level workboard-only skip (always execute)`
+      );
+      // Its first step computes the path-derived skip; the rest are gated by it.
+      assert.equal(j.steps[0].id, 'wb', `${job}: first step must compute the skip`);
+      for (let i = 1; i < j.steps.length; i++) {
+        assert.match(
+          String(j.steps[i].if),
+          /steps\.wb\.outputs\.skip != 'true'/,
+          `${job}: step ${i} must be gated by the computed skip`
+        );
+      }
     }
+    // The skip is path-derived from the allowlist regex.
+    assert.match(text, /grep -Ev '\^\(WORKBOARD/, 'wb steps derive the skip from the allowlist regex');
   });
 
   it('references each CS51 check script exactly where expected', () => {
