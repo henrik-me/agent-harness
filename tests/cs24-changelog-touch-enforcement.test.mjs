@@ -272,4 +272,86 @@ describe('extractDeliverablePathTokens (unit)', () => {
     const first = extractDeliverablePathTokens('- `package.json`\n')[0];
     assert.equal(matchesDistributedSurface(first, []), true);
   });
+
+  // --- R3 convergence matrix: matchesDistributedSurface is the SOLE classifier
+  // and only MAXIMAL whole tokens are extracted, so no distributed prefix is
+  // ever split out of a longer non-distributed path. ------------------------
+
+  const BT = String.fromCharCode(96);
+  const pipelineHit = (p) =>
+    extractDeliverablePathTokens(`- ${BT}${p}${BT}\n`).some((t) =>
+      matchesDistributedSurface(t, [])
+    );
+
+  it('22. pipeline classifies distributed deliverable tokens as true', () => {
+    for (const p of [
+      'scripts/foo.mjs',
+      'scripts/**',
+      'scripts/*.mjs',
+      'scripts/*',
+      'scripts/',
+      'lib/x.mjs',
+      'template/**',
+      'template/composed/OPERATIONS.md',
+      'schemas/x.schema.json',
+      'bin/harness.mjs',
+      'package.json',
+      'package-lock.json',
+    ]) {
+      assert.equal(pipelineHit(p), true, `expected distributed: ${p}`);
+    }
+  });
+
+  it('23. pipeline classifies non-distributed deliverable tokens as false', () => {
+    for (const p of [
+      'scripts/foo.sh',
+      'scripts/README.md',
+      'scripts/*.sh',
+      'package.json.bak',
+      'scripts/foo.mjs.bak',
+      'LEARNINGS.md',
+      'CONTEXT.md',
+      'tests/fixtures/cs24/',
+    ]) {
+      assert.equal(pipelineHit(p), false, `expected non-distributed: ${p}`);
+    }
+  });
+
+  it('24. strips a trailing sentence period without losing the extension', () => {
+    const tokens = extractDeliverablePathTokens('- Update scripts/foo.mjs.\n');
+    assert.ok(
+      tokens.includes('scripts/foo.mjs'),
+      `expected scripts/foo.mjs in ${JSON.stringify(tokens)}`
+    );
+    assert.equal(pipelineHit('scripts/foo.mjs'), true);
+  });
+
+  it('25. prefix safety: never splits a distributed prefix from a non-distributed path', () => {
+    assert.ok(
+      !extractDeliverablePathTokens(`- ${BT}scripts/foo.sh${BT}\n`).includes('scripts/'),
+      'must not extract scripts/ from scripts/foo.sh'
+    );
+    assert.ok(
+      !extractDeliverablePathTokens(`- ${BT}package.json.bak${BT}\n`).includes('package.json'),
+      'must not extract package.json from package.json.bak'
+    );
+    assert.ok(
+      !extractDeliverablePathTokens(`- ${BT}scripts/foo.mjs.bak${BT}\n`).includes('scripts/foo.mjs'),
+      'must not extract scripts/foo.mjs from scripts/foo.mjs.bak'
+    );
+  });
+
+  it('26. extracts non-.mjs and directory tokens whole (classifier decides)', () => {
+    assert.ok(
+      extractDeliverablePathTokens(`- ${BT}scripts/foo.sh${BT}\n`).includes('scripts/foo.sh')
+    );
+    assert.ok(
+      extractDeliverablePathTokens(`- ${BT}package.json.bak${BT}\n`).includes('package.json.bak')
+    );
+    assert.ok(
+      extractDeliverablePathTokens(`- ${BT}tests/fixtures/cs24/${BT}\n`).includes(
+        'tests/fixtures/cs24/'
+      )
+    );
+  });
 });
