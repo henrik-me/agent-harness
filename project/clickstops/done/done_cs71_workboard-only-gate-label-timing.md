@@ -1,10 +1,10 @@
 # CS71 — Eliminate transient red gates on workboard-only PRs
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs71/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** omni-ah (Claude Opus 4.8), 2026-06-11 — surfaced during a system-health validation requested by @henrik-me after red ❌ checks appeared on the merged CS70 PRs (#303 content / #304 workboard close-out). The #304 failures were a label-timing race, not a gate defect. User directive: "if proper process is followed gates should not be red."
 **Depends on:** none
 
@@ -107,10 +107,10 @@ Workboard-only claim/close-out PRs must show **green** review gates from their f
 | T2 — D71-4: new `scripts/check-workboard-allowlist-consistency.mjs` (Node built-ins only; `--quiet`; exit 0/1/2; `✅/❌`) asserting every `# harness:workboard-allowlist` occurrence (`review-gates.yml` ×2, `pr-evidence-lint.yml`, `workboard-auto-approve.yml`; template/managed **and** rendered) is equivalent under token-set canonical normalization; register in the `harness lint` aggregator; **no `lib/` extraction** | done | cs71-workflows | agent-id=cs71-workflows \| model=claude-opus-4.8 \| role=impl \| report-status=complete \| learnings=3 — owns scripts/check-workboard-allowlist-consistency.mjs, bin/harness.mjs (lint registry entry only) |
 | T3 — D71-5: tests (`node --test`, scratch under `os.tmpdir()` only, **min 6**) — matching→exit0, drifted-token→exit1, static YAML assertion (four jobs always-execute + no `paths-ignore`), fail-open guard (simulated file-list error runs the real gate), marker-present, exit2 bad-usage, rendered/template agreement | done | cs71-workflows | agent-id=cs71-workflows \| model=claude-opus-4.8 \| role=impl \| report-status=complete \| learnings=3 — added tests/cs71-workboard-allowlist-consistency.test.mjs (12 tests) + rewrote cs63/cs51 label-if assertions; also bumped cs15d-aggregator row count (linter registration) |
 | T4 — D71-1 + D71-6: `--label`-at-creation guidance in `OPERATIONS.md` §Claim/§Close-out (+ composed mirror) and the `harness claim`/`close-out` rendered PR guidance in `lib/claim.mjs` / `lib/closeout.mjs` (guidance-string only — **no** gate logic); §Skip-reasons-matrix path-derived note + `::notice::`-on-path-skip doc; keep the composed `OPERATIONS.md` mirror in sync | done | cs71-docs | agent-id=cs71-docs \| model=claude-sonnet-4.6 \| role=impl \| report-status=complete \| learnings=1 — owns OPERATIONS.md, template/composed/OPERATIONS.md, lib/claim.mjs, lib/closeout.mjs; also filed LRN-205 |
-| T5 — D71-7: Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint` incl. `workflow-pins`/`review-gates`/`text-encoding`, `node --test`, `harness sync --mode=check` zero drift) | pending | yoga-ah-c2 | independence: reviewer model ≠ every implementer model |
+| T5 — D71-7: Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint` incl. `workflow-pins`/`review-gates`/`text-encoding`, `node --test`, `harness sync --mode=check` zero drift) | done | yoga-ah-c2 | PVI **GO** by gpt-5.5 at `a2760dc`; independent code review R1 Go/R2 Needs-Fix/R3 Go (gpt-5.5) + Copilot clean; self-checks green (lint 37/0/3, tests 1898/0, no drift) |
 | CHANGELOG — add a `CHANGELOG.md` `[Unreleased]` entry (Added: path-derived workboard-only evidence-skip + `check-workboard-allowlist-consistency` linter; Minor) | done | yoga-ah-c2 | orchestrator-owned; distributed-surface CS (LRN-101); CHANGELOG.md `[Unreleased] › Added` entry added at integration |
-| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
-| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File the D71-1 empirical-non-determinism LEARNINGS.md entry (#305 green / #306 red, identical `gh pr create --label` command) + any new learnings + follow-up CSs |
+| Close-out: docs + restart state | done | yoga-ah-c2 | WORKBOARD Active Work row removed + CONTEXT.md restart-state updated at close-out |
+| Close-out: learnings + follow-ups | done | yoga-ah-c2 | LRN-205 filed (D71-1 empirical non-determinism: #305 green / #306 red, identical `gh pr create --label`); no follow-up CS required |
 
 ## Notes / Learnings
 
@@ -118,4 +118,24 @@ Workboard-only claim/close-out PRs must show **green** review gates from their f
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-04T22:15:50Z
+**Outcome:** GO
+
+Independent plan-vs-implementation review; reviewer model `gpt-5.5` ∉ implementer set `{claude-opus-4.8, claude-sonnet-4.6}` (independence confirmed). Run against the merged content squash `a2760dc` (`git diff a2760dc^..a2760dc`, 22 files, +1363/-51). Prior independent code review by the same reviewer model ran R1 `Go` → R2 `Needs-Fix` (linter exact-vs-prefix canonicalization hole) → R3 `Go`, recorded in PR #481 `## Review log`; Copilot reviewed `COMMENTED` with no comments generated.
+
+Per-deliverable outcome:
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| D71-1 | match | `OPERATIONS.md` (+ `template/composed` mirror), `lib/claim.mjs`, `lib/closeout.mjs` emit `gh pr create --base main --label workboard-only …` guidance (string-only); `LEARNINGS.md` carries the CS71 entry as **LRN-205** (renumbered from the plan's LRN-204 after CS75 claimed LRN-204 on `main`; treated as `match` per the D71-1 note). |
+| D71-2 | match | `pr-evidence-lint.yml` (rendered + managed) `compute-skip-reasons` is path-derived (single file fetch), `previous_filename`-aware, preserves the CS63 labelled-outside-allowlist reject, fails closed on `gh api` error. |
+| D71-3 | match | `review-gates.yml` (rendered + `template/managed` + `template/.github`) — four evidence jobs drop the label `if:`, always execute, short-circuit internally via a fail-closed `wb` step; `validate-workboard-only-scope` retained. |
+| D71-4 | match | `scripts/check-workboard-allowlist-consistency.mjs` added + self-host-registered in `harness lint`; every allowlist occurrence (incl. `workboard-auto-approve.yml`, both copies) carries the `# harness:workboard-allowlist` marker. |
+| D71-5 | match | `tests/cs71-workboard-allowlist-consistency.test.mjs` (15 tests, incl. exact/prefix hardening b2/b3/b4 from the R1/R2 findings); `cs63`/`cs51` label-`if:` assertions rewritten to the always-execute + internal-skip design. |
+| D71-6 | match | `OPERATIONS.md` Skip-reasons-matrix path-derived note (+ composed mirror); both workflows emit `::notice::` on path-derived / fail-closed skip. |
+| D71-7 | match | `harness lint --quiet` 37/0/3; `node --test tests/*.test.mjs` 1898 pass / 0 fail / 4 skipped; `sync --mode=check` no drift. |
+
+**Test-coverage assessment:** sufficient — no material untested scenarios for the planned scope (allowlist consistency, missing-marker/bad-usage, exact-vs-prefix semantics, always-execute/internal-skip workflow structure, no `paths-ignore`, fail-closed file-list-error).
+
+**Exit criteria 1–7:** satisfied. EC1/EC4 by the path-derived workflow implementation + static workflow tests; EC2 by docs/lib guidance; EC3 by the retained `validate-workboard-only-scope` reject; EC5 by no sync drift; EC6 by the allowlist linter + structural tests; EC7 by green self-checks + this GO.
