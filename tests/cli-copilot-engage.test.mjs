@@ -432,6 +432,9 @@ describe('harness copilot-engage CLI route', () => {
     }
     assert.match(result.stdout, /Exit codes:/);
     assert.match(result.stdout, /poll timeout/);
+    assert.doesNotMatch(result.stdout, /requestReviews/);
+    assert.doesNotMatch(result.stdout, /mutation accepted/);
+    assert.match(result.stdout, /gh pr edit --add-reviewer/);
   });
 
   it('top-level --help lists copilot-engage subcommand', () => {

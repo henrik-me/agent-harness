@@ -68,15 +68,17 @@ Surfaced by the GPT-5.5 plan-vs-implementation review of CS65 (recorded in `done
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| T1 — `bin/harness.mjs`: correct `copilot-engage` help wording (C87-1) — `--no-poll` description + two exit-code descriptions: "requestReviews mutation" / "mutation accepted" → REST review-request (`gh pr edit --add-reviewer`) / "request accepted". Help-string only, no runtime change | active | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=pending \| learnings=0 |
-| T2 — `tests/cli-copilot-engage.test.mjs`: extend the help-output test with a regression assertion (C87-2) — help does NOT contain `requestReviews` / `mutation accepted`, DOES reference `gh pr edit --add-reviewer`; `CHANGELOG.md` `[Unreleased]` help-accuracy entry | active | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=pending \| learnings=0 |
+| T1 — `bin/harness.mjs`: correct `copilot-engage` help wording (C87-1) — `--no-poll` description + two exit-code descriptions: "requestReviews mutation" / "mutation accepted" → REST review-request (`gh pr edit --add-reviewer`) / "request accepted". Help-string only, no runtime change | done | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=complete \| learnings=0 |
+| T2 — `tests/cli-copilot-engage.test.mjs`: extend the help-output test with a regression assertion (C87-2) — help does NOT contain `requestReviews` / `mutation accepted`, DOES reference `gh pr edit --add-reviewer`; `CHANGELOG.md` `[Unreleased]` help-accuracy entry | done | yoga-ah-c2 | agent-id=cs87-help \| role=implementer \| report-status=complete \| learnings=0 |
 | Independent content review (GPT-5.5) | pending | — | reviewer model ≠ implementer (independence per REVIEWS § 2.3); via `harness review` |
 | Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md (remove CS87 row) + CONTEXT.md; no rendered-mirror change (bin/tests/CHANGELOG only). |
 | Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File any LEARNINGS.md entry (or none) + disposition follow-ups; no open issue tied to CS87. |
 
 ## Notes / Learnings
 
-(filled during execution)
+- Implementation landed via background sub-agent `cs87-help` (model: claude-opus-4.8) on `cs87/content`: three help-string lines in `bin/harness.mjs` corrected, three regression assertions added to the existing help-output test in `tests/cli-copilot-engage.test.mjs`, and a `[Unreleased] → Documentation` CHANGELOG entry. No runtime/flag/exit-code change.
+- Risk R1 confirmed empty: no test in `tests/` pinned the stale help phrases (`requestReviews mutation` / `mutation accepted`), so no other assertion needed updating. `OPERATIONS.md` legitimately documents `requestReviews` as the *rejected* primitive and was left untouched.
+- Verified on `cs87/content`: `node -c bin/harness.mjs` clean, `harness lint` 35/0/3, `node --test tests/*.test.mjs` 1762 pass / 0 fail / 2 skipped, no CRLF/BOM. Help output now attributes engagement to `gh pr edit --add-reviewer` throughout.
 
 ## Plan-vs-implementation review
 

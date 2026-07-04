@@ -15,6 +15,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Documentation
 
+- **copilot-engage --help wording (CS87):** corrected three help lines that described the engagement as a GraphQL `requestReviews mutation` / "mutation accepted"; the shipped primitive is the REST `gh pr edit --add-reviewer` request (CS37 / ADR-0004 proved `requestReviews` rejects the Copilot Bot). Help-string only — no flag, behavior, or exit-code change (Patch).
+
 ### Fixed
 
 ## [0.16.0] — 2026-07-04
