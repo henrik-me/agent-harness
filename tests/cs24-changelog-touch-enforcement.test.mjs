@@ -161,15 +161,17 @@ describe('CS24 CHANGELOG-touch enforcement (no Deliverables section)', () => {
       'utf8'
     );
 
-    const result = spawnSync(NODE, [LINTER, '--dir', root], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    });
-    const stdout = result.stdout ?? '';
-    assert.equal(result.status, 0, `Expected exit 0; got ${result.status}\n${stdout}\n${result.stderr}`);
-    assert.ok(!stdout.includes(CHANGELOG_ERROR), `Unexpected CHANGELOG error:\n${stdout}`);
-
-    fs.rmSync(root, { recursive: true, force: true });
+    try {
+      const result = spawnSync(NODE, [LINTER, '--dir', root], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+      });
+      const stdout = result.stdout ?? '';
+      assert.equal(result.status, 0, `Expected exit 0; got ${result.status}\n${stdout}\n${result.stderr}`);
+      assert.ok(!stdout.includes(CHANGELOG_ERROR), `Unexpected CHANGELOG error:\n${stdout}`);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
