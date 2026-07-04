@@ -1,9 +1,9 @@
 # CS68 — Dependency-bump adoption procedure + non-CS review-tooling support
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs68/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** Out-of-CS `js-yaml` dependency-bump adoption (2026-06-07 by `yoga-ah-c2`). Surfaced while adopting Dependabot #226 as PR #262 (`js-yaml` 4.1.1→4.2.0, a DoS-hardening bump): the harness has no written procedure for adopting a Dependabot/dependency PR, and the review-evidence tooling is clickstop-centric so the bot/deps PR could not use it.
 **Depends on:** None hard from prior CSs. Cross-references CS59 (content/release-PR admin-merge doctrine) — coordinate to avoid duplicating that section. May claim independently of prior CSs. **CS64b** (hard, added 2026-06-10) — the dep-bump branch flow (`deps/<pkg>-<ver>`) allocates a clone for re-creation + lockfile regen and must use the `lib/disposers.mjs` + `assertSafeRef` primitives (C64b-2); the adoption procedure references those primitives as the required pattern.
@@ -70,11 +70,28 @@ Already-adequate doctrine (NOT in scope to restate): the owner-override `gh pr m
 | R1 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c2) | 23ce77c74408 | 2026-06-08T00:24:04Z | Needs-Fix | LRN-155 already used by CS63a; the non-CS `--implementer-models` flag could shrink an existing Model audit — needs union/fail-on-conflict. |
 | R2 | gpt-5.5 | claude-opus-4.8 | rubber-duck (orchestrator: yoga-ah-c2) | ddd8a2b89075 | 2026-06-08T00:46:04Z | Go-with-amendments | R1 fixes hold (LRN-157, union/fail-on-conflict + tests); amended stale Exit criterion LRN-155→LRN-157. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Planned assignment per INSTRUCTIONS.md § Every CS (orchestrator + implementer sub-tasks: claude-opus-4.8; local review: gpt-5.5). Independence per REVIEWS § 2.3 — reviewer gpt-5.5 ≠ implementer claude-opus-4.8. Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T1 — OPERATIONS.md `## Dependency-bump adoption` section: ordered adoption steps (`deps/<pkg>-<ver>` branch, tighten range + regen lockfile, tests + lint, author `## Model audit`/`## Review log` per REVIEWS §2.8, GPT-5.5 Go + Copilot, owner-override squash-merge, supersede Dependabot PR, verify green) + `template/composed/OPERATIONS.md` lockstep mirror (C68-1) | planned | — | Cross-link CS59 C59-3 + LRN-081 — link, don't restate (R3). Root + composed mirror lockstep (R2). |
+| T2 — INSTRUCTIONS.md + `template/managed/INSTRUCTIONS.md` mirror: register `deps/<pkg>-<ver>` in the branch-naming convention (C68-2) | planned | — | Root + managed mirror lockstep (R2). |
+| T3 — `lib/review.mjs` + `bin/harness.mjs`: non-CS implementer-model source via `--implementer-models` and/or PR-body `## Model audit` (union; hard-error on non-superset conflict; preserve `assertReviewerAllowed`; clickstop-branch path unchanged) (C68-3) | planned | — | Read `schemas/*` before field access. Independence guard preserved (R4). |
+| T4 — Unit tests under `tests/*.test.mjs`: non-CS happy path (models from flag/PR-body audit), union + conflict cases, missing-source error, reviewer∈implementers rejection (C68-3) | planned | — | Test minimums, not exact counts. |
+| T5 — `CHANGELOG.md` `[Unreleased]` entry (C68-5) | planned | — | SemVer per OPERATIONS § SemVer policy (Minor — new `--implementer-models` flag). |
+| T6 — File LRN-157 (`process`, `applied`) with `source_cs: CS68`, cross-refs LRN-081/LRN-153/CS59 (C68-4) | planned | — | At close-out; supersedes the interim agent-memory note (LRN-153). |
+| Close-out: docs + restart state | planned | — | Update WORKBOARD.md + CONTEXT.md + relevant docs so a fresh agent can restart from actual state. |
+| Close-out: learnings + follow-ups | planned | — | File LRN-157 + any follow-up planned CS (R1: C68-3 may split to a follow-up if the refactor grows). |
 
 ## Notes / Learnings
 
