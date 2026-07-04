@@ -281,4 +281,56 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
       (err) => err instanceof ReviewError && err.kind === 'bad-input' && /head branch must match/.test(err.message),
     );
   });
+
+  it('requests isCrossRepository from gh pr view so the fork gate is effective (regression: PR_VIEW_FIELDS omission)', async () => {
+    let jsonArg = null;
+    __testSeam.spawnSync = (cmd, args) => {
+      if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'view') {
+        const ji = args.indexOf('--json');
+        jsonArg = ji >= 0 ? args[ji + 1] : '';
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            body: '', headRefName: 'deps/js-yaml-4.2.0', headRefOid: HEAD,
+            baseRefOid: BASE, isCrossRepository: false, labels: [], url: 'u',
+          }),
+          stderr: '',
+        };
+      }
+      if (cmd === 'git') return { status: 0, stdout: '', stderr: '' };
+      return { status: 1, stdout: '', stderr: `unexpected ${cmd}` };
+    };
+    await runReview({
+      cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.5',
+      rubberDuckOnly: true, noPoll: true, actor: 'yoga-ah', implementerModelsFlag: 'claude-opus-4.8',
+    });
+    assert.ok(
+      jsonArg && jsonArg.split(',').includes('isCrossRepository'),
+      `gh pr view --json must request isCrossRepository so validateContentPr's fork gate works; got '${jsonArg}'`,
+    );
+  });
+
+  it('rejects a FORKED deps/… PR (isCrossRepository=true) even though the branch shape matches', async () => {
+    __testSeam.spawnSync = (cmd, args) => {
+      if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'view') {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            body: '', headRefName: 'deps/js-yaml-4.2.0', headRefOid: HEAD,
+            baseRefOid: BASE, isCrossRepository: true, labels: [], url: 'u',
+          }),
+          stderr: '',
+        };
+      }
+      if (cmd === 'git') return { status: 0, stdout: '', stderr: '' };
+      return { status: 1, stdout: '', stderr: `unexpected ${cmd}` };
+    };
+    await assert.rejects(
+      () => runReview({
+        cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.5',
+        rubberDuckOnly: true, noPoll: true, actor: 'yoga-ah', implementerModelsFlag: 'claude-opus-4.8',
+      }),
+      (err) => err instanceof ReviewError && err.kind === 'bad-input' && /from a fork/.test(err.message),
+    );
+  });
 });
