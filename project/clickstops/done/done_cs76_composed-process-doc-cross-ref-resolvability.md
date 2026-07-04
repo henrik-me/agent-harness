@@ -1,10 +1,10 @@
 # CS76 — Composed process-doc cross-ref resolvability: close #229 + fold in CS81-R3 docs/adr links, via an extended guard
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs76/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** omni-ah-c3 (Claude Opus 4.8), 2026-06-30 — filed from the open-LRN harvest triage requested by @henrik-me, adopting **LRN-170** (the second, distinct consumer-doc-cleanliness invariant CS72 deliberately carved out) and closing the consumer→harness feedback issue **#229**.
 **Updated by:** yoga-ah (Claude Opus 4.8), 2026-07-01 — relevance refresh after CS81/CS82 shipped (v0.11.0), rebased onto HEAD `67f3b5d` (v0.12.0; picks up CS83/CS84 — see Notes). Retargets the guard to **extend** CS81's `scripts/check-doc-xref-resolvability.mjs` (not a new script), folds in CS81's deferred R3 `docs/adr` process-base class (now incl. `CONVENTIONS.md`), corrects SemVer **Minor→Patch**, resolves **G-xref-approach** (qualify-in-place) and **G-issue-close** (user closes), decides the `docs/adr` tactic (C76-8), and refreshes all drifted line citations. Re-reviewed at **R5**.
 **Depends on:** none (hard). **Extends** CS81 (`scripts/check-doc-xref-resolvability.mjs`) and builds on CS72 (consumer-template genericity guard, `scripts/check-consumer-template-genericity.mjs`) + the CS58 § 2.6a/2.6c fact-claim doctrine. Coordinates with — but does not hard-depend on — the paused CS65 (root `OPERATIONS.md` right-sizing); see Risks R4. No in-flight CS owns the composed process-doc bases.
