@@ -515,7 +515,7 @@ Options:
   --poll-timeout <s>     Max seconds to poll (default: 300 = 5 minutes)
   --poll-interval <s>    Polling interval in seconds (default: 30)
   --head <sha>           Override poll HEAD (default: PR headRefOid from GitHub)
-  --no-poll              Return immediately after the requestReviews mutation
+  --no-poll              Return immediately after the review request ('gh pr edit --add-reviewer')
   --submitted-after <ts> ISO-8601 floor for the review's submittedAt (default:
                          the timestamp captured immediately before the engage
                          request — guarantees a NEW review, matching the A5+A16
@@ -532,9 +532,9 @@ Notes:
   warns on stderr; pass --head <sha> only when intentionally polling another SHA.
 
 Exit codes:
-  0  Copilot review found at the polled HEAD (or --no-poll: mutation accepted)
+  0  Copilot review found at the polled HEAD (or --no-poll: request accepted)
   2  bad usage (bad arguments, fork-source PR)
-  3  poll timeout (mutation accepted but no review within --poll-timeout)
+  3  poll timeout (request accepted but no review within --poll-timeout)
   4  auth or GraphQL error (incl. requested-reviewer verify unavailable)
   5  identity cache write failed (use --cache-dir to override; CS45)
   6  reviewer add did not land (silent no-op even after one re-add; CS92/LRN-160)
