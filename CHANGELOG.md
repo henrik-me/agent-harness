@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.15.0] — 2026-07-03
+
+### Added
+
 - **`harness install-hooks` (#421):** a new opt-in verb that installs a git `prepare-commit-msg` hook into the repository's active hooks directory. The hook auto-appends the canonical `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer when that exact line is absent — **including on merge commits** (inserted *above* git's comment/scissors template so it survives git's message cleanup) — making the commit-trailers (B1) gate pass by construction and removing the recurring manual `git commit --amend` on a `git merge` that integrates `main` into a long-running branch. Opt-in (never installed by `init`), idempotent (a sentinel makes re-runs a no-op), and refuses to clobber a pre-existing non-harness hook without `--force`. Ships a new dependency-free `lib/hooks.mjs` (Minor).
 - **Auto-rerun review gates on Copilot review (#424):** the managed `pr-evidence-lint.yml` workflow now re-runs its `read-only-gates` job on `pull_request_review` (submitted) events (base=`main`), so the A5+A16 Copilot gate turns green automatically once Copilot's asynchronous review lands — removing the manual `gh run rerun --failed` that the push-triggered run previously required (ADR4-8). Consumers adopt on the next `harness sync` (Minor).
 
@@ -573,7 +583,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/henrik-me/agent-harness/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/henrik-me/agent-harness/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/henrik-me/agent-harness/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/henrik-me/agent-harness/compare/v0.11.0...v0.12.0
