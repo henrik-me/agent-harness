@@ -1,10 +1,10 @@
 # CS87 — `copilot-engage --help` accuracy: "requestReviews mutation" → REST review-request wording
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs87/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** CS87 filed at CS65 close-out (2026-07-02 by `omni-ah-c3`) — the GPT-5.5 plan-vs-implementation review's 1 non-blocking finding, re-homed from the closed CS65 file into a visible planned CS per the "follow-ups must be a planned CS or a learning" convention.
 **Depends on:** none.
 
@@ -82,4 +82,16 @@ Surfaced by the GPT-5.5 plan-vs-implementation review of CS65 (recorded in `done
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck)
+**Date:** 2026-07-04T01:58:00Z
+**Outcome:** GO
+
+Per-deliverable outcome (analyzed at merged squash `67acffd`, parent `79d686c`):
+
+| Deliverable | Outcome | Rationale |
+|---|---|---|
+| 1. `bin/harness.mjs` copilot-engage help wording (C87-1) | match | Three help lines corrected; diff touches only the help literal — no flag/behavior/exit-code-number change. |
+| 2. Regression assertion (C87-2) | match | Existing help-output test extended with `doesNotMatch(/requestReviews/)`, `doesNotMatch(/mutation accepted/)`, `match(/gh pr edit --add-reviewer/)`. |
+| 3. `CHANGELOG.md` `[Unreleased]` entry | match | Entry lands under `[Unreleased] → Documentation` (correctly re-homed after the concurrent v0.16.0 cut promoted the old `[Unreleased]` to `[0.16.0]`). |
+
+**Test-coverage assessment:** sufficient — the help-output test now asserts absence of `requestReviews` / "mutation accepted" and presence of `gh pr edit --add-reviewer`. `node --test` 1762 pass / 0 fail / 2 skipped; `harness lint` 35/0/3.
