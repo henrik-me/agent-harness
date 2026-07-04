@@ -2531,13 +2531,15 @@ the dead-anchor regression cannot recur silently.
 `.trim(),
   'doc-xref-resolvability': `
 **Linter:** check-doc-xref-resolvability (scripts/check-doc-xref-resolvability.mjs)
-**Target:** three doc cross-reference classes, self-host-only (gated by package
+**Target:** four doc cross-reference classes, self-host-only (gated by package
           name, skipped unless package.json \`name\` is \`@henrik-me/agent-harness\`):
           (a) OPERATIONS.md + REVIEWS.md (root), (b) INSTRUCTIONS.md (root),
           (c) the consumer-onboarding doc set — template/managed/READMEGUIDE.md,
           template/composed/INSTRUCTIONS.md,
           template/composed/.github/copilot-instructions.md,
-          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md.
+          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md;
+          (e) the composed process-doc bases —
+          template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md.
 **Rules:**
   - (a) LRN tokens: every uppercase LRN-<id> token in OPERATIONS.md / REVIEWS.md
     must resolve to a \`### LRN-<id>\` heading in LEARNINGS.md. A placeholder
@@ -2548,9 +2550,14 @@ the dead-anchor regression cannot recur silently.
   - (c) relative-link deliverability: every relative FILE link in an onboarding
     doc must resolve to a target that ships under template/ (composed / managed /
     seeded). A target absent from template/ (e.g. docs/adr/0001-*.md) fails. (#356b)
-  - Checks (b)/(c) skip fenced code blocks + inline-code spans so example links
-    do not false-positive; the composed process-doc bases are NOT scanned for (c)
-    (pervasive out-of-scope docs/adr links — follow-up R3).
+  - (e) composed process-base xref (CS76 / #229): in
+    template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md, a bare not-guaranteed
+    sibling (INSTRUCTIONS.md / .github/copilot-instructions.md) that is neither
+    qualified "*(if your consumer syncs it)*" nor allowlisted fails, as does any
+    harness-internal docs/adr reference (case-insensitive; no allowlist).
+  - Checks (b)/(c) skip fenced code blocks + inline-code spans; check (e) scans
+    inline-code spans (its sibling / docs/adr tokens are backtick-wrapped) but
+    skips fenced blocks.
 **Why:** The v0.10.0 templates shipped three dangling refs no gate caught
 (placeholder LRN tokens, a stale cross-file anchor, an undeliverable relative
 link). This guard makes each class mechanical and permanent so they cannot

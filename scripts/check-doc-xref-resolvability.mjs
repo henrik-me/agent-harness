@@ -29,11 +29,11 @@
  *       consumer. Checks (b)/(c) skip fenced code blocks and inline-code spans so
  *       illustrative example links do not false-positive.
  *
- *       The onboarding set deliberately EXCLUDES the composed process-doc bases
- *       (`OPERATIONS.md` / `REVIEWS.md` / `CONVENTIONS.md`): they carry pervasive
- *       relative `docs/adr/*` links pending a separate genericization pass
- *       (C81-1, follow-up R3), so scanning them here would trip the guard on
- *       out-of-scope debt.
+ *       The onboarding set (check (c)) deliberately EXCLUDES the composed
+ *       process-doc bases (`OPERATIONS.md` / `REVIEWS.md` / `CONVENTIONS.md`):
+ *       their harness-internal sibling + `docs/adr` cross-refs are audited
+ *       separately by check (e) below (CS76 / C76-1..C76-8, fulfilling CS81's
+ *       deferred R3 follow-up).
  *
  *   (d) archive/stub integrity (CS65 / C65-3, C65-4) — when a sibling
  *       `LEARNINGS-archive.md` exists next to `LEARNINGS.md`, the archival
@@ -52,6 +52,21 @@
  *       enforced by check-learnings.mjs, which validates the archive's full
  *       entries against the CS69/LRN-154 rule.) Absent archive → skipped
  *       entirely, so this is a no-op pre-migration and for every consumer.
+ *
+ *   (e) composed-process-base xref (CS76 / C76-1..C76-8) — the three composed
+ *       process-doc BASES (`template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md`)
+ *       render to BOTH a consumer doc and the harness's OWN repo-root copy, so a
+ *       dangling harness-internal ref here ships to every consumer. FAILS on:
+ *       (i) a BARE "not-guaranteed sibling" token (`INSTRUCTIONS.md` or
+ *       `.github/copilot-instructions.md` — composed files a consumer may not
+ *       sync, C76-2) that is neither qualified by the documented phrase
+ *       `*(if your consumer syncs it)*` (C76-1) nor listed in the in-script
+ *       DESCRIPTIVE_ALLOWLIST of audited descriptive mentions; and (ii) ANY
+ *       harness-internal `docs/adr` reference — relative link, inline-code path,
+ *       bare `docs/adr/` token, or hardcoded-slug ADR URL (C76-8; no allowlist).
+ *       Unlike checks (b)/(c), this check SCANS inline-code spans (the sibling /
+ *       `docs/adr` tokens here are ALWAYS backtick-wrapped) but still SKIPS
+ *       fenced code blocks so illustrative fenced examples do not false-positive.
  *
  * Self-host only. The `harness lint` runner gates this linter by package name
  * (args/target null unless `package.json` `name` is `@henrik-me/agent-harness`,
@@ -149,8 +164,14 @@ for (let i = 0; i < argv.length; i++) {
       '  (d) archive/stub integrity between LEARNINGS.md and (if present)\n' +
       '      LEARNINGS-archive.md: a stub with no archive entry (dead redirect),\n' +
       '      an archive entry with no stub (orphan anchor), an id full in both\n' +
-      '      files, or an open/deferred entry in the archive.\n' +
-      'Checks (b)/(c) skip fenced code blocks and inline-code spans.\n\n' +
+      '      files, or an open/deferred entry in the archive;\n' +
+      '  (e) composed-process-base xref in template/composed/{OPERATIONS,\n' +
+      '      REVIEWS,CONVENTIONS}.md: a bare not-guaranteed sibling ref\n' +
+      '      (INSTRUCTIONS.md / .github/copilot-instructions.md) that is neither\n' +
+      '      qualified "*(if your consumer syncs it)*" nor allowlisted, or any\n' +
+      '      harness-internal docs/adr reference.\n' +
+      'Checks (b)/(c) skip fenced code blocks and inline-code spans;\n' +
+      'check (e) scans inline code but skips fenced blocks.\n\n' +
       'Options:\n' +
       '  --cwd <dir>   Repo root the scan paths resolve against (default: cwd)\n' +
       '  --dir <dir>   Alias for --cwd\n' +
@@ -545,6 +566,133 @@ function checkArchiveStubIntegrity() {
 }
 
 // ---------------------------------------------------------------------------
+// Check (e) -- composed process-base cross-ref resolvability (CS76 / C76-1..C76-8)
+// ---------------------------------------------------------------------------
+
+// The three composed process-doc BASES (template sources, not rendered roots).
+// Each renders to BOTH a consumer doc and the harness's OWN repo-root copy, so a
+// dangling harness-internal ref here ships to every consumer.
+const CHECK_E_DOCS = [
+  'template/composed/OPERATIONS.md',
+  'template/composed/REVIEWS.md',
+  'template/composed/CONVENTIONS.md',
+];
+
+// "Not-guaranteed siblings": composed files a consumer MAY choose not to sync
+// (composed.files is consumer-selectable, C76-2). A cross-ref pointing at one as
+// a canonical source must be QUALIFIED, else the pointer dangles for a consumer
+// who didn't adopt that file. Bare-token boundary (C76-8): match a sibling ONLY
+// when it is not part of a longer path -- the negative lookbehind excludes a
+// preceding path/word char ([\w./-]), so a path-qualified example such as
+// `template/composed/INSTRUCTIONS.md` (REVIEWS.md's nonexistent-path token) and
+// any `x/INSTRUCTIONS.md` are NOT flagged, while a bare `INSTRUCTIONS.md` IS.
+// Case-sensitive, so a lowercase `copilot-instructions.md` fragment does not
+// register as the uppercase `INSTRUCTIONS.md` sibling.
+const SIBLING_RES = [
+  /(?<![\w./-])INSTRUCTIONS\.md\b/g,
+  /(?<![\w/-])\.github\/copilot-instructions\.md\b/g,
+];
+
+// The documented qualifier phrase (C76-1). A bare sibling token counts as
+// qualified when this phrase FOLLOWS it on the SAME line within QUALIFIER_WINDOW
+// chars -- wide enough to span the `[link](target)` and paired-sibling
+// (`A` / `B` *(...)*) shapes where the phrase trails both tokens. Accepted
+// wording: "*(if your consumer syncs it)*" / "*(if your consumer syncs them)*".
+const QUALIFIER_RE = /\*\(if your consumer syncs (?:it|them)\)\*/g;
+const QUALIFIER_WINDOW = 80;
+
+// Harness-internal ADR references are banned outright (C76-8, fulfilling CS81 R3):
+// every form -- a relative markdown link `](docs/adr/...)`, an inline-code path
+// `docs/adr/...`, a bare `docs/adr/` directory token, and a hardcoded
+// henrik-me/agent-harness slug URL `https://github.com/.../docs/adr/...` --
+// contains this literal substring (matched case-INSENSITIVELY so a future
+// `Docs/adr` / `docs/ADR` spelling cannot slip a dangling ADR path past the
+// guard). There is deliberately NO allowlist: the composed bases carry the ADR
+// rationale as link-free prose (READMEGUIDE precedent from CS81).
+const DOCS_ADR_RE = /docs\/adr/i;
+
+// Audited DESCRIPTIVE mentions (C76-1): lines that merely NAME a sibling as data
+// (an example doc-set list; the genericity-invariant doc set) rather than cross-
+// referencing it as a canonical source. Each entry is a distinctive same-line
+// substring + the justification for excusing that line's sibling token(s). Keep
+// this list MINIMAL: any NEW unqualified sibling ref on a non-allowlisted line
+// must fail. (docs/adr is NEVER allowlisted.)
+const DESCRIPTIVE_ALLOWLIST = [
+  // OPERATIONS.md, Consumer-template genericity invariant: the doc-set that
+  // NAMES the onboarding files as the subject being described (spans two lines):
+  'The core onboarding docs shipped to consumers', // -> INSTRUCTIONS.md (list head)
+  '`TRACKING.md`, `RETROSPECTIVES.md`',            // -> .github/copilot-instructions.md (list tail)
+  // ...and the rendered-repo-root list the linter deliberately does not target:
+  'the **rendered repo-root** docs',               // -> INSTRUCTIONS.md
+  'which the linter does not target',              // -> .github/copilot-instructions.md
+  // REVIEWS.md, the 2.6a / 2.6c F3 rows: an illustrative example list of cited
+  // docs; qualifying one item mid-list would misread as doctrine (DECISION:
+  // descriptive, not a cross-ref). One key covers BOTH the 2.6a and 2.6c cells
+  // (identical example substring):
+  'OPERATIONS.md, REVIEWS.md, INSTRUCTIONS.md, README.md, etc.',
+  // CONVENTIONS.md, the naming-convention example + the repo-root doc-list row
+  // that TEACH file-naming/placement by naming the docs:
+  'kebab-case for reference docs under', // -> INSTRUCTIONS.md (naming example)
+  'Managed and seeded process docs',     // -> INSTRUCTIONS.md (repo-root doc list)
+];
+
+function isAllowlistedDescriptive(line) {
+  return DESCRIPTIVE_ALLOWLIST.some(sig => line.includes(sig));
+}
+
+function checkComposedProcessBaseXref() {
+  for (const rel of CHECK_E_DOCS) {
+    const content = readDoc(rel);
+    if (content === null) continue; // absent base: nothing to validate here
+
+    const lines = content.split('\n');
+    let inFence = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      // SKIP fenced code blocks (```/~~~) so illustrative fenced examples do not
+      // false-positive -- but DO scan inline-code spans below, since the real
+      // sibling / docs/adr tokens here are ALWAYS backtick-wrapped (unlike the
+      // CS81 (b)/(c) checks, which strip inline code and would miss every one).
+      if (/^\s*(?:```|~~~)/.test(line)) { inFence = !inFence; continue; }
+      if (inFence) continue;
+
+      // (ii) harness-internal docs/adr -- banned in every form; no allowlist.
+      if (DOCS_ADR_RE.test(line)) {
+        logError(
+          `${rel}:${i + 1}: harness-internal "docs/adr" reference must be genericized to link-free prose (C76-8): ${line.trim()}`
+        );
+      }
+
+      // (i) bare not-guaranteed-sibling tokens -- must be qualified, else fail.
+      // An audited descriptive mention (line names the file as data, not as a
+      // canonical source) is excused via DESCRIPTIVE_ALLOWLIST.
+      if (isAllowlistedDescriptive(line)) continue;
+
+      const qualifierIdx = [];
+      QUALIFIER_RE.lastIndex = 0;
+      let qm;
+      while ((qm = QUALIFIER_RE.exec(line)) !== null) qualifierIdx.push(qm.index);
+
+      for (const re of SIBLING_RES) {
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(line)) !== null) {
+          const tokenEnd = m.index + m[0].length;
+          const qualified = qualifierIdx.some(
+            qi => qi >= tokenEnd && qi - tokenEnd <= QUALIFIER_WINDOW
+          );
+          if (qualified) continue;
+          logError(
+            `${rel}:${i + 1}: bare not-guaranteed sibling "${m[0]}" must be qualified with ` +
+            `"*(if your consumer syncs it/them)*" (C76-1) or added to the audited descriptive allowlist: ${line.trim()}`
+          );
+        }
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -552,6 +700,7 @@ checkLrnTokens();
 checkCrossFileAnchors();
 checkRelativeLinkDeliverability();
 checkArchiveStubIntegrity();
+checkComposedProcessBaseXref();
 
 if (errors.length > 0) {
   process.stderr.write(`\n${LINTER_NAME}: ${errors.length} errors, 0 warnings\n`);
