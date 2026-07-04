@@ -138,9 +138,9 @@ CS24 close-out is permitted only when **all** of the following are true and reco
 | T3 — Test file: `tests/cs24-changelog-touch-enforcement.test.mjs` (≥8 fixture-based tests) | done | cs24-changelog-enforce | Deliverable 4; 34 tests (fixture e2e + extraction/matching unit + R1–R4 rubber-duck convergence matrix) |
 | T4 — Template doc: `template/composed/OPERATIONS.md § Harvest`, then refresh rendered root `OPERATIONS.md` | done | cs24-changelog-enforce | Deliverable 5 / C24-6; doc added to template + rendered root; `.harness-lock.json` intentionally kept at `main` (stale-lock resync deferred — see Notes); `sync --mode=check` clean |
 | T5 — CHANGELOG.md `[Unreleased] / Changed` entry for the enforcement | done | cs24-changelog-enforce | Deliverable 6; classified **Minor** |
-| T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | pending | yoga-ah-c2 | Deliverable 7 / C24-7 — CLOSE-OUT task |
-| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md, CONTEXT.md, and the rendered root OPERATIONS.md so a fresh agent can restart from actual state |
-| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | Disposition learnings in LEARNINGS.md (flip LRN-101); file a planned follow-up CS if OQ1 (content-vs-deliverable check) proves worthwhile |
+| T6 — Flip [LRN-101](../../../LEARNINGS.md#lrn-101) `open` → `applied` with disposition-update note (close-out SHA + CS16 pilot evidence) | done | yoga-ah-c2 | Deliverable 7 / C24-7 — flipped to applied at close-out (squash `d14372f`) |
+| Close-out: docs + restart state | done | yoga-ah-c2 | Updated WORKBOARD.md (row removed), CONTEXT.md, active→done rename; rendered root OPERATIONS.md shipped in content PR |
+| Close-out: learnings + follow-ups | done | yoga-ah-c2 | Flipped LRN-101→applied; filed LRN-200 (Copilot-last A5 ordering) + LRN-201 (stale-lock, open → dedicated lock-resync CS) |
 
 ## Notes / Learnings
 
@@ -187,6 +187,12 @@ rubber-duck review — R1–R4 each added token-parser regression coverage.)
   written; a follow-up may want package metadata enforced independently of
   sync-exclusion.
 
+**Filed at close-out:** [LRN-201](../../../LEARNINGS.md#lrn-201) (open — stale-lock / `sync --mode=check` validates rendered content not lock bookkeeping) + [LRN-200](../../../LEARNINGS.md#lrn-200) (applied — engage Copilot LAST; the read-only-gates A5 gate requires the latest Copilot review to postdate the latest local `## Review log` Go row). The package-metadata/`excluded[]` nuance is the intended C24-1 self-host behavior (no separate LRN).
+
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck, `cs24-pvi`)
+**Date:** 2026-07-04
+**Outcome:** GO
+
+Implementation faithfully realizes the CS24 plan at merged squash HEAD `d14372f`. Deliverables 1–6 shipped; Deliverable 7 / exit criterion 11 (LRN-101 flip → `applied`) executed in this close-out. Plan-fidelity: C24-1–C24-6 implemented (globs + `excluded[]` consultation, date gate `2026-07-05` with active-always/done-date-gated grandfathering, word-boundary CHANGELOG-verb predicate, 9 fixtures, doc sync root+template byte-match). C24-2 token detection evolved across the 6-round rubber-duck review to maximal whole-token extraction + balanced-markdown-emphasis normalization with `matchesDistributedSurface` as the sole classifier (documented in Notes + regression tests). The `.harness-lock.json`-kept-at-`main` deviation from C24-6's `--resolved-sha` step is documented + defensible (stale-since-cs55; `sync --mode=check` reports no drift). Verification: `check-clickstop --dir project/clickstops` 0 errors, `node --test tests/*.test.mjs` 1824 pass / 0 fail, `harness lint` 35/0/3, `sync --mode=check` no drift. Model audit matches reality (implementer `claude-opus-4.8`, reviewer `gpt-5.5`, Minor). No unmet plan elements.
