@@ -29,5 +29,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
 | CS87 | CS87 — `copilot-engage --help` accuracy: "requestReviews mutation" → REST review-request wording | 🟢 Active | yoga-ah-c2 | cs87/content | 2026-07-04 | — |
+| CS105 | CS105 — Cut harness release v0.16.0 | 🟢 Active | yoga-ah | cs105/content | 2026-07-04 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
