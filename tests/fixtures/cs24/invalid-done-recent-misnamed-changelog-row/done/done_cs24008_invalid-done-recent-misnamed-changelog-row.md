@@ -17,7 +17,7 @@
 | Task | State | Owner | Notes |
 |---|---|---|---|
 | T1 — implement the scaffold | done | test-ah | core work |
-| T2 — Review the CHANGELOG heading style for consistency | done | test-ah | mentions changelog only; not a changelog-writing row |
+| T2 — Address the CHANGELOG heading style | done | test-ah | mentions changelog; no writing verb, so it must be rejected (word-boundary regression) |
 | Close-out: docs + restart state | done | test-ah | Update WORKBOARD.md, CONTEXT.md so a fresh agent can restart |
 | Close-out: learnings + follow-ups | done | test-ah | Disposition learnings in LEARNINGS.md; file follow-ups |
 

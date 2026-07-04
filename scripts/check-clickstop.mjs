@@ -365,7 +365,8 @@ function checkChangelogTouchTask(content, subdir, basename) {
   const rows = tableRows(tasksBody)
     .map((row) => row.replace(/\blearnings=\d+\b/gi, '').toLowerCase());
   const hasChangelogRow = rows.some((row) =>
-    /changelog/i.test(row) && /(touch|update|entry|bullet|append|add)/i.test(row)
+    /changelog/i.test(row) &&
+    /\b(touch(?:ed|es|ing)?|updat(?:e|ed|es|ing)|entr(?:y|ies)|bullets?|append(?:ed|s|ing)?|add(?:ed|s|ing)?)\b/i.test(row)
   );
 
   if (!hasChangelogRow) {
