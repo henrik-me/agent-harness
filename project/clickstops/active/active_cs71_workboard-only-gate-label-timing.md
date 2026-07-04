@@ -1,9 +1,9 @@
 # CS71 — Eliminate transient red gates on workboard-only PRs
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs71/content
+**Started:** 2026-07-04
 **Closed:** —
 **Filed by:** omni-ah (Claude Opus 4.8), 2026-06-11 — surfaced during a system-health validation requested by @henrik-me after red ❌ checks appeared on the merged CS70 PRs (#303 content / #304 workboard close-out). The #304 failures were a label-timing race, not a gate defect. User directive: "if proper process is followed gates should not be red."
 **Depends on:** none
@@ -89,11 +89,28 @@ Workboard-only claim/close-out PRs must show **green** review gates from their f
 | R5 | gpt-5.5 | claude-opus-4.8 | general-purpose (orchestrator: omni-ah) | 93d097b6e112 | 2026-06-11T19:02:00Z | Go | F1 (lib guidance-string edits in scope) + F2 (green guarantee scoped to mandated create path; universal needs hardening) resolved; no new material blockers. |
 | R6 | gpt-5.5 | claude-opus-4.8 | general-purpose (orchestrator: omni-ah) | 27d510491a54 | 2026-06-11T19:14:00Z | Go-with-amendments | Re-corrected after #306 reproduced the race with --label (#305 green/#306 red, same cmd): path-derivation = reliable primary; --label = complementary. Gate wording resolved. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Minor** (provisional) per D71-4 — new `check-workboard-allowlist-consistency` linter + path-derived evidence-gate skip shipped in managed workflow templates; backward-compatible (consumers with `review_gates.enabled` false stay inert per OQ2). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| T1 — D71-2 + D71-3: path-derived evidence-gate skip — `pr-evidence-lint.yml` `compute-skip-reasons` adds `workboard-only` for an allowlist-confined diff; `review-gates.yml` four evidence jobs **always execute** and short-circuit internally to success (label **or** allowlist-confined diff), **fail closed** on a file-list API error; retain `validate-workboard-only-scope`; `# harness:workboard-allowlist` marker above every occurrence (template/managed **and** rendered) — R4 fail-open invariant, C63-7 guard intact | pending | — | agent-id=cs71-workflow-core \| role=impl \| report-status=pending \| learnings=0 — owns .github/workflows/{review-gates,pr-evidence-lint}.yml + template/managed/.github/workflows/{review-gates,pr-evidence-lint}.yml |
+| T2 — D71-4: new `scripts/check-workboard-allowlist-consistency.mjs` (Node built-ins only; `--quiet`; exit 0/1/2; `✅/❌`) asserting every `# harness:workboard-allowlist` occurrence (`review-gates.yml` ×2, `pr-evidence-lint.yml`, `workboard-auto-approve.yml`; template/managed **and** rendered) is equivalent under token-set canonical normalization; register in the `harness lint` aggregator; **no `lib/` extraction** | pending | — | agent-id=cs71-linter \| role=impl \| report-status=pending \| learnings=0 — owns scripts/check-workboard-allowlist-consistency.mjs, bin/harness.mjs (lint registry entry only) |
+| T3 — D71-5: tests (`node --test`, scratch under `os.tmpdir()` only, **min 6**) — matching→exit0, drifted-token→exit1, static YAML assertion (four jobs always-execute + no `paths-ignore`), fail-open guard (simulated file-list error runs the real gate), marker-present, exit2 bad-usage, rendered/template agreement | pending | — | agent-id=cs71-tests \| role=impl \| report-status=pending \| learnings=0 — Wave 2 (depends on T1 workflows + T2 linter) |
+| T4 — D71-1 + D71-6: `--label`-at-creation guidance in `OPERATIONS.md` §Claim/§Close-out (+ composed mirror) and the `harness claim`/`close-out` rendered PR guidance in `lib/claim.mjs` / `lib/closeout.mjs` (guidance-string only — **no** gate logic); §Skip-reasons-matrix path-derived note + `::notice::`-on-path-skip doc; keep the composed `OPERATIONS.md` mirror in sync | pending | — | agent-id=cs71-docs-guidance \| role=impl \| report-status=pending \| learnings=0 — owns OPERATIONS.md, template/composed/OPERATIONS.md, lib/claim.mjs, lib/closeout.mjs |
+| T5 — D71-7: Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint` incl. `workflow-pins`/`review-gates`/`text-encoding`, `node --test`, `harness sync --mode=check` zero drift) | pending | yoga-ah-c2 | independence: reviewer model ≠ every implementer model |
+| CHANGELOG — add a `CHANGELOG.md` `[Unreleased]` entry (Added: path-derived workboard-only evidence-skip + `check-workboard-allowlist-consistency` linter; Minor) | pending | yoga-ah-c2 | orchestrator-owned; distributed-surface CS (LRN-101) |
+| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File the D71-1 empirical-non-determinism LEARNINGS.md entry (#305 green / #306 red, identical `gh pr create --label` command) + any new learnings + follow-up CSs |
 
 ## Notes / Learnings
 
