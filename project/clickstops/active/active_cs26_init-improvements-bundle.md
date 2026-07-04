@@ -1,9 +1,9 @@
 # CS26 — `harness init` improvements bundle (6 findings from CS16 sub-invaders bootstrap)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs26/content
+**Started:** 2026-07-04T04:06:11Z
 **Closed:** —
 **Filed by:** Pre-claim disposition of [Findings #2, #3, #4, #5, #6, #9](../done/done_cs16_bootstrap-sub-invaders/sub-invaders-bootstrap-summary.md) from CS16 sub-invaders bootstrap (2026-05-11) by `yoga-ah`.
 **Depends on:** [CS25](../done/done_cs25_hotfix-runtime-deps.md) (**closed 2026-05-11**; ajv/ajv-formats/js-yaml moved to runtime dependencies so the init flow has a working ajv — dependency satisfied; CS25 is on `main`). No remaining blocker. (Note: no `v0.2.1` tag was cut — the patch-release step was reframed; `v0.2.0` remains the latest `v0.2.x` tag.)
@@ -147,11 +147,31 @@ The 4 sub-agents have disjoint owned files except the cmdInit copy-loop. The orc
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.7-xhigh | rubber-duck dispatched (orchestrator: yoga-ah) | 2d48e031198c | 2026-05-14T04:50:00Z | Go-with-amendments | CS26 grandfather attestation per CS42-7 strict-flip self-host validation. Pre-CS35b backlog; plan content unchanged; backfill only. |
+
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer set at close-out (init defect fixes + new `check-config-placeholders` linter — likely Minor). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per OPERATIONS.md § Claim) | planned | — | — |
+| T0 — Finalize scope + path: implement findings #2/#3/#6/#9 per the 2026-06-09 disposition note; choose Path A (leave Decisions/Deliverables untouched — plan-review hash `2d48e031198c` stays valid) vs Path B (re-author body → fresh R2 GPT-5.5 plan review) | in-progress | yoga-ah | #4/#5 obsolete; re-authoring Decisions/Deliverables invalidates the plan-review hash |
+| T1 — Finding #2: `bin/harness.mjs` cmdInit detects invocation ref + seeds a real `version` into `harness.config.json` (C26-2; fallback chain per R1) | pending | — | impl; sub-agent A candidate |
+| T2 — Finding #3: new `scripts/check-config-placeholders.mjs` (standalone `REPLACE_ME` token match) + wire into cmdLint aggregator; verify no seeded-token propagation (C26-3; risk R2) | pending | — | impl; sub-agent B candidate; 8 tokens across 6 fields today |
+| T3 — Finding #6: stop shipping a root `.gitkeep` — delete `template/seeded/.gitkeep` and/or skip it in the cmdInit seeded-copy loop (C26-6, mechanism updated per disposition) | pending | — | impl; sub-agent A candidate |
+| T4 — Finding #9: new `template/seeded/.gitattributes` (`* text=auto eol=lf` + binary/LF overrides) + copy-loop wiring (C26-7) | pending | — | impl; sub-agent A candidate |
+| T5 — Tests: `tests/cs26-init-improvements.test.mjs` (≥4, one per finding) + extend `tests/cs09-init.test.mjs` end-to-end smoke (C26-9) | pending | — | over-delivery on tests encouraged |
+| T6 — End-to-end fresh-install smoke probe (Deliverable #8) + `CHANGELOG.md [Unreleased]` entry (Deliverable #9) | pending | yoga-ah | orchestrator-owned |
+| T7 — Plan-vs-implementation review (GPT-5.5 close-out gate) | pending | yoga-ah | independence: reviewer model ≠ every implementer model |
+| Close-out: docs + restart state | pending | yoga-ah | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | pending | yoga-ah | File LEARNINGS.md entries; add resolution notes to CS16 `sub-invaders-bootstrap-summary.md` findings #2/#3/#6/#9; file planned follow-up CSs as needed |
 
 ## Notes / Learnings
 
