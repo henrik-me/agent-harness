@@ -2376,6 +2376,57 @@ worked" from "this was never implemented". Exit codes:
 
 ---
 
+## Dependency-bump adoption
+
+A Dependabot (or any bot / maintenance) dependency PR cannot clear the
+review-evidence gates on its own: it carries no `## Model audit` / `## Review
+log`, so `copilot-review-attached`, `independence-invariant`, and
+`review-log-evidence` all fail against it. This section is the repeatable
+procedure for adopting such a bump through those gates on a `deps/<pkg>-<ver>`
+branch (the sanctioned shape for dependency/maintenance PRs — see the
+branch-naming convention in [INSTRUCTIONS.md](INSTRUCTIONS.md)). It builds on
+existing doctrine rather than restating it: the solo-orchestrator merge path
+lives in
+[§ Content/release-PR admin-merge (solo-orchestrator reality)](#contentrelease-pr-admin-merge-solo-orchestrator-reality)
+(CS59 C59-3), and the related Dependabot-alert readback plus stale-bot-PR /
+source-template-propagation audit discipline is captured in
+[LRN-081](LEARNINGS.md#lrn-081).
+
+Adopt a dependency bump with these ordered steps:
+
+1. **Re-create the bump on a `deps/<pkg>-<ver>` branch** cut from current
+   `origin/main`. If a step allocates a throwaway clone to regenerate the
+   lockfile, it MUST go through the shared `lib/disposers.mjs` clone /
+   `assertSafeRef` re-creation primitives that CS64b (C64b-2) mandates for any
+   verb that allocates a clone — never hand-roll a temp dir or pass an
+   unguarded `git` ref.
+2. **Tighten the semver range to the patched version and regenerate the
+   lockfile** (`npm install`), so the adopted bump is pinned to the fix rather
+   than a floating range.
+3. **Run the tests and the linter** — `node --test tests/*.test.mjs` and
+   `harness lint` must both be green.
+4. **Generate the review evidence with `harness review`, not by hand.** The PR
+   body needs `## Model audit` + `## Review log` blocks per
+   [REVIEWS.md § 2.8](REVIEWS.md#28-pr-body-requirements) (implementer model ≠
+   reviewer model). Because a `deps/<pkg>-<ver>` PR has no `cs<NN>/` id and thus
+   no clickstop file to parse, `harness review <pr> --implementer-models <csv>`
+   sources the implementer set from the flag and/or the PR body's existing
+   `## Model audit` on a non-CS branch (C68-3) — so the evidence is produced by
+   `harness review`, not hand-authored.
+5. **Obtain the independent reviews** — a GPT-5.5 rubber-duck `Go` plus a
+   Copilot review — then confirm the review-evidence gates
+   (`copilot-review-attached`, `independence-invariant`, `review-log-evidence`)
+   are green.
+6. **Merge via owner override** — `gh pr merge --squash --admin <pr>`, under the
+   narrow solo-orchestrator conditions documented in
+   [§ Content/release-PR admin-merge (solo-orchestrator reality)](#contentrelease-pr-admin-merge-solo-orchestrator-reality).
+   Do not widen that scope here.
+7. **Close / supersede the original Dependabot PR** — it is replaced by the
+   `deps/` re-creation.
+8. **Verify post-merge `main` is green.**
+
+---
+
 ## Release process
 
 The mechanical procedure for cutting a harness release (tag + GitHub Release +

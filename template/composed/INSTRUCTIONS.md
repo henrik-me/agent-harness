@@ -246,7 +246,9 @@ record.
     generalisation beyond what the source asserts); (e) cross-doc claims
     (CHANGELOG vs OPERATIONS vs README vs LRN) are mutually consistent.
 - **Branch naming:** `cs<NN>/<slug>` for CS work; `workboard/cs<NN>-claim`,
-  `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs.
+  `workboard/cs<NN>-close`, etc. for WORKBOARD-only PRs; `deps/<pkg>-<ver>` for
+  dependency/maintenance (Dependabot adoption) PRs (see
+  [OPERATIONS.md § Dependency-bump adoption](OPERATIONS.md#dependency-bump-adoption)).
 - **Commit trailers:** every commit must include
   `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`.
 - **Mid-CS sync prohibition:** do not run `harness sync` mid-clickstop unless
