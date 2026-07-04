@@ -34,6 +34,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertHeadings, extractSectionBody, headingAnchor } from '../lib/doc-schema.mjs';
+import { matchesDistributedSurface } from '../lib/distributed-surface-globs.mjs';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -54,6 +55,17 @@ const FILENAME_RE = {
 
 /** Close-out task enforcement applies from CS15a close-out onward. */
 const CLOSEOUT_TASK_ENFORCEMENT_DATE = '2026-05-10';
+
+/**
+ * CHANGELOG-touch task enforcement (CS24 / LRN-101) applies from this date
+ * onward. The latest existing done-CS `**Closed:**` date in the repo at CS24
+ * time is 2026-07-04; per the `MODEL_AUDIT_ENFORCEMENT_DATE` precedent in
+ * `scripts/check-clickstop-implementer-not-reviewer.mjs`, the cutoff is set
+ * strictly AFTER it so every already-closed CS is grandfathered (warn-free) and
+ * CI stays green. Do NOT lower this date — an earlier value would retroactively
+ * flag closed CSs that predate the convention's mechanical enforcement.
+ */
+const CHANGELOG_TOUCH_ENFORCEMENT_DATE = '2026-07-05';
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
@@ -223,6 +235,178 @@ function checkCloseoutTasks(content, subdir, basename) {
 }
 
 // ---------------------------------------------------------------------------
+// CHANGELOG-touch task enforcement (CS24 — LRN-101)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cached `harness.config.json` `excluded[]` list (loaded lazily, once).
+ * `null` means "not yet loaded".
+ *
+ * @type {string[]|null}
+ */
+let excludedListCache = null;
+
+/**
+ * Load the `excluded[]` array from `harness.config.json`, fail-closed.
+ *
+ * The config lives at the repo root. It is resolved from the repo toplevel of
+ * the clickstops directory (via git) so the lookup is robust regardless of the
+ * process CWD; when the clickstops dir is not inside a git checkout, it falls
+ * back to `process.cwd()`. A missing or malformed config is a hard error
+ * (stderr + exit 1) — never a silent "treat everything as distributed" default
+ * (LRN-033). The result is memoized so repeated per-file calls read the config
+ * at most once.
+ *
+ * @returns {string[]} the `excluded[]` array (empty when the key is absent).
+ */
+function getExcludedList() {
+  if (excludedListCache !== null) return excludedListCache;
+
+  const top = gitTry(clickstopsDir, ['rev-parse', '--show-toplevel']);
+  const root = top != null ? top.trim() : process.cwd();
+  const configPath = path.join(root, 'harness.config.json');
+
+  let raw;
+  try {
+    raw = fs.readFileSync(configPath, 'utf8');
+  } catch (err) {
+    process.stderr.write(
+      `check-clickstop: cannot read harness.config.json at ${configPath} for ` +
+      `distributed-surface detection (CS24): ${err.message}\n`
+    );
+    process.exit(1);
+  }
+
+  let config;
+  try {
+    config = JSON.parse(raw.replace(/^\uFEFF/, ''));
+  } catch (err) {
+    process.stderr.write(
+      `check-clickstop: malformed harness.config.json at ${configPath}: ${err.message}\n`
+    );
+    process.exit(1);
+  }
+
+  let excluded = [];
+  if (config.excluded !== undefined) {
+    if (!Array.isArray(config.excluded)) {
+      process.stderr.write(
+        `check-clickstop: harness.config.json "excluded" must be an array; got ` +
+        `${typeof config.excluded}\n`
+      );
+      process.exit(1);
+    }
+    excluded = config.excluded;
+  }
+
+  excludedListCache = excluded;
+  return excludedListCache;
+}
+
+/**
+ * Determine whether the CHANGELOG-touch task row is required for this file.
+ * Mirrors {@link requiresCloseoutTasks}: `active/` files always; `done/` files
+ * only when their `**Closed:**` date parses AND is on/after
+ * `CHANGELOG_TOUCH_ENFORCEMENT_DATE`; never for `planned/`.
+ *
+ * @param {string} content
+ * @param {string} subdir
+ * @returns {boolean}
+ */
+function requiresChangelogTouchTask(content, subdir) {
+  if (subdir === 'active') return true;
+  if (subdir !== 'done') return false;
+  const closedMatch = content.match(/\*\*Closed:\*\*\s*(\d{4}-\d{2}-\d{2})/);
+  return Boolean(closedMatch && closedMatch[1] >= CHANGELOG_TOUCH_ENFORCEMENT_DATE);
+}
+
+/**
+ * Extract candidate path/glob tokens from a `## Deliverables` section body.
+ *
+ * To mitigate R1 (false positives from illustrative prose mentioning paths),
+ * only list-item lines (`- `, `* `, `N. `) and table rows (lines starting with
+ * `|`) are scanned; other prose lines are ignored. Surrounding backticks are
+ * stripped before matching. Two token shapes are recognised (C24-2):
+ *   - file paths ending in a code/config extension
+ *     (`.mjs`/`.js`/`.json`/`.md`/`.yml`/`.yaml`), e.g. `scripts/foo.mjs`; and
+ *   - directory-like tokens ending in `/` or `/*`/`/**`, e.g.
+ *     `tests/fixtures/cs24/`, `template/**`.
+ *
+ * @param {string} deliverablesBody
+ * @returns {string[]} candidate tokens (may contain duplicates).
+ */
+function extractDeliverablePathTokens(deliverablesBody) {
+  const PATH_TOKEN_RE = /[\w./-]+\.(?:m?js|json|md|yml|yaml)|[\w./-]+\/(?:\*{1,2})?/g;
+  const tokens = [];
+  for (const rawLine of deliverablesBody.split('\n')) {
+    const line = rawLine.trim();
+    const isListItem = /^([-*]\s|\d+\.\s)/.test(line);
+    const isTableRow = line.startsWith('|');
+    if (!isListItem && !isTableRow) continue;
+    const stripped = line.replace(/`/g, ' ');
+    const matches = stripped.match(PATH_TOKEN_RE);
+    if (matches) tokens.push(...matches);
+  }
+  return tokens;
+}
+
+/**
+ * Check that a CS whose deliverables touch the distributed harness surface
+ * carries an explicit CHANGELOG-touch task row (CS24 / LRN-101).
+ *
+ * Detection is pure-static: parse ONLY the `## Deliverables` section for path
+ * tokens (see {@link extractDeliverablePathTokens}) and match them against the
+ * distributed-surface globs minus the config `excluded[]` list
+ * ({@link matchesDistributedSurface}). If no `## Deliverables` section exists,
+ * the CS is treated as NOT distributed-touching (cannot determine — skip). When
+ * the CS is distributed-touching, the `## Tasks` table must contain a row
+ * matching both `/changelog/i` and one of the verbs
+ * `touch|update|entry|bullet|append|add` (after the same `learnings=\d+` strip +
+ * lowercase normalization used by {@link checkCloseoutTasks}).
+ *
+ * @param {string} content
+ * @param {string} subdir
+ * @param {string} basename
+ */
+function checkChangelogTouchTask(content, subdir, basename) {
+  if (!requiresChangelogTouchTask(content, subdir)) return;
+
+  const deliverablesBody = hasMarkdownHeading(content, 'Deliverables')
+    ? extractSectionBody(content, headingAnchor('Deliverables'))
+    : null;
+  if (!deliverablesBody) return; // no Deliverables section → cannot determine; skip
+
+  const excluded = getExcludedList();
+  const tokens = extractDeliverablePathTokens(deliverablesBody);
+  const touchesDistributed = tokens.some((t) => matchesDistributedSurface(t, excluded));
+  if (!touchesDistributed) return;
+
+  const tasksBody = hasMarkdownHeading(content, 'Tasks')
+    ? extractSectionBody(content, headingAnchor('Tasks'))
+    : null;
+  if (!tasksBody) {
+    logError(
+      `${subdir}/${basename}: missing required "## Tasks" section — a CHANGELOG-touch task row ` +
+      `is required (CS touches the distributed harness surface; see OPERATIONS.md § Harvest / LRN-101)`
+    );
+    return;
+  }
+
+  const rows = tableRows(tasksBody)
+    .map((row) => row.replace(/\blearnings=\d+\b/gi, '').toLowerCase());
+  const hasChangelogRow = rows.some((row) =>
+    /changelog/i.test(row) && /(touch|update|entry|bullet|append|add)/i.test(row)
+  );
+
+  if (!hasChangelogRow) {
+    logError(
+      `${subdir}/${basename}: ## Tasks must include an explicit CHANGELOG-touch task row ` +
+      `(CS touches the distributed harness surface; see OPERATIONS.md § Harvest / LRN-101)`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // File checking
 // ---------------------------------------------------------------------------
 
@@ -314,6 +498,9 @@ function checkFile(filePath, subdir) {
 
   // 5. Close-out hygiene tasks (introduced after CS15a close-out)
   checkCloseoutTasks(content, subdir, basename);
+
+  // 6. CHANGELOG-touch task for distributed-surface CSs (CS24 — LRN-101)
+  checkChangelogTouchTask(content, subdir, basename);
 }
 
 // ---------------------------------------------------------------------------
