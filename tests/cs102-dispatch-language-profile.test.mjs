@@ -14,7 +14,7 @@
  *   - CLI flag/config resolution: `--language-profile` overrides
  *     `dispatch.language_profile`, which overrides the `node` default.
  *
- * Managed content is read read-only from the on-repo OPERATIONS.md (rendered)
+ * Managed content is read-only from the on-repo OPERATIONS.md (rendered)
  * and template/composed/OPERATIONS.md (placeholder `{{harness_invoke}}`, so the
  * only place a Node token could appear in a dotnet briefing is a leak). CLI
  * tests that need a consumer checkout write into an OS temp dir (never a repo
