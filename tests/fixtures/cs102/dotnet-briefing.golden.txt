@@ -1,0 +1,124 @@
+## CRITICAL PREFLIGHT (LRN-021)
+
+1. Run `git log --oneline -1` NOW and record the SHA. Include it in your
+   report as `PREFLIGHT SHA: <sha>`.
+2. You MUST NOT commit, push, rebase, reset, `git add`, or `gh pr ...` at
+   any point. The orchestrator commits at CS end.
+3. At the end of your work, re-run `git log --oneline -1`. It MUST equal
+   the preflight SHA. Include it as `FINAL SHA: <sha>`.
+4. Run `git status --short` and include the output in your report. Only
+   your owned files should appear; nothing must be staged.
+5. State literally in your report: "No commit was created."
+
+## File ownership (LRN-016)
+
+OWN EXCLUSIVELY — you may read AND write only the files listed in the
+Identity + scope section of this dispatch. You MUST NOT modify, rename,
+or delete any file outside that list. Curiosity reads (grep/view) are
+fine; writes are not.
+
+Rationale: parallel sub-agents share a working tree. If two agents write
+the same file, the later writer silently overwrites the earlier one's work
+with no error or warning. Non-overlapping ownership is the only safe
+parallel model (validated across CS03 where stubs silently replaced rich
+APIs — see LRN-016).
+
+## Required reading
+
+Read every path listed in the Required reading section of this dispatch.
+Do not infer what to read — only the explicit list counts. "Read what you
+need" produces silent gaps that surface as integration failures later.
+
+## Conventions to follow
+
+- LF line endings, no BOM. After every file write on Windows, normalize:
+  strip BOM if present (first 3 bytes must NOT be 0xEF 0xBB 0xBF), replace
+  \r\n with \n. All content comparisons must normalize in the read step.
+  (LRN-006, LRN-018, LRN-065)
+
+- No dot-notation placeholders (LRN-049). Use flat keys only:
+  `ah` not `{{project.agent_suffix}}`. Dot-notation is not
+  supported by the template engine and will be emitted literally.
+
+- Cross-repo path discipline (LRN-105). When a sub-agent operates in a repo
+  OTHER than the orchestrator's, every path in the briefing must be rooted
+  in the executing repo. For composed-block edits in a consumer repo:
+  edit `<consumer-root>/<file>` between `<​!-- harness:local-start id=X -->`
+  markers, NOT `template/composed/<file>` (that path only exists in the
+  harness repo). Disambiguate any `template/`, `scripts/`, or other
+  directory name that exists in both repos with different semantics.
+
+- Fail-closed parsers (LRN-033). Malformed JSON/YAML/etc → clear error
+  message to stderr + process.exit(1). NEVER silent default. NEVER let a
+  stack trace be the only error signal.
+
+- C#/.NET 8+ on the .NET SDK toolchain. A new service or library owns its
+  `.csproj` together with its solution `.sln` entry and, once introduced,
+  `Directory.Packages.props` as a single ownership bundle, so the project
+  file, solution registration, and central-package pins move together
+  (issue #423 / the CS10 Aspire-service ownership finding).
+
+- NuGet central package management: declare each package version once in
+  `Directory.Packages.props` (`<PackageVersion Include="..." Version="..." />`)
+  and reference it from a `.csproj` with a version-less
+  `<PackageReference Include="..." />`. Do not pin versions per project.
+
+- Argument parsing, file layout, and tooling follow .NET/C# idioms rather
+  than the Node-profile equivalents; honor the project's established analyzer
+  settings (nullable reference types, warnings-as-errors) instead of
+  introducing new ones.
+
+- Fail-closed parsing still applies (agnostic doctrine restated for the .NET
+  toolchain): malformed JSON/config → a clear stderr error + non-zero exit,
+  never a silent default.
+
+## Self-checks before reporting
+
+Run all of the following and include each result in SELF-CHECKS RUN:
+
+1. `git status --short` — only owned files appear; nothing staged.
+2. `git log --oneline -1` — must match preflight SHA.
+3. Text-encoding + line-ending validation (BOM + line endings; LRN-065,
+   LRN-074): `node bin/harness.mjs lint` must exit 0. The encoding check
+   runs as part of the lint aggregate over the whole cwd (not just
+   modified files); it catches CRLF/bare-\r line endings introduced by
+   Windows core.autocrlf or stale editor settings.
+
+4. `dotnet build` — the affected projects/solution build with no errors.
+5. `dotnet test` — report the pass/fail count (e.g. "42 passed, 0 failed").
+6. `dotnet format --verify-no-changes` — formatting + whitespace conform
+   (non-zero exit if any file would be reformatted).
+
+## Reporting independence (CS48 / issue #142)
+
+**Self-review carries zero review weight.** Any implementer self-review of
+the diff is a debugging aid, not a review-of-record. The orchestrator MUST
+dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
+differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
+pre-empt that step or present implementer self-review as review evidence.
+
+Required final report field: `IMPLEMENTER MODEL USED` (the model-id(s)
+materially used for the sub-agent's work), so the orchestrator can update the
+CS sub-agent ledger and the PR-body `## Model audit` table.
+
+## Mandatory report shape
+
+Reports missing any field are rejected; orchestrator re-dispatches with
+missing fields explicitly listed.
+
+    STATUS: complete | partial | blocked
+    PREFLIGHT SHA: <sha>
+    FINAL SHA: <sha>
+    SUMMARY: <one paragraph>
+    IMPLEMENTER MODEL USED: <model-id(s) materially used for this work; used by the CS sub-agent ledger and PR-body ## Model audit>
+    FILES CHANGED:
+      - <path> (created | edited | deleted) — <one-line why> — <line count>
+    SELF-CHECKS RUN:
+      - git status / git log / text-encoding / [other checks]: pass | fail
+    DECISIONS MADE:
+      - <decision> — rationale
+    ESCALATIONS: (none) | <issue> — recommended path
+    LEARNINGS CANDIDATES: (none) | <category>: <problem>: <finding>: <evidence>
+    NEXT STEPS (if partial/blocked):
+      - <what's needed to complete>
+
