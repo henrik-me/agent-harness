@@ -354,4 +354,88 @@ describe('extractDeliverablePathTokens (unit)', () => {
       )
     );
   });
+
+  // --- R4: balanced Markdown emphasis (`**path**`, `*path*`, `__path__`,
+  // `_path_`) is stripped so bold/italic-wrapped distributed deliverables are
+  // not false-negatives, while unbalanced trailing globs (`scripts/**`) are
+  // preserved. Real style: done_cs35b uses `**template/composed/OPERATIONS.md**`
+  // and `| D | **lib/hooks.mjs** |` table rows. -----------------------------
+
+  it('27. list-item bold deliverable is unwrapped and classified distributed', () => {
+    const tokens = extractDeliverablePathTokens(
+      '- **template/composed/OPERATIONS.md**\n'
+    );
+    assert.ok(
+      tokens.includes('template/composed/OPERATIONS.md'),
+      `expected unwrapped token in ${JSON.stringify(tokens)}`
+    );
+    for (const t of tokens) {
+      assert.ok(!/^\*|\*$/.test(t), `token must have no leading/trailing * : ${t}`);
+    }
+    assert.equal(pipelineHit('**template/composed/OPERATIONS.md**'), true);
+  });
+
+  it('28. table-cell bold deliverable (done_cs35b style) is classified distributed', () => {
+    const tokens = extractDeliverablePathTokens(
+      '| D | **lib/hooks.mjs** | delete the hook |\n'
+    );
+    assert.ok(
+      tokens.includes('lib/hooks.mjs'),
+      `expected lib/hooks.mjs in ${JSON.stringify(tokens)}`
+    );
+    assert.equal(
+      tokens.some((t) => matchesDistributedSurface(t, [])),
+      true
+    );
+  });
+
+  it('29. italic single-* and underscore emphasis are unwrapped', () => {
+    assert.ok(
+      extractDeliverablePathTokens('- *scripts/foo.mjs*\n').includes('scripts/foo.mjs')
+    );
+    assert.ok(extractDeliverablePathTokens('- _lib/x.mjs_\n').includes('lib/x.mjs'));
+    assert.ok(
+      extractDeliverablePathTokens('- __bin/harness.mjs__\n').includes('bin/harness.mjs')
+    );
+    assert.equal(pipelineHit('*scripts/foo.mjs*'), true);
+    assert.equal(pipelineHit('_lib/x.mjs_'), true);
+    assert.equal(pipelineHit('__bin/harness.mjs__'), true);
+  });
+
+  it('30. glob preservation: unbalanced trailing globs are NOT stripped as emphasis', () => {
+    // `**` inside a bold wrapper is unwrapped to reveal the inner glob.
+    assert.ok(
+      extractDeliverablePathTokens('- **scripts/*.mjs**\n').includes('scripts/*.mjs'),
+      'bold-wrapped scripts/*.mjs should unwrap to scripts/*.mjs'
+    );
+    // Bare trailing globs have NO matching leading marker -> preserved verbatim.
+    assert.ok(
+      extractDeliverablePathTokens('- scripts/**\n').includes('scripts/**'),
+      'bare scripts/** must be preserved'
+    );
+    assert.ok(
+      extractDeliverablePathTokens('- scripts/*\n').includes('scripts/*'),
+      'bare scripts/* must be preserved'
+    );
+    assert.equal(pipelineHit('scripts/**'), true);
+    assert.equal(pipelineHit('scripts/*'), true);
+  });
+
+  it('31. combined emphasis + trailing sentence dot both stripped', () => {
+    assert.ok(
+      extractDeliverablePathTokens('- Update **scripts/foo.mjs**.\n').includes(
+        'scripts/foo.mjs'
+      ),
+      'emphasis and trailing dot must both be stripped (dot outside wrapper)'
+    );
+    assert.ok(
+      extractDeliverablePathTokens('- **scripts/foo.mjs.**\n').includes('scripts/foo.mjs'),
+      'emphasis and trailing dot must both be stripped (dot inside wrapper)'
+    );
+  });
+
+  it('32. non-distributed tokens under emphasis stay false', () => {
+    assert.equal(pipelineHit('**scripts/foo.sh**'), false);
+    assert.equal(pipelineHit('**package.json.bak**'), false);
+  });
 });
