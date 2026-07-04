@@ -623,7 +623,7 @@ confusion between them surfaced on SI PR #79 (LRN-136 chase).
 
 | Block | When it runs | Who reads it | Purpose |
 |---|---|---|---|
-| `review_gates.*` | Install time (`harness init`, `harness sync`) and CI workflow time | `template/managed/.github/workflows/pr-evidence-lint.yml` workflow + install machinery | Configures the **PR-evidence CI gate set** (B1, A2..A6, A16) wired into every content PR. |
+| `review_gates.*` | Install time (`harness init`, `harness sync`) and CI workflow time | `.github/workflows/pr-evidence-lint.yml` workflow + install machinery | Configures the **PR-evidence CI gate set** (B1, A2..A6, A16) wired into every content PR. |
 | `reviews.*` | Orchestrator runtime (`harness review <pr>`) and PR-side CI status checks | The `harness review` CLI + the PR-side `review-gates.yml` status checks | Configures the **rubber-duck reviewer model defaults**, fallback policy, Copilot trigger, gate enforcement toggles, and HIGH-RISK clickstop list. |
 
 **Rule of thumb:** if you're wiring CI workflow gates or the gate set itself,

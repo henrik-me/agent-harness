@@ -684,7 +684,7 @@ function checkComposedProcessBaseXref() {
           if (qualified) continue;
           logError(
             `${rel}:${i + 1}: bare not-guaranteed sibling "${m[0]}" must be qualified with ` +
-            `"*(if your consumer syncs it)*" (C76-1) or added to the audited descriptive allowlist: ${line.trim()}`
+            `"*(if your consumer syncs it/them)*" (C76-1) or added to the audited descriptive allowlist: ${line.trim()}`
           );
         }
       }
