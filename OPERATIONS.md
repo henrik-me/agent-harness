@@ -251,7 +251,7 @@ the canonical `project/clickstops/{planned,active,done}/**` arc:
    **Scope clarification (CS55 / LRN-137):** C35-13 applies to the
    harness repo only. Cross-repo handoff issues filed into OTHER
    repositories (e.g. `henrik-me/sub-invaders`) are governed by Hard
-   Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md`
+   Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md` *(if your consumer syncs them)*
    and the `## Cross-repo procedures` section below. In those repos,
    the orchestrator MUST file an issue (rather than commit/push/PR
    directly) and is expected to create exactly one tracking issue
@@ -631,7 +631,7 @@ If you need to leave a CS mid-flight:
 This section governs orchestrator behaviour when work crosses the boundary
 of `henrik-me/agent-harness` into other repositories (e.g. consumer repos
 such as `henrik-me/sub-invaders`). It is the operational complement to
-Hard Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md`.
+Hard Rule § 6 in `INSTRUCTIONS.md` / `.github/copilot-instructions.md` *(if your consumer syncs them)*.
 
 ### Handoff pattern: issue-only, never direct PR
 
@@ -666,7 +666,7 @@ the `sub-invaders-bootstrap-summary.md` misrouting
 3. If no tracking issue exists, idempotently create exactly ONE issue
    per workstream using the procedure below.
 
-**Issue-creation procedure (idempotent, non-mutating to consumer labels):**
+**Issue-creation procedure (idempotent, non-destructive / non-overwriting (no `--force`)):**
 
 1. **Pre-create existence check (idempotency guard).** Before creating,
    search for an existing tracking issue in the target repo to avoid
@@ -734,7 +734,7 @@ the `sub-invaders-bootstrap-summary.md` misrouting
    - **Verification steps:** which harness checks / lint commands to
      run on the consumer side (e.g. `node bin/harness.mjs lint`).
    - **Relevant LRNs / docs:** links to applicable `LEARNINGS.md`
-     entries and the harness `OPERATIONS.md` / `INSTRUCTIONS.md`
+     entries and the harness `OPERATIONS.md` / `INSTRUCTIONS.md` *(if your consumer syncs it)*
      sections that govern the handoff.
    - **Harness PR / tag links:** the merged harness PR and tag (if
      any) that supply the artefact the consumer will adopt.
@@ -988,8 +988,8 @@ standardization in [LRN-021](LEARNINGS.md#lrn-021).
 
 List paths explicitly — do not say "read whatever you need":
 
-- `INSTRUCTIONS.md`, `CONVENTIONS.md`, the active CS file, the cs-plan.
-- All ADRs in `docs/adr/` that touch the deliverables area. When briefing
+- `INSTRUCTIONS.md` *(if your consumer syncs it)*, `CONVENTIONS.md`, the active CS file, the cs-plan.
+- All ADRs that touch the deliverables area. When briefing
   a schema-author sub-agent, cross-check every ADR: ADR constraints
   frequently exceed what the cs-plan deliverables list restates (validated
   in [LRN-007](LEARNINGS.md#lrn-007) — omitting ADR 0002 cost three sub-agents a re-dispatch cycle).
@@ -1648,8 +1648,8 @@ REJECTS the Copilot reviewer ID with "Could not resolve to User node"
 because the Copilot reviewer is `__typename: Bot`, not `User`. The
 documented engagement primitive is therefore the REST-backed
 `gh pr edit --add-reviewer` invocation that `harness copilot-engage`
-wraps — NOT a GraphQL mutation. See `docs/adr/0004-copilot-graphql-spike.md`
-for the full transcript.
+wraps — NOT a GraphQL mutation. See the project's ADR-0004 (the Copilot
+GraphQL spike) for the full transcript.
 
 ### Recommended invocation (CS41+):
 
@@ -1670,8 +1670,7 @@ a `User`. The CLI resolves its Bot identity via the
 `node(id: $id) { ... on Bot { databaseId login } }` GraphQL fragment with the
 hardcoded Copilot Bot node ID `BOT_kgDOCnlnWA` (7-day identity cache per C41-2),
 required because `user(login: 'copilot-pull-request-reviewer')` returns `null`.
-See [LRN-009](LEARNINGS.md#lrn-009) and
-[ADR-0004 § ADR4-2](docs/adr/0004-copilot-graphql-spike.md#adr4-2).
+See [LRN-009](LEARNINGS.md#lrn-009) and the project's ADR-0004 § ADR4-2.
 
 The poll predicate is identical to the A5+A16 gate
 (`scripts/check-copilot-review.mjs`) so "engage CLI says satisfied" =
@@ -1799,7 +1798,7 @@ file class so consumers can keep custom prose, and prints branch-protection
 instructions per C38a-7/8) and the next `harness sync` lands the workflow
 in the consumer repo.
 
-The workflow is split into TWO jobs per [ADR4-8 (`docs/adr/0004-copilot-graphql-spike.md`)](https://github.com/henrik-me/agent-harness/blob/main/docs/adr/0004-copilot-graphql-spike.md):
+The workflow is split into TWO jobs per the project's ADR-0004 (ADR4-8):
 
 - **`read-only-gates`** runs on `pull_request` (`opened`, `synchronize`,
   `reopened`, `edited` per [LRN-100](LEARNINGS.md#lrn-100)) with
@@ -1892,7 +1891,7 @@ operations:
 1. **Patches `harness.config.json`** with a `review_gates` block — by default
    `{ enabled: true, copilot_required: true, gate_set: ['B1','A3','A4','A5','A16','A6'] }`.
    The default gate set is the CS37 spike PASS branch — full A5+A16
-   enforcement (per [ADR4-1](https://github.com/henrik-me/agent-harness/blob/main/docs/adr/0004-copilot-graphql-spike.md)).
+   enforcement (per the project's ADR-0004, ADR4-1).
    Custom gate sets are accepted via direct config edit; the schema enum
    bounds the vocabulary.
 2. **Migrates `.github/pull_request_template.md`** from `managed.files`
@@ -2412,7 +2411,7 @@ log`, so `copilot-review-attached`, `independence-invariant`, and
 `review-log-evidence` all fail against it. This section is the repeatable
 procedure for adopting such a bump through those gates on a `deps/<pkg>-<ver>`
 branch (the sanctioned shape for dependency/maintenance PRs — see the
-branch-naming convention in [INSTRUCTIONS.md](INSTRUCTIONS.md)). It builds on
+branch-naming convention in [INSTRUCTIONS.md](INSTRUCTIONS.md) *(if your consumer syncs it)*). It builds on
 existing doctrine rather than restating it: the solo-orchestrator merge path
 lives in
 [§ Content/release-PR admin-merge (solo-orchestrator reality)](#contentrelease-pr-admin-merge-solo-orchestrator-reality)
@@ -2493,7 +2492,7 @@ own CS — file a `planned_cs<NN>_release-v<x.y.z>` plan and follow the standard
 
 - Current pinned version (`package.json` `version` field).
 - Target version chosen per `§ SemVer policy` (e.g. `0.8.0`).
-- A clean `main` (bootstrap sanity-check passes per `INSTRUCTIONS.md`).
+- A clean `main` (bootstrap sanity-check passes per `INSTRUCTIONS.md` *(if your consumer syncs it)*).
 
 ### Pre-release audit ([LRN-101](LEARNINGS.md#lrn-101))
 
@@ -2579,7 +2578,7 @@ All file edits land on the `cs<NN>/content` branch:
 
 5. **Local review.** GPT-5.5 rubber-duck mandatory per
    [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)
-   and `INSTRUCTIONS.md § Every CS`. Record model + timestamp + verdict in
+   and `INSTRUCTIONS.md § Every CS` *(if your consumer syncs it)*. Record model + timestamp + verdict in
    the PR body's `## Model audit` + `## Review log` sections.
 
 6. **Open the content PR.** Use the standard `pull_request_template.md`.
@@ -2655,7 +2654,7 @@ review-of-record paths are:
 
 - The PR author cannot self-approve.
 - The Copilot PR reviewer is engaged per the documented mechanics in
-  [ADR-0004](docs/adr/0004-copilot-graphql-spike.md) (accepted review states
+  the project's ADR-0004 (accepted review states
   `{APPROVED, COMMENTED, CHANGES_REQUESTED}` per the CS37 spike). In observed
   harness-repo history, Copilot reviews on content/release PRs have
   consistently landed as `COMMENTED` — not `APPROVED` — so the Copilot
