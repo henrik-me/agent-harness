@@ -1,10 +1,10 @@
 # CS105 — Cut harness release v0.16.0
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs105/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-04
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-04. Cuts the follow-up release bundling #423 (CS102) now that it is delivered + closed out. Directed by @henrik-me ("when issue 423 gets delivered, release with those changes included").
 **Depends on:** none
 
