@@ -53,9 +53,12 @@ const DANGLING_MARKER_RE =
 const NODE_TOKENS = ['.mjs', 'npm install', 'requireValue', 'node --test', 'node -c'];
 
 // ---------------------------------------------------------------------------
-// Golden briefings — freeze the EXACT spliced node/dotnet output (CS102 C102-2a:
+// Golden briefings — freeze the full spliced node/dotnet output (CS102 C102-2a:
 // the node profile is reordered vs the pre-CS102 monolith, so a stable golden
 // guards against any silent drift beyond the token-completeness checks below).
+// Both sides are LF-normalized before comparison, so this is an LF-normalized
+// exact-match (robust to a CRLF checkout of OPERATIONS.md on Windows), not a
+// raw byte-for-byte compare.
 //
 // Regenerate after an intentional OPERATIONS.md § Mandatory briefing preamble
 // edit, from the repo root:
@@ -65,7 +68,7 @@ const NODE_TOKENS = ['.mjs', 'npm install', 'requireValue', 'node --test', 'node
 const GOLDEN_DIR = path.join(__dirname, 'fixtures', 'cs102');
 
 for (const profile of ['node', 'dotnet']) {
-  test(`golden: ${profile} profile briefing is byte-stable (C102-2a)`, () => {
+  test(`golden: ${profile} profile briefing is output-stable, LF-normalized (C102-2a)`, () => {
     const expected = readFileSync(
       path.join(GOLDEN_DIR, `${profile}-briefing.golden.txt`),
       'utf8'
