@@ -118,8 +118,8 @@ the existing `harness-drift.yml` `derive-ref` step) is authored under
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '20'
       - name: harness sync --mode=check (L1 drift gate)
@@ -182,9 +182,12 @@ self-host's own `managed.files`.
 
 **The #392 redundancy and its fix (C90-3).** Because the `structural-gate`
 job runs `harness lint` *in addition to* the classifier, a consumer that
-already runs `harness lint` (or L1's `sync --mode=check`, which subsumes lint
-in most trees) pays for a **second, redundant lint** just to obtain the
-classifier + escape valve. **CS90b** adds `pr_check.mode ∈ {lint+drift
+already runs `harness lint` in its own CI pays for a **second, redundant
+lint** just to obtain the classifier + escape valve. (Note: L1's
+`sync --mode=check` and `harness lint` are **distinct** — `sync --mode=check`
+verifies template drift, `harness lint` runs the linters — so L1 does **not**
+subsume the lint; the #392 redundancy is specifically the doubled `harness
+lint` run for a consumer that already lints inline.) **CS90b** adds `pr_check.mode ∈ {lint+drift
 (default), drift-only}` to `harness-pr-check.yml` and
 [`schemas/harness.config.schema.json`](../../schemas/harness.config.schema.json):
 in `drift-only` the job runs the managed-drift classifier + escape valve but
