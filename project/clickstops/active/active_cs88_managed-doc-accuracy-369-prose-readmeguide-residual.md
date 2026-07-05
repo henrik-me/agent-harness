@@ -96,8 +96,14 @@ Related: **CS76** (also edits `template/composed/OPERATIONS.md`, but its cited r
 
 ## Notes / Learnings
 
-(filled during execution)
+- **LRN-209** (open, tooling): `harness sync --mode=apply` fail-closes (`EMERGE_LEGACY_UNMAPPED`) on composed-template edits because `.harness-lock.json`'s `template_prose_hash` is stale (frozen at CS55). Mitigation used: hand-edit composed base + root mirror together, validate with `sync --mode=check` (CS76/CS86 pattern).
+- **LRN-210** (open, process): `harness review --copilot-only` appends an orchestrator-actored Go row that trips A5 (postdates the Copilot review by ~1s) and rewrites the Model-audit Reviewer agent (trips A3). Fix: keep the Review log rubber-duck-only + reset Reviewer agent to `rubber-duck` after the final engage.
+- Review-of-record: independent gpt-5.5 rubber-duck R1–R5 all Go; Copilot converged Go. Copilot flagged 4 in-scope accuracy/quality nits (over-claim scoping, split code span, docstring grammar) — all fixed. Rebased onto v0.17.0 main after CS107 released; CHANGELOG entry kept under `[Unreleased]`.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck) — independence: reviewer gpt-5.5 ≠ every implementer (claude-opus-4.8)
+**Date:** 2026-07-05T05:04:43Z
+**Outcome:** GO
+
+CS88 matches the merged implementation at `3f341af`: the composed/root `OPERATIONS.md` auto-merge block now conditions both auto-merge and the `validate-and-approve` branch-name-check failure on adopting `workboard-auto-approve.yml`, the root mirror is sync-clean, and the Copilot-driven refinements (harness-provided scoping, code-span reflow, and removal of the unconditional "every…by hand" overclaim in favor of "absent that workflow (or a repo's own non-harness automation)") are in-scope refinements of C88-1's intent rather than scope creep. The managed/root `READMEGUIDE.md` references are genericized to the harness README linter / `harness lint` form, contain no `scripts/check-readme.mjs` or bare `check-readme.mjs` references, and preserve the "do not run against this guide" caveat; the extended `harness-readme-linter-ref` invocation guard plus four CS88 tests catch path and bare-name regressions without false-positiveing the generic form, making the SemVer classification Patch because an existing guard was extended. The CHANGELOG entry stayed under `[Unreleased]` after the rebase onto v0.17.0 and references #381; CS76 was already merged/closed before CS88, leaving no unresolved same-file collision; Q1 was implemented as the planned static qualifier rather than a dynamic workflow-presence gate. Validation evidence is green: `node bin/harness.mjs sync --mode=check --cwd .` reported no drift, `node bin/harness.mjs lint --quiet` reported 37 passed / 0 failed / 3 skipped, and `node --test tests/check-consumer-template-genericity.test.mjs` passed 31/31; residual observations are non-blocking (sync still reports unrelated adoptable managed workflow files as report-only, as expected).
