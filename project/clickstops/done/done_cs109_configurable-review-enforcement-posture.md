@@ -1,10 +1,10 @@
 # CS109 — Configurable review-enforcement posture (human-approval | required-check | both)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs109/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#402](https://github.com/henrik-me/agent-harness/issues/402) (2026-07-05). Surfaced from `henrik-me/sub-invaders`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: **CS90c** — a future single-context `review-gates.yml` aggregate would be a cleaner required context; **CS106** — the concrete self-host required-check flip.)
 
@@ -149,4 +149,23 @@ Add a first-class, configurable **review-enforcement posture** so a repo can enf
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck, `cs109-pvi-review`)
+**Date:** 2026-07-05T21:25:00Z
+**Outcome:** GO
+
+Per-deliverable outcome (8 deliverables) at merged content HEAD `7720dc3`:
+
+| Deliverable | Outcome | Rationale |
+|---|---|---|
+| 1. ADR 0006 | match | posture semantics + drift/check model + F3/F4 + D6 split |
+| 2. Config + reader | match | schema enum (no default); reader preserves presence + fails closed incl. EACCES |
+| 3. `harness ruleset apply` / `check` | diverged | **G109-adr-ratified D6 split** — read-only `ruleset check` shipped; live `apply --apply` deferred to CS109a (filed) |
+| 4. F3 deadlock guard | match | `check-ruleset-deadlock.mjs` warn-only, registered in `harness lint` |
+| 5. F4 coherence guard | match | `check-posture-coherence.mjs` warn-only, registered in `harness lint` |
+| 6. F5 docs | match | ADR posture matrix + reversibility + guard inventory; REVIEWS.md pointer |
+| 7. Tests | match | reader/renderer/diff/verb/guards; full suite 2031 pass / 0 fail / 5 skip |
+| 8. CHANGELOG | match | `[Unreleased]` entry (config enum + `ruleset check` + guards + CS109a deferral) |
+
+**Test-coverage:** sufficient — presence semantics, malformed/fail-closed paths, D2 cross-product/precedence, managed-surface drift, `ruleset check` CLI (incl. rejected `apply` + options-before-action), and both guards. `node --test` 2031 pass / 0 fail / 5 skip.
+
+The sole divergence (deliverable 3) is the ratified D6 split (live mutation → CS109a), not a gap. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`.
