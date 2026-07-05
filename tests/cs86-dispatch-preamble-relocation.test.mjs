@@ -5,7 +5,7 @@
  * a new harness-owned MANAGED root doc, DISPATCH-PREAMBLE.md. `harness dispatch`
  * now resolves its source consumer-root-relative (LRN-050), preferring
  * DISPATCH-PREAMBLE.md and falling back to the legacy inline-fenced OPERATIONS.md
- * for a pre-`sync --apply-new` consumer (C86-4). These tests assert:
+ * for a pre-adoption consumer (C86-4). These tests assert:
  *   - BYTE-EQUALITY: the briefing emitted from the NEW file is byte-identical to
  *     frozen golden baselines (node/dotnet x fenced/no-fence). The relocation
  *     must not change a single byte of dispatch output.
@@ -14,7 +14,8 @@
  *     and (pre-thinning) yields byte-identical output.
  *   - fail-closed: a present-but-malformed new file surfaces extractPreamble's
  *     error and is NOT silently masked by a valid OPERATIONS.md alongside it.
- *   - a clear error naming BOTH paths + `sync --apply-new` when neither exists.
+ *   - a clear error naming BOTH paths + the `--apply-new` adoption command when
+ *     neither source is usable (absent, or a thinned/fence-less OPERATIONS.md).
  *   - consumer-root-relative resolution using committed fixture dirs as cwd.
  *   - the wired CLI (`bin/harness.mjs dispatch`) emits the golden bytes and
  *     falls back / fails closed correctly in a synthetic consumer checkout.
@@ -27,11 +28,14 @@
  * `### Mandatory briefing preamble` edit, from the repo root:
  *   node --input-type=module -e "const c=await import('node:child_process');const h=await import('node:crypto');for(const a of [[],['--no-fence'],['--language-profile','dotnet'],['--language-profile','dotnet','--no-fence']]){const o=c.execFileSync('node',['bin/harness.mjs','dispatch',...a]);console.log(a.join(' '),o.length,h.createHash('md5').update(o).digest('hex').toUpperCase());}"
  *
- * Committed fixtures under tests/fixtures/cs86-dispatch/ are READABILITY-ONLY:
- * resolvePreambleSource reads each candidate to probe readability (discriminating
- * ENOENT) but does not parse its content, so the fixtures are minimal readable
- * stubs. Content-level scratch is created under os.tmpdir() and removed in a
- * finally — never under the repo root.
+ * Committed fixtures under tests/fixtures/cs86-dispatch/ exercise path-level
+ * resolution. The PRIMARY (DISPATCH-PREAMBLE.md) is chosen by readability alone
+ * (a readable stub suffices — its content is parsed later by extractPreamble).
+ * The LEGACY OPERATIONS.md fallback is content-validated: resolvePreambleSource
+ * requires it to actually carry the preamble fence, so legacy-consumer ships a
+ * minimal real preamble. All reads discriminate ENOENT (never existsSync).
+ * Content-level scratch is created under os.tmpdir() and removed in a finally —
+ * never under the repo root.
  */
 
 import { test } from 'node:test';
@@ -159,15 +163,16 @@ test('C86-4: the current on-repo OPERATIONS.md still emits golden via fallback (
 });
 
 // ---------------------------------------------------------------------------
-// (b)/(c)/(d)/(e) RESOLUTION — consumer-root-relative, existence-based, using
-// committed presence-only fixture dirs as cwd.
+// (b)/(c)/(d)/(e) RESOLUTION — consumer-root-relative, using committed fixture
+// dirs as cwd. PRIMARY (DISPATCH-PREAMBLE.md) is chosen by readability; the
+// LEGACY OPERATIONS.md fallback is content-validated (must carry the preamble).
 // ---------------------------------------------------------------------------
 test('resolution (fixture cwd): prefers DISPATCH-PREAMBLE.md when both exist', () => {
   const dir = path.join(FIXTURES, 'synced-consumer');
   assert.equal(resolvePreambleSource({ cwd: dir }), path.join(dir, PREAMBLE_SOURCE_BASENAME));
 });
 
-test('resolution (fixture cwd): falls back to OPERATIONS.md when the new file is absent', () => {
+test('resolution (fixture cwd): falls back to a preamble-bearing OPERATIONS.md when the new file is absent', () => {
   const dir = path.join(FIXTURES, 'legacy-consumer');
   assert.equal(
     resolvePreambleSource({ cwd: dir }),
@@ -175,12 +180,12 @@ test('resolution (fixture cwd): falls back to OPERATIONS.md when the new file is
   );
 });
 
-test('resolution (fixture cwd): throws naming both paths + `sync --apply-new` when neither exists', () => {
+test('resolution (fixture cwd): throws naming both paths + the --apply-new adoption command when neither exists', () => {
   const dir = path.join(FIXTURES, 'empty-consumer');
   assert.throws(
     () => resolvePreambleSource({ cwd: dir }),
     (err) => {
-      assert.match(err.message, /sync --apply-new/);
+      assert.match(err.message, /--apply-new/);
       assert.match(err.message, /DISPATCH-PREAMBLE\.md/);
       assert.match(err.message, /OPERATIONS\.md/);
       return true;
@@ -190,7 +195,36 @@ test('resolution (fixture cwd): throws naming both paths + `sync --apply-new` wh
 
 test('resolution (tmpdir): throws for a dir containing neither source', () => {
   withTmp((dir) => {
-    assert.throws(() => resolvePreambleSource({ cwd: dir }), /sync --apply-new/);
+    assert.throws(() => resolvePreambleSource({ cwd: dir }), /--apply-new/);
+  });
+});
+
+test('C86-4 fail-closed: a THINNED (fence-less) OPERATIONS.md with no DISPATCH-PREAMBLE.md throws adoption guidance', () => {
+  // A consumer who ran `harness sync` (thinning OPERATIONS.md to a pointer stub)
+  // WITHOUT `--apply-new` has a fence-less OPERATIONS.md and no
+  // DISPATCH-PREAMBLE.md. The legacy is readable but carries no preamble, so it
+  // is NOT a valid fallback — resolvePreambleSource must surface the --apply-new
+  // adoption guidance, not silently return the fence-less legacy (which would
+  // emit a confusing generic extractor error downstream). Regression for the
+  // CS86 plan-vs-implementation NEEDS-FIX.
+  withTmp((dir) => {
+    writeFileSync(
+      path.join(dir, LEGACY_PREAMBLE_SOURCE_BASENAME),
+      '# OPERATIONS.md (thinned pointer stub — no inline preamble fence)\n\nSee DISPATCH-PREAMBLE.md.\n',
+      'utf8'
+    );
+    // No DISPATCH-PREAMBLE.md in dir.
+    assert.throws(
+      () => resolvePreambleSource({ cwd: dir }),
+      (err) => {
+        assert.match(err.message, /--apply-new/);
+        assert.match(err.message, /thinned/);
+        return true;
+      }
+    );
+    // The CLI-level path (emitBriefingFromDir) surfaces the same guidance rather
+    // than the generic extractor "heading not found" error:
+    assert.throws(() => emitBriefingFromDir({ cwd: dir }), /--apply-new/);
   });
 });
 
@@ -257,7 +291,21 @@ test('fail-closed: a non-ENOENT error at the primary source surfaces (no silent 
     placeLF(dir, LEGACY_PREAMBLE_SOURCE_BASENAME, NEW_SRC); // a VALID legacy alongside
     assert.throws(
       () => resolvePreambleSource({ cwd: dir }),
-      (err) => err && err.code !== 'ENOENT' && !/sync --apply-new/.test(err.message)
+      (err) => err && err.code !== 'ENOENT' && !/--apply-new/.test(err.message)
+    );
+  });
+});
+
+test('fail-closed: a non-ENOENT error at the LEGACY source surfaces (no silent fallthrough to the adoption error)', () => {
+  withTmp((dir) => {
+    // Primary absent; a DIRECTORY at the legacy OPERATIONS.md path makes
+    // readFileSync throw a non-ENOENT error (EISDIR). legacySourceHasPreamble
+    // must re-throw it (fail-closed) rather than treating it as "absent" and
+    // emitting the adoption/not-found error — a real I/O failure must surface.
+    mkdirSync(path.join(dir, LEGACY_PREAMBLE_SOURCE_BASENAME));
+    assert.throws(
+      () => resolvePreambleSource({ cwd: dir }),
+      (err) => err && err.code !== 'ENOENT' && !/--apply-new/.test(err.message)
     );
   });
 });
@@ -301,7 +349,7 @@ for (const [key, g] of Object.entries(GOLDEN)) {
   });
 }
 
-test('CLI: falls back to OPERATIONS.md in a pre-`sync --apply-new` consumer checkout', () => {
+test('CLI: falls back to OPERATIONS.md in a pre-adoption consumer checkout', () => {
   withTmp((dir) => {
     placeLF(dir, LEGACY_PREAMBLE_SOURCE_BASENAME, NEW_SRC); // only the legacy source present
     const res = spawnSync(process.execPath, [BIN, 'dispatch'], { cwd: dir });
@@ -315,6 +363,6 @@ test('CLI: fails closed with a clear error + exit 1 when no source is present', 
   withTmp((dir) => {
     const res = spawnSync(process.execPath, [BIN, 'dispatch'], { cwd: dir });
     assert.equal(res.status, 1);
-    assert.match(res.stderr.toString('utf8'), /sync --apply-new/);
+    assert.match(res.stderr.toString('utf8'), /--apply-new/);
   });
 });
