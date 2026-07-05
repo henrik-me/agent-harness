@@ -28,7 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS89 | CS89 — Ship CODEOWNERS as a composed file (project local block) + secure-by-default ownership for `.github` / `SECURITY.md` / infra | 🟢 Active | yoga-ah-c2 | cs89/content | 2026-07-05 | — |
 | CS90 | CS90 — CI-gate architecture: drift-detection layering doctrine (ADR) + `harness-pr-check` `pr_check.mode` + `review-gates.yml` feature parity & migration path | 🟢 Active | yoga-ah | cs90/content | 2026-07-05 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

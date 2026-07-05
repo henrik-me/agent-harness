@@ -1,10 +1,10 @@
 # CS89 — Ship CODEOWNERS as a composed file (project local block) + secure-by-default ownership for `.github` / `SECURITY.md` / infra
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs89/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** Triage of open inbound issue [#390](https://github.com/henrik-me/agent-harness/issues/390) (2026-07-02 by `omni-ah-c3`). Surfaced while evaluating adoption of v0.12.0's managed `.github/CODEOWNERS` in `henrik-me/sub-invaders`.
 **Depends on:** none.
 
