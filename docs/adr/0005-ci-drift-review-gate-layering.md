@@ -1,6 +1,6 @@
 # ADR 0005 — CI-gate architecture: drift-detection / review-gate layering
 
-**Status:** Accepted
+**Status:** Proposed (pending user-approval gate G90-1)
 **Date:** 2026-07-05
 **Linked CS:** [CS90](../../project/clickstops/active/active_cs90_ci-drift-review-gate-layering.md)
 **Linked issues:** [#391](https://github.com/henrik-me/agent-harness/issues/391), [#392](https://github.com/henrik-me/agent-harness/issues/392), [#393](https://github.com/henrik-me/agent-harness/issues/393)
@@ -10,14 +10,14 @@
 
 ## Status
 
-Accepted. This ADR codifies decisions **C90-1 … C90-5** from the
+**Proposed — pending user-approval gate G90-1.** This ADR codifies decisions **C90-1 … C90-5** from the
 [CS90 plan](../../project/clickstops/active/active_cs90_ci-drift-review-gate-layering.md)
 and is a **hard prerequisite** for the three implementation sub-clickstops
 (CS90a / CS90b / CS90c, per C90-6). Per C90-6, **no workflow, schema, or CLI
 code lands under CS90 itself** — this document is CS90's sole substantive
 deliverable, alongside the sub-CS filings. The layering model and the
 CS90a/b/c breakdown are gated on user approval **G90-1** before any sub-CS is
-claimed.
+claimed; **this ADR's status flips to `Accepted` once G90-1 is granted.**
 
 ---
 
