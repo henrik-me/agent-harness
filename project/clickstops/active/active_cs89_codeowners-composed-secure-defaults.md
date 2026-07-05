@@ -111,4 +111,31 @@ Verified at HEAD `3b20d0a`:
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck; independent sub-agent `cs89-pvi` — model ≠ implementer `claude-opus-4.8`)
+**Date:** 2026-07-05T16:44:11Z
+**Outcome:** GO
+
+Reviewed the merged content (squash `6bc0c86`, base `1a4ebe4`) against the 8 Deliverables + 5 Exit criteria. Observed on merged `main`: `harness sync --mode=check --cwd .` → No drift detected (exit 0); `harness lint --quiet` → 38 passed / 0 failed / 3 skipped (exit 0); `node --test tests/*.test.mjs` → 1983 tests, 1978 pass / 0 fail / 5 skipped, 218 suites (exit 0).
+
+**Per-deliverable outcome (8/8 `match`):**
+
+| # | Deliverable | Outcome | Rationale |
+|---:|---|---|---|
+| 1 | `lib/composed.mjs` `#`-marker parser | match | Parser recognizes whole-line `# harness:local-start/end id=...` alongside the unchanged HTML markers, with unit coverage for pairing, IDs, round-trip, and HTML regression. |
+| 2 | New `template/composed/.github/CODEOWNERS` composed template | match | Template contains the expanded secure-default core, `{{security_codeowner}}`/`{{infra_codeowner}}`, and an empty `codeowners.project` block using `#` markers. |
+| 3 | Delete `template/managed/.github/CODEOWNERS` | match | The managed template is absent; the replacement lives under `template/composed/.github/CODEOWNERS`. |
+| 4 | `harness.config.json` managed→composed move + overrides + templating keys | match | `.github/CODEOWNERS` is in `composed.files`, registered with `codeowners.project`, removed from `managed.files`, relying on the approved sync-side defaults. |
+| 5 | `lib/sync.mjs` sync-side defaults | match | `computeCodeownerDefaults` defaults both new owner keys to `default_codeowner`, merged under `config.templating` so explicit consumer values win. |
+| 6 | Schema + composed/file-class docs document `#` markers | match | `schemas/harness.config.schema.json` and `docs/adr/0001-file-classes.md` describe both the HTML and comment-safe `#` marker forms. |
+| 7 | Tests 7(a–f) | match | CS89 tests cover parser `#` markers + HTML regression, secure render, fallback/no literal placeholders, block round-trip/no drift, no raw HTML marker, and regeneration transition behavior. |
+| 8 | CHANGELOG `[Unreleased]` + migration notes, closes #390 | match | `CHANGELOG.md` documents CS89 under `[Unreleased]` with migration notes for managed adopters, custom adopters, and self-host, and states Closes #390. |
+
+**Exit criteria (5/5 met):**
+
+- [x] 1. `#` marker form works, HTML form still works, rendered CODEOWNERS has no raw `<!-- … -->` (parser + CODEOWNERS tests; root/template `#` markers).
+- [x] 2. CODEOWNERS is composed with a secure managed core plus a surviving `codeowners.project` block (`harness.config.json`, template + root CODEOWNERS, `sync --mode=check` no-drift).
+- [x] 3. `security_codeowner`/`infra_codeowner` resolve with default fallback, no literal placeholders (`computeCodeownerDefaults`; rendered root owners `@henrik-me`; fallback tests).
+- [x] 4. Managed→composed regeneration + self-host validation clean (transition fixture; `sync --mode=check` no-drift, `lint` 38/0/3, tests 1978 pass/0 fail).
+- [x] 5. Migration notes + CHANGELOG exist; PVI outcome GO.
+
+**Test-coverage assessment:** sufficient — deliverable 7(a–f) covered by `tests/cs89-hash-marker.test.mjs`, `tests/cs89-codeowners-composed.test.mjs`, and `tests/cs89-check-composed-blocks.test.mjs`; no blocker gaps.
