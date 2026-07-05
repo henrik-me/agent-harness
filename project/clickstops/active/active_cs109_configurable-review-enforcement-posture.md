@@ -98,6 +98,30 @@ Add a first-class, configurable **review-enforcement posture** so a repo can enf
 
 ## Notes / Learnings
 
+### ADR-first (C109-1) — `docs/adr/0006-review-enforcement-posture.md`
+
+- **Authored** 2026-07-05 (`83e0bad`); **revised** after independent review (`74e4859`).
+- **Independent design review** — gpt-5.5 rubber-duck (implementer claude-opus-4.8;
+  independence per REVIEWS.md § 2.3). **R1 = Needs-Fix**, 4 blocking findings, all addressed:
+  1. Default/absence guarantee not airtight (schema-default reader materializes absent) →
+     **D1**: no schema `default`; presence-gated generation; byte-for-byte-unchanged test (C109-7).
+  2. `reviews.enforce_gates` vs explicit `human-approval` precedence unspecified →
+     **D2**: explicit `enforcement` overrides legacy `enforce_gates`; cross-product tested.
+  3. Deadlock guard mis-modelled job-level `if:` (skipped ≠ pending); missed no-producer class →
+     **D4**: guard flags no-producer contexts + workflow-level filters as primary; job-level `if:` informational.
+  4. Bot/fork "always green" overclaim (only workboard-only skip exists; copilot gate can fail) →
+     **D3/Context**: contexts are *reported* not unconditionally green; bot/fork parity is CS90c.
+  - Non-blocking: refreshed recon HEAD, discover ruleset by name (dropped `reviews.ruleset_id`),
+    flagged CS106 stale-premise reconciliation as a close-out learning candidate.
+- **Design summary:** optional `review_gates.enforcement` enum (`human-approval | required-check | both`,
+  **no** schema default; presence-gated); enforcement→ruleset mapping (approval-count 1/0/1 +
+  review-gate contexts advisory/required/required); `harness ruleset check` (read-only drift) +
+  `apply --apply` (live mutation, G109-ruleset-apply); F3 deadlock guard; F4 admin-merge coherence guard.
+- **D6 scope split (recommended, pending G109-adr ratification):** CS109 = safe/additive surface
+  (config + reader + `ruleset check` + F3/F4 + docs + tests; no live mutation); **CS109a** (follow-up) =
+  `ruleset apply --apply` + self-host posture selection (coordinates with CS106).
+- **G109-adr status:** presented to @henrik-me for ratification (design + scope) before implementation lands.
+
 ## Plan-vs-implementation review
 
 > _(filled at close-out per the gate)_
