@@ -46,7 +46,7 @@ const CLEAN_TREE = {
   'OPERATIONS.md': '# Operations\n\n## Report shape\n\nBody referencing LRN-001.\n',
   'REVIEWS.md': '# Reviews\n\nReview referencing LRN-001.\n',
   'INSTRUCTIONS.md': '# Instructions\n\nSee [report shape](OPERATIONS.md#report-shape).\n',
-  'template/managed/READMEGUIDE.md': '# Guide\n\nSee [architecture](ARCHITECTURE.md).\n',
+  'template/composed/READMEGUIDE.md': '# Guide\n\nSee [architecture](ARCHITECTURE.md).\n',
   'template/managed/ARCHITECTURE.md': '# Architecture\n',
   // ----- check (e) targets: clean composed process-doc bases -----
   'template/composed/OPERATIONS.md':
@@ -299,7 +299,7 @@ describe('check-doc-xref-resolvability check (e) — composed-process-base xref'
 
   it('(regression c) a non-template relative link in READMEGUIDE still fails', () => {
     const dir = buildTree({
-      'template/managed/READMEGUIDE.md': '# Guide\n\nSee [ADR 0001](docs/adr/0001-file-classes.md).\n',
+      'template/composed/READMEGUIDE.md': '# Guide\n\nSee [ADR 0001](docs/adr/0001-file-classes.md).\n',
     });
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);

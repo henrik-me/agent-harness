@@ -1,8 +1,9 @@
 # RETROSPECTIVES
 
-> **Managed file** — Do not edit by hand. Canonical source is
-> `template/managed/RETROSPECTIVES.md`; the repo root copy is rendered from
-> this template during `harness sync`. Changes belong in the template.
+> **File class:** composed — managed core + one project-local block.
+> Do **not** edit the managed-core sections directly. Edit only the content
+> inside the `retrospectives.project` local block (see § Local block at the end
+> of this file). All managed-core sections are overwritten on every `harness sync`.
 
 This file defines what a *learning* is, how to author one, how the harvest
 cadences work, and the rules that govern bounded before-claim prompts. It is
@@ -389,4 +390,18 @@ deferred-past-due, ID gaps) do not affect the exit code.
 
 ---
 
-*This reference is maintained as a harness-managed template.*
+*This reference's managed core is maintained as a harness composed template; edit project notes in the `retrospectives.project` local block below.*
+
+---
+
+## Local block
+
+The section below is project-local and preserved across `harness sync`. Edit
+only the content **between** the markers. The markers and all content above are
+managed by the harness and overwritten on the next `harness sync`. The block ID
+`retrospectives.project` must be listed in `harness.config.json` under
+`composed.overrides["RETROSPECTIVES.md"].local_blocks`.
+
+<!-- harness:local-start id=retrospectives.project -->
+_(Project-local retrospectives notes. Empty by default.)_
+<!-- harness:local-end id=retrospectives.project -->

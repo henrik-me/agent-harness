@@ -25,9 +25,9 @@
  * Anchor scope set (each resolved to its generic location, relative to --cwd):
  *   - template/composed/INSTRUCTIONS.md               (composed base)
  *   - template/composed/.github/copilot-instructions.md (composed base)
- *   - template/managed/TRACKING.md                    (scrubbed managed)
- *   - template/managed/RETROSPECTIVES.md              (scrubbed managed)
- *   - template/managed/READMEGUIDE.md                 (managed, already clean)
+ *   - template/composed/TRACKING.md                   (composed base)
+ *   - template/composed/RETROSPECTIVES.md             (composed base)
+ *   - template/composed/READMEGUIDE.md                (composed base)
  *
  * Invocation scope set — the broader consumer-shipped composed + managed process
  * and onboarding docs (the five anchor docs plus the composed process bases):
@@ -100,19 +100,19 @@ const SCOPE_SET = [
     kind: 'composed',
   },
   {
-    display: 'template/managed/TRACKING.md',
-    segments: ['template', 'managed', 'TRACKING.md'],
-    kind: 'managed',
+    display: 'template/composed/TRACKING.md',
+    segments: ['template', 'composed', 'TRACKING.md'],
+    kind: 'composed',
   },
   {
-    display: 'template/managed/RETROSPECTIVES.md',
-    segments: ['template', 'managed', 'RETROSPECTIVES.md'],
-    kind: 'managed',
+    display: 'template/composed/RETROSPECTIVES.md',
+    segments: ['template', 'composed', 'RETROSPECTIVES.md'],
+    kind: 'composed',
   },
   {
-    display: 'template/managed/READMEGUIDE.md',
-    segments: ['template', 'managed', 'READMEGUIDE.md'],
-    kind: 'managed',
+    display: 'template/composed/READMEGUIDE.md',
+    segments: ['template', 'composed', 'READMEGUIDE.md'],
+    kind: 'composed',
   },
 ];
 
@@ -138,19 +138,19 @@ const INVOCATION_SCOPE_SET = [
     kind: 'composed',
   },
   {
-    display: 'template/managed/TRACKING.md',
-    segments: ['template', 'managed', 'TRACKING.md'],
-    kind: 'managed',
+    display: 'template/composed/TRACKING.md',
+    segments: ['template', 'composed', 'TRACKING.md'],
+    kind: 'composed',
   },
   {
-    display: 'template/managed/RETROSPECTIVES.md',
-    segments: ['template', 'managed', 'RETROSPECTIVES.md'],
-    kind: 'managed',
+    display: 'template/composed/RETROSPECTIVES.md',
+    segments: ['template', 'composed', 'RETROSPECTIVES.md'],
+    kind: 'composed',
   },
   {
-    display: 'template/managed/READMEGUIDE.md',
-    segments: ['template', 'managed', 'READMEGUIDE.md'],
-    kind: 'managed',
+    display: 'template/composed/READMEGUIDE.md',
+    segments: ['template', 'composed', 'READMEGUIDE.md'],
+    kind: 'composed',
   },
   {
     display: 'template/composed/OPERATIONS.md',

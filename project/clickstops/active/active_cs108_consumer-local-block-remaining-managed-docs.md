@@ -78,19 +78,35 @@ Give consumers a "harness core + your additions" path for the three remaining fu
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| D1: reclassify 3 docs managed→composed in `harness.config.json` (+ `composed.overrides` local_blocks) | planned | yoga-ah-c2 | `tracking.project` / `retrospectives.project` / `readmeguide.project` |
-| D2: create `template/composed/{TRACKING,RETROSPECTIVES,READMEGUIDE}.md` (managed content + empty local block); remove `template/managed/` copies | planned | yoga-ah-c2 | reuse HTML-comment markers |
-| D3: re-render root docs; `harness sync --mode=check` no drift | planned | yoga-ah-c2 | self-host |
-| D4/D7: `lib/sync.mjs` fail-closed migration message for reclassified doc still in `managed.files` + test | planned | yoga-ah-c2 | not raw ESYNC_MISSING_TEMPLATE |
-| D4/D8: update `check-consumer-template-genericity.mjs` + `check-doc-xref-resolvability.mjs` to composed paths (+ fixtures/tests) | planned | yoga-ah-c2 | hard prerequisite for green lint |
-| D4/D8: composed reclassification round-trip tests (populated local block preserved, core overwritten) | planned | yoga-ah-c2 | — |
-| D5: managed-workflow escape-valve doc note | planned | yoga-ah-c2 | OPERATIONS.md + composed mirror or READMEGUIDE |
-| D6: `CHANGELOG.md` `[Unreleased]` entry (Minor) | planned | yoga-ah-c2 | migration called out |
-| Validation: `harness lint` + `node --test` + `sync --mode=check` green | planned | yoga-ah-c2 | — |
+| D1: reclassify 3 docs managed→composed in `harness.config.json` (+ `composed.overrides` local_blocks) | done | yoga-ah-c2 | `tracking.project` / `retrospectives.project` / `readmeguide.project`; no `_inherited_class` |
+| D2: create `template/composed/{TRACKING,RETROSPECTIVES,READMEGUIDE}.md` (managed content + empty local block); remove `template/managed/` copies | done | yoga-ah-c2 | composed banner + footer reworded; HTML-comment markers |
+| D3: re-render root docs; `harness sync --mode=check` no drift | done | yoga-ah-c2 | fresh-start regeneration; no drift |
+| D4/D7: `lib/sync.mjs` fail-closed migration message for reclassified doc still in `managed.files` + test | done | yoga-ah-c2 | `ESYNC_RECLASSIFIED_TO_COMPOSED` (general) |
+| D4/D8: update `check-consumer-template-genericity.mjs` + `check-doc-xref-resolvability.mjs` to composed paths (+ fixtures/tests) | done | yoga-ah-c2 | both scope sets + CHECK_C_DOCS + headers |
+| D4/D8: composed reclassification round-trip tests (populated local block preserved, core overwritten) | done | yoga-ah-c2 | `tests/cs108-composed-reclassification.test.mjs` |
+| D5: managed-workflow escape-valve doc note | done | yoga-ah-c2 | `OPERATIONS.md § Extending managed CI workflows` (+ composed mirror) |
+| D6: `CHANGELOG.md` `[Unreleased]` entry (Minor) | done | yoga-ah-c2 | migration + escape valve called out |
+| Fix stale guard `--help` text in `bin/harness.mjs` (orchestrator patch) | done | yoga-ah-c2 | escalation (c): managed→composed paths in the two linter help blocks |
+| Validation: `harness lint` + `node --test` + `sync --mode=check` green | done | yoga-ah-c2 | lint 41/0/3; tests 1995 pass/0 fail/5 skip; sync check no drift |
 | Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, process templates + rendered roots | planned | yoga-ah-c2 | mandatory close-out row |
 | Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`, file follow-up CSs | planned | yoga-ah-c2 | mandatory close-out row |
 
 ## Notes / Learnings
+
+### Implementation (2026-07-05)
+
+**Execution model.** Implementation dispatched to a background general-purpose sub-agent (`cs108-impl`, model `claude-opus-4.8`) with the canonical dispatch preamble; orchestrator (`yoga-ah-c2`) reviewed the diff, applied the `bin/harness.mjs` help-text patch (escalation c), staged, and committed. Independent review is a separate reviewer sub-agent (model ≠ implementer) per REVIEWS.md § Phase 2.
+
+**Design (per CS89 CODEOWNERS precedent).** The three docs became NORMAL composed files (no `_inherited_class`): harness owns the core, consumer owns only the `<doc>.project` block. Because the composed base core = the same managed prose (only the top banner + footer reworded, empty block appended), the managed→composed transition is a **regeneration** — an existing consumer must delete/empty the on-disk doc before sync (else `mergeComposed` fails closed with `EMERGE_LEGACY_UNMAPPED`). Deliverable 7's `ESYNC_RECLASSIFIED_TO_COMPOSED` message handles the un-migrated (`still in managed.files`) case with an actionable message instead of a raw `ESYNC_MISSING_TEMPLATE`.
+
+**Sub-agent decisions accepted.**
+- `template/seeded/harness.config.json` also moved the 3 docs to composed (fresh-`init` parity, Decision 4; `managed.files` now `[]`). Init tests (cs09) updated. Accepted.
+- Root `OPERATIONS.md` was deleted + regenerated (not auto-adopted): its lock `template_prose_hash` was pre-existingly stale vs the actual root skeleton, so the template edit could not auto-adopt. The `operations.project-deploy` block held only the default placeholder → no consumer content lost; regeneration corrected the stale lock hash.
+
+**Learnings candidates (for close-out → LEARNINGS.md).**
+- process/file-class: fresh-`init` classifications live in `template/seeded/harness.config.json`, a SEPARATE source from the self-host `harness.config.json`; both must be updated on any reclassification or init tests (cs09/CS15e/CS15d) fail.
+- tooling: `harness lint`'s text-encoding check runs in git mode (`git ls-files`), so a tracked-file move fails it with read-errors until the moves are staged; `--no-respect-gitignore` filesystem-walk mode confirms disk cleanliness. (Resolved at commit-stage.)
+- data-integrity: `.harness-lock.json` `template_prose_hash` for `OPERATIONS.md` was latently stale vs the root skeleton (only passed check because template==root was byte-identical, short-circuiting the divergence branch). Worth auditing other composed lock entries for the same latent staleness (candidate follow-up CS).
 
 ## Plan-vs-implementation review
 

@@ -14,9 +14,6 @@
   },
   "managed": {
     "files": [
-      "TRACKING.md",
-      "RETROSPECTIVES.md",
-      "READMEGUIDE.md",
       "DISPATCH-PREAMBLE.md",
       ".github/workflows/harness-drift.yml",
       ".github/workflows/pr-evidence-lint.yml",
@@ -31,7 +28,10 @@
       "REVIEWS.md",
       ".github/copilot-instructions.md",
       ".github/pull_request_template.md",
-      ".github/CODEOWNERS"
+      ".github/CODEOWNERS",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md"
     ],
     "overrides": {
       "INSTRUCTIONS.md": {
@@ -68,6 +68,21 @@
       ".github/CODEOWNERS": {
         "local_blocks": [
           "codeowners.project"
+        ]
+      },
+      "TRACKING.md": {
+        "local_blocks": [
+          "tracking.project"
+        ]
+      },
+      "RETROSPECTIVES.md": {
+        "local_blocks": [
+          "retrospectives.project"
+        ]
+      },
+      "READMEGUIDE.md": {
+        "local_blocks": [
+          "readmeguide.project"
         ]
       }
     }

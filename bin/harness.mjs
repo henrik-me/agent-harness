@@ -2512,8 +2512,8 @@ branch ruleset contexts are installed; this catches partial sync/init states.
 **Target:** the consumer-onboarding doc set, each at its generic location —
           template/composed/INSTRUCTIONS.md,
           template/composed/.github/copilot-instructions.md,
-          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md,
-          template/managed/READMEGUIDE.md. Self-host-only, gated by package
+          template/composed/TRACKING.md, template/composed/RETROSPECTIVES.md,
+          template/composed/READMEGUIDE.md. Self-host-only, gated by package
           name (skipped unless package.json \`name\` is
           \`@henrik-me/agent-harness\`), so a consumer that merely has its own
           template/ dir does not run it.
@@ -2536,10 +2536,10 @@ the dead-anchor regression cannot recur silently.
 **Target:** four doc cross-reference classes, self-host-only (gated by package
           name, skipped unless package.json \`name\` is \`@henrik-me/agent-harness\`):
           (a) OPERATIONS.md + REVIEWS.md (root), (b) INSTRUCTIONS.md (root),
-          (c) the consumer-onboarding doc set — template/managed/READMEGUIDE.md,
+          (c) the consumer-onboarding doc set — template/composed/READMEGUIDE.md,
           template/composed/INSTRUCTIONS.md,
           template/composed/.github/copilot-instructions.md,
-          template/managed/TRACKING.md, template/managed/RETROSPECTIVES.md;
+          template/composed/TRACKING.md, template/composed/RETROSPECTIVES.md;
           (e) the composed process-doc bases —
           template/composed/{OPERATIONS,REVIEWS,CONVENTIONS}.md.
 **Rules:**

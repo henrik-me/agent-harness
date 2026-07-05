@@ -24,7 +24,7 @@
  *       pure `#anchor`, not a trailing-slash directory link) must resolve to a
  *       target that ships under the `template/` delivery surface (composed OR
  *       managed OR seeded). A target absent from `template/` → FAIL. This is the
- *       #356b class: `template/managed/READMEGUIDE.md` linked
+ *       #356b class: `template/composed/READMEGUIDE.md` linked
  *       `docs/adr/000{1,2}-*.md`, which exist at the harness root but ship in no
  *       consumer. Checks (b)/(c) skip fenced code blocks and inline-code spans so
  *       illustrative example links do not false-positive.
@@ -113,11 +113,11 @@ const CHECK_B_DOC = 'INSTRUCTIONS.md';
 //     paired with the directory it renders to in a consumer (so a relative link
 //     resolves against the right base). EXCLUDES the process-doc bases.
 const CHECK_C_DOCS = [
-  { rel: 'template/managed/READMEGUIDE.md', consumerDir: '' },
+  { rel: 'template/composed/READMEGUIDE.md', consumerDir: '' },
   { rel: 'template/composed/INSTRUCTIONS.md', consumerDir: '' },
   { rel: 'template/composed/.github/copilot-instructions.md', consumerDir: '.github' },
-  { rel: 'template/managed/TRACKING.md', consumerDir: '' },
-  { rel: 'template/managed/RETROSPECTIVES.md', consumerDir: '' },
+  { rel: 'template/composed/TRACKING.md', consumerDir: '' },
+  { rel: 'template/composed/RETROSPECTIVES.md', consumerDir: '' },
 ];
 
 // The template delivery surface: a link target ships if it exists under any of

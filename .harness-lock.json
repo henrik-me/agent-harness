@@ -1,49 +1,14 @@
 {
-  "harness_ref": "cs55/content",
-  "resolved_sha": "576067126397080349f8e118bf661ff34ca043ca",
+  "harness_ref": "cs108/content",
+  "resolved_sha": "7880ec5a5c6d1d0432363a40b0ed516e7c6e56b1",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-05-28T00:36:25.780Z",
+  "synced_at": "2026-07-05T17:24:38.558Z",
   "files": [
     {
-      "target": "INSTRUCTIONS.md",
-      "source_template": "template/managed/INSTRUCTIONS.md",
+      "target": "DISPATCH-PREAMBLE.md",
+      "source_template": "template/managed/DISPATCH-PREAMBLE.md",
       "class": "managed",
-      "rendered_hash": "69c9c3a5f4592e3d6b2c4ca9b8ad7bc66dafc7cffceb8cb8eeea400204a200e0",
-      "action": "skipped"
-    },
-    {
-      "target": "TRACKING.md",
-      "source_template": "template/managed/TRACKING.md",
-      "class": "managed",
-      "rendered_hash": "2992facf535ef098e4fda707e860798c060d43f4e4a9b1bb61b064f10761861d",
-      "action": "skipped"
-    },
-    {
-      "target": "RETROSPECTIVES.md",
-      "source_template": "template/managed/RETROSPECTIVES.md",
-      "class": "managed",
-      "rendered_hash": "ebe601aa5e85211801bc3d0892e05a66d523fe0c65afe31953fc9f41dc40755d",
-      "action": "skipped"
-    },
-    {
-      "target": "READMEGUIDE.md",
-      "source_template": "template/managed/READMEGUIDE.md",
-      "class": "managed",
-      "rendered_hash": "e82e54ddb6a3096ae18140fd41efc0d44f1c1481f1aec605608e8794ebdb70e3",
-      "action": "skipped"
-    },
-    {
-      "target": ".github/CODEOWNERS",
-      "source_template": "template/managed/.github/CODEOWNERS",
-      "class": "managed",
-      "rendered_hash": "d7346f9cccccdb0338f4568575b9d058c212405804f6bc377a7dd889dbf3187e",
-      "action": "skipped"
-    },
-    {
-      "target": ".github/copilot-instructions.md",
-      "source_template": "template/managed/.github/copilot-instructions.md",
-      "class": "managed",
-      "rendered_hash": "f20e2e0e2f47b13511ac14c51bb5a140d44b3804fca75296f37f5a39bca3e96c",
+      "rendered_hash": "b67d23e21466192f6c81e8bb48c470882851ad63aa4db5f4515fe2cb291d530c",
       "action": "skipped"
     },
     {
@@ -57,75 +22,115 @@
       "target": ".github/workflows/pr-evidence-lint.yml",
       "source_template": "template/managed/.github/workflows/pr-evidence-lint.yml",
       "class": "managed",
-      "rendered_hash": "d5e4a71cc44a1d9e7a6504e8e5fc3453475e3b7d8c9589611028e9d9fc7f32ac",
+      "rendered_hash": "305c336be6be738d643e5479bfe618031e266a16d688b131e316091ddf33feca",
       "action": "skipped"
     },
     {
       "target": ".github/workflows/review-gates.yml",
       "source_template": "template/managed/.github/workflows/review-gates.yml",
       "class": "managed",
-      "rendered_hash": "771734744723e5934a226d5776e26b147031d25ccf7639ec0ac81b90ba021f16",
+      "rendered_hash": "972ca75fb3e5d718c8c1aa9655795e315544caff98892c83b761c799d4f5a9f1",
       "action": "skipped"
+    },
+    {
+      "target": "INSTRUCTIONS.md",
+      "source_template": "template/composed/INSTRUCTIONS.md",
+      "class": "composed",
+      "rendered_hash": "272d2490947541cf96fe48a7d1b154d751c943237841e90537015444cc8b4cb1",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "instructions.harness",
+          "source_line_range": {
+            "start": 615,
+            "end": 676
+          },
+          "body_hash": "bddac21889e79ac05fb08f9ef82a294aa33fbe3c9ca64d7a707cac72175b3f5c",
+          "template_marker_hash": "a1d7aa0bc8405304204b5543d04415b6a9536f8bdc156ff1afba8eb5ca3ef444",
+          "provenance": "user-authored"
+        }
+      ],
+      "template_prose_hash": "ab46577fa876466c7212bfff52dad073660b226adde0710a052ebf3219f45095"
     },
     {
       "target": "CONVENTIONS.md",
       "source_template": "template/composed/CONVENTIONS.md",
       "class": "composed",
-      "rendered_hash": "02b36709cf97e0a79f0afbf660eaeea8e219d238c2fe9330ed831f0ecc97b503",
+      "rendered_hash": "fa5aacabc689b486d5584540af93c5eae87e661c6330e7ecbbe1ed0c70e1eac4",
       "action": "skipped",
       "blocks": [
         {
           "id": "conventions.project",
           "source_line_range": {
-            "start": 160,
-            "end": 163
+            "start": 165,
+            "end": 168
           },
           "body_hash": "6b83cfcb83b017bc39299353cebea5097efeb5f6d442690ad7a03ccdc1a0a534",
           "template_marker_hash": "d6d8dcea1d31794b2b9a755a199b5c0b76cc2c34e513164718e917c4945f1b92",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "a71d81cf7c8a72261e9fafd0f1ee380373d06c4e50b831694ebaf2c770b363c9"
+      "template_prose_hash": "f693bd5b4d771ec3558a2ab9910024bbf8e927e6ac498714afbc8ebbcbc88b7b"
     },
     {
       "target": "OPERATIONS.md",
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
-      "rendered_hash": "6b0a826eeb4845cbfbbaa659d44abae9a361181258e3a3faf755dd0078bc27d8",
-      "action": "updated",
+      "rendered_hash": "4d62a4fb43338b9d536b2c8a6c7209dac324b42a784714618f7c41fb8dd9e7d7",
+      "action": "created",
       "blocks": [
         {
           "id": "operations.project-deploy",
           "source_line_range": {
-            "start": 1844,
-            "end": 1846
+            "start": 2727,
+            "end": 2729
           },
           "body_hash": "35a13a15deb994c17bb4db02b4b9870c0de1f5192f68f996c3835465549f4093",
           "template_marker_hash": "c538812699662e1747082864f419826b433df6e5164cdd28e870df72fcc559e5",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "204c75713c57cca602caa1cbf82e3d18654b46e5a8a4f005361ce81ab2cd5a2d"
+      "template_prose_hash": "06aedc730e7489a852687a45343f0920b4a208a00db55eedf49f36cbff17f155"
     },
     {
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "5c14e47c1fe8827b3733d03b9a6b0664a0c4c19435cf52ee1cc59142812b1c87",
+      "rendered_hash": "a6df7f19f9810286a7a569c7f2ad7adea3249b00fd3dfe332f586b60d69bde93",
       "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
-            "start": 423,
-            "end": 440
+            "start": 870,
+            "end": 887
           },
           "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "27c1d07119a1386cd43ad491587ce067037a8f4bb493c0557919058eabec566a"
+      "template_prose_hash": "576568f83967a8ecebd4ccc417eab5ef176c6237bccc47f8afff051f11005c36"
+    },
+    {
+      "target": ".github/copilot-instructions.md",
+      "source_template": "template/composed/.github/copilot-instructions.md",
+      "class": "composed",
+      "rendered_hash": "47a37e0644a4f28d3923e107c1d0cbc8555e537c35df1961128623bf762a7641",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "copilot-instructions.harness",
+          "source_line_range": {
+            "start": 243,
+            "end": 286
+          },
+          "body_hash": "122667a0db2df7655fc983d69195bbb1a1d4db180774da3ca5ba9b2941c21ef6",
+          "template_marker_hash": "42a32b7dec3ef51074bab594f4f872f7d4a96b032495723a45e5c5a83dd1b3e6",
+          "provenance": "user-authored"
+        }
+      ],
+      "template_prose_hash": "25651f2ef0109bb0ceda1729ec5232d1905324f09a962294916dda7a495ab3e2"
     },
     {
       "target": ".github/pull_request_template.md",
@@ -148,10 +153,90 @@
       "template_prose_hash": "95006e14f9fde5c1acd69cbc6572e38575f01c02dc5187db18a2a3df1e43fed4"
     },
     {
+      "target": ".github/CODEOWNERS",
+      "source_template": "template/composed/.github/CODEOWNERS",
+      "class": "composed",
+      "rendered_hash": "46069b5f2171cc833b22ce41680b25f3ccb21539a652e8401915a45d6e149ff0",
+      "action": "skipped",
+      "blocks": [
+        {
+          "id": "codeowners.project",
+          "source_line_range": {
+            "start": 36,
+            "end": 39
+          },
+          "body_hash": "6e052a0353e79e44fec5072bb89312368ac901a475c6f22a168dc2a15b8f557d",
+          "template_marker_hash": "f3ed0dc482b9cf4fd60f68469205171c90e72394fd71eed4a213916396ae4dc7",
+          "provenance": "seeded-empty"
+        }
+      ],
+      "template_prose_hash": "f44aa91a949728a7b53ec8a5ca80e4cea62bffbd0b024123b8f019b0f1179cf2"
+    },
+    {
+      "target": "TRACKING.md",
+      "source_template": "template/composed/TRACKING.md",
+      "class": "composed",
+      "rendered_hash": "a211521c3958e8eb802bf4a02678220846d4d542d465afcfa59080bed69545cd",
+      "action": "created",
+      "blocks": [
+        {
+          "id": "tracking.project",
+          "source_line_range": {
+            "start": 314,
+            "end": 316
+          },
+          "body_hash": "e75c20105f649a84e7a149c51449667c7f7e5db97221a5cddc3585ef0d1a6dd4",
+          "template_marker_hash": "59edc901a3afd097c5987706d4e7b3699bfcd086fbc3e0dd1e1d2a398e6e12a3",
+          "provenance": "seeded-empty"
+        }
+      ],
+      "template_prose_hash": "9b2f77b90b969712ce5edfcf3a565f0f6a179c494c60b56c7a3b424cc4b4d886"
+    },
+    {
+      "target": "RETROSPECTIVES.md",
+      "source_template": "template/composed/RETROSPECTIVES.md",
+      "class": "composed",
+      "rendered_hash": "f581b2b48a6df23530887217df289ddd8a9e165545f14c24b01b7d90cf79da47",
+      "action": "created",
+      "blocks": [
+        {
+          "id": "retrospectives.project",
+          "source_line_range": {
+            "start": 405,
+            "end": 407
+          },
+          "body_hash": "f8647e9662e06fa35fb28ae85bee742e8526fb63290a3d53a885c3dd48376409",
+          "template_marker_hash": "63aae078eebb13d4757c30133d6bd6f791c09b4924b46fccf888b6aaf8581ed7",
+          "provenance": "seeded-empty"
+        }
+      ],
+      "template_prose_hash": "745462fd6bb699204c14a375462dd82fd9bac4da9a1695f92a4c5df9acfa2c97"
+    },
+    {
+      "target": "READMEGUIDE.md",
+      "source_template": "template/composed/READMEGUIDE.md",
+      "class": "composed",
+      "rendered_hash": "cb9e6a7c6e093ee1f6c8b4592d2f66230ccfb25e61ee0cb370c40d5d942c9f4f",
+      "action": "created",
+      "blocks": [
+        {
+          "id": "readmeguide.project",
+          "source_line_range": {
+            "start": 362,
+            "end": 364
+          },
+          "body_hash": "617ef02d65bc5370ade998b60c2955a794be831c75cbf5d8a1f02517d41272f9",
+          "template_marker_hash": "ab4bafada32b26afb4a42d4f987acaa39d9faf5b94e86be611e233242f4c743e",
+          "provenance": "seeded-empty"
+        }
+      ],
+      "template_prose_hash": "66e635f5e28acffc13cae55cef6a8d0b2854671481c3b024d2850811b26ebde8"
+    },
+    {
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "7d1451a07ac7c3e5cc95cfdacd583d465c6b1221ad5fe480e3129a8abe0d296a",
+      "rendered_hash": "7ce30e24f54218a04c5f7dd8740261f524d371370a5381fbb9eb2947aa7ef9e1",
       "action": "preserved"
     },
     {
@@ -165,14 +250,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "62de0d9aa36088d14cd7eb78c5b9d4d6db5b13ac7dc2b7378429a4d60a1cf53c",
+      "rendered_hash": "219d6d2efcdb9461f711e270ffa2383f60318555285986eaa55055c5f187d29f",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "92352eaea850c821767525bc96be82d3eac6132c8d0ceeaa41b129e2bd55943c",
+      "rendered_hash": "b9b9e978ac43df2b4ae0cb0d42728c627d2ea9e0b5d01b4b9ca2764f598863bd",
       "action": "preserved"
     },
     {
@@ -194,6 +279,7 @@
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
-    "CODE_OF_CONDUCT.md"
+    "CODE_OF_CONDUCT.md",
+    "LEARNINGS-archive.md"
   ]
 }
