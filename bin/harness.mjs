@@ -3100,6 +3100,34 @@ async function cmdLint(args, _global) {
       target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
     },
     {
+      // CS109 / ADR 0006 D4 (F3): warn when a required status-check context
+      // cannot be reliably produced (no producing job, or a workflow-level path
+      // filter can skip it) → the required context stays pending → deadlock.
+      // Warn-only. Runs only when the ruleset source exists (self-host + review-
+      // gate-enabled consumers); a repo without it skips (target not found).
+      name: 'ruleset-deadlock',
+      script: 'check-ruleset-deadlock.mjs',
+      args: [
+        '--ruleset', path.join(cwd, 'infra', 'main-protection-ruleset.json'),
+        '--workflows-dir', path.join(cwd, '.github', 'workflows'),
+      ],
+      target: path.join(cwd, 'infra', 'main-protection-ruleset.json'),
+    },
+    {
+      // CS109 / ADR 0006 D5 (F4): warn when review_gates.enforcement is
+      // required-check/both but a bypass path (ruleset bypass_actors, or an
+      // unrendered ruleset) makes the required-check gate decorative. Warn-only.
+      // Runs whenever a config exists; exits clean (0 warnings) when enforcement
+      // is absent or human-approval (the self-host + back-compat default).
+      name: 'posture-coherence',
+      script: 'check-posture-coherence.mjs',
+      args: [
+        ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+        '--ruleset', path.join(cwd, 'infra', 'main-protection-ruleset.json'),
+      ],
+      target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
+    },
+    {
       // CS26 / C26-3 (Finding #3): flag un-replaced REPLACE_ME placeholder tokens
       // left in the consumer-root harness.config.json after `harness init`. The
       // root config exists in both self-host and consumer, so this always runs;
