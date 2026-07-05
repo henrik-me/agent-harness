@@ -1,10 +1,10 @@
 # CS109a — `harness ruleset apply --apply` (live-ruleset mutation) + self-host posture flip
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs109a/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** CS109 (ADR [0006](../../../docs/adr/0006-review-enforcement-posture.md) § D6 split) — the high-blast-radius live-mutation half of #402, deliberately deferred from CS109 so the additive/safe surface (config + reader + `ruleset check` + F3/F4 guards + docs) could land without any live branch-protection change.
 **Depends on:** **CS109** (HARD) — CS109 ships the `review_gates.enforcement` config, the presence-gated ruleset renderer, `harness ruleset check`, and the F3/F4 guards. CS109a adds only the live-mutation verb + the self-host posture selection on top of that surface. Related: **CS106** (the concrete self-host `required-check` + `required_approving_review_count = 0` flip — coordinate so the two do not double-apply).
 
