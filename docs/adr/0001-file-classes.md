@@ -128,7 +128,7 @@ Local blocks are delimited by a pair of HTML comment markers (the markers below 
 <​!-- harness:local-end id=conventions.project -->
 ```
 
-Two whole-line marker forms are recognized (CS89). The **HTML-comment form** above suits Markdown/HTML files. For files where an HTML comment is an **invalid line** — e.g. CODEOWNERS or other `.gitignore`-style files whose only comment syntax is `#` — the parser also recognizes an equivalent **comment-safe `#`-form** (escaped below with a zero-width-space after the `#`, for the same reason as the HTML example above):
+Two whole-line marker forms are recognized (CS89). The **HTML-comment form** above suits Markdown/HTML files. For files where an HTML comment is an **invalid line** — e.g. CODEOWNERS or other `.gitignore`-style files whose only comment syntax is `#` — the parser also recognizes an equivalent **comment-safe `#`-form** (shown below with a zero-width space after the `#` purely so this ADR does not itself contain a live marker — a documentation display device, not a parser-recognised escape; see § Error rules):
 
 ```md
 #​ harness:local-start id=codeowners.project
@@ -183,12 +183,17 @@ recognised by `lib/composed.mjs` and document them in the linter test fixtures
 (`check-composed-blocks.mjs`).
 
 The comment-safe `#`-form (used by files where an HTML comment is an invalid
-line, such as CODEOWNERS or gitignore-style files) has **no escape form** — the
-zero-width-space / `&lt;` escapes above apply to the HTML-comment form only.
-This is acceptable because the `#`-form targets non-Markdown files that do not
-embed marker-shaped prose; a stray whole-line marker-shaped comment there is a
-genuine authoring error, and a mid-line occurrence is rejected as a mid-line
-marker (matching the HTML-form behavior).
+line, such as CODEOWNERS or gitignore-style files) has **no parser-recognised
+escape mechanism** — the zero-width-space / `&lt;` escapes above are recognised
+by `lib/composed.mjs` for the **HTML-comment form only**. A real whole-line
+`#`-marker in a real file is therefore always live. This is acceptable because
+the `#`-form targets non-Markdown files that do not embed marker-shaped prose;
+a stray whole-line marker-shaped comment there is a genuine authoring error, and
+a mid-line occurrence is rejected as a mid-line marker (matching the HTML-form
+behavior). To *display* a `#`-marker inside documentation (as in the Marker
+format example above) without it being parsed, break the literal
+`# harness:local-` trigger — e.g. insert a zero-width space after the `#`. That
+is a documentation device, not a parser feature.
 
 ### Legacy-content fail-closed invariant
 

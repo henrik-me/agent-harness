@@ -121,9 +121,11 @@ const ESCAPE_ENTITY_PREFIX = '&lt;!--';
 
 // Comment-safe `#`-marker form (CS89) — for files where an HTML comment is an
 // invalid line (e.g. CODEOWNERS). Additive; the HTML form above is unchanged.
-// The `#`-form has NO escape variant. Keep these two constants byte-identical
-// to lib/composed.mjs so the two hand-synced parsers never drift.
-const MARKER_HASH_RE = /^#[ \t]+harness:local-(start|end)[ \t]+id=([^\s]+)[ \t]*$/;
+// The `#`-form has NO escape variant. A single space follows `#` (matching
+// MARKER_HASH_CONTAINS); a tab or multiple spaces after `#` is not a marker.
+// Keep these two constants byte-identical to lib/composed.mjs so the two
+// hand-synced parsers never drift.
+const MARKER_HASH_RE = /^# harness:local-(start|end)[ \t]+id=([^\s]+)[ \t]*$/;
 const MARKER_HASH_CONTAINS = '# harness:local-';
 
 // ---------------------------------------------------------------------------
