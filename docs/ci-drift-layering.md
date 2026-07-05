@@ -38,9 +38,11 @@ Add one of the two forms below to your existing CI workflow. Both derive the
 harness ref from your `harness.config.json` `version` and validate it **before**
 any shell interpolation, building on the shipped `harness-drift.yml` `derive-ref`
 step (CS12 R1 shell-injection hardening). The validation uses a POSIX `case`
-glob rather than a line-based `grep`, and rejects an empty ref, a leading `-`
-(so a ref can never be parsed as a CLI option — e.g. a `--orphan` ref reaching
-the `git checkout` in Form B), and any character outside `[a-zA-Z0-9._/-]`
+glob rather than a line-based `grep`, and rejects an empty ref, a ref not
+starting with an alphanumeric (so a leading `-` can never be parsed as a CLI
+option — e.g. a `--orphan` ref reaching the `git checkout` in Form B — and a
+leading `.`/`_`/`/` can't create a ref-vs-pathspec ambiguity there), and any
+character outside `[a-zA-Z0-9._/-]`
 including an embedded newline (which a line-based check would let smuggle extra
 lines into `$GITHUB_OUTPUT`).
 
@@ -78,13 +80,15 @@ lines into `$GITHUB_OUTPUT`).
           # Validate with a POSIX `case` glob, NOT a line-based `grep`: a value
           # with an embedded newline (valid JSON via "\n") could pass `grep` on
           # its first line and then inject extra `ref=...` lines into
-          # $GITHUB_OUTPUT. This pattern rejects an empty ref, a leading '-' (so
-          # the ref can never be parsed as a CLI option), and any character
-          # outside [a-zA-Z0-9._/-] — including CR/LF. Covers semver tags, branch
-          # names, and 40-char SHAs.
+          # $GITHUB_OUTPUT. This pattern rejects an empty ref, a ref not starting
+          # with an alphanumeric (so a leading '-' can never be parsed as a CLI
+          # option, and a leading '.', '_' or '/' can't create a git-checkout
+          # ref-vs-pathspec ambiguity in Form B), and any character outside
+          # [a-zA-Z0-9._/-] — including CR/LF. Matches ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$;
+          # covers semver tags, branch names, and 40-char SHAs.
           case "$ref" in
-            '' | -* | *[!a-zA-Z0-9._/-]*)
-              echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] with no leading '-'." >&2
+            '' | [!a-zA-Z0-9]* | *[!a-zA-Z0-9._/-]*)
+              echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] starting with an alphanumeric." >&2
               exit 1;;
           esac
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
@@ -126,12 +130,13 @@ runtime deps with `npm ci`, then runs the CLI directly. This mirrors what
           fi
           ref="$version"
           # Same POSIX `case` validation as Form A (non-line-based, so an
-          # embedded newline can't smuggle extra $GITHUB_OUTPUT lines). Rejecting
-          # a leading '-' is load-bearing here: $CLI_REF is passed to
-          # `git checkout` below, where '--orphan' etc. would be read as an option.
+          # embedded newline can't smuggle extra $GITHUB_OUTPUT lines). Anchoring
+          # to a leading alphanumeric is load-bearing here: $CLI_REF is passed to
+          # `git checkout` below, where a leading '-' ('--orphan' etc.) reads as an
+          # option and a leading '.', '_' or '/' is ambiguous ref-vs-pathspec.
           case "$ref" in
-            '' | -* | *[!a-zA-Z0-9._/-]*)
-              echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] with no leading '-'." >&2
+            '' | [!a-zA-Z0-9]* | *[!a-zA-Z0-9._/-]*)
+              echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] starting with an alphanumeric." >&2
               exit 1;;
           esac
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
