@@ -128,12 +128,21 @@ Local blocks are delimited by a pair of HTML comment markers (the markers below 
 <​!-- harness:local-end id=conventions.project -->
 ```
 
+Two whole-line marker forms are recognized (CS89). The **HTML-comment form** above suits Markdown/HTML files. For files where an HTML comment is an **invalid line** — e.g. CODEOWNERS or other `.gitignore`-style files whose only comment syntax is `#` — the parser also recognizes an equivalent **comment-safe `#`-form** (escaped below with a zero-width-space after the `#`, for the same reason as the HTML example above):
+
+```md
+#​ harness:local-start id=codeowners.project
+...consumer-authored content...
+#​ harness:local-end id=codeowners.project
+```
+
 The `id` attribute identifies the block. IDs are stable across harness versions; they
 appear in the lock file and in `harness.config.json` → `composed.overrides[<file>].local_blocks` (per-file allowlist).
 
 ### Parser rules (normative — identical to `lib/composed.mjs` per CS03)
 
-A line is **recognised as a valid local-block marker** only when ALL of the following hold:
+A line is **recognised as a valid local-block marker** — in either the
+HTML-comment form or the comment-safe `#`-form — only when ALL of the following hold:
 
 1. **Whole-line:** the marker occupies the full line except for optional leading/trailing
    ASCII whitespace.
@@ -172,6 +181,14 @@ leading `<` (e.g. `<​!-- harness:local-start id=foo -->`), OR use HTML entity 
 (`&lt;!-- harness:local-start id=foo -->`). CS03 will pin the exact escape characters
 recognised by `lib/composed.mjs` and document them in the linter test fixtures
 (`check-composed-blocks.mjs`).
+
+The comment-safe `#`-form (used by files where an HTML comment is an invalid
+line, such as CODEOWNERS or gitignore-style files) has **no escape form** — the
+zero-width-space / `&lt;` escapes above apply to the HTML-comment form only.
+This is acceptable because the `#`-form targets non-Markdown files that do not
+embed marker-shaped prose; a stray whole-line marker-shaped comment there is a
+genuine authoring error, and a mid-line occurrence is rejected as a mid-line
+marker (matching the HTML-form behavior).
 
 ### Legacy-content fail-closed invariant
 

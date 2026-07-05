@@ -216,7 +216,7 @@
     },
     "composed": {
       "$ref": "#/$defs/fileClass",
-      "description": "Composed file class: the harness owns the skeleton and template blocks, but local-block markers (<!-- harness:local-start id=<blockId> --> ... <!-- harness:local-end id=<blockId> -->) preserve project-specific content across syncs. Only blocks listed in 'composed.overrides[<file>].local_blocks' for the file are preserved; all other local-block markers are rejected by the composed-class merge engine. (Top-level 'local_blocks' was removed in v0.2.0 per LRN-009 — use the per-file form under 'composed.overrides' instead.)"
+      "description": "Composed file class: the harness owns the skeleton and template blocks, but local-block markers preserve project-specific content across syncs. Two whole-line marker forms are recognized: the HTML-comment form (<!-- harness:local-start id=<blockId> --> ... <!-- harness:local-end id=<blockId> -->) for Markdown/HTML files, and the comment-safe '#'-form (# harness:local-start id=<blockId> ... # harness:local-end id=<blockId>) for files where an HTML comment is an invalid line, such as CODEOWNERS or gitignore-style files. Only blocks listed in 'composed.overrides[<file>].local_blocks' for the file are preserved; all other local-block markers are rejected by the composed-class merge engine. (Top-level 'local_blocks' was removed in v0.2.0 per LRN-009 — use the per-file form under 'composed.overrides' instead.)"
     },
     "seeded": {
       "$ref": "#/$defs/fileClass",

@@ -1,0 +1,10 @@
+# CODEOWNERS (fixture) — duplicate #-marker block id.
+* @owner
+
+# harness:local-start id=codeowners.project
+/a @x
+# harness:local-end id=codeowners.project
+
+# harness:local-start id=codeowners.project
+/b @y
+# harness:local-end id=codeowners.project

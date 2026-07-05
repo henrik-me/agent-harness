@@ -1,0 +1,3 @@
+# CODEOWNERS (fixture) — no codeowners.project block (required id missing).
+* @owner
+/lib/ @lib-owner
