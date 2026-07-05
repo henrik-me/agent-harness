@@ -31,6 +31,7 @@ import { runReview, ReviewError, parseImplementerModels } from '../lib/review.mj
 import { migrateFileClass } from '../lib/file-class-migration.mjs';
 import { openIssue as crossRepoOpenIssue, CrossRepoError } from '../lib/cross-repo.mjs';
 import { installPrepareCommitMsgHook } from '../lib/hooks.mjs';
+import { loadReviewGatesEnforcement, ReviewsConfigError } from '../lib/reviews-policy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,6 +104,8 @@ Subcommands:
   init              Scaffold harness.config.json + seeded files into a target dir
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
+  ruleset           Check the live branch-protection ruleset vs the config-derived
+                    source (CS109 — 'ruleset check'; 'apply' deferred to CS109a)
   upgrade           Preview upgrading the pinned harness ref (dry-run diff)
   doctor            Diagnose + (with --repair) recover broken git remote refs (CS64b)
   lint              Run all harness structural + policy linters (14 linters)
@@ -226,6 +229,27 @@ Options:
   --ref <ref>     PLANNED — not yet implemented (set 'version' in
                   harness.config.json to pin).
   --help          Print this help
+`.trimStart(),
+  ruleset: `
+Usage: harness ruleset check [options]
+
+Compare the LIVE GitHub branch-protection ruleset against the config-derived
+source (infra/main-protection-ruleset.json, kept current by 'harness sync') and
+report drift on the harness-MANAGED surface only: the required-check contexts
+and required_approving_review_count. GitHub-added fields never cause false drift.
+Read-only; exits non-zero on drift (fail-closed on any API/parse error).
+
+'harness ruleset apply' (live-ruleset mutation) is deferred to CS109a
+(see docs/adr/0006-review-enforcement-posture.md § D6).
+
+Options:
+  --repo <owner/repo>  Target repo (default: project.repo in config, else 'gh repo view')
+  --ruleset-id <id>    Live ruleset id (default: discovered by name 'main-protection')
+  --live-file <path>   Read the "live" ruleset from a file instead of the API (testing)
+  --cwd <path>         Consumer repo path (default: cwd)
+  --config <path>      Path to harness.config.json
+  --quiet              Print only when drift is found
+  --help               Print this help
 `.trimStart(),
 
   lint: `
@@ -1272,14 +1296,93 @@ function addReviewGateContextsToRuleset(ruleset) {
   return changed;
 }
 
+// CS109 / ADR 0006 D2 — enforcement → required_approving_review_count mapping.
+const REVIEW_GATE_ENFORCEMENT_APPROVAL_COUNT = {
+  'human-approval': 1,
+  'required-check': 0,
+  both: 1,
+};
+
+// Ensure the ruleset carries a `pull_request` rule with the given
+// required_approving_review_count, preserving any other params already present.
+// The four sibling booleans GitHub requires on that rule are defaulted to false
+// when the rule is first created so the rendered source is a valid, applyable
+// ruleset (CS109a `harness ruleset apply` PUTs it as-is).
+function setRequiredApprovingReviewCount(ruleset, count) {
+  if (!Array.isArray(ruleset.rules)) ruleset.rules = [];
+  let rule = ruleset.rules.find((entry) => entry?.type === 'pull_request');
+  if (!rule) {
+    ruleset.rules.push({
+      type: 'pull_request',
+      parameters: {
+        dismiss_stale_reviews_on_push: false,
+        require_code_owner_review: false,
+        require_last_push_approval: false,
+        required_approving_review_count: count,
+        required_review_thread_resolution: false,
+      },
+    });
+    return;
+  }
+  if (!isPlainObject(rule.parameters)) rule.parameters = {};
+  rule.parameters.required_approving_review_count = count;
+}
+
+// Remove the four harness review-gate contexts from every required_checks array
+// (the `human-approval` posture makes the evidence gates advisory, not required).
+// Non-gate contexts (e.g. a consumer's own CI checks) are preserved.
+function removeReviewGateContextsFromRuleset(ruleset) {
+  const gateSet = new Set(REVIEW_GATE_REQUIRED_CHECKS);
+  let changed = false;
+  for (const checks of requiredChecksArrays(ruleset)) {
+    for (let i = checks.length - 1; i >= 0; i--) {
+      const ctx = checkEntryContext(checks[i]);
+      if (ctx && gateSet.has(ctx)) {
+        checks.splice(i, 1);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+// Apply an explicit review_gates.enforcement posture to the ruleset (CS109 /
+// ADR 0006 D2). Authoritative over legacy reviews.enforce_gates: it manages both
+// the approval-count `pull_request` rule and whether the review-gate contexts are
+// required (required-check|both) or advisory (human-approval).
+function applyEnforcementToRuleset(ruleset, enforcement) {
+  setRequiredApprovingReviewCount(ruleset, REVIEW_GATE_ENFORCEMENT_APPROVAL_COUNT[enforcement]);
+  if (enforcement === 'human-approval') {
+    removeReviewGateContextsFromRuleset(ruleset);
+  } else {
+    ensureRulesetRequiredChecksObject(ruleset);
+    addReviewGateContextsToRuleset(ruleset);
+  }
+}
+
 function syncReviewGateRuleset({ cwd, mode, configPath }) {
   const config = loadConfig(cwd, configPath);
+
+  // CS109 / ADR 0006 D1+D2: an explicitly-present review_gates.enforcement is
+  // AUTHORITATIVE and overrides legacy reviews.enforce_gates for ruleset
+  // rendering. When enforcement is ABSENT, generation is byte-for-byte as before
+  // (enforce_gates alone drives required-check injection; approval-count
+  // untouched) — the presence gate structurally prevents a silent gate demotion.
+  let enforcement;
+  try {
+    enforcement = loadReviewGatesEnforcement({ cwd, configPath });
+  } catch (err) {
+    if (err instanceof ReviewsConfigError) die(err.message, 1);
+    throw err;
+  }
+
   // CS61 (LRN-145 follow-up) — DEFERRED schema-vs-runtime divergence: absent
   // `enforce_gates` is treated as opt-OUT (no ruleset sync) here and in
   // scripts/check-review-gates.mjs, diverging from the schema default `true`.
   // Not migrated to the shared reader's default-when-absent (would flip
-  // skip→enforce). See LEARNINGS.md (deferred divergence).
-  if (config?.reviews?.enforce_gates !== true) {
+  // skip→enforce). See LEARNINGS.md (deferred divergence). An explicit
+  // enforcement posture takes precedence over this opt-OUT.
+  if (!enforcement.present && config?.reviews?.enforce_gates !== true) {
     return { drift: false, change: null };
   }
 
@@ -1297,7 +1400,11 @@ function syncReviewGateRuleset({ cwd, mode, configPath }) {
   }
 
   const before = existed ? JSON.stringify(ruleset, null, 2) + '\n' : null;
-  addReviewGateContextsToRuleset(ruleset);
+  if (enforcement.present) {
+    applyEnforcementToRuleset(ruleset, enforcement.value);
+  } else {
+    addReviewGateContextsToRuleset(ruleset);
+  }
   const after = JSON.stringify(ruleset, null, 2) + '\n';
   const drift = before !== after;
   const action = !existed ? 'created' : (drift ? 'updated' : 'skipped');
@@ -2137,6 +2244,213 @@ async function cmdCheck(args, global) {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: ruleset (CS109 / ADR 0006 — review-enforcement posture)
+//
+// `harness ruleset check` renders no state: it compares the config-derived
+// source ruleset (infra/main-protection-ruleset.json, kept current by
+// `harness sync`) against the LIVE GitHub ruleset and reports drift on the
+// harness-MANAGED surface only (required-check contexts + approval count), so
+// GitHub-added fields never produce false drift. `harness ruleset apply` (live
+// mutation) is deferred to CS109a (ADR 0006 § D6).
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the harness-MANAGED surface of a ruleset: the set of required
+ * status-check contexts and the pull_request approval count (null when the
+ * ruleset does not manage one).
+ */
+function extractManagedRulesetSurface(ruleset) {
+  const contexts = new Set();
+  for (const arr of requiredChecksArrays(ruleset)) {
+    for (const entry of arr) {
+      const ctx = checkEntryContext(entry);
+      if (ctx) contexts.add(ctx);
+    }
+  }
+  let approvalCount = null;
+  const prRule = Array.isArray(ruleset?.rules)
+    ? ruleset.rules.find((rule) => rule?.type === 'pull_request')
+    : null;
+  if (
+    prRule &&
+    isPlainObject(prRule.parameters) &&
+    typeof prRule.parameters.required_approving_review_count === 'number'
+  ) {
+    approvalCount = prRule.parameters.required_approving_review_count;
+  }
+  return { contexts, approvalCount };
+}
+
+/**
+ * Diff the managed surface of the config-derived source ruleset against the
+ * live ruleset. Only harness-managed fields are compared (required-check
+ * contexts + approval count), so GitHub-added fields never produce false drift.
+ * The approval count is compared only when the SOURCE manages it (i.e. carries a
+ * pull_request rule) — an absent source approval rule means "unmanaged", not
+ * "must be unset". Returns { drift, details[] }.
+ */
+export function diffManagedRulesetSurface(source, live) {
+  const s = extractManagedRulesetSurface(source);
+  const l = extractManagedRulesetSurface(live);
+  const details = [];
+  const missing = [...s.contexts].filter((c) => !l.contexts.has(c)).sort();
+  const extra = [...l.contexts].filter((c) => !s.contexts.has(c)).sort();
+  if (missing.length) {
+    details.push(`live ruleset is MISSING required contexts present in source: ${missing.join(', ')}`);
+  }
+  if (extra.length) {
+    details.push(`live ruleset has EXTRA required contexts absent from source: ${extra.join(', ')}`);
+  }
+  if (s.approvalCount !== null && s.approvalCount !== l.approvalCount) {
+    details.push(
+      `required_approving_review_count drift: source=${s.approvalCount} ` +
+        `live=${l.approvalCount === null ? '(unset)' : l.approvalCount}`
+    );
+  }
+  return { drift: details.length > 0, details };
+}
+
+function ghCapture(args, cwd) {
+  const res = spawnSync('gh', args, { cwd, encoding: 'utf8' });
+  if (res.error) throw new Error(`gh invocation failed: ${res.error.message}`);
+  if (typeof res.status === 'number' && res.status !== 0) {
+    throw new Error(`gh ${args.join(' ')} exited ${res.status}: ${(res.stderr || '').trim()}`);
+  }
+  return res.stdout || '';
+}
+
+function resolveRepoSlug(cwd, configPath, explicitRepo) {
+  if (explicitRepo) return explicitRepo;
+  const config = loadConfig(cwd, configPath);
+  if (typeof config?.project?.repo === 'string' && /^[^/\s]+\/[^/\s]+$/.test(config.project.repo)) {
+    return config.project.repo;
+  }
+  const res = spawnSync('gh', ['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner'], {
+    cwd,
+    encoding: 'utf8',
+  });
+  if (!res.error && res.status === 0 && res.stdout.trim()) return res.stdout.trim();
+  return null;
+}
+
+function fetchLiveRuleset({ repo, rulesetId, rulesetName, cwd }) {
+  let id = rulesetId;
+  if (!id) {
+    const listRaw = ghCapture(
+      ['api', `repos/${repo}/rulesets`, '--jq', `.[] | select(.name=="${rulesetName}") | .id`],
+      cwd
+    );
+    const ids = listRaw.split('\n').map((line) => line.trim()).filter(Boolean);
+    if (ids.length === 0) throw new Error(`no live ruleset named "${rulesetName}" found on ${repo}`);
+    id = ids[0];
+  }
+  return JSON.parse(ghCapture(['api', `repos/${repo}/rulesets/${id}`], cwd));
+}
+
+async function cmdRuleset(args, global) {
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(SUBCOMMAND_HELP['ruleset']);
+    process.exit(0);
+  }
+  const cwd = global?.cwd ?? process.cwd();
+  const configPath = global?.config ?? null;
+
+  let repo = null;
+  let rulesetId = null;
+  let liveFile = null;
+  let quiet = false;
+  const positionals = [];
+  const takeValue = (i, flag) => {
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('-')) die(`harness ruleset: missing value for ${flag}`, 2);
+    return v;
+  };
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--repo') { repo = takeValue(i, '--repo'); i++; }
+    else if (a === '--ruleset-id') { rulesetId = takeValue(i, '--ruleset-id'); i++; }
+    else if (a === '--live-file') { liveFile = takeValue(i, '--live-file'); i++; }
+    else if (a === '--quiet') { quiet = true; }
+    else if (a.startsWith('-')) die(`harness ruleset: unknown flag "${a}"\n\n${SUBCOMMAND_HELP['ruleset']}`, 2);
+    else positionals.push(a);
+  }
+  // Select the action from true positionals only, so a flag VALUE (e.g. the
+  // `owner/repo` after `--repo`) is never mistaken for the action even when
+  // options precede it.
+  const action = positionals[0] ?? null;
+
+  if (action === 'apply') {
+    die(
+      'harness ruleset apply (live-ruleset mutation) is deferred to CS109a ' +
+        '(see docs/adr/0006-review-enforcement-posture.md § D6). ' +
+        'This build ships `harness ruleset check` only.',
+      2
+    );
+  }
+  if (action !== 'check') {
+    die(
+      `harness ruleset: expected action "check" (got ${action ? `"${action}"` : 'none'})` +
+        `\n\n${SUBCOMMAND_HELP['ruleset']}`,
+      2
+    );
+  }
+
+  const rulesetPath = getReviewRulesetPath(cwd);
+  if (!existsSync(rulesetPath)) {
+    die(
+      `harness ruleset check: source ruleset not found at ${rulesetPath}. ` +
+        `Run 'harness sync --mode=apply' first.`,
+      1
+    );
+  }
+  let source;
+  try {
+    source = JSON.parse(stripBOM(readFileSync(rulesetPath, 'utf8')));
+  } catch (err) {
+    die(`harness ruleset check: cannot parse ${rulesetPath}: ${err.message}`, 1);
+  }
+  const rulesetName = typeof source?.name === 'string' && source.name ? source.name : 'main-protection';
+
+  let live;
+  try {
+    if (liveFile) {
+      live = JSON.parse(stripBOM(readFileSync(path.resolve(cwd, liveFile), 'utf8')));
+    } else {
+      const slug = resolveRepoSlug(cwd, configPath, repo);
+      if (!slug) {
+        die(
+          'harness ruleset check: could not resolve owner/repo — set project.repo in config or pass --repo owner/repo',
+          1
+        );
+      }
+      live = fetchLiveRuleset({ repo: slug, rulesetId, rulesetName, cwd });
+    }
+  } catch (err) {
+    die(`harness ruleset check: failed to obtain the live ruleset (fail-closed): ${err.message}`, 1);
+  }
+
+  const { drift, details } = diffManagedRulesetSurface(source, live);
+  if (!drift) {
+    if (!quiet) {
+      process.stdout.write(
+        `harness ruleset check: no drift — live ruleset "${rulesetName}" matches the ` +
+          `config-derived source (managed surface: required-check contexts + approval count).\n`
+      );
+    }
+    process.exit(0);
+  }
+  process.stderr.write(
+    `harness ruleset check: DRIFT between live ruleset "${rulesetName}" and the config-derived source:\n`
+  );
+  for (const detail of details) process.stderr.write(`  - ${detail}\n`);
+  process.stderr.write(
+    `\nReconcile by re-applying the source to the live repo ` +
+      `(CS109a: 'harness ruleset apply --apply') or by updating config + 'harness sync --mode=apply'.\n`
+  );
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
 // Subcommand: upgrade (CS63a / C63-6 — guided update preview, U2)
 // ---------------------------------------------------------------------------
 
@@ -2784,6 +3098,34 @@ async function cmdLint(args, _global) {
       args: [
         '--cwd', cwd,
         ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+      ],
+      target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
+    },
+    {
+      // CS109 / ADR 0006 D4 (F3): warn when a required status-check context
+      // cannot be reliably produced (no producing job, or a workflow-level path
+      // filter can skip it) → the required context stays pending → deadlock.
+      // Warn-only. Runs only when the ruleset source exists (self-host + review-
+      // gate-enabled consumers); a repo without it skips (target not found).
+      name: 'ruleset-deadlock',
+      script: 'check-ruleset-deadlock.mjs',
+      args: [
+        '--ruleset', path.join(cwd, 'infra', 'main-protection-ruleset.json'),
+        '--workflows-dir', path.join(cwd, '.github', 'workflows'),
+      ],
+      target: path.join(cwd, 'infra', 'main-protection-ruleset.json'),
+    },
+    {
+      // CS109 / ADR 0006 D5 (F4): warn when review_gates.enforcement is
+      // required-check/both but a bypass path (ruleset bypass_actors, or an
+      // unrendered ruleset) makes the required-check gate decorative. Warn-only.
+      // Runs whenever a config exists; exits clean (0 warnings) when enforcement
+      // is absent or human-approval (the self-host + back-compat default).
+      name: 'posture-coherence',
+      script: 'check-posture-coherence.mjs',
+      args: [
+        ...(existsSync(effectiveConfigPath) ? ['--config', effectiveConfigPath] : []),
+        '--ruleset', path.join(cwd, 'infra', 'main-protection-ruleset.json'),
       ],
       target: existsSync(effectiveConfigPath) ? effectiveConfigPath : null,
     },
@@ -5127,6 +5469,7 @@ export const COMMAND_REGISTRY = {
   init: cmdInit,
   sync: cmdSync,
   check: cmdCheck,
+  ruleset: cmdRuleset,
   upgrade: cmdUpgrade,
   lint: cmdLint,
   harvest: cmdHarvest,
