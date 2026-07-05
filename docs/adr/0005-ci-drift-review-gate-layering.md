@@ -224,9 +224,11 @@ is CS90b's deliverable (schema-is-source-of-truth).
 
 **When.** L4 is for consumers who enforce the harness review process (Copilot
 review attached, review-log evidence, reviewer/implementer independence,
-threads resolved). A consumer chooses **either** the split per-gate contexts
-(`review-gates.yml`) **or** the single aggregate context
-(`pr-evidence-lint.yml`) — see the migration mapping below.
+threads resolved). The two workflows are **not** interchangeable today — their
+check sets differ (the split gates do not cover B1/A4/A5/A6), so the self-host
+runs both for full coverage. Consolidating to a single L4 workflow is what
+**CS90c**'s parity work + migration mapping (below) enables; do it through that
+mapping — favouring the aggregate mode — not a blind swap.
 
 **The #393 parity gap (C90-4 / C90-5).** `review-gates.yml` today drops three
 things `pr-evidence-lint.yml` provides: (1) the `mutation-engage`
@@ -257,14 +259,28 @@ and are both worth running. L2 and L3 add distinct **capabilities** on top —
 L2's scheduled auto-fix PR, L3's audited escape valve — while their
 drift-scanning portions overlap L1.
 
-**There are only two things to "choose," and they are narrow:**
+**Beyond composing, there are only two narrow things to get right — one
+consolidation and one de-duplication:**
 
-1. **L4 is a "pick exactly one" — the two files are two implementations of the
-   _same_ gate.** `review-gates.yml` (split per-gate contexts) and
-   `pr-evidence-lint.yml` (single aggregate context) enforce the identical
-   review-evidence guarantee in different shapes. Run **one**, never both —
-   running both doubles CI and forces you to satisfy two context shapes for one
-   guarantee. (#393 / CS90c ships the migration path between them.)
+1. **L4 is where you _consolidate_, not compose — and only via a migration
+   mapping, never a blind swap.** Both L4 workflows target the same **aspect**
+   (the review process), so running both permanently is not the intended
+   end-state. But they are **not identical today**: `pr-evidence-lint.yml`
+   (aggregate) enforces commit-trailers (B1), model-audit independence (A3),
+   stale-diff currency (A4), review ordering (A5), plan-review attestation (A6)
+   and Copilot-review (A16); `review-gates.yml` (split) enforces review-log
+   evidence, Copilot-review-attached, independence, and an explicit
+   `review-threads-resolved` gate — so its four split contexts do **not**
+   currently cover B1/A4/A5/A6. The self-host runs **both** today for full
+   coverage. Issue #393 / **CS90c** is what makes consolidation to one workflow
+   viable: it brings `review-gates.yml` toward parity (ports `mutation-engage`,
+   the bot/fork skip-reasons, and an aggregate single-context mode) and ships a
+   **migration mapping** documenting which check each context covers. So
+   consolidate to one L4 workflow **through that mapping** — favouring the
+   aggregate mode, which mirrors `read-only-gates`' full check set — because a
+   blind swap to the four split contexts silently drops B1/A4/A5/A6. Until you
+   have applied the mapping, running both is the safe (if heavier) posture, not
+   a redundancy to "fix".
 
 2. **Don't run the _same check_ twice — the only real redundancy.** It is
    specific and narrow:
@@ -283,9 +299,10 @@ drift-scanning portions overlap L1.
 adds a scheduled sweep + auto-fix PR that L1's per-PR gate does not provide (L2
 remains a sweep / safety-net, **not** a substitute for L1's merge-time gate).
 Running L4 alongside L1/L2/L3 guards a different concern entirely (the review
-process, not drift). So the recommended posture is: **compose the aspects you
-need**, pick exactly one L4 implementation, and avoid only the same-check-twice
-duplication above.
+process, not drift). So the posture is: **compose the aspects you need**,
+consolidate L4 to a single implementation only through CS90c's migration
+mapping (not a blind swap), and avoid only the same-check-twice duplication
+above.
 
 ### The L1-vs-L3 drift-semantics difference (CRITICAL, C90-2)
 
@@ -311,7 +328,7 @@ seeded-file absence that L3 deliberately tolerates. A consumer running L1
 already has strictly stronger drift protection than L3's classifier provides;
 L3's distinct value is the **`harness-managed-edit-ack` escape valve**
 (auditable intentional divergence), not additional drift coverage. This is why
-the recommended stack adds L3 for the escape valve — ideally in `drift-only`
+you add L3 for the escape valve — ideally in `drift-only`
 mode — rather than for its drift half.
 
 ---
@@ -409,11 +426,21 @@ is a **separate follow-up CS**, filed **only** if this manual mapping proves
 insufficient — it is **not** built under the CS90 arc by default (CS90 risk R5): a helper
 is avoidable net-new CLI surface.
 
+**Coverage caveat (read first).** The split `review-gates.yml` contexts are
+**not** a drop-in replacement for the aggregate's check set: the four split
+gates cover Copilot-review-attached, review-log evidence, independence (A3),
+and threads-resolved, but do **not** cover commit-trailers (B1), stale-diff
+currency (A4), review ordering (A5), or plan-review attestation (A6). A
+**coverage-preserving** migration therefore targets L4's aggregate
+single-context mode (CS90c) — which mirrors `read-only-gates`' full check set —
+**not** the four split contexts alone. Swapping the required context from
+`read-only-gates` to only the four split gates silently drops B1/A4/A5/A6.
+
 **Old → new required-status-context mapping.**
 
-| Old (aggregate: `pr-evidence-lint.yml`) | New (split: `review-gates.yml`) |
+| Old (aggregate: `pr-evidence-lint.yml`) | New (`review-gates.yml`) |
 |---|---|
-| `read-only-gates` — one context covering the read-only assertions (B1/A3/A4/A6) plus the Copilot review gate (A5/A16) | Four separate contexts: `review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved` |
+| `read-only-gates` — one context covering the read-only assertions (B1/A3/A4/A6) plus the Copilot review gate (A5/A16) | **Coverage-preserving:** L4's aggregate single-context mode (CS90c). The four split contexts (`review-log-evidence`, `copilot-review-attached`, `independence-invariant`, `review-threads-resolved`) cover A3/A16 + review-log + threads, but **not** B1/A4/A5/A6 — do not treat them as an equivalent replacement. |
 | *(guard runs inside the aggregate job)* | `validate-workboard-only-scope` — guard job; runs only when the `workboard-only` label is present (add as required only if you enforce the workboard-only bypass guard) |
 | *(single required check)* | **Or** keep a single required check by enabling L4's optional single-context aggregate mode (CS90c), avoiding the four-context remap entirely |
 
@@ -449,8 +476,8 @@ with `sync` regeneration and a green self-host PR (CS90 R2).
 
 **Benefits.**
 
-- A consumer picks layers deliberately from one authoritative document instead
-  of reverse-engineering four workflows.
+- A consumer composes the layers/aspects it needs from one authoritative
+  document instead of reverse-engineering four workflows.
 - The L1-vs-L3 semantics note prevents the most likely mis-layering (stacking
   a redundant drift gate).
 - The ported `mutation-engage` posture keeps Copilot engagement working in
