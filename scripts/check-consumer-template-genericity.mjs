@@ -15,7 +15,7 @@
  *      process/onboarding doc in the broader invocation scope set contains a
  *      consumer-invalid harness-repo run command (`node bin/harness.mjs …` or
  *      `node scripts/<x>.mjs …`), or a reference to the harness-repo-only README
- *      linter script `check-readme.mjs`. None of those paths exists in a consumer
+ *      linter script `check-readme.mjs`. None of those exist in a consumer
  *      checkout, so such an invocation fails there with `Cannot find module`
  *      (issues #370, #381). The scans are kept separate because process docs
  *      (e.g. OPERATIONS.md) legitimately carry LRN/CS tokens — so they cannot

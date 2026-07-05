@@ -146,8 +146,8 @@ Every CS produces exactly three PRs in sequence:
 **Auto-merge branch patterns.** Auto-merge of `workboard-only` PRs is performed by
 the managed `workboard-auto-approve.yml` workflow, which is **not** in the default
 `managed.files` set — it is an *adoptable* managed file, surfaced by
-`node bin/harness.mjs sync` (report-only) and adopted with `node bin/harness.mjs sync
---mode=apply --apply-new`. **A repo that has not adopted that workflow has no
+`node bin/harness.mjs sync` (report-only) and adopted with
+`node bin/harness.mjs sync --mode=apply --apply-new`. **A repo that has not adopted that workflow has no
 harness-provided auto-merge automation:** every `workboard-only` PR is admin-merged
 by hand (`gh pr merge <n> --admin --squash`), and the branch patterns below do not
 apply (a repo may still run its own non-harness automation).
