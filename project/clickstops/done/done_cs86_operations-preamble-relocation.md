@@ -1,10 +1,10 @@
 # CS86 — Deeper OPERATIONS.md right-sizing: relocate the extracted preamble source + thin the reviewer-preamble section
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs86/content
 **Started:** 2026-07-04
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** CS65 close-out (2026-07-02 by `omni-ah-c3`) — the documented `## Follow-ups` "deeper OPERATIONS.md thinning" item, re-homed from the closed CS file into a visible planned CS per the "follow-ups must be a planned CS or a learning" convention.
 **Depends on:** **CS65** (soft — builds on CS65's OPERATIONS thinning + the C65-5 anchor-preservation invariant and its recon that identified which sections are load-bearing).
 
