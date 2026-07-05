@@ -372,13 +372,17 @@ describe('CS109 harness ruleset check — CLI', () => {
     }
   });
 
-  it('rejects `ruleset apply` (deferred to CS109a) with exit 2', () => {
+  it('`ruleset apply` (dry-run, no --apply) is implemented (CS109a) — renders + diffs, mutates nothing', () => {
     const dir = makeTempDir();
     try {
-      writeRuleset(dir, ['ci']);
-      const res = runHarness(['--cwd', dir, 'ruleset', 'apply']);
-      assert.equal(res.status, 2);
-      assert.match(res.stderr, /deferred to CS109a/);
+      writeRuleset(dir, [...GATE_CONTEXTS]);
+      const live = path.join(dir, 'live.json');
+      writeFileSync(live, JSON.stringify({ name: 'main-protection', rules: [{ type: 'required_status_checks', parameters: { required_checks: GATE_CONTEXTS.map((context) => ({ context })) } }] }), 'utf8');
+      const res = runHarness(['--cwd', dir, 'ruleset', 'apply', '--live-file', live]);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.doesNotMatch(res.stderr, /deferred to CS109a/);
+      assert.match(res.stdout, /dry-run/);
+      assert.match(res.stdout, /NOTHING was mutated/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

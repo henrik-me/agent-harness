@@ -74,6 +74,7 @@ Deliver the deferred half of ADR 0006: the **`harness ruleset apply` / `apply --
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
+| Dispatch implementer — `harness ruleset apply` verb + tests + preflight + CHANGELOG (Deliverables 1-4,6) | in_progress | cs109a-impl | agent-id=cs109a-impl \| role=implementer \| report-status=pending \| learnings=0 |
 | Claim recon — re-verify #402 / ADR 0006 § D6 state at HEAD; confirm `harness ruleset apply` still rejects (exit 2) | pending | yoga-ah-c2 | F6 state-of-world |
 | Implement `harness ruleset apply` (dry-run: render + diff vs live) + `apply --apply` (live PUT), reusing CS109 renderer + `diffManagedRulesetSurface`; fail-closed on API error | pending | yoga-ah-c2 | Deliverable 1 / Decisions 1,2 |
 | Mandatory post-apply verification: after a successful PUT, auto re-run the managed-surface check; exit nonzero on residual drift/parse error | pending | yoga-ah-c2 | Deliverable 3 / Decision 2 |
@@ -90,7 +91,12 @@ Deliver the deferred half of ADR 0006: the **`harness ruleset apply` / `apply --
 
 ## Notes / Learnings
 
-(filled during execution)
+**CS106 coordination disposition (Decision 4 — resolved at claim time by yoga-ah-c2):**
+CS109a **ships the `harness ruleset apply` verb + tooling only** (Deliverables 1-4, 6). The concrete self-host `required-check` + `required_approving_review_count = 0` flip (Deliverable 5) is **NOT performed here** — it remains owned by **CS106** and is gated behind the **G109-ruleset-apply** user-approval gate (repo-wide merge-policy blast radius; ADR 0006 D7). This avoids the double-apply/contradiction risk (R2). CS106 (HARD-blocked on CS90's aggregate context) will use the `apply --apply` verb this CS ships to perform that flip once its own preconditions + G109-ruleset-apply are met.
+
+**Deliverable 5 status:** deferred — no live self-host ruleset mutation was made in this CS (G109-ruleset-apply not granted in-session).
+
+(further notes filled during execution)
 
 ## Plan-vs-implementation review
 
