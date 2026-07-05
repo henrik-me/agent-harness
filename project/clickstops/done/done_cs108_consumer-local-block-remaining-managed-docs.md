@@ -1,10 +1,10 @@
 # CS108 — Consumer local-block extension for the remaining managed docs (TRACKING.md / RETROSPECTIVES.md / READMEGUIDE.md)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs108/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#408](https://github.com/henrik-me/agent-harness/issues/408) (2026-07-05). Surfaced while operating v0.12.0 in the consumer repo `henrik-me/authzandentitlements`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: [#390](https://github.com/henrik-me/agent-harness/issues/390) / CS89 — the sibling CODEOWNERS-as-composed reclassification. CS108 covers the **markdown** docs, which reuse the existing HTML-comment marker form, so it does **not** depend on CS89's new CODEOWNERS `#`-comment marker.)
 
@@ -110,4 +110,23 @@ Give consumers a "harness core + your additions" path for the three remaining fu
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** gpt-5.5 (rubber-duck, independent — implementer was claude-opus-4.8)
+**Date:** 2026-07-05T18:25:00Z
+**Outcome:** GO
+
+CS108 matches the planned implementation intent as merged (content PR #507, squashed to `33691cb`); validation is green with only non-blocking test-shape gaps noted.
+
+| Deliverable | Outcome | Evidence / rationale |
+|---|---|---|
+| D1 — self-host `harness.config.json` reclassification | match | The three docs are removed from `managed.files`, added to `composed.files`, with `tracking.project` / `retrospectives.project` / `readmeguide.project` overrides (no `_inherited_class`). |
+| D2 — composed template bases + managed removal | match | `template/composed/{TRACKING,RETROSPECTIVES,READMEGUIDE}.md` exist with the expected local markers; old `template/managed/` copies absent. |
+| D3 — root re-render / no drift | match | Root docs include the empty local blocks; `harness sync --mode=check --cwd .` reports "No drift detected." |
+| D4 — tests | diverged | Covers per-doc config/base-parse/`mergeComposed` preservation + a sync-level migrated happy path, but the sync-level test uses a synthetic `TESTDOC.md` rather than running `sync()` for each of the three real docs. Non-blocking: the generic sync path and per-doc composed invariants are covered. |
+| D5 — managed-workflow escape-valve doc note | match | `OPERATIONS.md` (+ composed mirror) include "Extending managed CI workflows (escape valve)". |
+| D6 — CHANGELOG `[Unreleased]` entry | match | Minor CS108 entry with reclassification, migration instructions, and escape-valve note. |
+| D7 — fail-closed migration message + test | match | `lib/sync.mjs` emits `ESYNC_RECLASSIFIED_TO_COMPOSED`; tests assert the message path + raw `ESYNC_MISSING_TEMPLATE` fallback. |
+| D8 — guard-script updates + fixtures/tests | match | Genericity + xref scripts/help text reference `template/composed/...`; related tests updated; `harness lint` green. |
+| Fresh-init parity — `template/seeded/harness.config.json` | added | Seeded config now ships the three docs as composed with overrides (avoids init/config drift). |
+| `bin/harness.mjs` help-text fix | added | Linter `--help` text points at composed paths (CLI diagnostics consistent with the reclassification). |
+
+**Test-coverage assessment:** gaps (non-blocking) — no per-real-doc sync-level round-trip test (per-doc coverage is at `mergeComposed` level; full `sync()` preservation tested with synthetic `TESTDOC.md`); the un-migrated migration-message test exercises `TRACKING.md` only (implementation is generic; other two covered by invariants). Validation: `node --test tests/*.test.mjs` 2001 tests / 1996 pass / 0 fail / 5 skip; `harness lint` 41/0/3; `sync --mode=check` no drift.
