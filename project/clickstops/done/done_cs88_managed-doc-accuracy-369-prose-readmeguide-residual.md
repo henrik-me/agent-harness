@@ -1,10 +1,10 @@
 # CS88 — v0.12.0 managed-doc accuracy: gate the composed OPERATIONS #369 `validate-and-approve` prose + finish the READMEGUIDE `check-readme.mjs` genericity (CS83 residual)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs88/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** Triage of open inbound issue [#381](https://github.com/henrik-me/agent-harness/issues/381) (2026-07-02 by `omni-ah-c3`, at the maintainer's request to file file-worthy issues as CSs). Surfaced by Copilot review on the `henrik-me/sub-invaders` v0.12.0 pin-bump (sub-invaders#140).
 **Depends on:** none (but see C88-3: shares `template/composed/OPERATIONS.md` with CS76 — land sequentially).
 
