@@ -1,10 +1,10 @@
 # CS108 — Consumer local-block extension for the remaining managed docs (TRACKING.md / RETROSPECTIVES.md / READMEGUIDE.md)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs108/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#408](https://github.com/henrik-me/agent-harness/issues/408) (2026-07-05). Surfaced while operating v0.12.0 in the consumer repo `henrik-me/authzandentitlements`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: [#390](https://github.com/henrik-me/agent-harness/issues/390) / CS89 — the sibling CODEOWNERS-as-composed reclassification. CS108 covers the **markdown** docs, which reuse the existing HTML-comment marker form, so it does **not** depend on CS89's new CODEOWNERS `#`-comment marker.)
 
