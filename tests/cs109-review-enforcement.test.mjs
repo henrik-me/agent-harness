@@ -142,6 +142,27 @@ describe('CS109 loadReviewGatesEnforcement — presence semantics', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('throws NOT_FOUND for an explicit but missing config path (ENOENT)', () => {
+    const dir = makeTempDir();
+    try {
+      assert.throws(
+        () => loadReviewGatesEnforcement({ cwd: dir, configPath: 'does-not-exist.json' }),
+        (err) => err instanceof ReviewsConfigError && err.code === 'NOT_FOUND'
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns present:false for an implicit missing config (no configPath)', () => {
+    const dir = makeTempDir();
+    try {
+      assert.deepEqual(loadReviewGatesEnforcement({ cwd: dir }), { present: false, value: undefined });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
