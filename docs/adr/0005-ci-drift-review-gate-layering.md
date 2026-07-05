@@ -237,7 +237,9 @@ and migration mapping below).
 - **Low-activity repos:** add **L2** as a weekly belt-and-suspenders sweep
   with its auto-fix PR. High-activity repos may keep L2 purely as a safety net.
 - **Managed-file divergence needed:** add **L3** — preferably in `drift-only`
-  mode once CS90b ships, so you do not pay a redundant lint on top of L1.
+  mode once CS90b ships, so you do not pay a redundant lint on top of the
+  `harness lint` you already run in your own CI (L1's `sync --mode=check`
+  runs no lint).
 - **Review-process enforcement:** add **L4** — pick **one** of the split
   contexts (`review-gates.yml`) or the aggregate context
   (`pr-evidence-lint.yml`), never both.
@@ -247,7 +249,9 @@ and migration mapping below).
 - **Do not stack L1 and L3 blindly.** L1 already covers most of L3's drift
   half (see the semantics note below). Add L3 **only** for the escape-valve /
   intentional-managed-edit workflow, and prefer L3 `drift-only` so its lint
-  does not duplicate L1.
+  does not duplicate a `harness lint` you already run inline (L1's
+  `sync --mode=check` runs no lint, so the duplication to avoid is with your
+  own CI's lint, not L1).
 - **Do not run both L4 workflows.** They enforce the same evidence behind
   different required-status contexts; running both doubles CI and forces a
   consumer to satisfy two context shapes for one guarantee. Migrate from the
