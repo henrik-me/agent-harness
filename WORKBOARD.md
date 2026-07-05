@@ -28,6 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS86 | CS86 — Deeper OPERATIONS.md right-sizing: relocate the extracted preamble source + thin the reviewer-preamble section | 🟢 Active | yoga-ah-c2 | cs86/content | 2026-07-04 | — |
+| — | no active CS | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.
