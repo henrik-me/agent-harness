@@ -110,7 +110,8 @@ the existing `harness-drift.yml` `derive-ref` step) is authored under
 **CS90a**; the illustrative form below is the shape it takes.
 
 ```yaml
-# .github/workflows/ci.yml — add this job to your existing CI workflow.
+# .github/workflows/ci.yml — add this job UNDER the `jobs:` map of your
+# existing CI workflow (the 2-space indent below is relative to `jobs:`).
 # Pin <ref> to the harness version this repo tracks (harness.config.json
 # "version"), e.g. v0.12.0. SHA-pin the actions per your security policy.
   harness-sync-check:
@@ -378,7 +379,7 @@ required status-check contexts. The **default** migration path is this
 documented mapping (the MVP). A `harness migrate-ci` helper (which would swap
 the workflow in `managed.files` and print the exact ruleset context changes)
 is a **separate follow-up CS**, filed **only** if this manual mapping proves
-insufficient — it is **not** built under the CS90 arc by default (R5): a helper
+insufficient — it is **not** built under the CS90 arc by default (CS90 risk R5): a helper
 is avoidable net-new CLI surface.
 
 **Old → new required-status-context mapping.**
