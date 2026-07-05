@@ -25,7 +25,9 @@ const DISPATCH_SURFACES = [
   'template/composed/.github/copilot-instructions.md',
   '.github/copilot-instructions.md',
 ];
-const OPERATIONS_SURFACES = ['template/composed/OPERATIONS.md', 'OPERATIONS.md'];
+// CS86 relocated the machine-extracted briefing preamble (with its 4-space-indented
+// report shape) out of OPERATIONS.md into the managed DISPATCH-PREAMBLE.md source.
+const PREAMBLE_SURFACES = ['template/managed/DISPATCH-PREAMBLE.md', 'DISPATCH-PREAMBLE.md'];
 
 function read(relPath) {
   return readFileSync(path.join(REPO_ROOT, relPath), 'utf8').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -64,7 +66,7 @@ describe('CS48 — implementer self-review ban in dispatch template + LRN', () =
       );
     }
 
-    for (const relPath of OPERATIONS_SURFACES) {
+    for (const relPath of PREAMBLE_SURFACES) {
       const content = read(relPath);
       assert.match(
         content,

@@ -14,11 +14,14 @@
  *   - CLI flag/config resolution: `--language-profile` overrides
  *     `dispatch.language_profile`, which overrides the `node` default.
  *
- * Managed content is read-only from the on-repo OPERATIONS.md (rendered)
- * and template/composed/OPERATIONS.md (placeholder `{{harness_invoke}}`, so the
- * only place a Node token could appear in a dotnet briefing is a leak). CLI
- * tests that need a consumer checkout write into an OS temp dir (never a repo
- * path), mirroring the existing check-cs-plan / check-fixtures tests.
+ * Managed content is read-only from the on-repo DISPATCH-PREAMBLE.md (rendered
+ * root) and template/managed/DISPATCH-PREAMBLE.md (placeholder `{{harness_invoke}}`,
+ * so the only place a Node token could appear in a dotnet briefing is a leak).
+ * CS86 relocated the canonical preamble + language-profile fences out of
+ * OPERATIONS.md into the managed DISPATCH-PREAMBLE.md (which `harness dispatch`
+ * reads); these tests read that source rather than OPERATIONS.md. CLI tests that
+ * need a consumer checkout write into an OS temp dir (never a repo path),
+ * mirroring the existing check-cs-plan / check-fixtures tests.
  */
 
 import { test } from 'node:test';
@@ -39,8 +42,13 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
-const OPERATIONS_MD = path.join(REPO_ROOT, 'OPERATIONS.md');
-const COMPOSED_OPS_MD = path.join(REPO_ROOT, 'template', 'composed', 'OPERATIONS.md');
+// CS86: the canonical preamble + language-profile fences were relocated out of
+// OPERATIONS.md into the managed DISPATCH-PREAMBLE.md. These consts keep their
+// historical names but now point at the relocated source: OPERATIONS_MD → the
+// rendered root DISPATCH-PREAMBLE.md; COMPOSED_OPS_MD → the tokenized template
+// source template/managed/DISPATCH-PREAMBLE.md.
+const OPERATIONS_MD = path.join(REPO_ROOT, 'DISPATCH-PREAMBLE.md');
+const COMPOSED_OPS_MD = path.join(REPO_ROOT, 'template', 'managed', 'DISPATCH-PREAMBLE.md');
 const BIN = path.join(REPO_ROOT, 'bin', 'harness.mjs');
 
 const ROOT_MD = readFileSync(OPERATIONS_MD, 'utf8');
@@ -57,12 +65,12 @@ const NODE_TOKENS = ['.mjs', 'npm install', 'requireValue', 'node --test', 'node
 // the node profile is reordered vs the pre-CS102 monolith, so a stable golden
 // guards against any silent drift beyond the token-completeness checks below).
 // Both sides are LF-normalized before comparison, so this is an LF-normalized
-// exact-match (robust to a CRLF checkout of OPERATIONS.md on Windows), not a
+// exact-match (robust to a CRLF checkout of DISPATCH-PREAMBLE.md on Windows), not a
 // raw byte-for-byte compare.
 //
-// Regenerate after an intentional OPERATIONS.md § Mandatory briefing preamble
-// edit, from the repo root:
-//   node --input-type=module -e "const fs=await import('node:fs');const m=await import('./lib/dispatch.mjs');for(const p of ['node','dotnet'])fs.writeFileSync('tests/fixtures/cs102/'+p+'-briefing.golden.txt',m.emitBriefingFromFile({operationsPath:'OPERATIONS.md',includeFence:false,languageProfile:p}).replace(/\r\n/g,'\n'))"
+// Regenerate after an intentional DISPATCH-PREAMBLE.md § Mandatory briefing
+// preamble edit, from the repo root:
+//   node --input-type=module -e "const fs=await import('node:fs');const m=await import('./lib/dispatch.mjs');for(const p of ['node','dotnet'])fs.writeFileSync('tests/fixtures/cs102/'+p+'-briefing.golden.txt',m.emitBriefingFromFile({operationsPath:'DISPATCH-PREAMBLE.md',includeFence:false,languageProfile:p}).replace(/\r\n/g,'\n'))"
 // ---------------------------------------------------------------------------
 
 const GOLDEN_DIR = path.join(__dirname, 'fixtures', 'cs102');
@@ -81,7 +89,7 @@ for (const profile of ['node', 'dotnet']) {
     assert.equal(
       actual,
       expected,
-      `${profile} briefing drifted from the golden. If the OPERATIONS.md preamble ` +
+      `${profile} briefing drifted from the golden. If the DISPATCH-PREAMBLE.md preamble ` +
         `changed intentionally, regenerate tests/fixtures/cs102/${profile}-briefing.golden.txt ` +
         `(see the header comment).`
     );
@@ -188,9 +196,9 @@ test('the default profile output is identical to the explicit node profile', () 
 // dotnet profile content + strict Node-token exclusion
 // ---------------------------------------------------------------------------
 
-test('dotnet briefing (composed template) contains NONE of .mjs / npm install / requireValue', () => {
-  // The composed template keeps `{{harness_invoke}}` unrendered, so the core's
-  // agnostic lint self-check has no literal `.mjs`. Any Node token in this
+test('dotnet briefing (tokenized managed source) contains NONE of .mjs / npm install / requireValue', () => {
+  // The tokenized managed source keeps `{{harness_invoke}}` unrendered, so the
+  // core's agnostic lint self-check has no literal `.mjs`. Any Node token in this
   // output would therefore be a leak from the node conventions — assert none.
   const out = emitBriefingFromFile({
     operationsPath: COMPOSED_OPS_MD,
@@ -253,10 +261,10 @@ function runDispatch(args, cwd = REPO_ROOT) {
   return { status: r.status ?? -1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
 }
 
-/** Create a throwaway consumer checkout (OPERATIONS.md + optional config). */
+/** Create a throwaway consumer checkout (DISPATCH-PREAMBLE.md + optional config). */
 function makeConsumer(configText) {
   const dir = mkdtempSync(path.join(tmpdir(), 'cs102-dispatch-'));
-  writeFileSync(path.join(dir, 'OPERATIONS.md'), ROOT_MD);
+  writeFileSync(path.join(dir, 'DISPATCH-PREAMBLE.md'), ROOT_MD);
   if (configText !== undefined) {
     writeFileSync(path.join(dir, 'harness.config.json'), configText);
   }

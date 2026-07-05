@@ -59,8 +59,8 @@ back.
 
 ### 5 — Mandatory briefing preamble (orchestrator-side)
 
-The orchestrator MUST paste the canonical sub-agent briefing preamble (defined
-in `OPERATIONS.md § Mandatory briefing preamble`) verbatim into every sub-agent
+The orchestrator MUST paste the canonical sub-agent briefing preamble (emitted
+by `{{harness_invoke}} dispatch` from the harness-owned `DISPATCH-PREAMBLE.md`) verbatim into every sub-agent
 prompt, including small or "obvious" ones. Reference is not enough — verbatim
 paste is the discipline that prevents process steps from being forgotten.
 Sub-agents should reject (or surface as a learning candidate) any dispatch

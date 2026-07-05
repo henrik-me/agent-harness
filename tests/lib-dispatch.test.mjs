@@ -1,9 +1,12 @@
 /**
  * tests/lib-dispatch.test.mjs — unit tests for lib/dispatch.mjs (CS64 C64-6).
  *
- * Pure-function tests over inline markdown fixtures. The "real OPERATIONS.md"
- * roundtrip check reads the on-repo file read-only via path.resolve from
- * import.meta.url; no scratch files are written.
+ * Pure-function tests over inline markdown fixtures. The "real preamble source"
+ * roundtrip check reads the on-repo DISPATCH-PREAMBLE.md read-only via
+ * path.resolve from import.meta.url; no scratch files are written. CS86 relocated
+ * the canonical preamble source out of OPERATIONS.md into the managed
+ * DISPATCH-PREAMBLE.md (which `harness dispatch` now reads), so these cases read
+ * that file rather than OPERATIONS.md.
  */
 
 import { test } from 'node:test';
@@ -21,7 +24,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
-const OPERATIONS_MD = path.join(REPO_ROOT, 'OPERATIONS.md');
+const DISPATCH_PREAMBLE_MD = path.join(REPO_ROOT, 'DISPATCH-PREAMBLE.md');
 
 const MINIMAL_OPS_MD = [
   '# OPERATIONS',
@@ -282,8 +285,8 @@ test('emitBriefing always ends with a trailing newline', () => {
   }
 });
 
-test('real OPERATIONS.md: extractPreamble succeeds and emits the LRN-021 preflight + ownership + report-shape sections', () => {
-  const md = readFileSync(OPERATIONS_MD, 'utf8');
+test('real DISPATCH-PREAMBLE.md: extractPreamble succeeds and emits the LRN-021 preflight + ownership + report-shape sections', () => {
+  const md = readFileSync(DISPATCH_PREAMBLE_MD, 'utf8');
   const preamble = extractPreamble(md);
   assert.match(preamble, /## CRITICAL PREFLIGHT \(LRN-021\)/);
   assert.match(preamble, /## File ownership \(LRN-016\)/);
@@ -295,9 +298,9 @@ test('real OPERATIONS.md: extractPreamble succeeds and emits the LRN-021 preflig
   assert.match(preamble, /IMPLEMENTER MODEL USED:/);
 });
 
-test('emitBriefingFromFile reads OPERATIONS.md off disk and produces a fenced briefing', () => {
+test('emitBriefingFromFile reads DISPATCH-PREAMBLE.md off disk and produces a fenced briefing', () => {
   const out = emitBriefingFromFile({
-    operationsPath: OPERATIONS_MD,
+    operationsPath: DISPATCH_PREAMBLE_MD,
     task: { cs: 'CS64', role: 'implementer', ownedFiles: ['lib/startup.mjs'] },
   });
   assert.match(out, /^```text\n## CRITICAL PREFLIGHT \(LRN-021\)/);

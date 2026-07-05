@@ -933,9 +933,10 @@ structured report**. Both requirements are non-negotiable — without them the
 orchestrator loses observability and the work loses traceability.
 
 `harness dispatch` (CS64) emits the canonical sub-agent briefing preamble
-verbatim from this document's [§ Mandatory briefing preamble](#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)
-fence (the CRITICAL PREFLIGHT block + File ownership + Required reading +
-Conventions + Self-checks + Reporting independence + Mandatory report shape).
+verbatim from the harness-owned managed [`DISPATCH-PREAMBLE.md`](DISPATCH-PREAMBLE.md)
+(see [§ Mandatory briefing preamble](#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)) —
+the CRITICAL PREFLIGHT block + File ownership + Required reading +
+Conventions + Self-checks + Reporting independence + Mandatory report shape.
 Paste its output as the first thing in every sub-agent prompt to satisfy the
 "verbatim paste, not reference" discipline that LRN-068 captures. The verb is
 deterministic and read-only.
@@ -1122,7 +1123,7 @@ source of drift between what a sub-agent reports and what lands on disk.
 
 ### Mandatory briefing preamble (copy verbatim into every dispatch)
 
-The orchestrator MUST paste the block below verbatim into every sub-agent
+The orchestrator MUST paste the canonical preamble block verbatim into every sub-agent
 dispatch prompt — including small or seemingly "obvious" ones. This is not
 a style preference; it is the discipline that prevents individual requirements
 (preflight SHA recording, BOM check, file-ownership scope, report-shape
@@ -1142,6 +1143,14 @@ scope** (agent role, CS, exact owned files, what NOT to touch), **Required
 reading** (explicit paths for this CS), **Deliverables**, **Decision
 authority**, and any additional task-specific conventions. Do not modify the
 pasted block itself.
+
+The preamble text itself is **not** duplicated in this document. It is the
+harness-owned managed file [`DISPATCH-PREAMBLE.md`](DISPATCH-PREAMBLE.md), from
+which `{{harness_invoke}} dispatch` machine-extracts and emits it verbatim (CS86
+C86-2). Run `{{harness_invoke}} dispatch` and paste the emitted block — do not
+hand-copy or reconstruct it. Per-language variants are emitted by
+`{{harness_invoke}} dispatch --language-profile <name>` (see § Language profiles
+below).
 
 ### Subcommand authoring: never `git checkout` the consumer working repo ([LRN-124](LEARNINGS.md#lrn-124))
 
@@ -1172,297 +1181,32 @@ Any new subcommand that reaches a git ref is covered automatically: the CS47
 bisection enumerates the live `COMMAND_REGISTRY`, so a new subcommand that is
 neither exercised nor allow-listed (with rationale) fails the suite.
 
-```text
-## CRITICAL PREFLIGHT (LRN-021)
-
-1. Run `git log --oneline -1` NOW and record the SHA. Include it in your
-   report as `PREFLIGHT SHA: <sha>`.
-2. You MUST NOT commit, push, rebase, reset, `git add`, or `gh pr ...` at
-   any point. The orchestrator commits at CS end.
-3. At the end of your work, re-run `git log --oneline -1`. It MUST equal
-   the preflight SHA. Include it as `FINAL SHA: <sha>`.
-4. Run `git status --short` and include the output in your report. Only
-   your owned files should appear; nothing must be staged.
-5. State literally in your report: "No commit was created."
-
-## File ownership (LRN-016)
-
-OWN EXCLUSIVELY — you may read AND write only the files listed in the
-Identity + scope section of this dispatch. You MUST NOT modify, rename,
-or delete any file outside that list. Curiosity reads (grep/view) are
-fine; writes are not.
-
-Rationale: parallel sub-agents share a working tree. If two agents write
-the same file, the later writer silently overwrites the earlier one's work
-with no error or warning. Non-overlapping ownership is the only safe
-parallel model (validated across CS03 where stubs silently replaced rich
-APIs — see LRN-016).
-
-## Required reading
-
-Read every path listed in the Required reading section of this dispatch.
-Do not infer what to read — only the explicit list counts. "Read what you
-need" produces silent gaps that surface as integration failures later.
-
-## Conventions to follow
-
-- LF line endings, no BOM. After every file write on Windows, normalize:
-  strip BOM if present (first 3 bytes must NOT be 0xEF 0xBB 0xBF), replace
-  \r\n with \n. All content comparisons must normalize in the read step.
-  (LRN-006, LRN-018, LRN-065)
-
-- No dot-notation placeholders (LRN-049). Use flat keys only:
-  `{{agent_suffix}}` not `{{project.agent_suffix}}`. Dot-notation is not
-  supported by the template engine and will be emitted literally.
-
-- Cross-repo path discipline (LRN-105). When a sub-agent operates in a repo
-  OTHER than the orchestrator's, every path in the briefing must be rooted
-  in the executing repo. For composed-block edits in a consumer repo:
-  edit `<consumer-root>/<file>` between `<​!-- harness:local-start id=X -->`
-  markers, NOT `template/composed/<file>` (that path only exists in the
-  harness repo). Disambiguate any `template/`, `scripts/`, or other
-  directory name that exists in both repos with different semantics.
-
-- Fail-closed parsers (LRN-033). Malformed JSON/YAML/etc → clear error
-  message to stderr + process.exit(1). NEVER silent default. NEVER let a
-  stack trace be the only error signal.
-
-<!-- harness:dispatch-language-conventions -->
-
-## Self-checks before reporting
-
-Run all of the following and include each result in SELF-CHECKS RUN:
-
-1. `git status --short` — only owned files appear; nothing staged.
-2. `git log --oneline -1` — must match preflight SHA.
-3. Text-encoding + line-ending validation (BOM + line endings; LRN-065,
-   LRN-074): `{{harness_invoke}} lint` must exit 0. The encoding check
-   runs as part of the lint aggregate over the whole cwd (not just
-   modified files); it catches CRLF/bare-\r line endings introduced by
-   Windows core.autocrlf or stale editor settings.
-
-<!-- harness:dispatch-language-self-checks -->
-
-## Reporting independence (CS48 / issue #142)
-
-**Self-review carries zero review weight.** Any implementer self-review of
-the diff is a debugging aid, not a review-of-record. The orchestrator MUST
-dispatch a separate reviewer sub-agent (per REVIEWS.md § Phase 2) whose model
-differs from every implementer model used in the CS. The `harness review <pr>` CLI obtains the rubber-duck review; do not
-pre-empt that step or present implementer self-review as review evidence.
-
-Required final report field: `IMPLEMENTER MODEL USED` (the model-id(s)
-materially used for the sub-agent's work), so the orchestrator can update the
-CS sub-agent ledger and the PR-body `## Model audit` table.
-
-## Mandatory report shape
-
-Reports missing any field are rejected; orchestrator re-dispatches with
-missing fields explicitly listed.
-
-    STATUS: complete | partial | blocked
-    PREFLIGHT SHA: <sha>
-    FINAL SHA: <sha>
-    SUMMARY: <one paragraph>
-    IMPLEMENTER MODEL USED: <model-id(s) materially used for this work; used by the CS sub-agent ledger and PR-body ## Model audit>
-    FILES CHANGED:
-      - <path> (created | edited | deleted) — <one-line why> — <line count>
-    SELF-CHECKS RUN:
-      - git status / git log / text-encoding / [other checks]: pass | fail
-    DECISIONS MADE:
-      - <decision> — rationale
-    ESCALATIONS: (none) | <issue> — recommended path
-    LEARNINGS CANDIDATES: (none) | <category>: <problem>: <finding>: <evidence>
-    NEXT STEPS (if partial/blocked):
-      - <what's needed to complete>
-```
-
 #### Language profiles
 
-The `## Conventions to follow` and `## Self-checks before reporting` sections
-inside the core fence above each end with an injection marker
-(`<!-- harness:dispatch-language-conventions -->` /
-`<!-- harness:dispatch-language-self-checks -->`). `harness dispatch` replaces
-each marker with the matching part of the language profile selected by
-`dispatch.language_profile` in `harness.config.json` (default `node`) or the
-`--language-profile <name>` override, so a non-Node consumer (e.g. a .NET
-project) no longer has to negate Node/ESM/npm conventions in every dispatch.
-Each profile below lives in its own ```text fence whose first content line is
-`## LANGUAGE PROFILE: <name>`, split by `<!-- harness:profile-self-checks -->`
-into a conventions part and a self-checks part. The language-agnostic core
-(preflight, file ownership, required reading, fail-closed, report shape) is
-emitted for every profile.
-
-```text
-## LANGUAGE PROFILE: node
-
-### conventions
-
-- ESM `.mjs` only, Node 20+ stdlib. No CommonJS `require()`, no `.cjs`
-  files, no npm dependencies unless explicitly authorized in this dispatch.
-
-- Fresh git worktrees/checkouts need their own `npm install` before running
-  dependency-backed harness linters; `node_modules` is gitignored and
-  per-checkout, not shared from the parent worktree.
-
-- `requireValue(args, i, flagName)` guard for every value-taking CLI flag
-  (LRN-040). Must verify args[i+1] exists AND reject tokens starting with
-  `-`, exiting code 2 + usage message. Bare `if (args[i+1])` silently
-  consumes the next flag as a value.
-
-- Schema is source of truth (LRN-039). Read `schemas/*.schema.json` BEFORE
-  writing any field access against harness.config.json, .harness-lock.json,
-  or any other structured config. Do not guess field names.
-
-- Stdout for success output; stderr for errors and warnings (LRN-044).
-  `--quiet` suppresses success stdout only. Errors always go to stderr.
-
-- Consumer-root-relative paths (LRN-050). Scripts run from the consumer's
-  cwd, not the harness source location. Never use `import.meta.url` or
-  `process.cwd()` to resolve consumer-repo files.
-
-<!-- harness:profile-self-checks -->
-
-### self-checks
-
-4. If tests were added/modified: `node --test` — report count delta
-   (e.g. "23 → 27 tests; all pass").
-5. For any .mjs files authored: `node -c <file>` exits 0.
-6. If template files were modified (anything under `template/`),
-   `{{harness_invoke}} lint` must exit 0 — the lint aggregate includes the
-   templates linter (LRN-049/050/051: no dot-notation placeholders, no
-   relative-up paths, no self-referencing TODO/FIXME tokens in PR-template
-   files).
-```
-
-```text
-## LANGUAGE PROFILE: dotnet
-
-### conventions
-
-- C#/.NET 8+ on the .NET SDK toolchain. A new service or library owns its
-  `.csproj` together with its solution `.sln` entry and, once introduced,
-  `Directory.Packages.props` as a single ownership bundle, so the project
-  file, solution registration, and central-package pins move together
-  (issue #423 / the CS10 Aspire-service ownership finding).
-
-- NuGet central package management: declare each package version once in
-  `Directory.Packages.props` (`<PackageVersion Include="..." Version="..." />`)
-  and reference it from a `.csproj` with a version-less
-  `<PackageReference Include="..." />`. Do not pin versions per project.
-
-- Argument parsing, file layout, and tooling follow .NET/C# idioms rather
-  than the Node-profile equivalents; honor the project's established analyzer
-  settings (nullable reference types, warnings-as-errors) instead of
-  introducing new ones.
-
-- Fail-closed parsing still applies (agnostic doctrine restated for the .NET
-  toolchain): malformed JSON/config → a clear stderr error + non-zero exit,
-  never a silent default.
-
-<!-- harness:profile-self-checks -->
-
-### self-checks
-
-4. `dotnet build` — the affected projects/solution build with no errors.
-5. `dotnet test` — report the pass/fail count (e.g. "42 passed, 0 failed").
-6. `dotnet format --verify-no-changes` — formatting + whitespace conform
-   (non-zero exit if any file would be reformatted).
-```
+Per-language dispatch profiles (`node` default, `dotnet`) live in
+[`DISPATCH-PREAMBLE.md`](DISPATCH-PREAMBLE.md) and are emitted by
+`{{harness_invoke}} dispatch --language-profile <name>`, which splices the
+selected profile's conventions + self-checks into the language-agnostic core.
+`node` is the default (`dispatch.language_profile` in `harness.config.json`, or
+the `--language-profile` override). Run the command and paste the emitted block
+rather than copying the profile text here.
 
 ### Canonical reviewer preamble (CS35 C35-1)
 
-When dispatching a rubber-duck reviewer manually (per [REVIEWS.md § 2.1](REVIEWS.md#21-review-model)),
-the orchestrator MUST paste the block below verbatim into the dispatch.
-For content PRs on CS52+, prefer `harness review <pr>` (see
-[§ Reviewer dispatch via `harness review`](#reviewer-dispatch-via-harness-review-cs52));
-it composes the same guardrailed prompt for the manual MVP. The harness CLI
-still does not call an LLM API; the orchestrator dispatches the emitted prompt
-and paste-protocols the structured reviewer output.
+The canonical rubber-duck reviewer-dispatch preamble is maintained in its
+authoritative home, [REVIEWS.md § 2.9 Canonical reviewer preamble](REVIEWS.md#29-canonical-reviewer-preamble-cs35-c35-1)
+(relocated there in CS86). For content PRs on CS52+, prefer `harness review <pr>`
+(see [§ Reviewer dispatch via `harness review`](#reviewer-dispatch-via-harness-review-cs52));
+it composes the same guardrailed prompt. The harness CLI still does not call an
+LLM API; the orchestrator dispatches the emitted prompt and paste-protocols the
+structured reviewer output.
 
-The block is delimited by sentinel markers so `tests/operations-reviewer-preamble.test.mjs`
-can assert presence and required-field coverage:
-
-<!-- harness:reviewer-preamble:start -->
 ## Reviewer dispatch — canonical preamble
 
-**role:** Independent rubber-duck reviewer for the active CS.
-
-**scope:** Review the diff at the current HEAD against the base branch,
-the active CS file (Decisions, Deliverables, Tasks), the test count delta,
-and any sub-agent reports. Produce findings classified per
-REVIEWS.md § 2.6 (Blocking | Non-blocking | Suggestion). For doc-heavy or
-prose PRs, you MUST ALSO perform fact-claim verification per REVIEWS.md
-§ 2.6a: (F1) every `--flag` mentioned actually exists in `bin/harness.mjs`
-help text, library code, or pass-through `scripts/*.mjs` (e.g.
-`harness review-output` forwards to `scripts/check-review-output.mjs`);
-(F2) every file path mentioned actually exists
-in the tree at this HEAD; (F3) every doctrine-strength claim (`required`,
-`mandatory`, `enforces`, `recommended`, `optional`) matches the cited
-source's wording verbatim or via a documented synonym; (F4) every LRN/CS
-summary stays within the source entry's Problem/Finding scope (no
-generalisation); (F5) cross-doc claims (CHANGELOG vs OPERATIONS vs README
-vs LRN) are mutually consistent. Do NOT issue a Go verdict on a doc PR
-based on diff-internal coherence alone — cross-check claims against the
-shipped surfaces they reference. For changes that add or edit a config or
-schema reader, you MUST ALSO perform schema-conformance verification per
-REVIEWS.md § 2.6b: (S1) the reader requires no field the schema marks
-optional/defaulted; (S2) each default-when-absent matches the schema's
-declared `default` (or a documented divergence); (S3) present-but-malformed
-values fail closed against the schema's `type`/`pattern`/`enum`. For
-**plan reviews** of planned/active CS files (per
-[Plan review attestation procedure (CS35b)](#plan-review-attestation-procedure-cs35b)),
-you MUST ALSO perform plan-side fact-claim verification per REVIEWS.md
-§ 2.6c across **all** reviewer-consumed plan sections (Background,
-Decisions, Deliverables, Sub-agent fan-out, Exit criteria, Risks +
-open questions, and any cross-CS dependencies the plan declares —
-not only the hashed Decisions+Deliverables): (F1) every named `--flag`
-exists (or is explicitly described as not-yet-existing — for plans
-whose deliverables include adding a new flag); (F2) every
-`path:line` citation actually contains what the plan asserts at the
-analyzed HEAD (open the file — line numbers drift across snapshots and
-syncs); (F3) doctrine-strength claims match the cited source verbatim;
-(F4) LRN/CS scope summaries stay within the source entry's scope;
-(F5) cross-doc claims are mutually consistent; (F6) every
-state-of-the-world claim (release/tag/PR/issue/label state) is verified
-via a non-mutating CLI probe (`gh release list --repo <owner>/<repo> --limit N`,
-`gh api repos/<owner>/<repo>/releases --jq 'map(select(.tag_name=="<tag>"))'`
-covering BOTH published and draft, `git ls-remote origin refs/tags/<tag>`,
-`gh pr view <num> --repo <owner>/<repo>`, `gh issue view <num> --repo <owner>/<repo>`,
-`gh label list --repo <owner>/<repo>`) and the probe is recorded
-in the plan's Background or Constraints. Inherited findings (citations
-from other repos, prior snapshots, or earlier CS plans) MUST be
-re-verified against the current HEAD. Do NOT issue a Go verdict on a plan
-based on prose-internal coherence alone.
-
-**independence-invariant:** Your model MUST NOT appear in the active CS file's
-`## Model audit` `Implementer models` field. If it does, refuse the dispatch
-and instruct the orchestrator to escalate per the C35-2 fallback ladder.
-Beyond model independence, agent-identity independence (CS35 C35-18) also
-applies: your GitHub username MUST differ from the implementer agent's.
-
-**model-fallback-ladder (per CS35 C35-2):** GPT-highest-available
-(5.5 → 5.4 → ...) → Claude Sonnet-highest (4.7 → 4.6 → ...) → orchestrator's
-own model (last resort, requires explicit user waiver and is forbidden for
-HIGH-RISK CSs per REVIEWS.md § 2.3).
-
-**output-schema-link:** Your report MUST conform to REVIEWS.md § 2.6
-(Findings taxonomy) and § 2.7 (Finding disposition). For
-plan-vs-implementation reviews, also conform to OPERATIONS.md
-§ Plan-vs-implementation review (close-out gate). Always report a verdict:
-`Go` / `Needs-Fix` / `Block`.
-
-**required-output-fields:** Every plan-vs-implementation review row you (or the orchestrator on your behalf) record in the active CS file's `## Plan-vs-implementation review` table MUST contain these five fields, in this order:
-
-- `model:` the reviewer model identifier (e.g., `gpt-5.5`) — drawn from the C35-2 fallback ladder above; must satisfy the independence invariant against `Implementer models`.
-- `branch HEAD SHA:` the full 40-char SHA you reviewed against. Per CS35 C35-3 stale-diff doctrine, a verdict row whose SHA ≠ current HEAD at merge time is INVALID and forces a re-review (A4 enforces this mechanically in CS36).
-- `R-round:` `R1` / `R2` / `R3`. Capped at 3 rounds per C35-2; if R3 returns Needs-Fix, the orchestrator MUST escalate to the user rather than open R4.
-- `verdict:` exactly one of `Go` / `Needs-Fix` / `Block` (matches `output-schema-link` above and the A3/A4 PR-evidence parsers in CS36).
-- `evidence link:` a PR comment URL, commit SHA, or file:line reference that cites the primary artefact(s) supporting the verdict. No vibes-based verdicts.
-<!-- harness:reviewer-preamble:end -->
-
-After pasting the block, append CS-specific context (which CS, which files
-changed, which prior review rounds are on file). Do not modify the block itself.
+This canonical reviewer preamble now lives in
+[REVIEWS.md § 2.9 Canonical reviewer preamble](REVIEWS.md#29-canonical-reviewer-preamble-cs35-c35-1); this stub heading
+is retained so existing `#reviewer-dispatch--canonical-preamble` links keep
+resolving.
 
 ### Post-review validation (CS40 — `harness review-output`)
 
