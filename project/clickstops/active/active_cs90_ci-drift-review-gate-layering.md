@@ -1,9 +1,9 @@
 # CS90 — CI-gate architecture: drift-detection layering doctrine (ADR) + `harness-pr-check` `pr_check.mode` + `review-gates.yml` feature parity & migration path
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs90/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** Triage of three coupled open inbound issues — [#391](https://github.com/henrik-me/agent-harness/issues/391), [#392](https://github.com/henrik-me/agent-harness/issues/392), [#393](https://github.com/henrik-me/agent-harness/issues/393) (2026-07-02 by `omni-ah-c3`). All surfaced from the same `henrik-me/sub-invaders` CI-adoption evaluation (#392/#393 cite v0.12.0 explicitly; #391 is a general drift-layering ask).
 **Depends on:** none. (Related workflow-hardening: CS91 edits `workboard-auto-approve.yml`, a different workflow — no file overlap.)
@@ -89,11 +89,27 @@ Verified at HEAD `3b20d0a` (template headers read directly):
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs90-plan-review (omni-ah-c3) | 4cc103c8780c | 2026-07-02T23:47:00Z | Go-with-amendments | Facts verified; applied: mandatory split CS90a/b/c; ADR filename 0005; '4 gates+1 guard' not 5; mutation-engage least-privilege; L1 ci.yml snippet + drift-semantics; migrate-ci=follow-up. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. CS90 ships only the layering ADR (`docs/adr/0005-…`) + filings for sub-CSs CS90a/b/c; no distributed code/schema/workflow change lands under CS90 itself, so **no SemVer bump** for this CS. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C90-1: author `docs/adr/0005-ci-drift-review-gate-layering.md` — layering doctrine L1 (per-PR `sync --mode=check`) / L2 (weekly `harness-drift.yml` cron) / L3 (`harness-pr-check.yml` classifier) / L4 (`review-gates.yml` + `pr-evidence-lint.yml`), the L1-vs-L3 drift-semantics note, the `mutation-engage` least-privilege posture, and the #393 migration mapping | planned | — | agent-id=cs90-adr \| role=implementer \| report-status=pending \| learnings=0 |
+| C90-6: file planned sub-CSs CS90a (#391) / CS90b (#392) / CS90c (#393), each with its own plan + independent GPT-5.5 plan review, cross-linked to their issues (no workflow/schema/CLI code lands under CS90 itself) | planned | — | agent-id=cs90-adr \| role=implementer \| report-status=pending \| learnings=0 |
+| G90-1: user-approval gate — approve the ADR layering model + the CS90a/b/c breakdown before any sub-CS is claimed | planned | — | role=gate \| report-status=pending \| learnings=0 |
+| CHANGELOG.md: CS90 itself adds no `[Unreleased]` entry (ships only the ADR + sub-CS filings, no distributed code/schema/workflow change); each sub-CS CS90a/b/c adds its own `[Unreleased]` entry when it closes #391/#392/#393 | planned | — | report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck of the ADR + sub-CS plans (independence invariant per REVIEWS.md) | planned | — | role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | — | report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | — | report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
