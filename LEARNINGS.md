@@ -12,6 +12,66 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-218
+
+```yaml
+id: LRN-218
+date: 2026-07-05
+category: architectural
+source_cs: CS109
+status: open
+tags: [cs106, review-gates, workboard-only, step-gated, stale-premise, reconciliation]
+claim_area: review-gates
+```
+
+**Problem:** CS106's plan (Rec B: promote a review-evidence aggregate to a required check) is premised on today's `review-gates.yml` evidence jobs skipping at the **job** level on the `workboard-only` label — so it hard-depends on a CS90 "always-running aggregate" and asserts no safe required context exists. That premise is **stale**.
+
+**Finding:** Post-**CS71** (shipped v0.17.0), the four `review-gates.yml` evidence jobs **always execute** and skip **internally** at the step level (`if: steps.wb.outputs.skip != 'true'`), so their status context is always *reported* (never absent/pending) on every PR class — they are already safe required contexts. CS109's ADR-0006 (and its gpt-5.5 review) confirmed this and dropped CS109's hard dependency on CS90. CS106 should be reconciled (its hard-block on CS90 / "no safe aggregate" premise removed) when it is claimed.
+
+**Evidence:** `.github/workflows/review-gates.yml` (job-level `if:` is only the `pull_request` event; step-level `if: steps.wb.outputs.skip != 'true'`); ADR-0006 § Context + Cross-references (`docs/adr/0006-review-enforcement-posture.md`); CS109 content review (gpt-5.5) refuted the "always green including bot/fork" overclaim but confirmed "always *reported*".
+
+**Disposition:** Open — when CS106 is claimed, reconcile its Background/Depends-on with the post-CS71 reality (the safe context is the existing `read-only-gates` / the step-gated review-gates contexts today; CS90c's single aggregate is a soft nicety). Cross-links CS109/CS109a.
+
+### LRN-219
+
+```yaml
+id: LRN-219
+date: 2026-07-05
+category: architectural
+source_cs: CS109
+status: open
+tags: [config, schema, back-compat, presence-gating, reviews-policy, default]
+claim_area: sync
+```
+
+**Problem:** A new **optional** config field that *drives generation* (e.g. a ruleset renderer) can silently change back-compat behavior if it carries a JSON-Schema `default` AND is read through a defaults-**materializing** reader: the reader fills the default when the key is absent, so the generator cannot distinguish "absent" (want no change) from an explicit value — and may silently alter existing consumers.
+
+**Finding:** For such fields, **omit the schema `default`** and have the reader expose an explicit **presence** signal (absent vs set), then **presence-gate** generation so an absent field is byte-for-byte a no-op. CS109 applied this to `review_gates.enforcement` (no default; `loadReviewGatesEnforcement()` returns `{present,value}`; `syncReviewGateRuleset` only diverges when present) with a test asserting absent ⇒ unchanged ruleset. The existing defaults-materializing `loadReviewsPolicy` reader was the anti-pattern the Copilot review flagged.
+
+**Evidence:** `schemas/harness.config.schema.json` (`review_gates.enforcement` enum, no `default`); `lib/reviews-policy.mjs` `loadReviewGatesEnforcement`; `bin/harness.mjs` `syncReviewGateRuleset` presence gate; `tests/cs109-review-enforcement.test.mjs` "absent enforcement leaves the ruleset byte-for-byte unchanged".
+
+**Disposition:** Open — reuse this presence-gated / no-schema-default pattern for future optional config fields that drive sync/init/ruleset generation.
+
+### LRN-220
+
+```yaml
+id: LRN-220
+date: 2026-07-05
+category: process
+source_cs: CS109
+status: open
+tags: [review-log, read-only-gates, copilot, A5, timestamps]
+claim_area: review-gates
+```
+
+**Problem:** When hand-authoring a PR `## Review log`, using **placeholder/estimated timestamps that fall in the future** relative to real "now" silently breaks the A5 ordering gate: Copilot's real (earlier) review submission time then *predates* the future-dated local Go row, so `read-only-gates` stays red even though the content is fine. The row looks well-formed, so the cause is non-obvious.
+
+**Finding:** Every `## Review log` Go-row `timestamp` must be **≤ the real current UTC time** (and the latest Go must predate the Copilot review you then engage). This session I recorded Go rows at 20:55/21:08Z while real UTC was 20:27Z; re-writing them with realistic (past) timestamps and re-engaging Copilot greened A5.
+
+**Evidence:** CS109 PR #510 — `read-only-gates` stayed red until the future-dated Go rows were corrected to ≤ now and Copilot re-engaged (20:41Z) postdated the latest Go (20:34Z).
+
+**Disposition:** Open — complements LRN-200 (engage Copilot last) and LRN-217 (`gh run rerun --failed` on the async `read-only-gates`). Use real `[DateTime]::UtcNow` when stamping Review-log rows.
+
 ### LRN-213
 
 ```yaml

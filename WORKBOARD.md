@@ -28,7 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS109 | CS109 — Configurable review-enforcement posture (human-approval | required-check | both) | 🟢 Active | yoga-ah-c2 | cs109/content | 2026-07-05 | — |
 | CS90a | CS90a — #391 L1: documented per-PR `sync --mode=check` baseline drift snippet + `harness-drift.yml` low-activity repositioning | 🟢 Active | yoga-ah | cs90a/content | 2026-07-05 | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

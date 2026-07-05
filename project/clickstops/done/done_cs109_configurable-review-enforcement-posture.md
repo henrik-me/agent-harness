@@ -1,10 +1,10 @@
 # CS109 — Configurable review-enforcement posture (human-approval | required-check | both)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs109/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#402](https://github.com/henrik-me/agent-harness/issues/402) (2026-07-05). Surfaced from `henrik-me/sub-invaders`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: **CS90c** — a future single-context `review-gates.yml` aggregate would be a cleaner required context; **CS106** — the concrete self-host required-check flip.)
 
