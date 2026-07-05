@@ -74,20 +74,20 @@ Deliver the deferred half of ADR 0006: the **`harness ruleset apply` / `apply --
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Dispatch implementer — `harness ruleset apply` verb + tests + preflight + CHANGELOG (Deliverables 1-4,6) | in_progress | cs109a-impl | agent-id=cs109a-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| Claim recon — re-verify #402 / ADR 0006 § D6 state at HEAD; confirm `harness ruleset apply` still rejects (exit 2) | pending | yoga-ah-c2 | F6 state-of-world |
-| Implement `harness ruleset apply` (dry-run: render + diff vs live) + `apply --apply` (live PUT), reusing CS109 renderer + `diffManagedRulesetSurface`; fail-closed on API error | pending | yoga-ah-c2 | Deliverable 1 / Decisions 1,2 |
-| Mandatory post-apply verification: after a successful PUT, auto re-run the managed-surface check; exit nonzero on residual drift/parse error | pending | yoga-ah-c2 | Deliverable 3 / Decision 2 |
-| Binding pre-apply preflight: gate self-host `apply --apply` on `sync --mode=check` clean + zero F3 `ruleset-deadlock` warnings; script/test so it cannot be skipped | pending | yoga-ah-c2 | Deliverable 4 / Decision 5 |
-| Tests for the apply path (dry-run output, `--apply` gating, fail-closed on API error, verify-success + verify-failure paths) via `--live-file`/mock | pending | yoga-ah-c2 | Deliverable 2,3 |
-| Record the CS106 coordination disposition (Decision 4) — whether CS109a performs the self-host flip or ships the verb only | pending | yoga-ah-c2 | Decision 4 / R2 |
-| Add `CHANGELOG.md` `[Unreleased]` entry referencing #402 for the live-mutation portion | pending | yoga-ah-c2 | Deliverable 6 |
-| Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | pending | yoga-ah-c2 | Exit criteria |
-| Local review — GPT-5.5 rubber-duck before opening the content PR | pending | yoga-ah-c2 | REVIEWS.md |
-| (If G109-ruleset-apply approved) self-host posture selection + live apply | pending | yoga-ah-c2 | Deliverable 5 / G109-ruleset-apply |
-| Plan-vs-implementation review (GPT-5.5) — GO before close-out | pending | yoga-ah-c2 | close-out gate |
-| Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | pending | yoga-ah-c2 | mandatory |
-| Close-out: learnings + follow-ups — file LEARNINGS.md candidates / planned follow-up CSs | pending | yoga-ah-c2 | mandatory |
+| Dispatch implementer — `harness ruleset apply` verb + tests + preflight + CHANGELOG (Deliverables 1-4,6) | done | cs109a-impl | agent-id=cs109a-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| Claim recon — re-verify #402 / ADR 0006 § D6 state at HEAD; confirm `harness ruleset apply` still rejects (exit 2) | done | yoga-ah-c2 | F6 state-of-world |
+| Implement `harness ruleset apply` (dry-run: render + diff vs live) + `apply --apply` (live PUT), reusing CS109 renderer + `diffManagedRulesetSurface`; fail-closed on API error | done | yoga-ah-c2 | Deliverable 1 / Decisions 1,2 — shipped #517, API-shape-corrected #518 |
+| Mandatory post-apply verification: after a successful PUT, auto re-run the managed-surface check; exit nonzero on residual drift/parse error | done | yoga-ah-c2 | Deliverable 3 / Decision 2 |
+| Binding pre-apply preflight: gate self-host `apply --apply` on `sync --mode=check` clean + zero F3 `ruleset-deadlock` warnings; script/test so it cannot be skipped | done | yoga-ah-c2 | Deliverable 4 / Decision 5 |
+| Tests for the apply path (dry-run output, `--apply` gating, fail-closed on API error, verify-success + verify-failure paths) via `--live-file`/mock | done | yoga-ah-c2 | Deliverable 2,3 — 18 tests |
+| Record the CS106 coordination disposition (Decision 4) — whether CS109a performs the self-host flip or ships the verb only | done | yoga-ah-c2 | Decision 4 / R2 — verb-only; CS106 owns flip |
+| Add `CHANGELOG.md` `[Unreleased]` entry referencing #402 for the live-mutation portion | done | yoga-ah-c2 | Deliverable 6 |
+| Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | done | yoga-ah-c2 | Exit criteria — lint 43/0/3, 2049 pass, no drift |
+| Local review — GPT-5.5 rubber-duck before opening the content PR | done | yoga-ah-c2 | REVIEWS.md — #518 R1 Go (API-shape fix) + Copilot |
+| (If G109-ruleset-apply approved) self-host posture selection + live apply | deferred | yoga-ah-c2 | Deliverable 5 / G109-ruleset-apply — not granted; CS106 owns the concrete flip |
+| Plan-vs-implementation review (GPT-5.5) — GO before close-out | done | yoga-ah-c2 | close-out gate — GO (`cs109a-pvi-review`) |
+| Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | done | yoga-ah-c2 | mandatory |
+| Close-out: learnings + follow-ups — file LEARNINGS.md candidates / planned follow-up CSs | done | yoga-ah-c2 | mandatory — LRN-197/210/211 already open (no dupes) |
 
 ## Notes / Learnings
 
@@ -100,4 +100,23 @@ CS109a **ships the `harness ruleset apply` verb + tooling only** (Deliverables 1
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck)
+**Date:** 2026-07-05T23:35:00Z
+**Outcome:** GO
+
+An earlier PVI pass found the GitHub-API-shape defect (the source↔live diff and the `--apply` PUT body used the internal `required_checks` strings shape instead of the API `required_status_checks` objects) and returned NEEDS-FIX; it was fixed in PR #518 (`5acebaf`). This is the re-review of the now-complete CS109a delivery on `main` (PRs #517 + #518), independent per REVIEWS.md § 2.3 (reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`).
+
+Per-deliverable outcome:
+
+| # | Deliverable (short) | Outcome | Rationale |
+|---|---|---|---|
+| 1 | `harness ruleset apply` dry-run + `apply --apply` live PUT | match | — |
+| 2 | Apply-path tests: dry-run, `--apply` gating, API-error fail-closed | match | — |
+| 3 | Mandatory post-apply verification, fail-closed on residual drift/API error | match | — |
+| 4 | Binding pre-apply preflight: `sync --mode=check` clean + zero F3 warnings | match | — |
+| 5 | Self-host posture flip | match (deferred) | Intended scope deferral: the CS Notes record G109-ruleset-apply was not granted, no live self-host mutation was made, and CS106 owns the concrete `required-check` + count-0 flip. Not dropped. |
+| 6 | `CHANGELOG.md` `[Unreleased]` entry referencing #402 | match | — |
+
+Test-coverage assessment: **sufficient** — `node --test tests/cs109a-ruleset-apply.test.mjs` passes 18/18; coverage includes dry-run output, `--apply` gating, fail-closed PUT error, preflight success/failure (real `sync --mode=check` + F3 `ruleset-deadlock` block), post-apply verify success/failure, seam-safety guards, and GitHub API-shape read/PUT serialization.
+
+Summary: the implementation matches the CS109a plan, including the previously-flagged API-shape fix — live reads understand `required_status_checks` while PUT bodies serialize to the API shape. The pre-apply preflight and mandatory post-apply verification are binding fail-closed paths and are tested. The renderer/on-disk ruleset source remains on the internal `required_checks` shape; `toApiRulesetBody` is only used on the PUT path, and `harness sync --mode=check` reports no drift, so the split is non-breaking.
