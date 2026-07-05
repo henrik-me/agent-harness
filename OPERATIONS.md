@@ -148,8 +148,9 @@ the managed `workboard-auto-approve.yml` workflow, which is **not** in the defau
 `managed.files` set — it is an *adoptable* managed file, surfaced by
 `node bin/harness.mjs sync` (report-only) and adopted with `node bin/harness.mjs sync
 --mode=apply --apply-new`. **A repo that has not adopted that workflow has no
-auto-merge automation at all:** every `workboard-only` PR is admin-merged by hand
-(`gh pr merge <n> --admin --squash`), and the branch patterns below do not apply.
+harness-provided auto-merge automation:** every `workboard-only` PR is admin-merged
+by hand (`gh pr merge <n> --admin --squash`), and the branch patterns below do not
+apply (a repo may still run its own non-harness automation).
 
 Once `workboard-auto-approve.yml` is adopted, a `workboard-only`-labelled PR
 auto-merges only when its branch matches one of `cs<NN>/(claim|close|close-out)`,
