@@ -88,6 +88,23 @@ function makeCleanFixture(contexts = [...GATE_CONTEXTS]) {
   return dir;
 }
 
+// A minimal but schema-valid harness.config.json that makes `sync --mode=check`
+// pass (empty managed/composed/seeded + a review_gates opt-out), so the
+// pre-apply sync-check preflight leg passes with the DEFAULT config.
+function writeMinimalConfig(dir) {
+  const cfg = {
+    version: 'v0.5.1',
+    project: { name: 'fx', agent_suffix: 'rg', repo: 'owner/repo' },
+    managed: { files: [] },
+    composed: { files: [] },
+    seeded: { files: [] },
+    scaffolds: [],
+    excluded: [],
+    review_gates: { _opt_out_reason: 'fixture' },
+  };
+  writeFileSync(path.join(dir, 'harness.config.json'), `${JSON.stringify(cfg, null, 2)}\n`, 'utf8');
+}
+
 // ---------------------------------------------------------------------------
 // Dry-run (default, no --apply) — renders + diffs, mutates nothing
 // ---------------------------------------------------------------------------
@@ -287,6 +304,69 @@ describe('CS109a harness ruleset apply --apply — pre-apply preflight', () => {
       assert.match(res.stderr, /BLOCKED by the pre-apply preflight/);
       assert.match(res.stderr, /sync --mode=check/);
       assert.equal(existsSync(store), false, 'a blocked preflight must never PUT');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('threads --config into the pre-apply sync-check: a malformed --config blocks even when the DEFAULT config is clean (exit 1, no PUT)', () => {
+    // Regression for the preflight-config-threading fix. The cwd carries a CLEAN
+    // default harness.config.json (sync --mode=check would pass with it); a
+    // MALFORMED config sits at a non-default path. With --config threaded into the
+    // preflight sync-check, the malformed config is used → sync fails → the apply is
+    // blocked. If --config were NOT threaded, sync would use the clean default and
+    // proceed to the PUT — so this test fails without the fix.
+    const dir = makeCleanFixture();
+    try {
+      writeMinimalConfig(dir);
+      const brokenCfg = path.join(dir, 'broken.json');
+      writeFileSync(brokenCfg, '{ not valid json', 'utf8');
+      const live = writeLiveFile(dir, 'live.json', ['ci']);
+      const store = path.join(dir, 'put-store.json');
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply',
+        '--config', brokenCfg, '--live-file', live, '--put-file', store,
+      ]);
+      assert.equal(res.status, 1, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stderr, /BLOCKED by the pre-apply preflight/);
+      assert.match(res.stderr, /sync --mode=check/);
+      assert.equal(existsSync(store), false, 'a blocked preflight must never PUT');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TEST-ONLY seam safety guards — the seams must be impossible to combine into
+// a live-mutation hole (file-verify / skipped preflight around a real PUT).
+// ---------------------------------------------------------------------------
+
+describe('CS109a harness ruleset apply --apply — seam safety guards', () => {
+  it('rejects --verify-live-file without --put-file (exit 2) — never file-verify a real live PUT', () => {
+    const dir = makeCleanFixture();
+    try {
+      const live = writeLiveFile(dir, 'live.json', ['ci']);
+      const verify = writeLiveFile(dir, 'verify.json', ['ci']);
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply', '--live-file', live, '--verify-live-file', verify,
+      ]);
+      assert.equal(res.status, 2, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stderr, /--verify-live-file requires --put-file/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects --skip-preflight-sync without --put-file (exit 2) — never skip the preflight around a real live PUT', () => {
+    const dir = makeCleanFixture();
+    try {
+      const live = writeLiveFile(dir, 'live.json', ['ci']);
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply', '--live-file', live, '--skip-preflight-sync',
+      ]);
+      assert.equal(res.status, 2, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stderr, /--skip-preflight-sync requires --put-file/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

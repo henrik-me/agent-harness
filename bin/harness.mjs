@@ -2371,14 +2371,16 @@ function fetchLiveRuleset({ repo, rulesetId, rulesetName, cwd }) {
  * The F3 guard is warn-only (always exit 0 on findings), so its warning count
  * is parsed from stdout ("N warning(s)") rather than read from the exit code.
  *
- * @param {{cwd:string, rulesetPath:string, workflowsDir:string, skipSyncCheck?:boolean}} opts
+ * @param {{cwd:string, rulesetPath:string, workflowsDir:string, configPath?:string|null, skipSyncCheck?:boolean}} opts
  * @returns {{ok:boolean, reasons:string[]}}
  */
-function runApplyPreflight({ cwd, rulesetPath, workflowsDir, skipSyncCheck = false }) {
+function runApplyPreflight({ cwd, rulesetPath, workflowsDir, configPath = null, skipSyncCheck = false }) {
   const reasons = [];
 
   if (!skipSyncCheck) {
-    const syncRes = spawnSync(process.execPath, [__filename, 'sync', '--mode=check', '--cwd', cwd], {
+    const syncArgs = [__filename, 'sync', '--mode=check', '--cwd', cwd];
+    if (configPath) syncArgs.push('--config', configPath);
+    const syncRes = spawnSync(process.execPath, syncArgs, {
       encoding: 'utf8',
     });
     if (syncRes.error) {
@@ -2463,6 +2465,21 @@ async function cmdRuleset(args, global) {
     else if (a.startsWith('-')) die(`harness ruleset: unknown flag "${a}"\n\n${SUBCOMMAND_HELP['ruleset']}`, 2);
     else positionals.push(a);
   }
+
+  // TEST-ONLY seam coherence (SAFETY): the ONLY seam that suppresses the real
+  // `gh api -X PUT` is --put-file (it redirects the PUT body to a file). Both
+  // --verify-live-file (file-based post-apply verification) and
+  // --skip-preflight-sync are safe ONLY when the PUT was so suppressed. Without
+  // --put-file a real live PUT happens, so honouring either flag would file-verify
+  // or skip the preflight around a live mutation — a repo-wide-blast-radius hole.
+  // Reject them fail-closed so no path that can reach the live PUT can use them.
+  if (verifyLiveFile !== null && putFile === null) {
+    die('harness ruleset: --verify-live-file requires --put-file (test-only seam; refusing to file-verify a real live PUT)', 2);
+  }
+  if (skipPreflightSync && putFile === null) {
+    die('harness ruleset: --skip-preflight-sync requires --put-file (test-only seam; refusing to skip the pre-apply preflight around a real live PUT)', 2);
+  }
+
   // Select the action from true positionals only, so a flag VALUE (e.g. the
   // `owner/repo` after `--repo`) is never mistaken for the action even when
   // options precede it.
@@ -2535,7 +2552,11 @@ async function cmdRuleset(args, global) {
   }
 
   // action === 'apply' (CS109a) --------------------------------------------
-  const seamMode = putFile !== null || verifyLiveFile !== null;
+  // SAFETY: seam mode is defined ONLY by --put-file (the flag that suppresses the
+  // real `gh api -X PUT`). Any apply that can reach the live PUT (putFile === null)
+  // is therefore NOT in seam mode, so it always runs the full pre-apply preflight
+  // and re-fetches independent live state for post-apply verification.
+  const seamMode = putFile !== null;
   const { drift, details } = diffManagedRulesetSurface(source, live);
 
   // Dry-run (default, no --apply): render + diff, mutate NOTHING.
@@ -2573,6 +2594,7 @@ async function cmdRuleset(args, global) {
     cwd,
     rulesetPath,
     workflowsDir: path.join(cwd, '.github', 'workflows'),
+    configPath,
     skipSyncCheck: skipPreflightSync && seamMode,
   });
   if (!preflight.ok) {
