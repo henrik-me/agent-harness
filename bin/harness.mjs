@@ -1244,6 +1244,30 @@ function requiredChecksArrays(root) {
   return arrays;
 }
 
+// The GitHub rulesets API represents required checks as
+// `parameters.required_status_checks: [{ context }]` (NOT the internal
+// `required_checks: [<string>]` shape the harness renderer emits). Collect those
+// arrays so the DIFF/READ path (extractManagedRulesetSurface) understands a live
+// ruleset fetched from the API. `required_status_checks` is also a rule *type*
+// string, so only array-valued matches are collected. This is READ-ONLY and does
+// NOT feed the renderer (which stays on the internal `required_checks` shape).
+function requiredStatusCheckArrays(root) {
+  const arrays = [];
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'required_status_checks' && Array.isArray(value)) arrays.push(value);
+      else visit(value);
+    }
+  };
+  visit(root);
+  return arrays;
+}
+
 function ensureRulesetRequiredChecksObject(ruleset) {
   let arrays = requiredChecksArrays(ruleset);
   if (arrays.length > 0) return arrays;
@@ -2271,7 +2295,11 @@ async function cmdCheck(args, global) {
  */
 function extractManagedRulesetSurface(ruleset) {
   const contexts = new Set();
-  for (const arr of requiredChecksArrays(ruleset)) {
+  // Read BOTH the internal `required_checks` shape (what the renderer emits into
+  // the source file) AND the GitHub API `required_status_checks` shape (what a
+  // live ruleset fetched from the API carries), so source-vs-live diffs are
+  // shape-agnostic and a real API response is never mis-read as "no contexts".
+  for (const arr of [...requiredChecksArrays(ruleset), ...requiredStatusCheckArrays(ruleset)]) {
     for (const entry of arr) {
       const ctx = checkEntryContext(entry);
       if (ctx) contexts.add(ctx);
@@ -2289,6 +2317,35 @@ function extractManagedRulesetSurface(ruleset) {
     approvalCount = prRule.parameters.required_approving_review_count;
   }
   return { contexts, approvalCount };
+}
+
+// Serialize the config-derived source ruleset into a body the GitHub rulesets
+// API accepts. The internal source shape uses `parameters.required_checks`
+// (array of context strings); the API expects `parameters.required_status_checks`
+// (array of `{ context }` objects). This transform is applied ONLY to the PUT
+// body (`ruleset apply --apply`); the on-disk source file and the renderer are
+// left untouched. Rules that already carry `required_status_checks` (e.g. a
+// hand-authored API-shape source) pass through unchanged.
+function toApiRulesetBody(source) {
+  const body = JSON.parse(JSON.stringify(source));
+  if (Array.isArray(body.rules)) {
+    for (const rule of body.rules) {
+      if (
+        rule &&
+        rule.type === 'required_status_checks' &&
+        isPlainObject(rule.parameters) &&
+        Array.isArray(rule.parameters.required_checks) &&
+        !Array.isArray(rule.parameters.required_status_checks)
+      ) {
+        rule.parameters.required_status_checks = rule.parameters.required_checks
+          .map((entry) => checkEntryContext(entry))
+          .filter((ctx) => typeof ctx === 'string' && ctx)
+          .map((context) => ({ context }));
+        delete rule.parameters.required_checks;
+      }
+    }
+  }
+  return body;
 }
 
 /**
@@ -2609,7 +2666,7 @@ async function cmdRuleset(args, global) {
   // it via `gh api -X PUT ... --input <tempfile>` (a temp --input file avoids
   // Windows-fragile stdin piping). The --put-file seam writes the body to disk
   // instead, for tests. Fail-closed (stderr + exit 1) on any error.
-  const bodyJSON = `${JSON.stringify(source, null, 2)}\n`;
+  const bodyJSON = `${JSON.stringify(toApiRulesetBody(source), null, 2)}\n`;
   if (putFile) {
     try {
       writeFileSync(path.resolve(cwd, putFile), bodyJSON, 'utf8');

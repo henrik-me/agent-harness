@@ -79,6 +79,31 @@ function writeLiveFile(dir, name, contexts) {
   return p;
 }
 
+// Write a live ruleset in the GitHub rulesets API shape:
+// parameters.required_status_checks (array of {context} objects), as returned by
+// GET /repos/{owner}/{repo}/rulesets/{id}. This is the shape a REAL live fetch
+// carries — distinct from the internal required_checks source shape.
+function writeApiLiveFile(dir, name, contexts) {
+  const p = path.join(dir, name);
+  writeFileSync(
+    p,
+    JSON.stringify({
+      name: 'main-protection',
+      rules: [
+        {
+          type: 'required_status_checks',
+          parameters: {
+            required_status_checks: contexts.map((c) => ({ context: c })),
+            strict_required_status_checks_policy: true,
+          },
+        },
+      ],
+    }),
+    'utf8'
+  );
+  return p;
+}
+
 // A fixture where the source's required contexts all have producing workflow
 // jobs (so the F3 preflight is clean).
 function makeCleanFixture(contexts = [...GATE_CONTEXTS]) {
@@ -177,10 +202,18 @@ describe('CS109a harness ruleset apply --apply — PUT', () => {
       assert.equal(existsSync(store), true, 'the PUT body must be written');
       const written = JSON.parse(readFileSync(store, 'utf8'));
       assert.equal(written.name, 'main-protection');
-      assert.deepEqual(
+      // The PUT body is serialized into the GitHub API shape
+      // (parameters.required_status_checks objects), NOT the internal
+      // required_checks-strings source shape.
+      assert.equal(
         written.rules[0].parameters.required_checks,
-        [...GATE_CONTEXTS],
-        'the PUT body is the rendered source'
+        undefined,
+        'the internal required_checks shape must not leak into the PUT body'
+      );
+      assert.deepEqual(
+        written.rules[0].parameters.required_status_checks,
+        [...GATE_CONTEXTS].map((context) => ({ context })),
+        'the PUT body is the rendered source in GitHub API shape'
       );
       assert.match(res.stdout, /verified/);
     } finally {
@@ -388,6 +421,82 @@ describe('CS109a harness ruleset apply --apply — seam safety guards', () => {
       ]);
       assert.equal(res.status, 2, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
       assert.match(res.stderr, /--skip-preflight-sync requires --put-file/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GitHub API shape — a REAL live ruleset carries `parameters.required_status_checks`
+// (array of {context} objects), not the internal `required_checks` strings. The
+// diff must read it, and the PUT body must be serialized into it.
+// ---------------------------------------------------------------------------
+
+describe('CS109a harness ruleset apply — GitHub API shape (required_status_checks)', () => {
+  it('dry-run reads an API-shape live ruleset (no false drift when contexts match the source)', () => {
+    const dir = makeCleanFixture(); // source required_checks = GATE_CONTEXTS
+    try {
+      const live = writeApiLiveFile(dir, 'api-live.json', [...GATE_CONTEXTS]); // same contexts, API shape
+      const res = runHarness(['--cwd', dir, 'ruleset', 'apply', '--live-file', live]);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stdout, /no drift/, 'API-shape live contexts must match the source (not read as empty)');
+      assert.match(res.stdout, /NOTHING was mutated/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('dry-run detects real drift against an API-shape live ruleset (reads live contexts, not empty)', () => {
+    const dir = makeCleanFixture(); // source = GATE_CONTEXTS
+    try {
+      const live = writeApiLiveFile(dir, 'api-live.json', ['validate', 'secret-scan']); // different contexts, API shape
+      const res = runHarness(['--cwd', dir, 'ruleset', 'apply', '--live-file', live]);
+      assert.equal(res.status, 0, `stderr:\n${res.stderr}`);
+      assert.match(res.stdout, /DRIFT vs the live ruleset/);
+      assert.match(res.stdout, /MISSING required contexts present in source/);
+      // The EXTRA line only appears if the API-shape live contexts were actually read.
+      assert.match(res.stdout, /EXTRA required contexts absent from source/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('the --apply PUT body is serialized to the GitHub API shape (required_status_checks objects)', () => {
+    const dir = makeCleanFixture();
+    try {
+      const live = writeApiLiveFile(dir, 'api-live.json', ['ci']);
+      const store = path.join(dir, 'put-store.json');
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply',
+        '--live-file', live, '--put-file', store, '--skip-preflight-sync',
+      ]);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      const written = JSON.parse(readFileSync(store, 'utf8'));
+      assert.equal(written.rules[0].parameters.required_checks, undefined);
+      assert.deepEqual(
+        written.rules[0].parameters.required_status_checks,
+        [...GATE_CONTEXTS].map((context) => ({ context })),
+        'the PUT body must use the GitHub API required_status_checks shape'
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('post-apply verification succeeds when the post-PUT live is API-shape and matches the source', () => {
+    const dir = makeCleanFixture();
+    try {
+      const live = writeApiLiveFile(dir, 'api-live.json', ['ci']); // pre-apply drift
+      const store = path.join(dir, 'put-store.json');
+      // The re-fetched post-apply "live" is API-shape with the source contexts.
+      const verify = writeApiLiveFile(dir, 'api-verify.json', [...GATE_CONTEXTS]);
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply',
+        '--live-file', live, '--put-file', store, '--verify-live-file', verify, '--skip-preflight-sync',
+      ]);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stdout, /verified/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
