@@ -11,6 +11,16 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Added
 
+### Changed
+
+### Documentation
+
+### Fixed
+
+## [0.17.0] — 2026-07-05
+
+### Added
+
 - **Path-derived `workboard-only` evidence-gate skip + `check-workboard-allowlist-consistency` linter (CS71):** the managed `review-gates.yml` and `pr-evidence-lint.yml` now derive the `workboard-only` evidence-gate skip from the PR's **allowlist-confined diff** (which the `opened` event always carries) instead of the racy `workboard-only` label — so a correctly-shaped workboard PR (diff confined to `WORKBOARD.md` / `CONTEXT.md` / `LEARNINGS.md` / `project/clickstops/(planned|active|done)/`) shows **green** `review-gates` and `pr-evidence-lint` runs on its first CI event regardless of label-attach timing (`gh pr create --label` attaches the label in a separate API call *after* PR creation: PR #305 was green but PR #306 — identical command — went red, then green on the `labeled` re-run). The four `review-gates` evidence jobs now **always execute** and short-circuit internally to success (fail **closed** on a file-list API error — never fail-open via a skipped `needs:` dependency), and `validate-workboard-only-scope` still rejects a *labelled* PR that touches files outside the allowlist. A new self-host `harness lint` guard, `check-workboard-allowlist-consistency`, asserts every `# harness:workboard-allowlist` occurrence across both workflow forms (the `grep -Ev` regex and the `allowed-paths.txt` list) parses to the identical token set. The `workboard-only` label is still required for `workboard-auto-approve.yml` to auto-merge (a correctly-shaped unlabelled PR is green yet will not auto-merge until labelled). Consumers adopt on the next `harness sync` (Minor).
 
 - **Bounded `workboard/maint-*` auto-merge branch pattern (CS91, [#395](https://github.com/henrik-me/agent-harness/issues/395) Rec C):** the managed `workboard-auto-approve.yml` `validate-and-approve` gate now also auto-approves `workboard-only` PRs whose branch matches `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` — ad-hoc workboard-allowlist **maintenance** PRs (e.g. a standalone `CONTEXT.md`/`LEARNINGS.md` correction) that are not claim/close/close-out or CS-filing PRs and previously failed the branch-name check. The pattern is anchored and slash-free so it cannot broaden into a `workboard/*` wildcard, and the `is_allowed()` path allowlist still constrains *which* files may change. Consumers adopt on the next `harness sync` (Minor).
@@ -616,7 +626,8 @@ ready for invitation-only consumers via `npx -y github:henrik-me/agent-harness#v
 - CONTEXT, ARCHITECTURE, LEARNINGS (77 entries), WORKBOARD — seeded
   project-state docs.
 
-[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/henrik-me/agent-harness/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/henrik-me/agent-harness/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/henrik-me/agent-harness/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/henrik-me/agent-harness/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/henrik-me/agent-harness/compare/v0.13.0...v0.14.0
