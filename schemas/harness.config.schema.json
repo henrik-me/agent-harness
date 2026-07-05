@@ -368,7 +368,7 @@
     },
     "dispatch": {
       "type": "object",
-      "description": "Optional configuration for the 'harness dispatch' subcommand (issue #423). Selects the language profile whose ecosystem-specific conventions and self-check commands are spliced into the canonical sub-agent briefing preamble (OPERATIONS.md § Mandatory briefing preamble). The language-agnostic core of the preamble (preflight, file ownership, required reading, fail-closed, report shape) is always emitted regardless of profile. Absent this block, dispatch behaves as if language_profile is 'node' (backward-compatible).",
+      "description": "Optional configuration for the 'harness dispatch' subcommand (issue #423). Selects the language profile whose ecosystem-specific conventions and self-check commands are spliced into the canonical sub-agent briefing preamble (sourced from the harness-owned DISPATCH-PREAMBLE.md, which 'harness dispatch' machine-extracts; a consumer that has not yet run 'harness sync --apply-new' falls back to the legacy inline-fenced OPERATIONS.md). The language-agnostic core of the preamble (preflight, file ownership, required reading, fail-closed, report shape) is always emitted regardless of profile. Absent this block, dispatch behaves as if language_profile is 'node' (backward-compatible).",
       "additionalProperties": false,
       "properties": {
         "language_profile": {

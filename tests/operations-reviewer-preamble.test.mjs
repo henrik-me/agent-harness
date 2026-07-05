@@ -1,11 +1,16 @@
 /**
  * tests/operations-reviewer-preamble.test.mjs — CS35 Exit criteria #5.
  *
- * Asserts that OPERATIONS.md (and its template counterpart) contains exactly
+ * Asserts that REVIEWS.md (and its template counterpart) contains exactly
  * one reviewer-preamble sentinel block delimited by:
  *   <!-- harness:reviewer-preamble:start -->
  *   <!-- harness:reviewer-preamble:end -->
  * and that the block is non-empty and contains all required field labels.
+ *
+ * CS86: the canonical reviewer-preamble body was relocated from OPERATIONS.md
+ * to its authoritative home REVIEWS.md § 2.9 (OPERATIONS.md now carries only a
+ * pointer stub). The filename is retained for history; the assertions target
+ * REVIEWS.md + template/composed/REVIEWS.md.
  *
  * Run: node --test tests/operations-reviewer-preamble.test.mjs
  */
@@ -67,11 +72,11 @@ function extractPreamble(content) {
 }
 
 /**
- * Run all four assertions against a given OPERATIONS.md file path.
+ * Run all four assertions against a given REVIEWS.md file path.
  *
  * @param {string} relPath - Repo-root-relative path to the file.
  */
-function assertOperationsFile(relPath) {
+function assertReviewsFile(relPath) {
   const content = readFile(relPath);
 
   // 1. Exactly one start marker, exactly one end marker, start before end.
@@ -130,12 +135,12 @@ function assertOperationsFile(relPath) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('operations reviewer preamble block', () => {
-  it('OPERATIONS.md contains valid reviewer-preamble block with all required fields', () => {
-    assertOperationsFile('OPERATIONS.md');
+describe('reviewer preamble block (REVIEWS.md home — relocated in CS86)', () => {
+  it('REVIEWS.md contains valid reviewer-preamble block with all required fields', () => {
+    assertReviewsFile('REVIEWS.md');
   });
 
-  it('template/composed/OPERATIONS.md contains valid reviewer-preamble block with all required fields', () => {
-    assertOperationsFile('template/composed/OPERATIONS.md');
+  it('template/composed/REVIEWS.md contains valid reviewer-preamble block with all required fields', () => {
+    assertReviewsFile('template/composed/REVIEWS.md');
   });
 });

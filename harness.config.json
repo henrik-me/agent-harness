@@ -17,6 +17,7 @@
       "TRACKING.md",
       "RETROSPECTIVES.md",
       "READMEGUIDE.md",
+      "DISPATCH-PREAMBLE.md",
       ".github/CODEOWNERS",
       ".github/workflows/harness-drift.yml",
       ".github/workflows/pr-evidence-lint.yml",

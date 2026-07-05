@@ -850,9 +850,11 @@ Exit codes:
 Usage: harness dispatch [options]
 
 Emit the canonical sub-agent briefing preamble (CS64 C64-6). Surfaces the
-verbatim block from OPERATIONS.md § Mandatory briefing preamble so the
-orchestrator can paste it into every sub-agent prompt without copy/paste
-drift (LRN-068 / Hard Rule § 5). Pure stdout — no IO side effects.
+verbatim block from the harness-owned DISPATCH-PREAMBLE.md (CS86; falls back to
+the legacy inline-fenced OPERATIONS.md for a consumer that has not yet run
+'harness sync --apply-new') so the orchestrator can paste it into every
+sub-agent prompt without copy/paste drift (LRN-068 / Hard Rule § 5). Pure
+stdout — no IO side effects.
 
 Options:
   --task-file <path>    Read the task description from a YAML/JSON file and
@@ -4933,7 +4935,7 @@ async function cmdDispatch(args, global) {
     }
   }
 
-  const { emitBriefingFromFile, LANGUAGE_PROFILES } = await import('../lib/dispatch.mjs');
+  const { emitBriefingFromFile, resolvePreambleSource, LANGUAGE_PROFILES } = await import('../lib/dispatch.mjs');
   const languageProfile =
     languageProfileFlag ?? config?.dispatch?.language_profile ?? 'node';
   if (!LANGUAGE_PROFILES.includes(languageProfile)) {
@@ -4944,9 +4946,15 @@ async function cmdDispatch(args, global) {
     );
   }
 
-  const operationsPath = path.join(cwd, 'OPERATIONS.md');
-  if (!existsSync(operationsPath)) {
-    die(`harness dispatch: OPERATIONS.md not found at ${operationsPath}`, 1);
+  // CS86 (C86-2/C86-4): prefer the managed DISPATCH-PREAMBLE.md source, falling
+  // back to the legacy inline-fenced OPERATIONS.md for a pre-`sync --apply-new`
+  // consumer. resolvePreambleSource fails closed with a message naming both
+  // paths + the adoption command when neither is present.
+  let operationsPath;
+  try {
+    operationsPath = resolvePreambleSource({ cwd });
+  } catch (err) {
+    die(`harness dispatch: ${err.message}`, 1);
   }
   let task = null;
   if (taskFile) {

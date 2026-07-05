@@ -268,8 +268,9 @@ record.
 - **Report shape:** every sub-agent must respond with the canonical report shape from
   [OPERATIONS.md § Sub-agent report shape](OPERATIONS.md#sub-agent-report-shape-mandatory).
   Reports missing this structure are rejected and the sub-agent is re-dispatched.
-- **Sub-agent briefing preamble**: every sub-agent dispatch MUST paste the canonical preamble from
-  [OPERATIONS.md § Mandatory briefing preamble](OPERATIONS.md#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)
+- **Sub-agent briefing preamble**: every sub-agent dispatch MUST paste the canonical preamble —
+  emitted verbatim by `node bin/harness.mjs dispatch` from the harness-owned `DISPATCH-PREAMBLE.md`
+  (see [OPERATIONS.md § Mandatory briefing preamble](OPERATIONS.md#mandatory-briefing-preamble-copy-verbatim-into-every-dispatch)) —
   verbatim into the prompt. Verbatim paste (not just reference) is the discipline that prevents
   process steps from being forgotten.
 
