@@ -1,9 +1,9 @@
 # CS108 — Consumer local-block extension for the remaining managed docs (TRACKING.md / RETROSPECTIVES.md / READMEGUIDE.md)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs108/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#408](https://github.com/henrik-me/agent-harness/issues/408) (2026-07-05). Surfaced while operating v0.12.0 in the consumer repo `henrik-me/authzandentitlements`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: [#390](https://github.com/henrik-me/agent-harness/issues/390) / CS89 — the sibling CODEOWNERS-as-composed reclassification. CS108 covers the **markdown** docs, which reuse the existing HTML-comment marker form, so it does **not** depend on CS89's new CODEOWNERS `#`-comment marker.)
@@ -78,7 +78,17 @@ Give consumers a "harness core + your additions" path for the three remaining fu
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| D1: reclassify 3 docs managed→composed in `harness.config.json` (+ `composed.overrides` local_blocks) | planned | yoga-ah-c2 | `tracking.project` / `retrospectives.project` / `readmeguide.project` |
+| D2: create `template/composed/{TRACKING,RETROSPECTIVES,READMEGUIDE}.md` (managed content + empty local block); remove `template/managed/` copies | planned | yoga-ah-c2 | reuse HTML-comment markers |
+| D3: re-render root docs; `harness sync --mode=check` no drift | planned | yoga-ah-c2 | self-host |
+| D4/D7: `lib/sync.mjs` fail-closed migration message for reclassified doc still in `managed.files` + test | planned | yoga-ah-c2 | not raw ESYNC_MISSING_TEMPLATE |
+| D4/D8: update `check-consumer-template-genericity.mjs` + `check-doc-xref-resolvability.mjs` to composed paths (+ fixtures/tests) | planned | yoga-ah-c2 | hard prerequisite for green lint |
+| D4/D8: composed reclassification round-trip tests (populated local block preserved, core overwritten) | planned | yoga-ah-c2 | — |
+| D5: managed-workflow escape-valve doc note | planned | yoga-ah-c2 | OPERATIONS.md + composed mirror or READMEGUIDE |
+| D6: `CHANGELOG.md` `[Unreleased]` entry (Minor) | planned | yoga-ah-c2 | migration called out |
+| Validation: `harness lint` + `node --test` + `sync --mode=check` green | planned | yoga-ah-c2 | — |
+| Close-out: docs + restart state — update `WORKBOARD.md`, `CONTEXT.md`, process templates + rendered roots | planned | yoga-ah-c2 | mandatory close-out row |
+| Close-out: learnings + follow-ups — file/disposition learnings in `LEARNINGS.md`, file follow-up CSs | planned | yoga-ah-c2 | mandatory close-out row |
 
 ## Notes / Learnings
 
