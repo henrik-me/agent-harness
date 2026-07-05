@@ -146,7 +146,9 @@ runtime deps with `npm ci`, then runs the CLI directly. This mirrors what
         run: |
           tmpdir="$(mktemp -d)"
           git clone --quiet --no-checkout https://github.com/henrik-me/agent-harness.git "$tmpdir"
-          git -C "$tmpdir" checkout --quiet "$CLI_REF"
+          # --detach requires a commit-ish: an unresolvable ref fails closed here
+          # instead of falling back to a confusing pathspec checkout.
+          git -C "$tmpdir" checkout --quiet --detach "$CLI_REF"
           (cd "$tmpdir" && npm ci --omit=optional --no-audit --no-fund)
           node "$tmpdir/bin/harness.mjs" sync --mode=check --cwd .
 ```
