@@ -268,6 +268,27 @@ describe('CS109a harness ruleset apply --apply — pre-apply preflight', () => {
     }
   });
 
+  it('preflight-pass via the REAL sync-check leg: a clean default config proceeds to the PUT (exit 0)', () => {
+    // Exercises the DEFAULT sync-check success path (no --skip-preflight-sync):
+    // a minimal valid harness.config.json makes `sync --mode=check` pass, so the
+    // preflight's sync leg runs for real and succeeds, then the F3 leg is clean,
+    // and the apply proceeds to the PUT + post-apply verify.
+    const dir = makeCleanFixture();
+    try {
+      writeMinimalConfig(dir);
+      const live = writeLiveFile(dir, 'live.json', ['ci']);
+      const store = path.join(dir, 'put-store.json');
+      const res = runHarness([
+        '--cwd', dir, 'ruleset', 'apply', '--apply', '--live-file', live, '--put-file', store,
+      ]);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.equal(existsSync(store), true, 'the real sync-check passed → the PUT ran');
+      assert.match(res.stdout, /verified/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('preflight-block via F3: a required context with no producer blocks the apply (exit 1, no PUT)', () => {
     // Source requires a context that no workflow job produces → F3 warns.
     const dir = makeTempDir();
