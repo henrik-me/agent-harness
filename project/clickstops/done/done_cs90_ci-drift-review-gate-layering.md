@@ -1,10 +1,10 @@
 # CS90 — CI-gate architecture: drift-detection layering doctrine (ADR) + `harness-pr-check` `pr_check.mode` + `review-gates.yml` feature parity & migration path
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs90/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** Triage of three coupled open inbound issues — [#391](https://github.com/henrik-me/agent-harness/issues/391), [#392](https://github.com/henrik-me/agent-harness/issues/392), [#393](https://github.com/henrik-me/agent-harness/issues/393) (2026-07-02 by `omni-ah-c3`). All surfaced from the same `henrik-me/sub-invaders` CI-adoption evaluation (#392/#393 cite v0.12.0 explicitly; #391 is a general drift-layering ask).
 **Depends on:** none. (Related workflow-hardening: CS91 edits `workboard-auto-approve.yml`, a different workflow — no file overlap.)
 
