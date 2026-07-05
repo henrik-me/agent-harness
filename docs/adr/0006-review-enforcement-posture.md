@@ -8,6 +8,11 @@
 ## Status
 
 Proposed (CS109 — inbound issue [#402](https://github.com/henrik-me/agent-harness/issues/402)).
+Independently rubber-duck-reviewed (gpt-5.5, 2026-07-05): the first round
+returned **Needs-Fix** with four blocking design findings (default/absence
+guarantee, `enforce_gates` precedence, deadlock-guard modelling, bot/fork
+overclaim); this revision addresses all four (D1, D2, D4, and the D3/Context
+bot-fork wording respectively).
 This ADR is a **user-approval gate** (G109-adr): implementation of the config
 field, the `harness ruleset` verb, and the deadlock/coherence guards MUST NOT
 land until the posture model below is accepted. It is the generalized,
@@ -39,7 +44,7 @@ than a human thumbs-up: the `review-gates.yml` evidence jobs
 of the native approval count — making review *stronger* while removing the
 App/PAT/admin-bypass dependency.
 
-### What already exists (recon at HEAD `232e5de`)
+### What already exists (recon on the `cs109/content` base, HEAD `232e5de`; re-verified at `83e0bad`)
 
 - **Ruleset source of truth:** `infra/main-protection-ruleset.json` — a GitHub
   ruleset document (`name`, `target`, `enforcement`, `conditions`, `rules[]`,
@@ -57,13 +62,23 @@ App/PAT/admin-bypass dependency.
   `require_copilot_review`, …). The dep-free reader `lib/reviews-policy.mjs`
   reads the `reviews` subtree (schema-sourced defaults, fail-closed on malformed
   values).
-- **Deadlock-safety is already achieved for the four contexts:** post-CS71 the
-  `review-gates.yml` jobs always *run* and skip **internally** at the step level
-  (`if: steps.wb.outputs.skip != 'true'`), so their status context is always
-  *reported* (success), never absent/pending — including on workboard-only, bot,
-  and fork PRs. `read-only-gates` likewise runs on every PR. This is why #402's
-  premise (a safe always-green required context exists) holds **today**, and why
-  CS109 has **no hard dependency** on CS90's aggregate.
+- **The four contexts are always *reported* (not absent/pending):** post-CS71 the
+  `review-gates.yml` jobs always *run* at the job level (no job-level `if:`) and
+  skip **internally** at the step level (`if: steps.wb.outputs.skip != 'true'`),
+  so each status context is always *created and reported*, never absent/pending —
+  the property that actually matters for a required check (an absent/pending
+  required context deadlocks; a *reported* one does not). On **workboard-only**
+  PRs they report success (internal skip). They are **not**, however,
+  unconditionally *green* on every class: `review-gates.yml` implements only a
+  **workboard-only** skip today (no bot/fork skip), and `copilot-review-attached`
+  *fails* when no acceptable Copilot review exists
+  (`scripts/checks/check-copilot-review-attached.mjs`). CS90 assigns bot/fork
+  false-fail parity to **CS90c**. `read-only-gates` (`pr-evidence-lint.yml`) runs
+  on every PR and reports success for a valid workboard-only PR. This is why
+  #402's premise (a safe always-*reported* required context exists) holds
+  **today** for the content and workboard-only classes, and why CS109 has **no
+  hard dependency** on CS90's aggregate — while bot/fork-heavy `required-check`
+  adoption should prefer CS90c parity or the `read-only-gates` context (see D3).
 
 ### The subtlety this ADR must resolve
 
@@ -99,15 +114,28 @@ extended in `lib/reviews-policy.mjs` (already dep-free and schema-default-driven
 imported by the PR-side gate scripts) so both `reviews.*` and
 `review_gates.enforcement` resolve through one fail-closed reader.
 
-**Default and back-compat (schema `default` vs generation trigger).** The schema
-`default` is `"human-approval"` for documentation/discoverability, but
-generation is **opt-in**: the ruleset renderer diverges from today's behavior
-**only when `review_gates.enforcement` is explicitly present** in the config.
-When the key is **absent**, `harness sync` continues exactly as today
-(`reviews.enforce_gates` governs required-check injection; the harness does not
-manage `required_approving_review_count`). This makes the change strictly
-additive and non-breaking (SemVer **minor**) and prevents a silent demotion of
-any existing consumer's required gates.
+**Default and back-compat (no schema `default`; presence-gated generation).**
+The field carries **no JSON Schema `default`** — deliberately. The existing
+`lib/reviews-policy.mjs` reader *materializes* schema defaults into the returned
+object, which erases the absent-vs-set distinction; a `default: "human-approval"`
+would therefore make an absent field indistinguishable from an explicit
+`human-approval` and could silently demote an existing consumer's required gates
+to advisory. Instead:
+
+- The schema declares the enum **without** a `default`.
+- The reader exposes an explicit **presence** signal (e.g.
+  `enforcement === undefined` / a `reviewGateEnforcementPresent` boolean), so a
+  caller can distinguish "absent" from any explicit value.
+- Ruleset generation is **presence-gated**: it diverges from today's behavior
+  **only when `review_gates.enforcement` is explicitly present**. When the key is
+  **absent**, `harness sync` renders the ruleset **byte-for-byte as it does
+  today** (`reviews.enforce_gates` alone governs required-check injection; the
+  harness does not manage `required_approving_review_count`).
+
+A mandatory test (C109-7) asserts that an absent `review_gates.enforcement`
+leaves ruleset generation **byte-for-byte unchanged even when schema defaults are
+loaded**. This makes the change strictly additive and non-breaking (SemVer
+**minor**) and *structurally* prevents a silent demotion of required gates.
 
 ### D2 — Enforcement → ruleset mapping
 
@@ -127,16 +155,32 @@ To manage the approval count, the renderer adds/updates a `pull_request` rule
 `required-check` sets it to `0`. The four review-gate contexts are added to
 `required_checks` for `required-check`/`both` and removed for `human-approval`.
 
+**Precedence over legacy `reviews.enforce_gates`.** When `review_gates.enforcement`
+is explicitly present it is **authoritative** for ruleset rendering and
+**overrides** the legacy `reviews.enforce_gates` required-check injection (which
+today adds the four contexts whenever `enforce_gates === true`,
+`bin/harness.mjs:1282`,`1300`). So `reviews.enforce_gates: true` **+**
+`review_gates.enforcement: "human-approval"` renders gates *advisory* with count
+`1` (the enum wins) — not the legacy "gates required" behavior. `enforce_gates`
+remains the switch that *installs* the `review-gates.yml` CI jobs and *computes*
+the contexts; `enforcement` decides whether those contexts are **required** in
+the ruleset and what the approval count is. C109-7 tests the full
+`{enforce_gates} × {enforcement}` cross-product, calling out
+`enforce_gates:true + human-approval` explicitly.
+
 ### D3 — `harness ruleset apply` / `harness ruleset check` (F2)
 
 Add a new subcommand `ruleset` with two actions:
 
 - **`harness ruleset check`** — read-only. Render the expected ruleset from
-  config (D2), fetch the live ruleset via
-  `gh api repos/{owner}/{repo}/rulesets/{id}` (or the `--ruleset-id` / config
-  `reviews.ruleset_id` pointer), and **diff** them. Exit non-zero on drift
-  (fail-closed on API/parse error). This is safe on every tier and is the piece
-  CS109 ships enabled.
+  config (D2), fetch the live ruleset via the GitHub API — discovered **by name**
+  (`main-protection`) from `gh api repos/{owner}/{repo}/rulesets`, then
+  `…/rulesets/{id}`, with an optional `--ruleset-id` override — and **diff** them.
+  Discovery-by-name avoids a new config field (no `ruleset_id` under `reviews`,
+  which is `additionalProperties:false` and would conflict with the
+  "enforcement lives under `review_gates`" rationale of D1). Exit non-zero on
+  drift (fail-closed on API/parse error). This is safe on every tier and is the
+  piece CS109 ships enabled.
 - **`harness ruleset apply`** — dry-run by default (prints the diff);
   **`--apply` is required** to PUT the rendered ruleset to the live API. `apply`
   without `--apply` never mutates. `apply --apply` is the only action that
@@ -152,13 +196,28 @@ as an advisory, so a source-vs-live divergence surfaces in normal validation.
 ### D4 — F3 deadlock-risk guard (a `harness lint` check)
 
 Add a linter that reads `infra/main-protection-ruleset.json` `required_checks`
-and cross-references each context against the workflow jobs that produce it. It
-**warns** (does not hard-fail, to avoid a chicken-and-egg block) when a required
-context is produced by a job that can be **skipped at the job level**
-(`if:` on the job, or a `paths:`/`branches:` filter) — because a job-level skip
-leaves the required context perpetually *pending* → **deadlock**. The four
-harness review-gate contexts pass (they are step-gated, never job-gated). The
-guard protects a consumer who marks a genuinely skippable context as required.
+and cross-references each required context against the workflow jobs under
+`.github/workflows/` that could produce it. It **warns** (does not hard-fail, to
+avoid a chicken-and-egg block) on the two real deadlock classes, ordered by
+severity:
+
+1. **No producer (highest risk).** A required context whose name matches **no**
+   workflow job `name:` / job-id in the repo — a typo or a removed job. GitHub
+   holds an unproduced required context in the *expected/pending* state
+   indefinitely → the PR can never merge. This is the deadlock the guard most
+   needs to catch.
+2. **Workflow-level non-instantiation.** A producing workflow whose
+   **workflow-level** `on:` filters (`paths` / `paths-ignore` / `branches` /
+   restricted event `types`) can prevent the check run from ever being *created*
+   for some PR class — again leaving the required context absent/pending.
+
+Job-level `if:` conditions are treated as **lower-severity / informational**:
+GitHub generally reports a job skipped by a job-level `if:` with a *skipped*
+(not pending) conclusion, so it does not usually deadlock the way an unproduced
+context does — and the harness's own four contexts deliberately skip *internally*
+at the **step** level precisely so the context is always reported. The guard
+notes job-level `if:` on a required producer but does not treat it as the primary
+deadlock signal. The four harness review-gate contexts pass all classes.
 
 ### D5 — F4 posture-coherence guard (a `harness lint`/`doctor` check)
 
@@ -249,5 +308,11 @@ non-breaking). The orchestrator owns that edit at close-out.
 
 - **CS106** — the concrete self-host required-check + `required_approving_review_count = 0`
   flip (a specific instance of `enforcement: required-check`); CS109 is the
-  generalized surface, CS106 must not be re-implemented here.
+  generalized surface, CS106 must not be re-implemented here. **Reconciliation
+  follow-up:** CS106's plan still describes today's per-gate `review-gates.yml`
+  jobs as skipping at the *job* level and hard-depending on a CS90 aggregate;
+  post-CS71 that premise is stale (the jobs are step-gated and always report).
+  CS106 should be reconciled with this ADR when it is claimed — filed as a
+  learning candidate at CS109 close-out, not edited here (CS106 is out of CS109's
+  ownership).
 - **#402** — the inbound feature request (F1–F5) this ADR designs.
