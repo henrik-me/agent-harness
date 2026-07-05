@@ -120,7 +120,32 @@ Add a first-class, configurable **review-enforcement posture** so a repo can enf
 - **D6 scope split (recommended, pending G109-adr ratification):** CS109 = safe/additive surface
   (config + reader + `ruleset check` + F3/F4 + docs + tests; no live mutation); **CS109a** (follow-up) =
   `ruleset apply --apply` + self-host posture selection (coordinates with CS106).
-- **G109-adr status:** presented to @henrik-me for ratification (design + scope) before implementation lands.
+- **G109-adr status:** presented to @henrik-me for ratification (design + scope). User **away** and
+  directed autonomous progress → **proceeded on the recommended option 1** (D6 split): implemented the
+  CS109 safe/additive surface; the live-ruleset apply + self-host flip stay deferred to CS109a behind
+  G109-ruleset-apply (never crossed — no live ruleset was mutated). The content PR is **not merged**
+  pending @henrik-me's G109-adr ratification, so no design "lands" before acceptance.
+
+### Implementation (C109-2..7, F5, CHANGELOG) — 2026-07-05
+
+- **C109-2** schema `review_gates.enforcement` enum (no default) + `lib/reviews-policy.mjs`
+  `loadReviewGatesEnforcement()` presence reader (fail-closed). Commit `e870ac6`.
+- **C109-3** presence-gated renderer in `syncReviewGateRuleset` (absent ⇒ byte-for-byte unchanged;
+  present ⇒ D2 mapping; overrides legacy `enforce_gates`) + **`harness ruleset check`** verb
+  (managed-surface drift vs live; `apply` rejected → CS109a). Commit `e870ac6`.
+- **C109-4/5** F3 `check-ruleset-deadlock.mjs` + F4 `check-posture-coherence.mjs` guards, registered in
+  `harness lint` (43 linters). Commit `551bce1`.
+- **C109-7** 30 tests (`tests/cs109-review-enforcement.test.mjs` + `tests/cs109-guards.test.mjs`):
+  reader presence/malformed, renderer cross-product incl. absent=unchanged + precedence,
+  `diffManagedRulesetSurface`, `ruleset check` CLI, both guards. Commit `551bce1`.
+- **C109-6 (F5)** operating docs: posture matrix + reversibility + guard inventory in ADR 0006
+  `## Operating the posture (F5)`, plus a pointer in `REVIEWS.md` `reviews.project-gates` local block.
+- **CHANGELOG** `[Unreleased] / Added` entry.
+- **CS109a** filed (`project/clickstops/planned/planned_cs109a_*.md`) with an independent gpt-5.5 plan review.
+- **Delegation note:** F3/F4 guards were implemented directly (not via parallel background agents) —
+  they couple tightly to the `harness lint` registration + are false-positive-sensitive (must pass clean
+  on self-host), and concurrent shared-working-tree agent edits would race the orchestrator's doc/CHANGELOG
+  edits (git-status/lint self-checks). Independent GPT-5.5 review was still used for the ADR + will be for the PR.
 
 ## Plan-vs-implementation review
 

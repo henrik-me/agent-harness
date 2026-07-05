@@ -291,6 +291,46 @@ recommendation, not a hard requirement.
 `review_gates.enforcement` field and the `harness ruleset` subcommand (minor,
 non-breaking). The orchestrator owns that edit at close-out.
 
+## Operating the posture (F5)
+
+### Team-shape → posture matrix
+
+| Team shape | Recommended `review_gates.enforcement` | `required_approving_review_count` | Why |
+|---|---|---|---|
+| Multi-maintainer, humans review each other | `human-approval` (or absent) | 1 | A second human is available to approve; CI evidence stays advisory. |
+| Solo maintainer + agent(s) | `required-check` | 0 | No second human to approve; the machine-checked review-evidence gate *is* the review, so drop the unsatisfiable approval count and require the check. |
+| Regulated / belt-and-braces | `both` | 1 | A human approval **and** the review-evidence check are both mandatory. |
+| Not yet decided / back-compat | absent (unset) | unchanged | Generation is byte-for-byte as before; adopt a posture later with zero risk. |
+
+### Reversibility
+
+The posture is fully reversible and each step is dry-run-first:
+
+1. **Flip the config** — change (or remove) `review_gates.enforcement` in
+   `harness.config.json`.
+2. **Re-render the source** — `harness sync --mode=check` to preview, then
+   `harness sync --mode=apply` to rewrite `infra/main-protection-ruleset.json`.
+   Removing the field restores the pre-posture rendering exactly.
+3. **Re-apply to the live ruleset** — (CS109a) `harness ruleset apply` (dry-run),
+   then `harness ruleset apply --apply`. To roll back `required-check` → raise the
+   approval count and re-require nothing new: set `human-approval` (or remove the
+   field) and re-apply.
+4. **Verify** — `harness ruleset check` must report no drift between source and
+   live after the apply.
+
+Rolling back from `required-check` to `human-approval` re-adds the native
+approval requirement and demotes the evidence gates to advisory; nothing is
+destroyed and no history is rewritten.
+
+### Per-mode guard inventory
+
+| Guard | When it runs | `human-approval` / absent | `required-check` / `both` |
+|---|---|---|---|
+| `ruleset-deadlock` (F3, `harness lint`) | whenever `infra/main-protection-ruleset.json` exists | warns only if a *required* context has no producer / is path-filtered | same — validates the newly-required contexts are safe to require |
+| `posture-coherence` (F4, `harness lint`) | whenever a config exists | no-op (advisory gates can't be "bypassed") | warns if `bypass_actors` are present or the ruleset is unrendered (decorative gate) |
+| `harness ruleset check` (on demand / CI) | on demand | compares the managed surface (contexts + approval count) source-vs-live | same |
+| `harness sync --mode=check` | every sync/CI | detects config-vs-source ruleset drift | same |
+
 ## Related ADRs
 
 - **[ADR 0001](0001-file-classes.md)** — the schema-first `harness.config.json`

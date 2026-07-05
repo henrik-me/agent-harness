@@ -229,6 +229,12 @@ const SUBCOMMAND_PLAN = {
   'pr-evidence': {
     skip: 'Aggregator that fetches PR metadata; git usage is read-only diff/log (bin/harness.mjs).',
   },
+  ruleset: {
+    skip: 'CS109 ruleset drift check; `ruleset check` fetches the live GitHub ruleset via gh api ' +
+      '(or reads --live-file) and diffs the harness-managed surface, performing no git operation at ' +
+      'all (bin/harness.mjs cmdRuleset). `ruleset apply` is deferred to CS109a and currently die()s ' +
+      'before any work. No HEAD-moving git op.',
+  },
   'review-output': {
     skip: 'Reads a reviewer-output file + read-only `git diff` (scripts/check-review-output.mjs); ' +
       'a post-review capture tool, not exercised here.',

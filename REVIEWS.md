@@ -871,17 +871,29 @@ C42-6, after which missing columns become a hard failure.
 
 ## Project-specific review gates
 
-_No project-specific gates are defined yet. Add entries here for gates that
-apply to this project but are not universal harness policy. Examples:_
+### Review-enforcement posture (CS109 / ADR 0006)
 
-- _"All clickstops that touch Azure deployment configuration require a manual
-  approval step from the project owner before the close-out PR is raised."_
-- _"Security-sensitive changes (cryptographic primitives, secret handling,
-  auth flows) require a dedicated security review round in addition to the
-  standard GPT-5.5 content review."_
-- _"Any CS that modifies public-facing API schemas must include a
-  backwards-compatibility attestation in the PR body."_
+This repo can enforce code review via a **required status check** (the harness
+review-evidence gate) instead of GitHub's native
+`required_approving_review_count`, via the optional `review_gates.enforcement`
+config (`human-approval | required-check | both`; **absent ⇒ today's behavior is
+unchanged**). See
+[`docs/adr/0006-review-enforcement-posture.md`](docs/adr/0006-review-enforcement-posture.md)
+for the team-shape → posture matrix, reversibility steps, and the per-mode guard
+inventory (`ruleset-deadlock` F3 + `posture-coherence` F4, both in
+`harness lint`). Inspect live-vs-source ruleset drift with `harness ruleset check`.
 
-_Replace this placeholder paragraph with the actual gates for your project._
+**Current self-host posture:** the explicit `enforcement` field is not yet set —
+the effective posture is native approval (count 1) **plus** the required
+review-evidence contexts (`reviews.enforce_gates: true`). Adopting an explicit
+posture (e.g. `required-check`, to drop the unsatisfiable approval requirement
+while keeping the gate) together with the live-ruleset apply is tracked by
+**CS109a** (`harness ruleset apply --apply`) and the concrete self-host flip by
+**CS106**, behind the G109-ruleset-apply user-approval gate.
+
+_Add further project-specific review gates below (gates that apply to this
+project but are not universal harness policy — e.g. a mandatory security-review
+round for auth/crypto changes, or a backwards-compatibility attestation for
+public API-schema changes)._
 
 <!-- harness:local-end id=reviews.project-gates -->
