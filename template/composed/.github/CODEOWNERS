@@ -20,18 +20,18 @@
 # infra_codeowner are optional (they default to default_codeowner).
 
 # Default: all files require review from the default codeowner.
-* @henrik-me
+* @{{default_codeowner}}
 
 # lib/ changes require a dedicated reviewer.
-/lib/ @henrik-me
+/lib/ @{{lib_codeowner}}
 
 # Secure-by-default: highest-risk change surfaces require codeowner review.
 # CODEOWNERS is last-match-wins, so these follow the `*` default; the more
 # specific /.github/workflows/ rule follows /.github/.
-/.github/ @henrik-me
-/.github/workflows/ @henrik-me
-/SECURITY.md @henrik-me
-/infra/ @henrik-me
+/.github/ @{{security_codeowner}}
+/.github/workflows/ @{{security_codeowner}}
+/SECURITY.md @{{security_codeowner}}
+/infra/ @{{infra_codeowner}}
 
 # harness:local-start id=codeowners.project
 # Project-specific CODEOWNERS rules — preserved across `harness sync`.

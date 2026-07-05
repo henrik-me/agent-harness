@@ -49,6 +49,7 @@ Verified at HEAD `3b20d0a`:
 ## User-approval gates
 
 - **G89-1** — confirm the four secure-default paths (`/.github/`, `/.github/workflows/`, `/SECURITY.md`, `/infra/`) and the two new key names before implementation, since they set a harness-wide default that lands in every consumer's CODEOWNERS on next sync.
+  - **Resolved 2026-07-05 (yoga-ah-c2): APPROVED as-is.** The four paths and the two key names (`security_codeowner`, `infra_codeowner`) are confirmed as planned; `/SECURITY.md` is root-only (Q1 recommendation adopted). Mapping: `/.github/`, `/.github/workflows/`, `/SECURITY.md` → `@{{security_codeowner}}`; `/infra/` → `@{{infra_codeowner}}`. Both keys default to `default_codeowner` when unset (R4: solo repos see no functional change). Disposition made autonomously under the maintainer's explicit "work autonomously and make good decisions" delegation; the recommended set passed plan-review R1–R3 (R3 Go). Subject to maintainer review at the content PR.
 
 ## Exit criteria
 
@@ -91,12 +92,12 @@ Verified at HEAD `3b20d0a`:
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| C89-4: extend `lib/composed.mjs` marker parser to ALSO recognize the `#`-comment marker form (`# harness:local-start\|end id=<id>`) without breaking the HTML form; update `schemas/harness.config.schema.json` marker docs (`:217-219`) + file-class/composed docs | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| C89-1/C89-2: add `template/composed/.github/CODEOWNERS` (secure-default core `/.github/`, `/.github/workflows/`, `/SECURITY.md`, `/infra/` + empty `codeowners.project` `#`-marker block); delete `template/managed/.github/CODEOWNERS` | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| C89-1/C89-3: `harness.config.json` move `.github/CODEOWNERS` managed→composed + `composed.overrides` `codeowners.project`; add `security_codeowner`/`infra_codeowner` templating keys; `lib/sync.mjs` sync-side defaults (= `default_codeowner`) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| C89-5: regenerate self-host root `.github/CODEOWNERS`; migration notes for both consumer classes + self-host (regeneration, not append) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| Tests 7(a–f): `#`-marker pairing/id/round-trip + HTML-form regression; secure-default render; templating fallback (no literal `{{…}}`); `codeowners.project` sync no-drift; no raw `<!-- … -->` line; managed→composed transition fixture | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
-| CHANGELOG.md `[Unreleased]` entry + migration notes (closes #390) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C89-4: extend `lib/composed.mjs` marker parser to ALSO recognize the `#`-comment marker form (`# harness:local-start\|end id=<id>`) without breaking the HTML form; **mirror the same `#`-form into `scripts/check-composed-blocks.mjs`'s duplicate parser** (harness lint runs it per composed file — plan gap, see Notes); update `schemas/harness.config.schema.json` marker docs (`:217-219`) + `docs/adr/0001-file-classes.md` § Composed marker syntax | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| C89-1/C89-2: add `template/composed/.github/CODEOWNERS` (secure-default core `/.github/`, `/.github/workflows/`, `/SECURITY.md`, `/infra/` + empty `codeowners.project` `#`-marker block); delete `template/managed/.github/CODEOWNERS` | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| C89-1/C89-3: `harness.config.json` move `.github/CODEOWNERS` managed→composed + `composed.overrides` `codeowners.project`; add `security_codeowner`/`infra_codeowner` templating keys; `lib/sync.mjs` sync-side defaults (= `default_codeowner`) | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| C89-5: regenerate self-host root `.github/CODEOWNERS`; migration notes for both consumer classes + self-host (regeneration, not append) | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| Tests 7(a–f): `#`-marker pairing/id/round-trip + HTML-form regression; secure-default render; templating fallback (no literal `{{…}}`); `codeowners.project` sync no-drift; no raw `<!-- … -->` line; managed→composed transition fixture | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
+| CHANGELOG.md `[Unreleased]` entry + migration notes (closes #390) | done | cs89-impl | agent-id=cs89-impl \| role=implementer \| report-status=complete \| learnings=0 |
 | Local review — GPT-5.5 rubber-duck (independence invariant per REVIEWS.md) | planned | — | role=reviewer \| report-status=pending \| learnings=0 |
 | Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | — | report-status=pending \| learnings=0 |
 | Close-out: learnings + follow-ups (LEARNINGS.md) | planned | — | report-status=pending \| learnings=0 |
@@ -104,6 +105,9 @@ Verified at HEAD `3b20d0a`:
 ## Notes / Learnings
 
 (filled during execution)
+
+- **Plan gap found at dispatch (yoga-ah-c2, 2026-07-05):** deliverable 1 named only `lib/composed.mjs`, but `harness lint` invokes `scripts/check-composed-blocks.mjs --file .github/CODEOWNERS --allowed-ids codeowners.project` for every composed file (bin/harness.mjs:2754-2770), and that linter carries its **own** HTML-only marker parser (`scripts/check-composed-blocks.mjs:114-116` `MARKER_EXACT_RE`/`MARKER_CONTAINS`), which would not see the `#`-marker block → "required block codeowners.project missing" lint failure. Resolution: mirror the same additive `#`-form into that duplicate parser (in-scope fix — direct consequence of the composed reclassification). Learning candidate: two hand-synced marker parsers (`lib/composed.mjs` + `scripts/check-composed-blocks.mjs`) are a duplication hazard; a future CS could DRY them (the sibling `scripts/check-consumer-template-genericity.mjs` already imports `parseComposed`).
+- **Migration mechanics verified (read-only source review):** `sync.driftDetected` derives ONLY from content `isDrift` (lib/sync.mjs:1341,1347), NOT from a lock class change — so moving `.github/CODEOWNERS` managed→composed and regenerating the self-host root to byte-match the composed render keeps `sync --mode=check` clean with `.harness-lock.json` left at `main` (LRN-201 precedent). Without `_inherited_class`, sync uses `mergeComposed` (template skeleton canonical, lib/sync.mjs:1311-1327); a deleted/empty consumer file hits the fresh-start path (template verbatim, composed.mjs:656-676) = the regeneration path C89-5 mandates.
 
 ## Plan-vs-implementation review
 

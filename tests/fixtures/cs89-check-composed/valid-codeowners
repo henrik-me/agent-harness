@@ -1,0 +1,8 @@
+# CODEOWNERS (fixture) — valid #-marker composed file.
+* @owner
+
+/lib/ @lib-owner
+
+# harness:local-start id=codeowners.project
+/docs/ @docs-team
+# harness:local-end id=codeowners.project

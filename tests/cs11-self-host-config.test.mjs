@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { parseComposed } from '../lib/composed.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,13 +98,15 @@ describe('CS11 — self-host harness.config.json', () => {
       const templatePath = path.join('template', 'composed', file);
       const content = readText(templatePath);
 
-      // Extract all harness:local-start block IDs from the template
-      const markerRe = /<!--\s*harness:local-start\s+id=([^\s>]+)\s*-->/g;
-      const templateIds = new Set();
-      let m;
-      while ((m = markerRe.exec(content)) !== null) {
-        templateIds.add(m[1]);
-      }
+      // Extract all local-block IDs from the template using the canonical
+      // parser (single source of truth). It recognizes BOTH the HTML-comment
+      // and the `#`-comment marker forms, so this test never drifts from the
+      // runtime parser when a new marker syntax is added (CS89 — previously an
+      // inline HTML-only regex here silently missed the `#`-form CODEOWNERS
+      // block, a third hand-synced parser copy).
+      const templateIds = new Set(
+        parseComposed(content, { filename: file }).blocks.keys()
+      );
 
       const configIds = new Set(config.composed?.overrides?.[file]?.local_blocks ?? []);
 

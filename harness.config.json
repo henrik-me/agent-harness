@@ -18,7 +18,6 @@
       "RETROSPECTIVES.md",
       "READMEGUIDE.md",
       "DISPATCH-PREAMBLE.md",
-      ".github/CODEOWNERS",
       ".github/workflows/harness-drift.yml",
       ".github/workflows/pr-evidence-lint.yml",
       ".github/workflows/review-gates.yml"
@@ -31,7 +30,8 @@
       "OPERATIONS.md",
       "REVIEWS.md",
       ".github/copilot-instructions.md",
-      ".github/pull_request_template.md"
+      ".github/pull_request_template.md",
+      ".github/CODEOWNERS"
     ],
     "overrides": {
       "INSTRUCTIONS.md": {
@@ -63,6 +63,11 @@
         "_inherited_class": "managed",
         "local_blocks": [
           "pull-request.review-evidence"
+        ]
+      },
+      ".github/CODEOWNERS": {
+        "local_blocks": [
+          "codeowners.project"
         ]
       }
     }

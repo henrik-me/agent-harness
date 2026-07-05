@@ -119,6 +119,15 @@ const ESCAPE_ZWSP_PREFIX = '<\u200B!--';
 // Escape prefix: HTML entity form.
 const ESCAPE_ENTITY_PREFIX = '&lt;!--';
 
+// Comment-safe `#`-marker form (CS89) — for files where an HTML comment is an
+// invalid line (e.g. CODEOWNERS). Additive; the HTML form above is unchanged.
+// The `#`-form has NO escape variant. A single space follows `#` (matching
+// MARKER_HASH_CONTAINS); a tab or multiple spaces after `#` is not a marker.
+// Keep these two constants byte-identical to lib/composed.mjs so the two
+// hand-synced parsers never drift.
+const MARKER_HASH_RE = /^# harness:local-(start|end)[ \t]+id=([^\s]+)[ \t]*$/;
+const MARKER_HASH_CONTAINS = '# harness:local-';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -136,8 +145,9 @@ function getFenceInfo(line) {
 }
 
 /**
- * Return true if every `<!-- harness:local-` substring in `line` is escaped
- * (preceded by U+200B or replaced with `&lt;!--`).
+ * Return true if every marker substring in `line` is escaped or clean. A line
+ * carrying an unescaped HTML marker (`<!-- harness:local-`) OR a `#`-comment
+ * marker (`# harness:local-`, which has no escape form) is NOT clean.
  *
  * @param {string} line
  * @returns {boolean}
@@ -146,7 +156,7 @@ function lineIsEscapedOrClean(line) {
   let check = line;
   if (line.includes(ESCAPE_ZWSP_PREFIX)) check = check.replace(/<\u200B!--/g, '');
   if (line.includes(ESCAPE_ENTITY_PREFIX)) check = check.replace(/&lt;!--/g, '');
-  return !check.includes(MARKER_CONTAINS);
+  return !check.includes(MARKER_CONTAINS) && !line.includes(MARKER_HASH_CONTAINS);
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +211,7 @@ for (let i = 0; i < lines.length; i++) {
   // Quick skip: line has no marker-related content at all.
   if (
     !line.includes(MARKER_CONTAINS) &&
+    !line.includes(MARKER_HASH_CONTAINS) &&
     !line.includes(ESCAPE_ZWSP_PREFIX) &&
     !line.includes(ESCAPE_ENTITY_PREFIX)
   ) {
@@ -218,9 +229,9 @@ for (let i = 0; i < lines.length; i++) {
     continue;
   }
 
-  // Parse as a whole-line marker.
+  // Parse as a whole-line marker (HTML form first, then the #-comment form).
   const stripped = line.replace(/^[ \t]+|[ \t]+$/g, '');
-  const m = MARKER_EXACT_RE.exec(stripped);
+  const m = MARKER_EXACT_RE.exec(stripped) || MARKER_HASH_RE.exec(stripped);
   if (m) {
     const type = m[1];
     const id = m[2];
