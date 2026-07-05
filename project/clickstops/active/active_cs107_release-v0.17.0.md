@@ -1,9 +1,9 @@
 # CS107 — Cut harness release v0.17.0
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs107/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-04. Cuts the accumulated `[Unreleased]` batch merged since v0.16.0 (9 CSs). Directed by @henrik-me ("yes, release and properly close issues").
 **Depends on:** none
