@@ -1,9 +1,9 @@
 # CS90a — #391 L1: documented per-PR `sync --mode=check` baseline drift snippet + `harness-drift.yml` low-activity repositioning
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs90a/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** CS90 deliverable 2 / C90-6 (2026-07-05 by `yoga-ah`) — implements inbound issue [#391](https://github.com/henrik-me/agent-harness/issues/391) under the layering model fixed by [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) (L1 + L2 repositioning). One of the three mandatory sub-CSs split from CS90 (C90-6).
 **Depends on:** **CS90** (HARD) — [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) fixes the L1/L2 layering model and the L1-vs-L3 drift-semantics this CS documents. Do NOT claim before user-approval **G90-1** (ADR layering model + CS90a/b/c breakdown) is granted.
@@ -68,11 +68,31 @@ Grounding (verify at claim HEAD):
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs90-plan-review (yoga-ah) | fd5e552c9d7c | 2026-07-05T16:50:00Z | Go | Verified #391 OPEN; L1/L3 drift semantics, sync/check flags, harness-drift trigger/auto-PR, cited paths. No plan amendments. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | L1/L2 documentation CS (docs snippet + `harness-drift.yml` header repositioning; no runtime code). Independence per REVIEWS § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. Finalized at close-out. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| Claim recon Q1 — resolve the authoritative docs home for the L1 snippet | pending | yoga-ah | C90a-3 |
+| Author the hardened per-PR `sync --mode=check` L1 job snippet (npx + clone-then-run variants, ref allowlist `^[a-zA-Z0-9._/-]+$`, SHA-pin guidance) | pending | yoga-ah | Deliverable 1 |
+| Document the L1-vs-L3 drift-semantics note at the snippet's point-of-use; cross-link ADR-0005 | pending | yoga-ah | Deliverable 3 / C90a-5 |
+| Reposition `harness-drift.yml` header comment as low-activity belt-and-suspenders (behaviour unchanged); regen self-host root via `sync --mode=apply` | pending | yoga-ah | Deliverable 2 / R1 |
+| Cross-link the L1 snippet home from ADR-0005 | pending | yoga-ah | C90a-3 |
+| Add `CHANGELOG.md` `[Unreleased]` entry referencing #391 for auto-close | pending | yoga-ah | Deliverable 4 |
+| Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | pending | yoga-ah | Deliverable 5 |
+| Local review — GPT-5.5 rubber-duck before opening the content PR | pending | yoga-ah | REVIEWS.md |
+| Plan-vs-implementation review (GPT-5.5) — GO before close-out | pending | yoga-ah | close-out gate |
+| Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | pending | yoga-ah | mandatory |
+| Close-out: learnings + follow-ups — file LEARNINGS.md candidates / planned follow-up CSs | pending | yoga-ah | mandatory |
 
 ## Notes / Learnings
 
