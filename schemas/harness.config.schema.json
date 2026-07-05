@@ -133,6 +133,11 @@
           },
           "uniqueItems": true,
           "default": []
+        },
+        "enforcement": {
+          "type": "string",
+          "description": "CS109 / ADR 0006 (docs/adr/0006-review-enforcement-posture.md): review-enforcement posture. Optional and PRESENCE-GATED — it deliberately has NO schema default. When ABSENT, 'harness sync' renders infra/main-protection-ruleset.json byte-for-byte as before (reviews.enforce_gates alone governs required-status-check injection; the harness does not manage required_approving_review_count). When PRESENT it is AUTHORITATIVE and overrides reviews.enforce_gates for ruleset rendering: 'human-approval' => required_approving_review_count 1 + review-gate contexts advisory (removed from required_checks); 'required-check' => count 0 + contexts required; 'both' => count 1 + contexts required. Inspect drift with 'harness ruleset check'.",
+          "enum": ["human-approval", "required-check", "both"]
         }
       }
     },
