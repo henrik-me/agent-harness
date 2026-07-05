@@ -1,8 +1,8 @@
 # Harness READMEGUIDE — How to write your project's README
 
 This guide describes the structural requirements your project's `README.md` must
-satisfy. The harness linter (`scripts/check-readme.mjs`) mechanically enforces
-every ERROR-level rule listed here; WARNING-level rules are advisory.
+satisfy. The harness README linter (part of `node bin/harness.mjs lint`) mechanically
+enforces every ERROR-level rule listed here; WARNING-level rules are advisory.
 
 > **File class: managed.** This guide is overwritten on every `harness sync`.
 > Your `README.md` is _not_ — it is consumer-owned and never touched by sync.
@@ -28,7 +28,7 @@ that's already failing new contributors silently.
 
 ## Required structure
 
-The sections below map directly to what `check-readme.mjs` enforces. Every
+The sections below map directly to what the harness README linter enforces. Every
 ERROR-level item causes the linter to exit with code `1` and blocks CI. Every
 WARNING-level item prints a diagnostic but does not fail the build.
 
@@ -319,7 +319,7 @@ Exit codes:
 CI runs this check automatically as part of the harness lint aggregate. It is
 safe to run locally at any time; it is read-only and makes no changes.
 
-> **Note:** Do not run `check-readme.mjs` against this guide file
+> **Note:** Do not run the README linter against this guide file
 > (`READMEGUIDE.md`). The linter is for actual `README.md` files, and this
 > guide deliberately shows counter-examples that would fail the checks.
 

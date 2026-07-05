@@ -17,6 +17,8 @@ Versioning policy and release process: see [OPERATIONS.md § Release process](OP
 
 ### Fixed
 
+- **Managed/composed consumer-doc accuracy: conditional auto-merge prose + READMEGUIDE README-linter genericity (CS88, [#381](https://github.com/henrik-me/agent-harness/issues/381); CS83/#370 residual):** two harness-managed consumer-doc surfaces that described automation a consumer may not actually have are corrected. The composed `OPERATIONS.md` "Auto-merge branch patterns" block now **conditions** the `validate-and-approve` branch-name-check failure (and all auto-merge behaviour) on the repo having adopted the managed `workboard-auto-approve.yml` workflow — an *adoptable* managed file **not** in the default `managed.files` set, surfaced report-only by `harness sync` and added with `harness sync --mode=apply --apply-new` — so a consumer that synced the composed docs but not that workflow no longer reads an unconditional enforcement claim (until adopted, the repo has no auto-merge automation and every `workboard-only` PR is admin-merged by hand). The managed `READMEGUIDE.md` drops its three consumer-invalid `check-readme.mjs` references (one `scripts/check-readme.mjs` path + two bare names) for the generic "harness README linter" / `harness lint` form, finishing CS83/#370's consumer-doc invocation-genericity sweep. A new `check-consumer-template-genericity` invocation pattern bans any reintroduced `check-readme.mjs` reference (path or bare name) in a consumer-shipped scope doc, so the residual cannot recur silently. Consumers adopt on the next `harness sync` (Patch).
+
 ## [0.17.0] — 2026-07-05
 
 ### Added

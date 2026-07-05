@@ -332,3 +332,63 @@ describe('check-consumer-template-genericity — invocation scan (CS83 / C83-5)'
     assert.match(stderr, /template\/composed\/OPERATIONS\.md:\d+: node bin\/harness\.mjs/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CS88 / C88-4 — the check-readme.mjs reference ban. An extension of the
+// invocation scan (a third INVOCATION_PATTERN): a consumer has no local
+// `check-readme.mjs` script — they run the README linter via
+// `{{harness_invoke}} lint` — so a `scripts/check-readme.mjs` path OR a bare
+// `check-readme.mjs` name in any consumer-shipped scope doc (e.g. the managed
+// READMEGUIDE.md) is flagged (issue #381 / CS83 residual). Variant content is
+// written straight into the temp --cwd (like the fs.rmSync cases above), so no
+// static fixture file is needed and repo-root scratch is never touched (LRN-094).
+// ---------------------------------------------------------------------------
+
+describe('check-consumer-template-genericity — check-readme.mjs ref ban (CS88 / C88-4)', () => {
+  it('(r1) fails (exit 1) on a `scripts/check-readme.mjs` path in READMEGUIDE.md', () => {
+    const dir = buildCwd();
+    fs.writeFileSync(
+      path.join(dir, ...SCOPE.readme),
+      '# README guide\n\nThe harness linter (`scripts/check-readme.mjs`) enforces every rule.\n',
+    );
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/managed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
+    assert.match(stderr, /❌ Linter FAILED/);
+  });
+
+  it('(r2) fails (exit 1) on a bare `check-readme.mjs` name in READMEGUIDE.md', () => {
+    const dir = buildCwd();
+    fs.writeFileSync(
+      path.join(dir, ...SCOPE.readme),
+      '# README guide\n\nThe sections map directly to what `check-readme.mjs` enforces.\n',
+    );
+    const { status, stderr } = runLinter(['--cwd', dir]);
+    assert.equal(status, 1);
+    assert.match(stderr, /template\/managed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
+  });
+
+  it('(r3) passes (exit 0) on the generic `{{harness_invoke}} lint` README-linter form (no false positive)', () => {
+    const dir = buildCwd();
+    fs.writeFileSync(
+      path.join(dir, ...SCOPE.readme),
+      '# README guide\n\nThe harness README linter (part of `{{harness_invoke}} lint`) enforces every rule.\n',
+    );
+    const { status, stdout } = runLinter(['--cwd', dir]);
+    assert.equal(status, 0);
+    assert.match(stdout, /✅ Linter passed/);
+  });
+
+  it('(r4) --allow exempts the exact check-readme.mjs token (exit 0)', () => {
+    const dir = buildCwd();
+    fs.writeFileSync(
+      path.join(dir, ...SCOPE.readme),
+      '# README guide\n\nThe sections map to what `check-readme.mjs` enforces.\n',
+    );
+    const failed = runLinter(['--cwd', dir]);
+    assert.equal(failed.status, 1, 'check-readme.mjs is flagged without --allow');
+    const allowed = runLinter(['--cwd', dir, '--allow', 'check-readme.mjs']);
+    assert.equal(allowed.status, 0);
+    assert.match(allowed.stdout, /✅ Linter passed/);
+  });
+});

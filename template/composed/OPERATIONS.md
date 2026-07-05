@@ -143,8 +143,17 @@ Every CS produces exactly three PRs in sequence:
    preceded by the plan-vs-implementation review gate (see
    [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)).**
 
-**Auto-merge branch patterns.** A `workboard-only`-labelled PR auto-merges only
-when its branch matches one of `cs<NN>/(claim|close|close-out)`,
+**Auto-merge branch patterns.** Auto-merge of `workboard-only` PRs is performed by
+the managed `workboard-auto-approve.yml` workflow, which is **not** in the default
+`managed.files` set — it is an *adoptable* managed file, surfaced by
+`{{harness_invoke}} sync` (report-only) and adopted with
+`{{harness_invoke}} sync --mode=apply --apply-new`. **A repo that has not adopted that workflow has no
+harness-provided auto-merge automation:** absent that workflow (or a repo's own
+non-harness automation), each `workboard-only` PR is admin-merged by hand
+(`gh pr merge <n> --admin --squash`), and the branch patterns below do not apply.
+
+Once `workboard-auto-approve.yml` is adopted, a `workboard-only`-labelled PR
+auto-merges only when its branch matches one of `cs<NN>/(claim|close|close-out)`,
 `workboard/cs<NN>-(claim|close|close-out)`, `docs/file-planned-cs<NN>(-<slug>)?`
 (the planned-CS filing PR), or `workboard/maint-[A-Za-z0-9][A-Za-z0-9._-]*` (an
 ad-hoc workboard-allowlist maintenance PR — see below), where `<NN>` is the CS

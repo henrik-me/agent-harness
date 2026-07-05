@@ -11,13 +11,15 @@
  *      (harness-internal LRN/CS/anchor refs leaking into consumer-shipped docs)
  *      cannot recur silently.
  *
- *   2. INVOCATION scan (CS83) — fails if any process/onboarding doc in the
- *      broader invocation scope set contains a consumer-invalid harness-repo run
- *      command (`node bin/harness.mjs …` or `node scripts/<x>.mjs …`). Neither
- *      path exists in a consumer checkout, so such an invocation fails there with
- *      `Cannot find module` (issue #370). The scans are kept separate because
- *      process docs (e.g. OPERATIONS.md) legitimately carry LRN/CS tokens — so
- *      they cannot join the anchor scan — yet their run commands must still be
+ *   2. INVOCATION scan (CS83; check-readme ref CS88) — fails if any
+ *      process/onboarding doc in the broader invocation scope set contains a
+ *      consumer-invalid harness-repo run command (`node bin/harness.mjs …` or
+ *      `node scripts/<x>.mjs …`), or a reference to the harness-repo-only README
+ *      linter script `check-readme.mjs`. None of those exist in a consumer
+ *      checkout, so such an invocation fails there with `Cannot find module`
+ *      (issues #370, #381). The scans are kept separate because process docs
+ *      (e.g. OPERATIONS.md) legitimately carry LRN/CS tokens — so they cannot
+ *      join the anchor scan — yet their run commands must still be
  *      consumer-runnable.
  *
  * Anchor scope set (each resolved to its generic location, relative to --cwd):
@@ -40,12 +42,17 @@
  *   - a bare `\bCS\d+[a-z]?\b` token
  *   - the (case-insensitive) `henrik-me/agent-harness` slug
  *
- * Banned invocations (each is a FAIL anywhere in an invocation-scope doc). Both
- * patterns are anchored on the `node ` run prefix, so a backtick source-ref
- * (e.g. `` `bin/harness.mjs` ``) and the `{{harness_invoke}}` templating
- * placeholder are NOT flagged — only actual run commands are:
+ * Banned invocations (each is a FAIL anywhere in an invocation-scope doc). The
+ * two `node …` run-command patterns are anchored on the `node ` run prefix, so a
+ * backtick source-ref (e.g. `` `bin/harness.mjs` ``) and the `{{harness_invoke}}`
+ * templating placeholder are NOT flagged — only actual run commands are. The
+ * third pattern bans any reference to the harness-repo-only README linter script
+ * `check-readme.mjs` (the `scripts/check-readme.mjs` path or a bare
+ * `check-readme.mjs` name); a consumer has no such script and runs the README
+ * linter via `{{harness_invoke}} lint` (issue #381 / CS83 residual):
  *   - `\bnode\s+bin/harness\.mjs\b`
  *   - `\bnode\s+scripts/[\w-]+\.mjs\b`
+ *   - `\bcheck-readme\.mjs\b`
  *
  * For composed bases, the ENTIRE base is scanned — including the default body
  * of `<!-- harness:local-start id=... -->` local blocks. That default body is
@@ -185,11 +192,15 @@ const PATTERNS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Invocation patterns (C83-5). Both are anchored on the `node ` run prefix so
-// they match RUN COMMANDS but not prose/backtick source-refs
-// (`` `bin/harness.mjs` ``) or the `{{harness_invoke}}` templating placeholder.
-// `node --test …` is not matched either (it is neither `node bin/harness.mjs`
-// nor `node scripts/<x>.mjs`).
+// Invocation patterns (C83-5; check-readme ref C88-4). The two `node …` run
+// patterns are anchored on the `node ` run prefix so they match RUN COMMANDS but
+// not prose/backtick source-refs (`` `bin/harness.mjs` ``) or the
+// `{{harness_invoke}}` templating placeholder. `node --test …` is not matched
+// either (it is neither `node bin/harness.mjs` nor `node scripts/<x>.mjs`). The
+// third pattern bans any `check-readme.mjs` reference — the harness-repo-only
+// README linter script (the `scripts/check-readme.mjs` path or a bare
+// `check-readme.mjs` name); a consumer has no such script and runs the README
+// linter via `{{harness_invoke}} lint` (issue #381 / CS83 residual).
 // ---------------------------------------------------------------------------
 
 const INVOCATION_PATTERNS = [
@@ -197,6 +208,10 @@ const INVOCATION_PATTERNS = [
   { name: 'harness-bin-invocation', re: /\bnode\s+bin\/harness\.mjs\b/g },
   // `node scripts/<harness-script>.mjs …` — harness-repo-only linters/scripts.
   { name: 'harness-script-invocation', re: /\bnode\s+scripts\/[\w-]+\.mjs\b/g },
+  // `check-readme.mjs` — the harness-repo-only README linter script (the
+  // `scripts/check-readme.mjs` path or a bare name); a consumer runs the README
+  // linter via `{{harness_invoke}} lint`, not a local script (C88-4 / issue #381).
+  { name: 'harness-readme-linter-ref', re: /\bcheck-readme\.mjs\b/g },
 ];
 
 // ---------------------------------------------------------------------------
@@ -238,9 +253,10 @@ for (let i = 0; i < argv.length; i++) {
       '  2. Invocation scan — fail if any process/onboarding doc in the broader\n' +
       '     invocation scope set (the anchor docs plus OPERATIONS.md, REVIEWS.md\n' +
       '     and CONVENTIONS.md) contains a consumer-invalid harness-repo run\n' +
-      '     command (node bin/harness.mjs ... or node scripts/<x>.mjs ...). Both\n' +
-      '     patterns are anchored on the "node " prefix, so backtick source-refs\n' +
-      '     and the {{harness_invoke}} placeholder are not flagged.\n\n' +
+      '     command (node bin/harness.mjs ... or node scripts/<x>.mjs ...) or a\n' +
+      '     reference to the harness-repo-only README linter check-readme.mjs. The\n' +
+      '     two node-run patterns are anchored on the "node " prefix, so backtick\n' +
+      '     source-refs and the {{harness_invoke}} placeholder are not flagged.\n\n' +
       'Composed bases are scanned in full, including default local-block bodies\n' +
       '(they ship to consumers); the composed marker parser only fail-closes on\n' +
       'malformed markers.\n\n' +
