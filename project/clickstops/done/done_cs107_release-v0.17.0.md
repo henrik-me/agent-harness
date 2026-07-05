@@ -1,10 +1,10 @@
 # CS107 — Cut harness release v0.17.0
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs107/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8), 2026-07-04. Cuts the accumulated `[Unreleased]` batch merged since v0.16.0 (9 CSs). Directed by @henrik-me ("yes, release and properly close issues").
 **Depends on:** none
 
@@ -166,4 +166,21 @@ Rec A/C shipped, Rec B stays open in CS106).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate)_
+**Reviewer:** GPT-5.5 (rubber-duck, `cs107-pvi`)
+**Date:** 2026-07-05T03:37:46Z
+**Outcome:** GO
+
+Independent plan-vs-implementation review of the merged release (content PR #492, squash `558008746b7bb838f1ece0f17b2077fc5dff1099`) + the post-merge tag / published-Release state.
+
+| Deliverable | Outcome | Evidence |
+|---|---|---|
+| 1. `package.json` + lock → 0.17.0 | match | origin/main `package.json`/lock root + `packages[""]` = `0.17.0`. |
+| 2. CHANGELOG `[Unreleased] → [0.17.0]` | match | `## [0.17.0] — 2026-07-05` with the 9-CS batch; fresh `[Unreleased]`; `[0.17.0]: …/compare/v0.16.0...v0.17.0` + `[Unreleased]: …/compare/v0.17.0...HEAD`. |
+| 3. README pins + Status | match | `## Status` headlines v0.17.0 (2026-07-05) + demotes v0.16.0 to `Prior:`; install/upgrade pins → v0.17.0; no current-version v0.16.0 pin remains. |
+| 4. Content PR + review evidence | match | PR #492 MERGED (squash `5580087`); Review log `gpt-5.5` Go @ `76152aa`; Model audit Implementer `yoga-ah` ≠ Reviewer `rubber-duck`; Copilot COMMENTED. |
+| 5. Annotated tag + **published** Release | match | v0.17.0 `isDraft:false`, Latest, published 2026-07-05T03:30:58Z; exactly one release; annotated tag dereferences to the squash SHA `5580087`. |
+| 6. Consumer notifications | match | `sub-invaders#152` + `authzandentitlements#149`, labeled `harness-orchestrator`. |
+| 7. Issue reconciliation | match | #229/#394 CLOSED (shipped-in-v0.17.0 comments); #395 OPEN with Rec-A/C-shipped + Rec-B→CS106 comment; no issue closed incorrectly. |
+| 8. Close-out | in progress | active→done rename + WORKBOARD removal in this close-out PR. |
+
+**Test-coverage assessment:** sufficient — content-only release; PR #492 CI `validate` ran `node --test` (1947 pass / 5 skip) + `harness lint` (37/0/3) + `sync --mode=check` (no drift), and the annotated tag + published-to-Latest Release state was verified. **Findings: None.**
