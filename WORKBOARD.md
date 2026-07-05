@@ -28,6 +28,6 @@ Do NOT use `_(none)_` placeholder rows — `check-workboard.mjs` will reject the
 
 | CS-Task ID | Title | State | Owner | Branch | Last Updated | Blocked Reason |
 |------------|-------|-------|-------|--------|--------------|----------------|
-| CS88 | CS88 — v0.12.0 managed-doc accuracy: gate the composed OPERATIONS #369 `validate-and-approve` prose + finish the READMEGUIDE `check-readme.mjs` genericity (CS83 residual) | 🟢 Active | yoga-ah-c2 | cs88/content | 2026-07-05 | — |
+| — | no active CS | — | — | — | — | — |
 
 > **Note:** WORKBOARD shows live coordination state only — active orchestrators and their active work. The queue lives in `project/clickstops/planned/` (priority via filename + per-file `**Depends on:**`); historical record lives in `project/clickstops/done/`. Do not duplicate either here.

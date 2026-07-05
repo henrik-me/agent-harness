@@ -12,6 +12,46 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-209
+
+```yaml
+id: LRN-209
+date: 2026-07-05
+category: tooling
+source_cs: CS88
+status: open
+tags: [sync, composed-template, harness-lock, fail-close, emerge-legacy-unmapped]
+claim_area: sync
+```
+
+**Problem:** During CS88, editing `template/composed/OPERATIONS.md` and then running `harness sync --mode=apply` to regenerate the root mirror **fail-closed** with `EMERGE_LEGACY_UNMAPPED` ("Consumer file contains content outside local blocks that does not match the template"). Root cause: the tracked `.harness-lock.json` is frozen at CS55 (commit `a34b197`), but `template/composed/OPERATIONS.md` was edited across CS71/CS76/CS86 without a lock refresh, so its recorded `template_prose_hash` is stale versus the current root skeleton hash. `sync --mode=apply` therefore takes the CS03d/LRN-020 "consumer edited prose" branch (refuse to overwrite) instead of "auto-adopt".
+
+**Finding:** `sync --mode=apply` cannot regenerate a composed root mirror while the lock's `template_prose_hash` for that file is stale — but `sync --mode=check` (the CI drift gate, `harness-drift.yml`) is unaffected once `root == rendered(template)`. The established CS76/CS86 mitigation is to **hand-edit the composed base + the root mirror together** (byte-identical prose modulo `{{harness_invoke}}` → `node bin/harness.mjs` rendering) and validate with `sync --mode=check`; `.harness-lock.json` is deliberately **not** committed by content PRs.
+
+**Evidence:** CS88 sub-agent escalation on PR #494: `sync --mode=apply` threw `EMERGE_LEGACY_UNMAPPED`; the two root mirrors were hand-rendered and ground-truthed by `sync --mode=check` → "No drift detected" (lint 37/0/3, tests green). CS76 PR #483 body documents the same "lock deliberately not committed" pattern.
+
+**Disposition:** Open. A future maintenance CS could refresh `.harness-lock.json` `template_prose_hash` values (run `sync --mode=apply` from a clean baseline and commit the lock) so composed-template edits can use `sync --mode=apply` directly instead of hand-rendering the mirror.
+
+### LRN-210
+
+```yaml
+id: LRN-210
+date: 2026-07-05
+category: process
+source_cs: CS88
+status: open
+tags: [review-evidence, a5, a3, copilot-engage, review-log, model-audit]
+claim_area: review-gates
+```
+
+**Problem:** On CS88 PR #494, after each `harness review --copilot-only`, the `read-only-gates` **A5** gate (`check-copilot-review`) failed once the other gates were green — even though Copilot returned Go. A5 requires the latest Copilot review's `submittedAt` ≥ the latest local `## Review log` Go-row timestamp, and `findLatestLocalGoTimestamp` only excludes rows whose `actor`/`model` matches `/copilot-pull-request-reviewer/`. But `harness review --copilot-only` appends a Review-log Go row with `actor=<orchestrator-id>` (e.g. `yoga-ah-c2`), `model=gpt-5.5`, timestamped ~1 s **after** the Copilot review it records — so that row counts as a "local Go" and postdates the Copilot review by ~1 s → A5 fails. Separately, `harness review --copilot-only` also rewrites the `## Model audit` **Reviewer agent** to the orchestrator id, tripping the **A3** agent-identity gate (Implementer agent == Reviewer agent).
+
+**Finding:** Keep the `## Review log` **rubber-duck-only** (the CS76 PR #483 precedent has only `actor=rubber-duck` rows). A16 fetches Copilot review evidence directly from GitHub, so the copilot-engage Review-log rows are redundant and only serve to trip A5; removing them makes the latest local Go = the latest rubber-duck row (which predates the final Copilot re-engage) → A5 passes. After the final Copilot engage, also reset the Model audit **Reviewer agent** back to `rubber-duck` (distinct from the `Implementer agent`) so A3 passes.
+
+**Evidence:** PR #494 `read-only-gates` run 28729749112: A5+A16 fail with Copilot `04:38:47Z` < latest Go row `04:38:48Z` (`yoga-ah-c2`). Fixed by rebuilding the Review log rubber-duck-only (latest rubber-duck `04:36:05Z` < Copilot `04:38:47Z`) → local `check-copilot-review` 0 errors, CI `read-only-gates` pass. Earlier A3 failure: "Implementer agent and Reviewer agent are both yoga-ah-c2"; fixed by setting Reviewer agent → `rubber-duck`.
+
+**Disposition:** Open. Candidate harness fix: `harness review --copilot-only` should either record its Review-log row with `actor=copilot-pull-request-reviewer` (so A5 excludes it) or not append a Review-log row at all (A16 already sources Copilot evidence from GitHub), and should not overwrite the Model audit `Reviewer agent`.
+
 ### LRN-208
 
 ```yaml
