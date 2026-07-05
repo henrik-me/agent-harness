@@ -337,6 +337,20 @@ describe('CS109 harness ruleset check — CLI', () => {
     }
   });
 
+  it('accepts options before the action (a flag value is not mistaken for the action)', () => {
+    const dir = makeTempDir();
+    try {
+      writeRuleset(dir, [...GATE_CONTEXTS]);
+      const live = path.join(dir, 'live.json');
+      writeFileSync(live, JSON.stringify({ name: 'main-protection', rules: [{ type: 'required_status_checks', parameters: { required_checks: GATE_CONTEXTS.map((context) => ({ context })) } }] }), 'utf8');
+      const res = runHarness(['--cwd', dir, 'ruleset', '--live-file', live, 'check']);
+      assert.equal(res.status, 0, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+      assert.match(res.stdout, /no drift/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects `ruleset apply` (deferred to CS109a) with exit 2', () => {
     const dir = makeTempDir();
     try {

@@ -183,6 +183,7 @@ function parseWorkflow(text) {
   let jobsIndent = -1;
   let onIndent = -1;
   let inOn = false;
+  let onEvent = null;
   let hasPathFilter = false;
 
   for (const rawLine of lines) {
@@ -192,12 +193,16 @@ function parseWorkflow(text) {
     const indent = line.length - line.trimStart().length;
     const trimmed = line.trim();
 
-    // Top-level `on:` block (indent 0). Track it to spot path filters.
-    if (indent === 0 && /^on:/.test(trimmed)) {
+    // Top-level `on:` block (indent 0; accept a quoted "on":). Track it and the
+    // current event so a paths filter is only counted for the pull_request
+    // events that actually gate check-run creation (a `push.paths` filter, or a
+    // paths filter on a non-PR event, must NOT flag a PR-required context).
+    if (indent === 0 && /^["']?on["']?:/.test(trimmed)) {
       inOn = true;
       onIndent = 0;
+      onEvent = null;
       inJobs = false;
-      // Inline `on: [push, pull_request]` — no nested filters possible.
+      // Inline `on: pull_request` / `on: [push, pull_request]` — no nested paths.
       continue;
     }
     // Top-level `jobs:` block (indent 0).
@@ -208,14 +213,25 @@ function parseWorkflow(text) {
       continue;
     }
     // Any other indent-0 key closes both blocks.
-    if (indent === 0 && /^[A-Za-z0-9_.-]+:/.test(trimmed)) {
+    if (indent === 0 && /^["']?[A-Za-z0-9_.-]+["']?:/.test(trimmed)) {
       inOn = false;
       inJobs = false;
       continue;
     }
 
     if (inOn && indent > onIndent) {
-      if (/^paths(-ignore)?:/.test(trimmed)) hasPathFilter = true;
+      // Event keys sit one level under `on:` (e.g. `pull_request:`); their
+      // paths/paths-ignore filters sit one level deeper. Only a filter under a
+      // pull_request(_target) event can prevent the check run for a PR.
+      const eventMatch = /^([A-Za-z_]+):/.exec(trimmed);
+      if (indent === onIndent + 2 && eventMatch) {
+        onEvent = eventMatch[1];
+      } else if (
+        /^paths(-ignore)?:/.test(trimmed) &&
+        (onEvent === 'pull_request' || onEvent === 'pull_request_target')
+      ) {
+        hasPathFilter = true;
+      }
       continue;
     }
 

@@ -91,6 +91,19 @@ describe('CS109 F3 check-ruleset-deadlock', () => {
     }
   });
 
+  it('does not warn when only a non-PR event (push) carries a paths filter', () => {
+    const dir = makeTempDir();
+    try {
+      const rs = writeRuleset(dir, { contexts: ['job-a'] });
+      writeWorkflow(dir, 'w.yml', 'name: w\non:\n  push:\n    paths:\n      - "src/**"\n  pull_request:\n    branches: [main]\njobs:\n  job-a:\n    runs-on: ubuntu-latest\n    steps:\n      - run: true\n');
+      const res = run(F3, ['--ruleset', rs, '--workflows-dir', path.join(dir, '.github', 'workflows')]);
+      assert.equal(res.status, 0);
+      assert.match(res.stdout, /0 warning\(s\)/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('exits 1 (fail-closed) on a malformed ruleset', () => {
     const dir = makeTempDir();
     try {

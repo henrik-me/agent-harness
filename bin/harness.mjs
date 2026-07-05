@@ -2355,13 +2355,11 @@ async function cmdRuleset(args, global) {
   const cwd = global?.cwd ?? process.cwd();
   const configPath = global?.config ?? null;
 
-  const positional = args.filter((a) => !a.startsWith('-'));
-  const action = positional[0] ?? null;
-
   let repo = null;
   let rulesetId = null;
   let liveFile = null;
   let quiet = false;
+  const positionals = [];
   const takeValue = (i, flag) => {
     const v = args[i + 1];
     if (v === undefined || v.startsWith('-')) die(`harness ruleset: missing value for ${flag}`, 2);
@@ -2369,13 +2367,17 @@ async function cmdRuleset(args, global) {
   };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (!a.startsWith('-')) continue;
     if (a === '--repo') { repo = takeValue(i, '--repo'); i++; }
     else if (a === '--ruleset-id') { rulesetId = takeValue(i, '--ruleset-id'); i++; }
     else if (a === '--live-file') { liveFile = takeValue(i, '--live-file'); i++; }
     else if (a === '--quiet') { quiet = true; }
-    else die(`harness ruleset: unknown flag "${a}"\n\n${SUBCOMMAND_HELP['ruleset']}`, 2);
+    else if (a.startsWith('-')) die(`harness ruleset: unknown flag "${a}"\n\n${SUBCOMMAND_HELP['ruleset']}`, 2);
+    else positionals.push(a);
   }
+  // Select the action from true positionals only, so a flag VALUE (e.g. the
+  // `owner/repo` after `--repo`) is never mistaken for the action even when
+  // options precede it.
+  const action = positionals[0] ?? null;
 
   if (action === 'apply') {
     die(
