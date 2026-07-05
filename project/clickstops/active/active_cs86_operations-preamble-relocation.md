@@ -78,10 +78,10 @@ CS65's recon (see `done_cs65_process-doc-right-sizing`) established: (1) `lib/di
 |---|---|---|---|
 | T1 — D1: dispatch-preamble source relocation (C86-2/C86-4). Create the new single-source sub-agent briefing preamble file (shipped template — default `template/managed/`, file-class pending **G-preamble-home**) carrying the verbatim preamble body currently inlined in `OPERATIONS.md`; re-point `lib/dispatch.mjs` `extractPreamble` to resolve + extract from it in BOTH self-host and consumer modes, consumer-root-relative (LRN-050), with a fall-back to legacy `OPERATIONS.md` extraction when the new file is absent (pre-`sync --apply-new`) and a clear error when neither source resolves; register the new file for `harness sync`. Tests: CLI-level `harness dispatch` emitted-preamble byte-equality before/after for default fenced output AND `--no-fence`, self-host + consumer; consumer-mode dispatch fixtures (synced success, root-relative resolution, missing-new-file fallback/error). | done | — | agent-id=cs86-dispatch \| role=impl \| report-status=complete \| learnings=3 — owns the new preamble-source template file, `lib/dispatch.mjs`, dispatch/consumer-mode tests + fixtures; does NOT touch OPERATIONS.md/REVIEWS.md prose (cs86-docs owns those). Must land the re-point BEFORE T2 thins the OPERATIONS section. |
 | T2 — D2+D3: doc thinning (C86-1/C86-3). Thin `OPERATIONS.md` `### Mandatory briefing preamble` + `## Reviewer dispatch — canonical preamble` to pointer stubs (+ `template/composed/OPERATIONS.md` lockstep + root regen via `harness sync`); move the reviewer-preamble verbatim body to its authoritative home in `REVIEWS.md` (+ composed lockstep) and drop any claim it lives in `OPERATIONS.md`; **retarget `tests/operations-reviewer-preamble.test.mjs`** to the new home. Preserve EVERY pre-existing `OPERATIONS.md` heading anchor (reuse the CS65 C65-5 pre/post audit tooling). | done | — | agent-id=cs86-docs \| role=impl \| report-status=complete \| learnings=3 — owns `OPERATIONS.md` (+composed), `REVIEWS.md` (+composed), `tests/operations-reviewer-preamble.test.mjs`, the regenerated roots; does NOT touch `lib/dispatch.mjs` or the new preamble-source file (cs86-dispatch owns those). Depends on T1 landing the dispatch re-point first. |
-| T3 — Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint`, `node --test tests/*.test.mjs`, `harness sync --mode=check` zero drift, composed-blocks lockstep) | pending | yoga-ah-c2 | independence: reviewer model ≠ every implementer model |
+| T3 — Plan-vs-implementation review (GPT-5.5 close-out gate) + full self-checks green (`harness lint`, `node --test tests/*.test.mjs`, `harness sync --mode=check` zero drift, composed-blocks lockstep) | done | yoga-ah-c2 | independence: reviewer model ≠ every implementer model. PVI R1 NEEDS-FIX (C86-4 gap) → fast-follow PR #487 → **R2 GO** at `a5493d8`. |
 | CHANGELOG — D5: `CHANGELOG.md` `[Unreleased]` entry (doc/CLI-plumbing: sub-agent preamble source relocated but `harness dispatch` output unchanged; note consumers adopt via `harness sync --apply-new`). | done | yoga-ah-c2 | orchestrator-owned; distributed-surface CS (LRN-101) |
-| Close-out: docs + restart state | pending | yoga-ah-c2 | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
-| Close-out: learnings + follow-ups | pending | yoga-ah-c2 | File any new LEARNINGS.md entries + follow-up CSs (e.g. if C86-2 is descoped per Q2, file the residual as a planned CS); note this closes CS65's deferred "deeper OPERATIONS.md thinning" follow-up |
+| Close-out: docs + restart state | done | yoga-ah-c2 | Update WORKBOARD.md and CONTEXT.md so a fresh agent can restart from actual state |
+| Close-out: learnings + follow-ups | done | yoga-ah-c2 | Filed LRN-206 (relocation-sweep, applied), LRN-207 (new-managed-file transition window, applied), LRN-208 (DISPATCH-PREAMBLE.md linter-scope, open follow-up). Closes CS65's deferred "deeper OPERATIONS.md thinning" follow-up. |
 
 ## Notes / Learnings
 
@@ -95,4 +95,20 @@ CS65's recon (see `done_cs65_process-doc-right-sizing`) established: (1) `lib/di
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** gpt-5.5 (rubber-duck) — independence: reviewer gpt-5.5 ≠ every implementer (claude-opus-4.8)
+**Date:** 2026-07-05T02:52:17Z
+**Outcome:** GO
+
+**R1 (NEEDS-FIX at `b893ce0`):** the C86-4 transition error path was incomplete — a consumer who runs a normal `harness sync` (not `--apply-new`) has a thinned `OPERATIONS.md` (no preamble fence) AND no `DISPATCH-PREAMBLE.md`; the resolver fell back to the readable-but-fence-less `OPERATIONS.md` and `harness dispatch` failed with a generic extractor error instead of adoption guidance. → **Fast-follow fix PR #487 (`a5493d8`)**: the legacy fallback is now content-validated (`legacySourceHasPreamble` — returned only when `extractPreamble` succeeds; a thinned/fence-less legacy throws the `harness sync --mode=apply --apply-new` adoption error naming both paths) + regression tests (thinned-legacy adoption error, symmetric primary/legacy EISDIR fail-closed).
+
+**R2 (GO at `a5493d8`):** all deliverables `match`; the R1 blocker is fully closed.
+
+| Deliverable | Outcome |
+|---|---|
+| D1 — new managed source (`DISPATCH-PREAMBLE.md`) + `lib/dispatch.mjs` extraction (self-host + consumer, content-validated fallback) | match |
+| D2 — `OPERATIONS.md` thinned to pointer stubs (+ composed lockstep, all real heading anchors preserved) | match |
+| D3 — reviewer preamble → `REVIEWS.md § 2.9` + retargeted `tests/operations-reviewer-preamble.test.mjs` | match |
+| D4 — tests (CLI byte-equality node/dotnet × fenced/no-fence, anchors, consumer fixtures, fallback/adoption/EISDIR fail-closed) | match |
+| D5 — `CHANGELOG.md` `[Unreleased]` entry | match |
+
+Exit criteria 1–6 all `match`. Test coverage: **sufficient** (byte-identity goldens; primary/legacy resolution; content-validated fallback; thinned-legacy adoption error; malformed-primary + non-ENOENT/EISDIR fail-closed; consumer-root-relative resolution). Self-checks green: `node --test` 1947 pass / 0 fail, `harness lint` 37/0/3, `sync --mode=check` no drift, `harness dispatch` byte-identical (6295/6283/6016 B). **Scope note:** the plan's original ~130-line estimate grew to relocating all three fences (core + `node`/`dotnet` language profiles, added by CS102 after this plan was filed) — a recorded refinement, not a divergence.
