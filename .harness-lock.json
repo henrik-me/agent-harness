@@ -1,8 +1,8 @@
 {
   "harness_ref": "cs108/content",
-  "resolved_sha": "7880ec5a5c6d1d0432363a40b0ed516e7c6e56b1",
+  "resolved_sha": "532d7e33b6dbb0b9bd6e109891195c670078449a",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-07-05T17:24:38.558Z",
+  "synced_at": "2026-07-05T17:52:06.111Z",
   "files": [
     {
       "target": "DISPATCH-PREAMBLE.md",
@@ -77,7 +77,7 @@
       "source_template": "template/composed/OPERATIONS.md",
       "class": "composed",
       "rendered_hash": "4d62a4fb43338b9d536b2c8a6c7209dac324b42a784714618f7c41fb8dd9e7d7",
-      "action": "created",
+      "action": "skipped",
       "blocks": [
         {
           "id": "operations.project-deploy",
@@ -177,7 +177,7 @@
       "source_template": "template/composed/TRACKING.md",
       "class": "composed",
       "rendered_hash": "a211521c3958e8eb802bf4a02678220846d4d542d465afcfa59080bed69545cd",
-      "action": "created",
+      "action": "skipped",
       "blocks": [
         {
           "id": "tracking.project",
@@ -197,7 +197,7 @@
       "source_template": "template/composed/RETROSPECTIVES.md",
       "class": "composed",
       "rendered_hash": "f581b2b48a6df23530887217df289ddd8a9e165545f14c24b01b7d90cf79da47",
-      "action": "created",
+      "action": "skipped",
       "blocks": [
         {
           "id": "retrospectives.project",
@@ -216,21 +216,21 @@
       "target": "READMEGUIDE.md",
       "source_template": "template/composed/READMEGUIDE.md",
       "class": "composed",
-      "rendered_hash": "cb9e6a7c6e093ee1f6c8b4592d2f66230ccfb25e61ee0cb370c40d5d942c9f4f",
-      "action": "created",
+      "rendered_hash": "f02e37c41a7441e5e8c673ad49a0abc90281ed9ebaf7c75f2f033a84371e57b7",
+      "action": "updated",
       "blocks": [
         {
           "id": "readmeguide.project",
           "source_line_range": {
-            "start": 362,
-            "end": 364
+            "start": 364,
+            "end": 366
           },
           "body_hash": "617ef02d65bc5370ade998b60c2955a794be831c75cbf5d8a1f02517d41272f9",
           "template_marker_hash": "ab4bafada32b26afb4a42d4f987acaa39d9faf5b94e86be611e233242f4c743e",
           "provenance": "seeded-empty"
         }
       ],
-      "template_prose_hash": "66e635f5e28acffc13cae55cef6a8d0b2854671481c3b024d2850811b26ebde8"
+      "template_prose_hash": "2ba096d983067956658ad661b2149d708db84e7119e378eb7c29160468d133b0"
     },
     {
       "target": "CONTEXT.md",

@@ -265,3 +265,100 @@ describe('CS108 (5) reclassified doc still in managed.files → ESYNC_RECLASSIFI
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// (6) Sync-level migrated happy path (end-to-end, not just mergeComposed)
+// ---------------------------------------------------------------------------
+
+describe('CS108 (6) migrated config → sync() preserves a populated block + renders the core', () => {
+  const tmpDirs = [];
+  after(() => {
+    for (const d of tmpDirs) {
+      try { rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+  });
+
+  function tmp(prefix) {
+    const d = mkdtempSync(path.join(os.tmpdir(), prefix));
+    tmpDirs.push(d);
+    return d;
+  }
+
+  function writeText(filePath, content) {
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, content, 'utf8');
+  }
+
+  const PROVENANCE_DEPS = {
+    installRoot: '/cs108-hermetic-harness-checkout',
+    readFileSync: () => { throw new Error('no npx cache in hermetic fixture'); },
+    execSync: (cmd) => {
+      if (cmd.includes('rev-parse HEAD')) return `${'a'.repeat(40)}\n`;
+      if (cmd.includes('describe --tags --exact-match')) return 'v0.1.0\n';
+      if (cmd.includes('rev-parse --abbrev-ref')) return 'main\n';
+      throw new Error(`unexpected git command in hermetic fixture: ${cmd}`);
+    },
+  };
+
+  const composedBase = [
+    '# TESTDOC',
+    '',
+    '> **File class:** composed — managed core + one project-local block.',
+    '',
+    'Managed core prose line — harness-owned, overwritten on every sync.',
+    '',
+    '## Local block',
+    '',
+    '<!-- harness:local-start id=testdoc.project -->',
+    '_(Project-local notes. Empty by default.)_',
+    '<!-- harness:local-end id=testdoc.project -->',
+    '',
+  ].join('\n');
+
+  it('resolves composed.files + override end-to-end and keeps the consumer block body while the core matches the template', async () => {
+    const harnessDir = tmp('cs108-h6-');
+    const consumerDir = tmp('cs108-c6-');
+
+    writeText(
+      path.join(harnessDir, 'schemas', 'harness.config.schema.json'),
+      readFileSync(path.join(repoRoot, 'schemas', 'harness.config.schema.json'), 'utf8'),
+    );
+    writeText(path.join(harnessDir, 'template', 'composed', 'TESTDOC.md'), composedBase);
+
+    // Migrated consumer config: the doc lives in composed.files with its override.
+    const consumerConfig = {
+      version: 'v0.1.0',
+      project: { name: 'test-project', agent_suffix: 'test' },
+      managed: { files: [] },
+      composed: { files: ['TESTDOC.md'], overrides: { 'TESTDOC.md': { local_blocks: ['testdoc.project'] } } },
+      seeded: { files: [] },
+      excluded: [],
+      templating: {},
+    };
+    writeText(path.join(consumerDir, 'harness.config.json'), JSON.stringify(consumerConfig, null, 2) + '\n');
+
+    // On-disk doc = the composed skeleton with a POPULATED project block.
+    const projectNote = 'Consumer note living inside the testdoc.project block.';
+    const onDisk = composedBase.replace('_(Project-local notes. Empty by default.)_', projectNote);
+    writeText(path.join(consumerDir, 'TESTDOC.md'), onDisk);
+
+    const result = await sync({
+      consumerRepoPath: consumerDir,
+      harnessRepoPath: harnessDir,
+      mode: 'dry-run',
+      provenanceDeps: PROVENANCE_DEPS,
+    });
+
+    const change = result.changes.find((c) => c.target === 'TESTDOC.md');
+    assert.ok(change, 'TESTDOC.md is in the sync plan');
+    assert.equal(change.class, 'composed');
+    // The consumer's populated block body survives the composed merge…
+    assert.ok(change.preview.includes(projectNote), 'populated block body preserved through sync()');
+    // …and the harness-owned core is rendered from the template.
+    assert.ok(change.preview.includes('Managed core prose line'), 'managed core rendered from template');
+    assert.ok(change.preview.includes('<!-- harness:local-start id=testdoc.project -->'));
+    // Steady state (on-disk already matches the merged output) → no rewrite needed,
+    // and crucially NO EMERGE_LEGACY_UNMAPPED was thrown.
+    assert.equal(change.action, 'skipped');
+  });
+});

@@ -339,9 +339,11 @@ overwritten** — it is consumer-owned (seeded file class). Changes the consumer
 preserved indefinitely. Changes the harness makes to `template/seeded/README.md`
 do not propagate to existing consumers.
 
-This guide, by contrast, **is** overwritten on every `harness sync` (managed file
-class). Think of this file as the specification the linter is built against, not
-as the README skeleton consumers edit.
+This guide, by contrast, is a **composed** file: its harness-owned core **is**
+overwritten on every `harness sync`, while any project notes you add in the
+`readmeguide.project` local block (see § Local block below) are preserved. Think
+of the core as the specification the linter is built against, not as the README
+skeleton consumers edit.
 
 ---
 
