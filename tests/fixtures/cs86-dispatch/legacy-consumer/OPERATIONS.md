@@ -1,7 +1,16 @@
-# cs86-dispatch fixture marker (legacy-consumer / pre-sync fallback source)
+# cs86-dispatch fixture marker (legacy-consumer / pre-CS86 OPERATIONS.md WITH preamble)
 
-Readability-only fixture for resolvePreambleSource() path-level resolution.
-The resolver reads each candidate to probe readability (discriminating ENOENT)
-but does not parse its content, so this marker is intentionally minimal.
-Content-level (byte-equality / fail-closed) tests copy the real repo-root
-sources into an os.tmpdir() scratch dir instead.
+The legacy OPERATIONS.md fallback is content-validated: resolvePreambleSource
+returns it ONLY when it still carries the inline briefing-preamble fence (a
+pre-CS86 consumer). This fixture therefore supplies a minimal real preamble; a
+thinned/fence-less OPERATIONS.md is NOT a valid fallback (covered by a tmpdir
+test), so this file must keep the anchored fence below.
+
+### Mandatory briefing preamble (copy verbatim into every dispatch)
+
+```text
+## CRITICAL PREFLIGHT (LRN-021)
+
+Minimal legacy-preamble fixture body — extractPreamble only needs the heading
+above plus this anchored text fence to treat OPERATIONS.md as a valid fallback.
+```
