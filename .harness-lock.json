@@ -1,8 +1,8 @@
 {
-  "harness_ref": "cs108/content",
-  "resolved_sha": "532d7e33b6dbb0b9bd6e109891195c670078449a",
+  "harness_ref": "cs90a/content",
+  "resolved_sha": "dde252d49bfaeeafe7a72b6076547662ebe9bb92",
   "config_schema_version": "https://github.com/henrik-me/agent-harness/schemas/harness.config.schema.json",
-  "synced_at": "2026-07-05T17:52:06.111Z",
+  "synced_at": "2026-07-05T22:30:45.557Z",
   "files": [
     {
       "target": "DISPATCH-PREAMBLE.md",
@@ -15,8 +15,8 @@
       "target": ".github/workflows/harness-drift.yml",
       "source_template": "template/managed/.github/workflows/harness-drift.yml",
       "class": "managed",
-      "rendered_hash": "f8f8dc1d61e7049b4fae48c9d4c54aa0f62caf74422ca2e0b9aae7d7f62d1cc7",
-      "action": "skipped"
+      "rendered_hash": "7e4702a44c438f25e91682a1fc9df74882809a08a217fb52b54027f165b79e74",
+      "action": "updated"
     },
     {
       "target": ".github/workflows/pr-evidence-lint.yml",
@@ -96,18 +96,18 @@
       "target": "REVIEWS.md",
       "source_template": "template/composed/REVIEWS.md",
       "class": "composed",
-      "rendered_hash": "a6df7f19f9810286a7a569c7f2ad7adea3249b00fd3dfe332f586b60d69bde93",
+      "rendered_hash": "14e60eac77410ce815741381a95b194e3f44e41f0efdbc52b064347d38cfe706",
       "action": "skipped",
       "blocks": [
         {
           "id": "reviews.project-gates",
           "source_line_range": {
             "start": 870,
-            "end": 887
+            "end": 899
           },
-          "body_hash": "e568d66dbdd339b8ff7aa737d65b44bf7ad0d30ebc7fa28975f87c5b69a303cc",
+          "body_hash": "da9cdb7e6642f04992dcc5009ee77c88f7b34c6bb3067ce3d3ecfaf44f7cf544",
           "template_marker_hash": "5e1b41d3287a93df32706fff5619c8aa4fd7cfacd0f601fd1d23489010a4319e",
-          "provenance": "seeded-empty"
+          "provenance": "user-authored"
         }
       ],
       "template_prose_hash": "576568f83967a8ecebd4ccc417eab5ef176c6237bccc47f8afff051f11005c36"
@@ -217,7 +217,7 @@
       "source_template": "template/composed/READMEGUIDE.md",
       "class": "composed",
       "rendered_hash": "f02e37c41a7441e5e8c673ad49a0abc90281ed9ebaf7c75f2f033a84371e57b7",
-      "action": "updated",
+      "action": "skipped",
       "blocks": [
         {
           "id": "readmeguide.project",
@@ -236,7 +236,7 @@
       "target": "CONTEXT.md",
       "source_template": "template/seeded/CONTEXT.md",
       "class": "seeded",
-      "rendered_hash": "7ce30e24f54218a04c5f7dd8740261f524d371370a5381fbb9eb2947aa7ef9e1",
+      "rendered_hash": "4f3b8893d14dcb9a67fc89f741be646e28670918f52d38b7d6376b994d62d280",
       "action": "preserved"
     },
     {
@@ -250,14 +250,14 @@
       "target": "LEARNINGS.md",
       "source_template": "template/seeded/LEARNINGS.md",
       "class": "seeded",
-      "rendered_hash": "219d6d2efcdb9461f711e270ffa2383f60318555285986eaa55055c5f187d29f",
+      "rendered_hash": "6c3db8749eb544d3108b6889345f9635a1c2771d050284fb6158a7f15638dee8",
       "action": "preserved"
     },
     {
       "target": "WORKBOARD.md",
       "source_template": "template/seeded/WORKBOARD.md",
       "class": "seeded",
-      "rendered_hash": "b9b9e978ac43df2b4ae0cb0d42728c627d2ea9e0b5d01b4b9ca2764f598863bd",
+      "rendered_hash": "fe15247b4144ee3878e48100a4ab2ddb3863a5d15f67eb72a33a740943e65ae1",
       "action": "preserved"
     },
     {

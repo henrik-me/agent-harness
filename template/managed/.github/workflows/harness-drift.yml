@@ -1,5 +1,13 @@
 # harness-drift.yml — scheduled drift detection per CS12 / LRN-074.
 #
+# LAYERING (ADR-0005). This is L2: the weekly, belt-and-suspenders drift sweep
+# for LOW-ACTIVITY repos. It is a safety net, NOT a substitute for the
+# recommended L1 per-PR `harness sync --mode=check` gate. Adopt L1 from the
+# agent-harness guide (upstream; not shipped into consumer repos):
+#   L1 guide:      https://github.com/henrik-me/agent-harness/blob/main/docs/ci-drift-layering.md
+#   design record: https://github.com/henrik-me/agent-harness/blob/main/docs/adr/0005-ci-drift-review-gate-layering.md
+# Behaviour below is unchanged.
+#
 # Runs weekly. Calls `harness sync --mode=check` against this repo. If drift
 # is detected (exit 1), runs `sync --mode=apply` to generate the update,
 # then opens a PR via peter-evans/create-pull-request. Skips PR on no drift.

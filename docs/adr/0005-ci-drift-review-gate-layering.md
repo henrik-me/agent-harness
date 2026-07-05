@@ -147,7 +147,9 @@ clone-then-run pattern (`git clone` the harness at the pinned ref, `npm ci`,
 then `node <harness>/bin/harness.mjs sync --mode=check --cwd .`) exactly as
 `review-gates.yml` and `pr-evidence-lint.yml` already do, pinning
 `npm install -g npm@10.9.2` first. **CS90a** owns the final canonical snippet
-including the shell-injection-hardened ref derivation (CS12 R1).
+including the shell-injection-hardened ref derivation (CS12 R1); it now lives in
+the consumer-facing guide [`docs/ci-drift-layering.md`](../ci-drift-layering.md)
+(this block remains illustrative).
 
 #### L2 — weekly `harness-drift.yml` cron (belt-and-suspenders)
 
@@ -500,6 +502,7 @@ with `sync` regeneration and a green self-host PR (CS90 R2).
 ## Cross-references
 
 - [CS90 plan](../../project/clickstops/active/active_cs90_ci-drift-review-gate-layering.md) — decisions C90-1 … C90-6, deliverables, risks.
+- [`docs/ci-drift-layering.md`](../ci-drift-layering.md) — the consumer-facing L1 adoption guide (canonical hardened snippet) + L2 low-activity positioning (CS90a).
 - [ADR 0004 — Copilot review GraphQL spike](0004-copilot-graphql-spike.md) — ADR4-2 (`gh pr edit --add-reviewer` engagement primitive), ADR4-8 (async engage/verify split) that the L4 `mutation-engage` posture builds on.
 - [ADR 0001 — Three file classes for harness sync](0001-file-classes.md) — the managed/composed/seeded classes underpinning the L1-vs-L3 drift-semantics difference.
 - [`harness-drift.yml`](../../template/managed/.github/workflows/harness-drift.yml) — L2.
