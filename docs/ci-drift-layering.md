@@ -82,7 +82,7 @@ lines into `$GITHUB_OUTPUT`).
           # the ref can never be parsed as a CLI option), and any character
           # outside [a-zA-Z0-9._/-] — including CR/LF. Covers semver tags, branch
           # names, and 40-char SHAs.
-          case $ref in
+          case "$ref" in
             '' | -* | *[!a-zA-Z0-9._/-]*)
               echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] with no leading '-'." >&2
               exit 1;;
@@ -129,7 +129,7 @@ runtime deps with `npm ci`, then runs the CLI directly. This mirrors what
           # embedded newline can't smuggle extra $GITHUB_OUTPUT lines). Rejecting
           # a leading '-' is load-bearing here: $CLI_REF is passed to
           # `git checkout` below, where '--orphan' etc. would be read as an option.
-          case $ref in
+          case "$ref" in
             '' | -* | *[!a-zA-Z0-9._/-]*)
               echo "ERROR: ref \"$ref\" must be a single-line token of [a-zA-Z0-9._/-] with no leading '-'." >&2
               exit 1;;
