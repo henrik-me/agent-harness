@@ -1,12 +1,13 @@
 # TRACKING
 
-> **Managed file** — do not edit by hand. Harness sync overwrites this file on
-> every `harness sync` run. Local changes will be lost. See
-> [`harness.config.json`](harness.config.json) for project-specific settings.
+> **File class:** composed — managed core + one project-local block.
+> Do **not** edit the managed-core sections directly. Edit only the content
+> inside the `tracking.project` local block (see § Local block at the end of
+> this file). All managed-core sections are overwritten on every `harness sync`.
 
 Clickstop lifecycle, workboard state machine, and agent identification for this
 project. Canonical definition lives in the harness template
-(`template/managed/TRACKING.md`); the copy in your repository is kept in sync
+(`template/composed/TRACKING.md`); the copy in your repository is kept in sync
 automatically.
 
 ---
@@ -299,3 +300,17 @@ or reviewing a PR from a new contributor.
 - `harness whoami [--explain]` — CLI derivation tool
 - `scripts/check-workboard.mjs` — WORKBOARD structural linter
 - `check-clickstop.mjs` — clickstop file structure linter
+
+---
+
+## Local block
+
+The section below is project-local and preserved across `harness sync`. Edit
+only the content **between** the markers. The markers and all content above are
+managed by the harness and overwritten on the next `harness sync`. The block ID
+`tracking.project` must be listed in `harness.config.json` under
+`composed.overrides["TRACKING.md"].local_blocks`.
+
+<!-- harness:local-start id=tracking.project -->
+_(Project-local tracking notes. Empty by default.)_
+<!-- harness:local-end id=tracking.project -->

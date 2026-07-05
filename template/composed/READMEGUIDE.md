@@ -4,8 +4,10 @@ This guide describes the structural requirements your project's `README.md` must
 satisfy. The harness README linter (part of `{{harness_invoke}} lint`) mechanically
 enforces every ERROR-level rule listed here; WARNING-level rules are advisory.
 
-> **File class: managed.** This guide is overwritten on every `harness sync`.
-> Your `README.md` is _not_ — it is consumer-owned and never touched by sync.
+> **File class:** composed — managed core + one project-local block. This guide's
+> core is overwritten on every `harness sync`; edit only the content inside the
+> `readmeguide.project` local block (see § Local block at the end of this file).
+> Your `README.md` is _not_ touched by sync — it is consumer-owned.
 
 ---
 
@@ -337,11 +339,28 @@ overwritten** — it is consumer-owned (seeded file class). Changes the consumer
 preserved indefinitely. Changes the harness makes to `template/seeded/README.md`
 do not propagate to existing consumers.
 
-This guide, by contrast, **is** overwritten on every `harness sync` (managed file
-class). Think of this file as the specification the linter is built against, not
-as the README skeleton consumers edit.
+This guide, by contrast, is a **composed** file: its harness-owned core **is**
+overwritten on every `harness sync`, while any project notes you add in the
+`readmeguide.project` local block (see § Local block below) are preserved. Think
+of the core as the specification the linter is built against, not as the README
+skeleton consumers edit.
 
 ---
 
-_Managed by agent-harness — do not edit directly. Changes belong in
-`template/managed/READMEGUIDE.md` in the harness repository._
+_The managed core of this guide is maintained as a harness composed template
+(`template/composed/READMEGUIDE.md`); edit project notes in the
+`readmeguide.project` local block below._
+
+---
+
+## Local block
+
+The section below is project-local and preserved across `harness sync`. Edit
+only the content **between** the markers. The markers and all content above are
+managed by the harness and overwritten on the next `harness sync`. The block ID
+`readmeguide.project` must be listed in `harness.config.json` under
+`composed.overrides["READMEGUIDE.md"].local_blocks`.
+
+<!-- harness:local-start id=readmeguide.project -->
+_(Project-local README-guide notes. Empty by default.)_
+<!-- harness:local-end id=readmeguide.project -->

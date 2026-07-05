@@ -8,11 +8,7 @@
     "repo": "REPLACE_ME/REPLACE_ME"
   },
   "managed": {
-    "files": [
-      "TRACKING.md",
-      "RETROSPECTIVES.md",
-      "READMEGUIDE.md"
-    ]
+    "files": []
   },
   "composed": {
     "files": [
@@ -20,7 +16,10 @@
       "CONVENTIONS.md",
       "OPERATIONS.md",
       "REVIEWS.md",
-      ".github/copilot-instructions.md"
+      ".github/copilot-instructions.md",
+      "TRACKING.md",
+      "RETROSPECTIVES.md",
+      "READMEGUIDE.md"
     ],
     "overrides": {
       "INSTRUCTIONS.md": {
@@ -37,6 +36,15 @@
       },
       ".github/copilot-instructions.md": {
         "local_blocks": ["copilot-instructions.harness"]
+      },
+      "TRACKING.md": {
+        "local_blocks": ["tracking.project"]
+      },
+      "RETROSPECTIVES.md": {
+        "local_blocks": ["retrospectives.project"]
+      },
+      "READMEGUIDE.md": {
+        "local_blocks": ["readmeguide.project"]
       }
     }
   },

@@ -34,7 +34,7 @@ const CLEAN_TREE = {
   'OPERATIONS.md': '# Operations\n\n## Report shape\n\nBody referencing LRN-001.\n',
   'REVIEWS.md': '# Reviews\n\nReview referencing LRN-001.\n',
   'INSTRUCTIONS.md': '# Instructions\n\nSee [report shape](OPERATIONS.md#report-shape).\n',
-  'template/managed/READMEGUIDE.md': '# Guide\n\nSee [architecture](ARCHITECTURE.md).\n',
+  'template/composed/READMEGUIDE.md': '# Guide\n\nSee [architecture](ARCHITECTURE.md).\n',
   'template/managed/ARCHITECTURE.md': '# Architecture\n',
 };
 
@@ -179,7 +179,7 @@ describe('check-doc-xref-resolvability', () => {
 
   it('(c) fails (exit 1) on a relative link to a non-template path (the #356b bug)', () => {
     const dir = buildTree({
-      'template/managed/READMEGUIDE.md':
+      'template/composed/READMEGUIDE.md':
         '# Guide\n\nSee [ADR 0001](docs/adr/0001-file-classes.md).\n',
     });
     const { status, stderr } = runLinter(['--cwd', dir]);
@@ -197,7 +197,7 @@ describe('check-doc-xref-resolvability', () => {
 
   it('(c) skips a non-shipped link that lives inside a fenced code block', () => {
     const dir = buildTree({
-      'template/managed/READMEGUIDE.md':
+      'template/composed/READMEGUIDE.md':
         '# Guide\n\n```markdown\nSee [ADR](docs/adr/0001-file-classes.md).\n```\n',
     });
     assert.equal(runLinter(['--cwd', dir]).status, 0);
@@ -205,7 +205,7 @@ describe('check-doc-xref-resolvability', () => {
 
   it('(c) resolves a link across the template class boundary (managed link -> seeded target)', () => {
     const dir = buildTree({
-      'template/managed/READMEGUIDE.md': '# Guide\n\nSee [readme](README.md).\n',
+      'template/composed/READMEGUIDE.md': '# Guide\n\nSee [readme](README.md).\n',
       'template/seeded/README.md': '# Project\n',
     });
     assert.equal(runLinter(['--cwd', dir]).status, 0);

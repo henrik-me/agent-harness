@@ -186,7 +186,9 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
       // the default-on review-gates flow (CS41 C41-7: review_gates is opt-out
       // by default in v0.5.0, and a fresh init runs the migration). CS72
       // reclassified INSTRUCTIONS.md + .github/copilot-instructions.md
-      // managed->composed so fresh consumers receive generic bases.
+      // managed->composed; CS108 reclassified TRACKING.md / RETROSPECTIVES.md /
+      // READMEGUIDE.md managed->composed so fresh consumers receive the harness
+      // core plus their own local block.
       assert.deepEqual(
         cfg.composed.files,
         [
@@ -195,14 +197,18 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
           'OPERATIONS.md',
           'REVIEWS.md',
           '.github/copilot-instructions.md',
+          'TRACKING.md',
+          'RETROSPECTIVES.md',
+          'READMEGUIDE.md',
           '.github/pull_request_template.md',
         ],
       );
 
       // composed.overrides has the 3 original per-file allowlists (LRN-009 / CS02b)
-      // plus the PR-template override added by enableReviewGatesForInit, plus the
-      // 2 CS72 reclassifications (INSTRUCTIONS.md + .github/copilot-instructions.md).
-      assert.equal(Object.keys(cfg.composed.overrides).length, 6);
+      // plus the PR-template override added by enableReviewGatesForInit, the
+      // 2 CS72 reclassifications (INSTRUCTIONS.md + .github/copilot-instructions.md),
+      // and the 3 CS108 reclassifications (TRACKING/RETROSPECTIVES/READMEGUIDE).
+      assert.equal(Object.keys(cfg.composed.overrides).length, 9);
       assert.deepEqual(cfg.composed.overrides['INSTRUCTIONS.md'].local_blocks, ['instructions.harness']);
       assert.deepEqual(cfg.composed.overrides['CONVENTIONS.md'].local_blocks, ['conventions.project']);
       assert.deepEqual(cfg.composed.overrides['OPERATIONS.md'].local_blocks, ['operations.project-deploy']);
@@ -211,6 +217,9 @@ describe('CS09 — harness init seeds a fresh consumer repo', () => {
         cfg.composed.overrides['.github/copilot-instructions.md'].local_blocks,
         ['copilot-instructions.harness'],
       );
+      assert.deepEqual(cfg.composed.overrides['TRACKING.md'].local_blocks, ['tracking.project']);
+      assert.deepEqual(cfg.composed.overrides['RETROSPECTIVES.md'].local_blocks, ['retrospectives.project']);
+      assert.deepEqual(cfg.composed.overrides['READMEGUIDE.md'].local_blocks, ['readmeguide.project']);
       assert.deepEqual(
         cfg.composed.overrides['.github/pull_request_template.md'].local_blocks,
         ['pull-request.review-evidence'],

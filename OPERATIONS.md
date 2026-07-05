@@ -1788,6 +1788,18 @@ advisory.
 | **seeded** | Create if missing (seed once); skip completely if the file already exists. |
 | **excluded** | Never touched (e.g. `README.md` per ADR 0002). Listed in `harness.config.json` `excluded[]`. |
 
+### Extending managed CI workflows (escape valve)
+
+The managed CI workflow files (for example the PR-evidence-lint, review-gates,
+and drift-check workflows) are full-overwrite `managed` files: they have no
+composed local-block extension point, so any hand edit is lost on the next
+`harness sync`. To add project-specific CI — a build job, a test job, a deploy
+step — add a **separate, non-managed** workflow file (for example
+`.github/workflows/project-ci.yml`) that is not listed in `managed.files` or
+`composed.files`. `harness sync` never touches files outside those lists, so
+your project workflow is preserved across every sync while the managed
+workflows stay authoritative.
+
 ### `review_gates` block currency (CS38a / CS41)
 
 `harness sync` checks the `review_gates` block in `harness.config.json`

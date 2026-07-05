@@ -34,9 +34,9 @@ const NODE = process.execPath;
 const SCOPE = {
   instructions: ['template', 'composed', 'INSTRUCTIONS.md'],
   copilot: ['template', 'composed', '.github', 'copilot-instructions.md'],
-  tracking: ['template', 'managed', 'TRACKING.md'],
-  retro: ['template', 'managed', 'RETROSPECTIVES.md'],
-  readme: ['template', 'managed', 'READMEGUIDE.md'],
+  tracking: ['template', 'composed', 'TRACKING.md'],
+  retro: ['template', 'composed', 'RETROSPECTIVES.md'],
+  readme: ['template', 'composed', 'READMEGUIDE.md'],
   operations: ['template', 'composed', 'OPERATIONS.md'],
   reviews: ['template', 'composed', 'REVIEWS.md'],
   conventions: ['template', 'composed', 'CONVENTIONS.md'],
@@ -112,7 +112,7 @@ describe('check-consumer-template-genericity', () => {
     const dir = buildCwd({ tracking: path.join(VARIANTS, 'TRACKING-lrn.md') });
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);
-    assert.match(stderr, /template\/managed\/TRACKING\.md:\d+: LRN-068/);
+    assert.match(stderr, /template\/composed\/TRACKING\.md:\d+: LRN-068/);
     assert.match(stderr, /❌ Linter FAILED/);
   });
 
@@ -120,7 +120,7 @@ describe('check-consumer-template-genericity', () => {
     const dir = buildCwd({ tracking: path.join(VARIANTS, 'TRACKING-cs.md') });
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);
-    assert.match(stderr, /template\/managed\/TRACKING\.md:\d+: CS54/);
+    assert.match(stderr, /template\/composed\/TRACKING\.md:\d+: CS54/);
   });
 
   it('(b3) fails (exit 1) on a LEARNINGS.md#lrn- link in a composed base', () => {
@@ -205,7 +205,7 @@ describe('check-consumer-template-genericity', () => {
     fs.rmSync(path.join(dir, ...SCOPE.tracking));
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);
-    assert.match(stderr, /template\/managed\/TRACKING\.md: cannot read file/);
+    assert.match(stderr, /template\/composed\/TRACKING\.md: cannot read file/);
   });
 
   it('(j) does not false-positive on LRN-NNN / CSNN placeholders in clean docs', () => {
@@ -338,7 +338,7 @@ describe('check-consumer-template-genericity — invocation scan (CS83 / C83-5)'
 // invocation scan (a third INVOCATION_PATTERN): a consumer has no local
 // `check-readme.mjs` script — they run the README linter via
 // `{{harness_invoke}} lint` — so a `scripts/check-readme.mjs` path OR a bare
-// `check-readme.mjs` name in any consumer-shipped scope doc (e.g. the managed
+// `check-readme.mjs` name in any consumer-shipped scope doc (e.g. the composed
 // READMEGUIDE.md) is flagged (issue #381 / CS83 residual). Variant content is
 // written straight into the temp --cwd (like the fs.rmSync cases above), so no
 // static fixture file is needed and repo-root scratch is never touched (LRN-094).
@@ -353,7 +353,7 @@ describe('check-consumer-template-genericity — check-readme.mjs ref ban (CS88 
     );
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);
-    assert.match(stderr, /template\/managed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
+    assert.match(stderr, /template\/composed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
     assert.match(stderr, /❌ Linter FAILED/);
   });
 
@@ -365,7 +365,7 @@ describe('check-consumer-template-genericity — check-readme.mjs ref ban (CS88 
     );
     const { status, stderr } = runLinter(['--cwd', dir]);
     assert.equal(status, 1);
-    assert.match(stderr, /template\/managed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
+    assert.match(stderr, /template\/composed\/READMEGUIDE\.md:\d+: check-readme\.mjs/);
   });
 
   it('(r3) passes (exit 0) on the generic `{{harness_invoke}} lint` README-linter form (no false positive)', () => {
