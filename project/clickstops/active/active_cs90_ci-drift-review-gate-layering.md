@@ -16,7 +16,7 @@ Resolve the harness's **CI-gate / drift-detection / review-gate architecture** a
 - **#392** — `harness-pr-check.yml` runs `harness lint` **and** a managed/composed-drift classifier; a consumer that already runs `harness lint` as its own required job gets a redundant second run, blocking adoption of the workflow's useful managed-drift classifier + `harness-managed-edit-ack` escape valve. Add a `pr_check.mode` (drift-only vs lint+drift) + an adoption-overlap warning.
 - **#393** — `review-gates.yml` (four enforcement gates + one `validate-workboard-only-scope` guard job) drops three things `pr-evidence-lint.yml` provides: Copilot `mutation-engage`, the full **bot-author / fork-source** skip-reason set (Dependabot & fork PRs would false-fail), and a single-context **aggregate mode**; and offers no documented migration path. Port parity + a migration mapping (documented; a `harness migrate-ci` helper only if the ADR proves it essential).
 
-The unifying deliverable is a **drift/CI/review-gate layering ADR** that tells a consumer which layer to pick instead of stacking redundant ones.
+The unifying deliverable is a **drift/CI/review-gate layering ADR** that makes explicit how the layers **compose** (each guards a different aspect of the product/operational cycle), names the one genuine either/or (L4's two implementations of the same gate), and the one redundancy to avoid (the same check run twice) — rather than presenting the layers as a menu to pick one from.
 
 ## Background
 
@@ -62,7 +62,7 @@ Verified at HEAD `3b20d0a` (template headers read directly):
 ## Exit criteria
 
 **CS90's own exit criteria:**
-1. The layering ADR (`docs/adr/0005-…`) exists (status **Proposed** pending G90-1; flips to **Accepted** once G90-1 is granted) and names the recommended per-repo combination, the redundancies to avoid, the L1-vs-L3 drift-semantics difference, the review-gates `mutation-engage` least-privilege posture, and the #393 context mapping.
+1. The layering ADR (`docs/adr/0005-…`) exists (status **Proposed** pending G90-1; flips to **Accepted** once G90-1 is granted) and makes explicit how the layers compose (the aspect each guards), the one genuine either/or (L4's two implementations) and the one same-check-twice redundancy to avoid, the L1-vs-L3 drift-semantics difference, the review-gates `mutation-engage` least-privilege posture, and the #393 context mapping.
 2. CS90a / CS90b / CS90c are filed as planned CSs (each with its own passing plan review) and cross-linked to #391 / #392 / #393.
 3. `harness lint` passes on the ADR + sub-CS files; `node --test tests/*.test.mjs` green. Plan-vs-implementation review (GPT-5.5) GO.
 

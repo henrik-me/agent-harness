@@ -26,9 +26,10 @@ claimed; **this ADR's status flips to `Accepted` once G90-1 is granted.**
 The harness ships four distinct CI/drift/review mechanisms as managed-template
 workflows plus one recommended-but-unshipped pattern. A consumer adopting the
 harness today must **hand-assemble** these layers with no authoritative guide
-to which layer to pick, and several of them **overlap** — a consumer can
-easily stack two gates that do substantially the same work, paying double CI
-cost and double failure surface for one unit of protection.
+to how they **compose** — which aspect each guards and where they genuinely
+overlap. Without that guide a consumer can easily stack two gates that do
+substantially the same work, paying double CI cost and double failure surface
+for one unit of protection.
 
 The problem surfaced concretely in the `henrik-me/sub-invaders` **v0.12.0**
 CI-adoption evaluation, which spawned three coupled inbound issues (all
@@ -56,9 +57,13 @@ drift-layering ask):
   aggregator.
 
 Because the three issues are mutually referential, they are resolved as one
-coherent design pass. The unifying deliverable is this layering ADR: it tells
-a consumer **which layer to pick** instead of stacking redundant ones, and it
-fixes the required shapes for the concrete sub-CS changes.
+coherent design pass. The unifying deliverable is this layering ADR. The
+layers are **not a menu to pick one from** — they guard different aspects of
+the product/operational cycle and mostly **compose**. The ADR's job is to make
+that composition explicit: which aspect each layer guards, the **one** genuine
+either/or (the two L4 implementations of the same gate), and the **one**
+redundancy to avoid (running the same check twice) — and to fix the required
+shapes for the concrete sub-CS changes.
 
 ### Current behaviour of each mechanism (as read at CS90 authoring time)
 
@@ -77,13 +82,16 @@ section.
 
 ## Decision
 
-Define a **four-layer model**. A consumer selects layers deliberately; the ADR
-names the recommended combination and the redundancies to avoid. The
-per-decision summary:
+Define a **four-layer model** whose layers **compose** — each guards a
+different aspect (drift, audited managed-file edits, the review process), so a
+repo runs the layers whose aspects it needs rather than picking one from a
+menu. The ADR names the single genuine either/or (the two L4 implementations
+of the same gate) and the single redundancy to avoid (the same check run
+twice). The per-decision summary:
 
 | # | Decision | Maps to |
 |---|---|---|
-| D5-1 | Adopt the four-layer model (L1–L4) below as the authoritative CI/drift/review-gate architecture; document the recommended combination and the redundancies to avoid. | C90-1 |
+| D5-1 | Adopt the four-layer model (L1–L4) below as the authoritative CI/drift/review-gate architecture; frame it as **composition** (each layer guards a different aspect), naming the one genuine either/or (L4's two implementations) and the one redundancy to avoid (the same check run twice). | C90-1 |
 | D5-2 | Ship L1 as a **documented `ci.yml` job snippet**, not a new managed workflow; record the L1-vs-L3 drift-semantics difference (L1 is strictly stricter). | C90-2 |
 | D5-3 | L3 gains a `pr_check.mode` (`drift-only` vs `lint+drift`) so a consumer that lints inline can adopt the classifier + escape valve without a redundant lint (implemented in CS90b). | C90-3 |
 | D5-4 | The `mutation-engage` engagement job ported into L4's `review-gates.yml` MUST hold the least-privilege posture recorded below (implemented in CS90c). | C90-4 |
@@ -160,7 +168,7 @@ little from L2's weekly sweep and keeps L2's auto-fix-PR mainly as a safety
 net. A low-activity repo may value L2 especially — a scheduled sweep still
 catches drift that landed without a PR — but L2 remains a sweep / safety net,
 **not** a substitute for L1 when PR-time drift gating is wanted (see
-"Redundancies to avoid" below).
+"Composition, not a menu" below).
 
 #### L3 — `harness-pr-check.yml` managed-drift classifier + escape valve
 
@@ -230,35 +238,54 @@ and migration mapping below).
 
 ---
 
-## Recommended combination and redundancies to avoid
+## Composition, not a menu: which layers to run
 
-**Recommended per-repo stack.**
+**The four layers are not a menu to pick one from — they guard different
+aspects of the product/operational cycle and mostly _compose_.** A repo that
+wants full protection runs several together; each layer guards a distinct
+concern:
 
-- **Baseline (all repos):** **L1** per-PR `sync --mode=check`.
-- **Low-activity repos:** add **L2** as a weekly belt-and-suspenders sweep
-  with its auto-fix PR. High-activity repos may keep L2 purely as a safety net.
-- **Managed-file divergence needed:** add **L3** — preferably in `drift-only`
-  mode once CS90b ships, so you do not pay a redundant lint on top of the
-  `harness lint` you already run in your own CI (L1's `sync --mode=check`
-  runs no lint).
-- **Review-process enforcement:** add **L4** — pick **one** of the split
-  contexts (`review-gates.yml`) or the aggregate context
-  (`pr-evidence-lint.yml`), never both.
+| Layer | Distinct aspect it guards | When it fires |
+|---|---|---|
+| **L1** — per-PR `sync --mode=check` | Template **drift**, caught at merge time | Every PR |
+| **L2** — weekly `harness-drift` cron | Template **drift** on a schedule, and it **auto-opens a fix PR** | Weekly (+ manual dispatch) |
+| **L3** — `harness-pr-check` classifier + escape valve | **Intentional, audited** managed/composed-file edits (the `harness-managed-edit-ack` escape valve) | Every PR |
+| **L4** — `review-gates.yml` / `pr-evidence-lint.yml` | The **review process** (Copilot review present, review-log evidence, reviewer/implementer independence, threads resolved) — orthogonal to drift | Every PR |
 
-**Redundancies to avoid.**
+L1 (drift at PR time) and L4 (review process) guard clearly different things
+and are both worth running. L2 and L3 add distinct **capabilities** on top —
+L2's scheduled auto-fix PR, L3's audited escape valve — while their
+drift-scanning portions overlap L1.
 
-- **Do not stack L1 and L3 blindly.** L1 already covers most of L3's drift
-  half (see the semantics note below). Add L3 **only** for the escape-valve /
-  intentional-managed-edit workflow, and prefer L3 `drift-only` so its lint
-  does not duplicate a `harness lint` you already run inline (L1's
-  `sync --mode=check` runs no lint, so the duplication to avoid is with your
-  own CI's lint, not L1).
-- **Do not run both L4 workflows.** They enforce the same evidence behind
-  different required-status contexts; running both doubles CI and forces a
-  consumer to satisfy two context shapes for one guarantee. Migrate from the
-  aggregate to the split (or keep the aggregate) — do not run both.
-- **Do not treat L2 as a substitute for L1.** L2 catches drift up to seven
-  days late; it is a sweep, not a merge gate.
+**There are only two things to "choose," and they are narrow:**
+
+1. **L4 is a "pick exactly one" — the two files are two implementations of the
+   _same_ gate.** `review-gates.yml` (split per-gate contexts) and
+   `pr-evidence-lint.yml` (single aggregate context) enforce the identical
+   review-evidence guarantee in different shapes. Run **one**, never both —
+   running both doubles CI and forces you to satisfy two context shapes for one
+   guarantee. (#393 / CS90c ships the migration path between them.)
+
+2. **Don't run the _same check_ twice — the only real redundancy.** It is
+   specific and narrow:
+   - **L3's internal `harness lint` vs your own inline `harness lint`.** L3
+     (`harness-pr-check`) runs `harness lint` in addition to its drift
+     classifier. If you already run `harness lint` as your own CI job, that is
+     a duplicated lint — so adopt L3 in **`drift-only`** mode (CS90b) to keep
+     the classifier + escape valve without the second lint. (L1's
+     `sync --mode=check` runs **no** lint — it checks drift — so this
+     duplication is only ever with your _own_ inline lint, never with L1.)
+   - **L1's drift check vs L3's drift classifier.** Both scan for drift, so you
+     keep L3 for its **escape valve**, not for a second drift scan (see the
+     L1-vs-L3 drift-semantics note below).
+
+**Everything else composes — it is not redundant.** Running L2 alongside L1
+adds a scheduled sweep + auto-fix PR that L1's per-PR gate does not provide (L2
+remains a sweep / safety-net, **not** a substitute for L1's merge-time gate).
+Running L4 alongside L1/L2/L3 guards a different concern entirely (the review
+process, not drift). So the recommended posture is: **compose the aspects you
+need**, pick exactly one L4 implementation, and avoid only the same-check-twice
+duplication above.
 
 ### The L1-vs-L3 drift-semantics difference (CRITICAL, C90-2)
 
