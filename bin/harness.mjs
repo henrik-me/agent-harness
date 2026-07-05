@@ -19,7 +19,7 @@
  */
 
 import { parseArgs } from 'node:util';
-import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, copyFileSync, writeFileSync, statSync, realpathSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -105,7 +105,8 @@ Subcommands:
   sync              Sync managed/composed/seeded files from the harness template
   check             Alias for sync --mode=check
   ruleset           Check the live branch-protection ruleset vs the config-derived
-                    source (CS109 — 'ruleset check'; 'apply' deferred to CS109a)
+                    source, and (with 'apply --apply') PUT the source to reconcile
+                    (CS109 'ruleset check'; CS109a 'ruleset apply')
   upgrade           Preview upgrading the pinned harness ref (dry-run diff)
   doctor            Diagnose + (with --repair) recover broken git remote refs (CS64b)
   lint              Run all harness structural + policy linters (14 linters)
@@ -231,24 +232,33 @@ Options:
   --help          Print this help
 `.trimStart(),
   ruleset: `
-Usage: harness ruleset check [options]
+Usage: harness ruleset <check|apply> [options]
 
-Compare the LIVE GitHub branch-protection ruleset against the config-derived
-source (infra/main-protection-ruleset.json, kept current by 'harness sync') and
-report drift on the harness-MANAGED surface only: the required-check contexts
-and required_approving_review_count. GitHub-added fields never cause false drift.
-Read-only; exits non-zero on drift (fail-closed on any API/parse error).
+Compare (and, with 'apply', reconcile) the LIVE GitHub branch-protection ruleset
+against the config-derived source (infra/main-protection-ruleset.json, kept
+current by 'harness sync') on the harness-MANAGED surface only: the required-check
+contexts and required_approving_review_count. GitHub-added fields never cause
+false drift.
 
-'harness ruleset apply' (live-ruleset mutation) is deferred to CS109a
-(see docs/adr/0006-review-enforcement-posture.md § D6).
+Actions:
+  check            Read-only drift report. Exits non-zero on drift (fail-closed
+                   on any API/parse error).
+  apply            Dry-run by default: renders the source + diffs it vs live and
+                   mutates NOTHING. With --apply it PUTs the source to the live
+                   ruleset — gated by a BINDING pre-apply preflight ('sync
+                   --mode=check' clean + zero ruleset-deadlock (F3) warnings),
+                   fail-closed on any API error, and followed by a MANDATORY
+                   post-apply verification that fails closed on residual drift.
+                   High blast radius: repo-wide merge policy.
 
 Options:
+  --apply              (apply only) Actually PUT the source to the live ruleset
   --repo <owner/repo>  Target repo (default: project.repo in config, else 'gh repo view')
   --ruleset-id <id>    Live ruleset id (default: discovered by name 'main-protection')
   --live-file <path>   Read the "live" ruleset from a file instead of the API (testing)
   --cwd <path>         Consumer repo path (default: cwd)
   --config <path>      Path to harness.config.json
-  --quiet              Print only when drift is found
+  --quiet              Suppress success stdout
   --help               Print this help
 `.trimStart(),
 
@@ -2333,18 +2343,79 @@ function resolveRepoSlug(cwd, configPath, explicitRepo) {
   return null;
 }
 
+// Resolve the numeric live-ruleset id: honour an explicit --ruleset-id, else
+// discover it by name from `gh api repos/<repo>/rulesets`. Factored out of
+// fetchLiveRuleset so the `apply --apply` PUT (which targets
+// repos/<repo>/rulesets/<id>) reuses the exact same discovery path.
+function discoverRulesetId({ repo, rulesetId, rulesetName, cwd }) {
+  if (rulesetId) return rulesetId;
+  const listRaw = ghCapture(
+    ['api', `repos/${repo}/rulesets`, '--jq', `.[] | select(.name=="${rulesetName}") | .id`],
+    cwd
+  );
+  const ids = listRaw.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (ids.length === 0) throw new Error(`no live ruleset named "${rulesetName}" found on ${repo}`);
+  return ids[0];
+}
+
 function fetchLiveRuleset({ repo, rulesetId, rulesetName, cwd }) {
-  let id = rulesetId;
-  if (!id) {
-    const listRaw = ghCapture(
-      ['api', `repos/${repo}/rulesets`, '--jq', `.[] | select(.name=="${rulesetName}") | .id`],
-      cwd
-    );
-    const ids = listRaw.split('\n').map((line) => line.trim()).filter(Boolean);
-    if (ids.length === 0) throw new Error(`no live ruleset named "${rulesetName}" found on ${repo}`);
-    id = ids[0];
-  }
+  const id = discoverRulesetId({ repo, rulesetId, rulesetName, cwd });
   return JSON.parse(ghCapture(['api', `repos/${repo}/rulesets/${id}`], cwd));
+}
+
+/**
+ * Binding pre-apply preflight (CS109a Deliverable 4 / ADR 0006 D5). Returns
+ * { ok, reasons[] }. A live `apply --apply` is gated on BOTH:
+ *   (a) `harness sync --mode=check` reporting NO drift for the target cwd, and
+ *   (b) ZERO `ruleset-deadlock` (F3) warnings for the target ruleset.
+ * The F3 guard is warn-only (always exit 0 on findings), so its warning count
+ * is parsed from stdout ("N warning(s)") rather than read from the exit code.
+ *
+ * @param {{cwd:string, rulesetPath:string, workflowsDir:string, configPath?:string|null, skipSyncCheck?:boolean}} opts
+ * @returns {{ok:boolean, reasons:string[]}}
+ */
+function runApplyPreflight({ cwd, rulesetPath, workflowsDir, configPath = null, skipSyncCheck = false }) {
+  const reasons = [];
+
+  if (!skipSyncCheck) {
+    const syncArgs = [__filename, 'sync', '--mode=check', '--cwd', cwd];
+    if (configPath) syncArgs.push('--config', configPath);
+    const syncRes = spawnSync(process.execPath, syncArgs, {
+      encoding: 'utf8',
+    });
+    if (syncRes.error) {
+      reasons.push(`sync --mode=check could not run: ${syncRes.error.message}`);
+    } else if (syncRes.status !== 0) {
+      reasons.push(
+        `sync --mode=check reported config-vs-source drift (exit ${syncRes.status}) — ` +
+          `reconcile with 'harness sync --mode=apply' before applying the ruleset`
+      );
+    }
+  }
+
+  const f3Script = path.join(REPO_ROOT, 'scripts', 'check-ruleset-deadlock.mjs');
+  const f3Res = spawnSync(
+    process.execPath,
+    [f3Script, '--ruleset', rulesetPath, '--workflows-dir', workflowsDir, '--quiet'],
+    { encoding: 'utf8' }
+  );
+  if (f3Res.error) {
+    reasons.push(`ruleset-deadlock (F3) guard could not run: ${f3Res.error.message}`);
+  } else if (f3Res.status !== 0) {
+    // Exit 1 = unreadable/malformed ruleset (fail-closed); exit 2 = bad usage.
+    reasons.push(`ruleset-deadlock (F3) guard failed (exit ${f3Res.status}): ${(f3Res.stderr || '').trim()}`);
+  } else {
+    const m = /(\d+)\s+warning\(s\)/.exec(f3Res.stdout || '');
+    const warnCount = m ? Number(m[1]) : 0;
+    if (warnCount > 0) {
+      reasons.push(
+        `${warnCount} ruleset-deadlock (F3) warning(s) for the target ruleset — a required context ` +
+          `with no producer (or a path-filtered producer) would deadlock every PR; resolve before applying`
+      );
+    }
+  }
+
+  return { ok: reasons.length === 0, reasons };
 }
 
 async function cmdRuleset(args, global) {
@@ -2359,6 +2430,12 @@ async function cmdRuleset(args, global) {
   let rulesetId = null;
   let liveFile = null;
   let quiet = false;
+  let apply = false;
+  // --- TEST-ONLY seams (never used in production; production always uses the
+  //     GitHub API). Each seam is documented at its parse site. ---
+  let putFile = null;
+  let verifyLiveFile = null;
+  let skipPreflightSync = false;
   const positionals = [];
   const takeValue = (i, flag) => {
     const v = args[i + 1];
@@ -2370,84 +2447,235 @@ async function cmdRuleset(args, global) {
     if (a === '--repo') { repo = takeValue(i, '--repo'); i++; }
     else if (a === '--ruleset-id') { rulesetId = takeValue(i, '--ruleset-id'); i++; }
     else if (a === '--live-file') { liveFile = takeValue(i, '--live-file'); i++; }
+    else if (a === '--apply') { apply = true; }
     else if (a === '--quiet') { quiet = true; }
+    // --put-file <path>: TEST-ONLY. With `apply --apply`, write the would-be PUT
+    // body (the rendered source ruleset) to <path> instead of calling
+    // `gh api -X PUT`. Presence marks "seam mode" (no live network mutation).
+    else if (a === '--put-file') { putFile = takeValue(i, '--put-file'); i++; }
+    // --verify-live-file <path>: TEST-ONLY. The mandatory post-apply verification
+    // re-reads the "live" ruleset from <path> instead of re-fetching the API, so
+    // the verify-failure (residual-drift) path can be exercised deterministically.
+    else if (a === '--verify-live-file') { verifyLiveFile = takeValue(i, '--verify-live-file'); i++; }
+    // --skip-preflight-sync: TEST-ONLY, honoured ONLY in seam mode (see below).
+    // Skips the sync --mode=check step of the pre-apply preflight so the F3
+    // deadlock preflight can be exercised in isolation. Never weakens a real
+    // (network) apply, which is never in seam mode.
+    else if (a === '--skip-preflight-sync') { skipPreflightSync = true; }
     else if (a.startsWith('-')) die(`harness ruleset: unknown flag "${a}"\n\n${SUBCOMMAND_HELP['ruleset']}`, 2);
     else positionals.push(a);
   }
+
+  // TEST-ONLY seam coherence (SAFETY): the ONLY seam that suppresses the real
+  // `gh api -X PUT` is --put-file (it redirects the PUT body to a file). Both
+  // --verify-live-file (file-based post-apply verification) and
+  // --skip-preflight-sync are safe ONLY when the PUT was so suppressed. Without
+  // --put-file a real live PUT happens, so honouring either flag would file-verify
+  // or skip the preflight around a live mutation — a repo-wide-blast-radius hole.
+  // Reject them fail-closed so no path that can reach the live PUT can use them.
+  if (verifyLiveFile !== null && putFile === null) {
+    die('harness ruleset: --verify-live-file requires --put-file (test-only seam; refusing to file-verify a real live PUT)', 2);
+  }
+  if (skipPreflightSync && putFile === null) {
+    die('harness ruleset: --skip-preflight-sync requires --put-file (test-only seam; refusing to skip the pre-apply preflight around a real live PUT)', 2);
+  }
+
   // Select the action from true positionals only, so a flag VALUE (e.g. the
   // `owner/repo` after `--repo`) is never mistaken for the action even when
   // options precede it.
   const action = positionals[0] ?? null;
 
-  if (action === 'apply') {
+  if (action !== 'check' && action !== 'apply') {
     die(
-      'harness ruleset apply (live-ruleset mutation) is deferred to CS109a ' +
-        '(see docs/adr/0006-review-enforcement-posture.md § D6). ' +
-        'This build ships `harness ruleset check` only.',
-      2
-    );
-  }
-  if (action !== 'check') {
-    die(
-      `harness ruleset: expected action "check" (got ${action ? `"${action}"` : 'none'})` +
+      `harness ruleset: expected action "check" or "apply" (got ${action ? `"${action}"` : 'none'})` +
         `\n\n${SUBCOMMAND_HELP['ruleset']}`,
       2
     );
   }
 
+  const label = `harness ruleset ${action}`;
+
+  // Shared: resolve + parse the config-derived source ruleset (fail-closed).
   const rulesetPath = getReviewRulesetPath(cwd);
   if (!existsSync(rulesetPath)) {
-    die(
-      `harness ruleset check: source ruleset not found at ${rulesetPath}. ` +
-        `Run 'harness sync --mode=apply' first.`,
-      1
-    );
+    die(`${label}: source ruleset not found at ${rulesetPath}. Run 'harness sync --mode=apply' first.`, 1);
   }
   let source;
   try {
     source = JSON.parse(stripBOM(readFileSync(rulesetPath, 'utf8')));
   } catch (err) {
-    die(`harness ruleset check: cannot parse ${rulesetPath}: ${err.message}`, 1);
+    die(`${label}: cannot parse ${rulesetPath}: ${err.message}`, 1);
   }
   const rulesetName = typeof source?.name === 'string' && source.name ? source.name : 'main-protection';
 
+  // Shared: obtain a ruleset (the current live one, or a post-apply re-read),
+  // fail-closed. `fileOverride` reads from a file (testing / verify seam); else
+  // it fetches the live ruleset via the GitHub API.
+  const obtainRuleset = (fileOverride) => {
+    if (fileOverride) {
+      return JSON.parse(stripBOM(readFileSync(path.resolve(cwd, fileOverride), 'utf8')));
+    }
+    const slug = resolveRepoSlug(cwd, configPath, repo);
+    if (!slug) {
+      throw new Error('could not resolve owner/repo — set project.repo in config or pass --repo owner/repo');
+    }
+    return fetchLiveRuleset({ repo: slug, rulesetId, rulesetName, cwd });
+  };
+
   let live;
   try {
-    if (liveFile) {
-      live = JSON.parse(stripBOM(readFileSync(path.resolve(cwd, liveFile), 'utf8')));
-    } else {
-      const slug = resolveRepoSlug(cwd, configPath, repo);
-      if (!slug) {
-        die(
-          'harness ruleset check: could not resolve owner/repo — set project.repo in config or pass --repo owner/repo',
-          1
-        );
-      }
-      live = fetchLiveRuleset({ repo: slug, rulesetId, rulesetName, cwd });
-    }
+    live = obtainRuleset(liveFile);
   } catch (err) {
-    die(`harness ruleset check: failed to obtain the live ruleset (fail-closed): ${err.message}`, 1);
+    die(`${label}: failed to obtain the live ruleset (fail-closed): ${err.message}`, 1);
   }
 
+  if (action === 'check') {
+    const { drift, details } = diffManagedRulesetSurface(source, live);
+    if (!drift) {
+      if (!quiet) {
+        process.stdout.write(
+          `harness ruleset check: no drift — live ruleset "${rulesetName}" matches the ` +
+            `config-derived source (managed surface: required-check contexts + approval count).\n`
+        );
+      }
+      process.exit(0);
+    }
+    process.stderr.write(
+      `harness ruleset check: DRIFT between live ruleset "${rulesetName}" and the config-derived source:\n`
+    );
+    for (const detail of details) process.stderr.write(`  - ${detail}\n`);
+    process.stderr.write(
+      `\nReconcile by re-applying the source to the live repo ` +
+        `(CS109a: 'harness ruleset apply --apply') or by updating config + 'harness sync --mode=apply'.\n`
+    );
+    process.exit(1);
+  }
+
+  // action === 'apply' (CS109a) --------------------------------------------
+  // SAFETY: seam mode is defined ONLY by --put-file (the flag that suppresses the
+  // real `gh api -X PUT`). Any apply that can reach the live PUT (putFile === null)
+  // is therefore NOT in seam mode, so it always runs the full pre-apply preflight
+  // and re-fetches independent live state for post-apply verification.
+  const seamMode = putFile !== null;
   const { drift, details } = diffManagedRulesetSurface(source, live);
-  if (!drift) {
+
+  // Dry-run (default, no --apply): render + diff, mutate NOTHING.
+  if (!apply) {
     if (!quiet) {
       process.stdout.write(
-        `harness ruleset check: no drift — live ruleset "${rulesetName}" matches the ` +
-          `config-derived source (managed surface: required-check contexts + approval count).\n`
+        `harness ruleset apply (dry-run): rendered source ruleset "${rulesetName}" ` +
+          `(managed surface: required-check contexts + approval count):\n`
+      );
+      process.stdout.write(`${JSON.stringify(source, null, 2)}\n`);
+      if (drift) {
+        process.stdout.write(
+          `\nharness ruleset apply (dry-run): DRIFT vs the live ruleset "${rulesetName}" — ` +
+            `--apply would PUT the source to reconcile:\n`
+        );
+        for (const detail of details) process.stdout.write(`  - ${detail}\n`);
+      } else {
+        process.stdout.write(
+          `\nharness ruleset apply (dry-run): no drift — the live ruleset "${rulesetName}" already ` +
+            `matches the config-derived source (managed surface).\n`
+        );
+      }
+      process.stdout.write(
+        `\nNOTHING was mutated. Re-run with --apply to PUT the source to the live ruleset ` +
+          `(high blast radius: repo-wide merge policy).\n`
       );
     }
     process.exit(0);
   }
-  process.stderr.write(
-    `harness ruleset check: DRIFT between live ruleset "${rulesetName}" and the config-derived source:\n`
-  );
-  for (const detail of details) process.stderr.write(`  - ${detail}\n`);
-  process.stderr.write(
-    `\nReconcile by re-applying the source to the live repo ` +
-      `(CS109a: 'harness ruleset apply --apply') or by updating config + 'harness sync --mode=apply'.\n`
-  );
-  process.exit(1);
+
+  // --apply: BINDING pre-apply preflight (Deliverable 4 / Decision 5) BEFORE
+  // any PUT. Skipping the sync-check step is honoured ONLY in seam mode so a
+  // real (network) apply always runs the full preflight.
+  const preflight = runApplyPreflight({
+    cwd,
+    rulesetPath,
+    workflowsDir: path.join(cwd, '.github', 'workflows'),
+    configPath,
+    skipSyncCheck: skipPreflightSync && seamMode,
+  });
+  if (!preflight.ok) {
+    process.stderr.write(
+      `harness ruleset apply: BLOCKED by the pre-apply preflight (no PUT performed):\n`
+    );
+    for (const reason of preflight.reasons) process.stderr.write(`  - ${reason}\n`);
+    process.exit(1);
+  }
+
+  // Perform the PUT. Production writes the source JSON to a temp file and PUTs
+  // it via `gh api -X PUT ... --input <tempfile>` (a temp --input file avoids
+  // Windows-fragile stdin piping). The --put-file seam writes the body to disk
+  // instead, for tests. Fail-closed (stderr + exit 1) on any error.
+  const bodyJSON = `${JSON.stringify(source, null, 2)}\n`;
+  if (putFile) {
+    try {
+      writeFileSync(path.resolve(cwd, putFile), bodyJSON, 'utf8');
+    } catch (err) {
+      die(`harness ruleset apply: failed to write PUT body (fail-closed): ${err.message}`, 1);
+    }
+  } else {
+    let id;
+    let slug;
+    try {
+      slug = resolveRepoSlug(cwd, configPath, repo);
+      if (!slug) throw new Error('could not resolve owner/repo — set project.repo in config or pass --repo owner/repo');
+      id = discoverRulesetId({ repo: slug, rulesetId, rulesetName, cwd });
+    } catch (err) {
+      die(`harness ruleset apply: failed to resolve the live ruleset id (fail-closed): ${err.message}`, 1);
+    }
+    const tmpBody = path.join(os.tmpdir(), `harness-ruleset-put-${process.pid}-${Date.now()}.json`);
+    try {
+      writeFileSync(tmpBody, bodyJSON, 'utf8');
+      ghCapture(['api', '-X', 'PUT', `repos/${slug}/rulesets/${id}`, '--input', tmpBody], cwd);
+    } catch (err) {
+      die(`harness ruleset apply: live PUT failed (fail-closed): ${err.message}`, 1);
+    } finally {
+      try { rmSync(tmpBody, { force: true }); } catch { /* best-effort cleanup */ }
+    }
+  }
+
+  if (!quiet) {
+    process.stdout.write(
+      `harness ruleset apply: PUT the source ruleset "${rulesetName}" to the live repo. ` +
+        `Verifying the managed surface...\n`
+    );
+  }
+
+  // MANDATORY post-apply verification (Deliverable 3 / Decision 2): re-obtain
+  // the live ruleset and re-diff. In seam mode the re-read comes from
+  // --verify-live-file (if given) else the just-written --put-file store; in
+  // production it re-fetches the live API. Fail-closed on residual drift OR any
+  // API/parse error.
+  let postLive;
+  try {
+    const verifyOverride = verifyLiveFile ?? putFile;
+    postLive = obtainRuleset(seamMode ? verifyOverride : null);
+  } catch (err) {
+    die(
+      `harness ruleset apply: post-apply verification could not re-obtain the live ruleset ` +
+        `(fail-closed — the PUT may have partially applied): ${err.message}`,
+      1
+    );
+  }
+  const post = diffManagedRulesetSurface(source, postLive);
+  if (post.drift) {
+    process.stderr.write(
+      `harness ruleset apply: post-apply verification FAILED — the live ruleset "${rulesetName}" ` +
+        `still diverges from the source after the PUT (fail-closed):\n`
+    );
+    for (const detail of post.details) process.stderr.write(`  - ${detail}\n`);
+    process.exit(1);
+  }
+  if (!quiet) {
+    process.stdout.write(
+      `harness ruleset apply: verified — the live ruleset "${rulesetName}" now matches the ` +
+        `config-derived source (managed surface).\n`
+    );
+  }
+  process.exit(0);
 }
 
 // ---------------------------------------------------------------------------
