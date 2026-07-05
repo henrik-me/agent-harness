@@ -62,7 +62,7 @@ Verified at HEAD `3b20d0a` (template headers read directly):
 ## Exit criteria
 
 **CS90's own exit criteria:**
-1. The layering ADR (`docs/adr/0005-…`) exists and is accepted; it names the recommended per-repo combination, the redundancies to avoid, the L1-vs-L3 drift-semantics difference, the review-gates `mutation-engage` least-privilege posture, and the #393 context mapping.
+1. The layering ADR (`docs/adr/0005-…`) exists (status **Proposed** pending G90-1; flips to **Accepted** once G90-1 is granted) and names the recommended per-repo combination, the redundancies to avoid, the L1-vs-L3 drift-semantics difference, the review-gates `mutation-engage` least-privilege posture, and the #393 context mapping.
 2. CS90a / CS90b / CS90c are filed as planned CSs (each with its own passing plan review) and cross-linked to #391 / #392 / #393.
 3. `harness lint` passes on the ADR + sub-CS files; `node --test tests/*.test.mjs` green. Plan-vs-implementation review (GPT-5.5) GO.
 

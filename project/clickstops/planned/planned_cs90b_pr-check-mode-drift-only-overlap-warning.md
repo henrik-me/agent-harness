@@ -14,7 +14,7 @@ Implement the **L3** change from ADR-0005: add a `pr_check.mode ∈ {lint+drift 
 
 ## Background
 
-Filed from inbound issue **#392** (state: open — re-verify `gh issue view 392` at claim-time HEAD, F6). `harness-pr-check.yml`'s single `structural-gate` job runs `harness lint --quiet` (line ~116) AND `scripts/check-managed-drift.mjs` (line ~118) in one job; a consumer that already runs `harness lint` (or L1's `sync --mode=check`) as its own required job pays for a redundant second lint just to obtain the managed-drift classifier + escape valve. #392 asks for a mode toggle to split those, plus an overlap warning.
+Filed from inbound issue **#392** (state: open — re-verify `gh issue view 392` at claim-time HEAD, F6). `harness-pr-check.yml`'s single `structural-gate` job runs `harness lint --quiet` (line ~116) AND `scripts/check-managed-drift.mjs` (line ~118) in one job; a consumer that already runs `harness lint` as its own required job pays for a redundant second lint just to obtain the managed-drift classifier + escape valve. (L1's `sync --mode=check` runs no lint — it verifies template drift — so it adds no lint here; the redundancy is specifically the doubled `harness lint`.) #392 asks for a mode toggle to split those, plus an overlap warning.
 
 Grounding (verify at claim HEAD):
 
