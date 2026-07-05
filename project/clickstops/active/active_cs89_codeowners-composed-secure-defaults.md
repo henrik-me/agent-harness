@@ -1,9 +1,9 @@
 # CS89 — Ship CODEOWNERS as a composed file (project local block) + secure-by-default ownership for `.github` / `SECURITY.md` / infra
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs89/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** Triage of open inbound issue [#390](https://github.com/henrik-me/agent-harness/issues/390) (2026-07-02 by `omni-ah-c3`). Surfaced while evaluating adoption of v0.12.0's managed `.github/CODEOWNERS` in `henrik-me/sub-invaders`.
 **Depends on:** none.
@@ -77,11 +77,29 @@ Verified at HEAD `3b20d0a`:
 | R2 | gpt-5.5 | claude-opus-4.8 | cs89-review-r2 (omni-ah-c3) | 71e3c5e3098c | 2026-07-03T00:05:00Z | Needs-Fix | _inherited_class shim is append-only (preserves consumer prose), so migrated managed adopters keep the OLD minimal core and never receive the secure defaults. |
 | R3 | gpt-5.5 | claude-opus-4.8 | cs89-review-r3 (omni-ah-c3) | ea308fd60e38 | 2026-07-03T00:22:00Z | Go-with-amendments | R1/R2 resolved: #-marker parser support + mandated core REGENERATION (not _inherited_class-append) + transition fixture. Minor applied: custom adopters copy skeleton first, then wrap rules. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Minor** (provisional): additive `#`-comment composed-marker form (HTML form preserved) + new `security_codeowner`/`infra_codeowner` templating keys + CODEOWNERS reclassified managed→composed. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C89-4: extend `lib/composed.mjs` marker parser to ALSO recognize the `#`-comment marker form (`# harness:local-start\|end id=<id>`) without breaking the HTML form; update `schemas/harness.config.schema.json` marker docs (`:217-219`) + file-class/composed docs | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C89-1/C89-2: add `template/composed/.github/CODEOWNERS` (secure-default core `/.github/`, `/.github/workflows/`, `/SECURITY.md`, `/infra/` + empty `codeowners.project` `#`-marker block); delete `template/managed/.github/CODEOWNERS` | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C89-1/C89-3: `harness.config.json` move `.github/CODEOWNERS` managed→composed + `composed.overrides` `codeowners.project`; add `security_codeowner`/`infra_codeowner` templating keys; `lib/sync.mjs` sync-side defaults (= `default_codeowner`) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C89-5: regenerate self-host root `.github/CODEOWNERS`; migration notes for both consumer classes + self-host (regeneration, not append) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| Tests 7(a–f): `#`-marker pairing/id/round-trip + HTML-form regression; secure-default render; templating fallback (no literal `{{…}}`); `codeowners.project` sync no-drift; no raw `<!-- … -->` line; managed→composed transition fixture | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| CHANGELOG.md `[Unreleased]` entry + migration notes (closes #390) | planned | — | agent-id=cs89-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck (independence invariant per REVIEWS.md) | planned | — | role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | — | report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | — | report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
