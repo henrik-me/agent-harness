@@ -1,9 +1,9 @@
 # CS88 — v0.12.0 managed-doc accuracy: gate the composed OPERATIONS #369 `validate-and-approve` prose + finish the READMEGUIDE `check-readme.mjs` genericity (CS83 residual)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs88/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** Triage of open inbound issue [#381](https://github.com/henrik-me/agent-harness/issues/381) (2026-07-02 by `omni-ah-c3`, at the maintainer's request to file file-worthy issues as CSs). Surfaced by Copilot review on the `henrik-me/sub-invaders` v0.12.0 pin-bump (sub-invaders#140).
 **Depends on:** none (but see C88-3: shares `template/composed/OPERATIONS.md` with CS76 — land sequentially).
@@ -72,11 +72,27 @@ Related: **CS76** (also edits `template/composed/OPERATIONS.md`, but its cited r
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs88-plan-review (omni-ah-c3) | 0e7c58378532 | 2026-07-02T23:44:00Z | Go-with-amendments | Premise sound; applied: workflow predates v0.12.0 (frame as not-in-managed.files); apply-new needs --mode=apply; L4 path vs L31/L322 bare refs + guard bans both; CS76 non-overlapping block. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | Provisional at claim; finalized at close-out. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. SemVer **Patch** (provisional): pure managed/composed consumer-doc accuracy fix (no behaviour/flag/schema change); rises to **Minor** only if C88-4 ships as a new always-on standalone linter rather than an extension of an existing guard/test (Q2 — confirmed at close-out). |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C88-1: reword composed `template/composed/OPERATIONS.md` #369 auto-merge block (condition branch-name enforcement on adopted `workboard-auto-approve.yml`) + regenerate root `OPERATIONS.md` mirror via `harness sync` | planned | — | agent-id=cs88-content \| role=implementer \| report-status=pending \| learnings=0 |
+| C88-2: reword `template/managed/READMEGUIDE.md` three `check-readme.mjs` refs (L4 path + L31/L322 bare) to the consumer-generic `npx … lint` README-linter form | planned | — | agent-id=cs88-content \| role=implementer \| report-status=pending \| learnings=0 |
+| C88-4: add regression guard asserting `template/managed/READMEGUIDE.md` carries no `scripts/check-readme.mjs` path nor bare `check-readme.mjs` script ref | planned | — | agent-id=cs88-content \| role=implementer \| report-status=pending \| learnings=0 |
+| CHANGELOG.md `[Unreleased]` entry (managed/composed consumer-doc accuracy; closes #381) | planned | — | agent-id=cs88-content \| role=implementer \| report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck (independence invariant per REVIEWS.md) | planned | — | role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | — | report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | — | report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
