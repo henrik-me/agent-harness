@@ -135,7 +135,10 @@ describe('CS15d scaffold aggregator integration', () => {
     assert.equal(rows.filter((row) => /migration.*policy|feature.*flag.*policy|feature-flags.*policy/.test(row.name)).length, 0);
     // CS71 D71-4: the self-host-gated `workboard-allowlist-consistency` linter
     // adds one row (skipped in a consumer), so the total grew by 1 (26->27, 18->19).
-    assert.equal(rows.length, beta9AggregatorLanded() ? 27 : 19, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
+    // CS109: `ruleset-deadlock` (F3) + `posture-coherence` (F4) add two more rows
+    // (posture-coherence runs against the config; ruleset-deadlock skips without an
+    // infra ruleset), so the total grew by 2 more (27->29, 19->21).
+    assert.equal(rows.length, beta9AggregatorLanded() ? 29 : 21, `unexpected linter row count; rows: ${rows.map((row) => row.name).join(', ')}`);
   });
 
   it('self-host scaffold-readme walk does not run for non-self-host consumers', (t) => {
