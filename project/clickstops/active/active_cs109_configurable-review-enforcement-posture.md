@@ -1,9 +1,9 @@
 # CS109 — Configurable review-enforcement posture (human-approval | required-check | both)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs109/content
+**Started:** 2026-07-05
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#402](https://github.com/henrik-me/agent-harness/issues/402) (2026-07-05). Surfaced from `henrik-me/sub-invaders`. Directed by @henrik-me ("triage the issues, identify how to address each, such as filing CS's").
 **Depends on:** none. (Related: **CS90c** — a future single-context `review-gates.yml` aggregate would be a cleaner required context; **CS106** — the concrete self-host required-check flip.)
@@ -82,7 +82,19 @@ Add a first-class, configurable **review-enforcement posture** so a repo can enf
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C109-1: author `docs/adr/0006-review-enforcement-posture.md` — the posture design: `review_gates.enforcement` (`human-approval` \| `required-check` \| `both`) semantics + ruleset-generation/drift model (F2), F3 deadlock-safety rule (required context must always run + report green), F4 admin-merge coherence rule, and the split decision (Decision 3 / open question) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| G109-adr: user-approval gate — approve the ADR posture design (config-enum semantics + ruleset-generation/drift + F3/F4 rules + split decision) before any implementation lands | planned | — | role=gate \| report-status=pending \| learnings=0 |
+| C109-2: config + reader — new **optional** `review_gates.enforcement` enum (default `human-approval`, back-compat) in `harness.config.json` + `schemas/harness.config.schema.json`, read fail-closed by the existing review-gates config reader | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| C109-3: `harness ruleset apply` / `harness ruleset check` verb — render the branch-protection ruleset from config + apply via the GitHub API; `check` detects drift vs. the live ruleset (fail-closed; `apply` dry-run-first, gated behind explicit `--apply`) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| C109-4: F3 deadlock-risk guard — a `harness lint`/`doctor` check that warns when a required status context's job can be skipped (never-runs → perpetually-pending → deadlock) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| C109-5: F4 posture-coherence guard — warn when `enforcement` is `required-check`/`both` but the repo still admin-merges (gate bypassed → decorative) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| C109-6: F5 docs — team-shape → posture matrix, reversibility steps, per-mode guard inventory (`OPERATIONS.md` / `REVIEWS.md` + composed mirrors) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| C109-7: tests — config reader, ruleset renderer/drift, and the F3/F4 guards (`node --test`) | planned | — | role=implementer \| report-status=pending \| learnings=0 |
+| G109-ruleset-apply: user-approval gate — approve the default posture + any self-host live-ruleset change before `harness ruleset apply --apply` runs against the self-host repo (high blast radius) | planned | — | role=gate \| report-status=pending \| learnings=0 |
+| CHANGELOG.md: add `[Unreleased]` entry (Minor — new optional `review_gates.enforcement` config field + new `harness ruleset` subcommand); reference #402 for auto-close | planned | — | report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck of the ADR + implementation (independence invariant per REVIEWS.md § 2.3) | planned | — | role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | — | report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | — | report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
