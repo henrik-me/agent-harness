@@ -389,11 +389,13 @@ is avoidable net-new CLI surface.
 | *(guard runs inside the aggregate job)* | `validate-workboard-only-scope` — guard job; runs only when the `workboard-only` label is present (add as required only if you enforce the workboard-only bypass guard) |
 | *(single required check)* | **Or** keep a single required check by enabling L4's optional single-context aggregate mode (CS90c), avoiding the four-context remap entirely |
 
-**Context-string caveat.** A required-status-check context is the job's name.
-GitHub's branch-protection UI may display these as `<workflow> / <job>` (e.g.
-`pr-evidence-lint / read-only-gates`, as [`OPERATIONS.md`](../../OPERATIONS.md)
-references it). When updating a ruleset, copy the **exact** context string the
-ruleset UI shows for each job rather than assuming a format.
+**Context-string caveat.** A required-status-check context is **not** simply
+the job name — GitHub keys and displays these contexts as `<workflow> / <job>`
+(e.g. `pr-evidence-lint / read-only-gates`, as
+[`OPERATIONS.md`](../../OPERATIONS.md) references it), and the exact string can
+vary (a job `name:` override changes it). When updating a ruleset, copy the
+**exact** context string the ruleset UI shows for each check rather than
+assuming a `<workflow> / <job>` or job-name-only format.
 
 ---
 
