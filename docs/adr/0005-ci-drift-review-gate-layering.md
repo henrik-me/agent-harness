@@ -60,10 +60,12 @@ Because the three issues are mutually referential, they are resolved as one
 coherent design pass. The unifying deliverable is this layering ADR. The
 layers are **not a menu to pick one from** — they guard different aspects of
 the product/operational cycle and mostly **compose**. The ADR's job is to make
-that composition explicit: which aspect each layer guards, the **one** genuine
-either/or (the two L4 implementations of the same gate), and the **one**
-redundancy to avoid (running the same check twice) — and to fix the required
-shapes for the concrete sub-CS changes.
+that composition explicit: which aspect each layer guards, the **one** place a
+consumer consolidates rather than composes (the two L4 workflows — the same
+review-process aspect, but **not** identical today, so consolidate only via
+CS90c's migration mapping), and the **one** redundancy to avoid (running the
+same check twice) — and to fix the required shapes for the concrete sub-CS
+changes.
 
 ### Current behaviour of each mechanism (as read at CS90 authoring time)
 
@@ -85,13 +87,14 @@ section.
 Define a **four-layer model** whose layers **compose** — each guards a
 different aspect (drift, audited managed-file edits, the review process), so a
 repo runs the layers whose aspects it needs rather than picking one from a
-menu. The ADR names the single genuine either/or (the two L4 implementations
-of the same gate) and the single redundancy to avoid (the same check run
-twice). The per-decision summary:
+menu. The ADR names the single point where a consumer consolidates rather than
+composes (the two L4 workflows target the same aspect but are **not** identical
+today — consolidate only via CS90c's migration mapping) and the single
+redundancy to avoid (the same check run twice). The per-decision summary:
 
 | # | Decision | Maps to |
 |---|---|---|
-| D5-1 | Adopt the four-layer model (L1–L4) below as the authoritative CI/drift/review-gate architecture; frame it as **composition** (each layer guards a different aspect), naming the one genuine either/or (L4's two implementations) and the one redundancy to avoid (the same check run twice). | C90-1 |
+| D5-1 | Adopt the four-layer model (L1–L4) below as the authoritative CI/drift/review-gate architecture; frame it as **composition** (each layer guards a different aspect), naming the one consolidation point (L4's two workflows — same aspect, not identical today; consolidate via CS90c's migration mapping) and the one redundancy to avoid (the same check run twice). | C90-1 |
 | D5-2 | Ship L1 as a **documented `ci.yml` job snippet**, not a new managed workflow; record the L1-vs-L3 drift-semantics difference (L1 is strictly stricter). | C90-2 |
 | D5-3 | L3 gains a `pr_check.mode` (`drift-only` vs `lint+drift`) so a consumer that lints inline can adopt the classifier + escape valve without a redundant lint (implemented in CS90b). | C90-3 |
 | D5-4 | The `mutation-engage` engagement job ported into L4's `review-gates.yml` MUST hold the least-privilege posture recorded below (implemented in CS90c). | C90-4 |
