@@ -104,6 +104,20 @@ describe('CS109 F3 check-ruleset-deadlock', () => {
     }
   });
 
+  it('does not treat a step-level name: as a producing job (no false negative)', () => {
+    const dir = makeTempDir();
+    try {
+      const rs = writeRuleset(dir, { contexts: ['deploy'] });
+      // `deploy` appears only as a STEP name (not a job) → still no producer → warn.
+      writeWorkflow(dir, 'w.yml', 'name: w\non:\n  pull_request:\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        name: deploy\n');
+      const res = run(F3, ['--ruleset', rs, '--workflows-dir', path.join(dir, '.github', 'workflows')]);
+      assert.equal(res.status, 0);
+      assert.match(res.stdout, /NO producing workflow job/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('exits 1 (fail-closed) on a malformed ruleset', () => {
     const dir = makeTempDir();
     try {

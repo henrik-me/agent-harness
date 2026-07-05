@@ -207,9 +207,12 @@ severity:
    indefinitely → the PR can never merge. This is the deadlock the guard most
    needs to catch.
 2. **Workflow-level non-instantiation.** A producing workflow whose
-   **workflow-level** `on:` filters (`paths` / `paths-ignore` / `branches` /
-   restricted event `types`) can prevent the check run from ever being *created*
-   for some PR class — again leaving the required context absent/pending.
+   **workflow-level** `on:` `paths` / `paths-ignore` filter (on a `pull_request`
+   / `pull_request_target` event) can prevent the check run from ever being
+   *created* for a PR that does not touch those paths — leaving the required
+   context absent/pending. (The shipped guard scopes to `paths`/`paths-ignore`
+   under PR events; other workflow-level filters — `branches` / restricted event
+   `types` — are a documented future extension, not yet flagged.)
 
 Job-level `if:` conditions are treated as **lower-severity / informational**:
 GitHub generally reports a job skipped by a job-level `if:` with a *skipped*
@@ -222,11 +225,15 @@ deadlock signal. The four harness review-gate contexts pass all classes.
 ### D5 — F4 posture-coherence guard (a `harness lint`/`doctor` check)
 
 Add a check that **warns** when `review_gates.enforcement` is `required-check`
-or `both` **and** the repo's documented merge path still relies on
-`gh pr merge --admin` (admin bypass). `--admin` bypasses required *checks*, not
-only approvals, so admin-merging under a `required-check` posture makes the gate
-**decorative**. Detection is documentary (config + a known-admin-merge marker),
-warning-level, and points at the reversibility steps in F5.
+or `both` **and** the ruleset admits a bypass path — concretely, when the
+ruleset source grants one or more `bypass_actors`, or when no ruleset source
+exists yet (the required-check posture is *unrendered*). A `bypass_actors` entry
+(and `gh pr merge --admin`) bypasses required *checks*, not only approvals, so a
+required-check posture with a live bypass path is **decorative**. The shipped
+guard uses the ruleset `bypass_actors` (and the missing/unrendered ruleset) as
+the concrete, testable proxy for a bypass/admin merge path rather than parsing
+docs for `gh pr merge --admin`. Detection is warning-level and points at the
+reversibility steps in F5.
 
 ### D6 — Scope split (resolves the plan's open question)
 

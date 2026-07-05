@@ -184,6 +184,7 @@ function parseWorkflow(text) {
   let onIndent = -1;
   let inOn = false;
   let onEvent = null;
+  let currentJobIndent = -1;
   let hasPathFilter = false;
 
   for (const rawLine of lines) {
@@ -236,18 +237,20 @@ function parseWorkflow(text) {
     }
 
     if (inJobs && indent > jobsIndent) {
-      // A job-id is the first key one level under `jobs:` (two-space indent in
-      // standard workflows). Collect it plus any `name:` under it.
+      // A job-id is a key one level under `jobs:` (two-space indent in standard
+      // workflows). Collect it, and — ONLY at the job's direct-child level — its
+      // `name:` (the display context). A `name:` deeper than that is a STEP name
+      // (which produces no status-check context) and must not be collected, or
+      // the guard would falsely conclude a required context has a producer.
       const jobIdMatch = /^([A-Za-z0-9_.-]+):\s*$/.exec(trimmed);
       if (indent === jobsIndent + 2 && jobIdMatch) {
         jobContexts.add(jobIdMatch[1]);
+        currentJobIndent = indent;
         continue;
       }
       const nameMatch = /^name:\s*(.+?)\s*$/.exec(trimmed);
-      if (nameMatch) {
-        let value = nameMatch[1];
-        // strip surrounding quotes if present
-        value = value.replace(/^['"]/, '').replace(/['"]$/, '');
+      if (nameMatch && currentJobIndent >= 0 && indent === currentJobIndent + 2) {
+        const value = nameMatch[1].replace(/^['"]/, '').replace(/['"]$/, '');
         if (value) jobContexts.add(value);
       }
     }
