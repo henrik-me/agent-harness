@@ -82,13 +82,13 @@ Grounding (verify at claim HEAD):
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| Claim recon Q1 — resolve the authoritative docs home for the L1 snippet | pending | yoga-ah | C90a-3 |
-| Author the hardened per-PR `sync --mode=check` L1 job snippet (npx + clone-then-run variants, ref allowlist `^[a-zA-Z0-9._/-]+$`, SHA-pin guidance) | pending | yoga-ah | Deliverable 1 |
-| Document the L1-vs-L3 drift-semantics note at the snippet's point-of-use; cross-link ADR-0005 | pending | yoga-ah | Deliverable 3 / C90a-5 |
-| Reposition `harness-drift.yml` header comment as low-activity belt-and-suspenders (behaviour unchanged); regen self-host root via `sync --mode=apply` | pending | yoga-ah | Deliverable 2 / R1 |
-| Cross-link the L1 snippet home from ADR-0005 | pending | yoga-ah | C90a-3 |
-| Add `CHANGELOG.md` `[Unreleased]` entry referencing #391 for auto-close | pending | yoga-ah | Deliverable 4 |
-| Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | pending | yoga-ah | Deliverable 5 |
+| Claim recon Q1 — resolve the authoritative docs home for the L1 snippet | done | yoga-ah | C90a-3 — resolved to a dedicated `docs/ci-drift-layering.md` consumer guide (see Notes) |
+| Author the hardened per-PR `sync --mode=check` L1 job snippet (npx + clone-then-run variants, ref allowlist `^[a-zA-Z0-9._/-]+$`, SHA-pin guidance) | done | yoga-ah (impl: claude-opus-4.8) | Deliverable 1 — `docs/ci-drift-layering.md` Form A/B |
+| Document the L1-vs-L3 drift-semantics note at the snippet's point-of-use; cross-link ADR-0005 | done | yoga-ah (impl: claude-opus-4.8) | Deliverable 3 / C90a-5 |
+| Reposition `harness-drift.yml` header comment as low-activity belt-and-suspenders (behaviour unchanged); regen self-host root via `sync --mode=apply` | done | yoga-ah (impl: claude-opus-4.8) | Deliverable 2 / R1 |
+| Cross-link the L1 snippet home from ADR-0005 | done | yoga-ah (impl: claude-opus-4.8) | C90a-3 |
+| Add `CHANGELOG.md` `[Unreleased]` entry referencing #391 for auto-close | done | yoga-ah (impl: claude-opus-4.8) | Deliverable 4 |
+| Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | done | yoga-ah | lint 43/0/3; tests 2031/0/5; sync clean |
 | Local review — GPT-5.5 rubber-duck before opening the content PR | pending | yoga-ah | REVIEWS.md |
 | Plan-vs-implementation review (GPT-5.5) — GO before close-out | pending | yoga-ah | close-out gate |
 | Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | pending | yoga-ah | mandatory |
@@ -96,7 +96,41 @@ Grounding (verify at claim HEAD):
 
 ## Notes / Learnings
 
-(filled during execution)
+**Q1 recon (docs home for the L1 snippet) — resolved 2026-07-05 by `yoga-ah`.**
+Chose a dedicated consumer-facing guide **`docs/ci-drift-layering.md`** over an
+`OPERATIONS.md` section. Rationale: (a) `docs/` already hosts the consumer-facing
+adoption-guide pattern (`private-consumption.md`, `pre-flip-readiness.md`,
+`migration-*.md`); (b) `OPERATIONS.md` is orchestrator-workflow doctrine
+(claim/dispatch/handoff) that a consumer adopting the harness would not read —
+a poor home for a paste-ready CI snippet; (c) a dedicated guide gives one URL
+that ADR-0005 (design record) and the `harness-drift.yml` (L2) header both
+cross-link, satisfying R2's "single point to update". ADR-0005 already carries
+the *illustrative* L1 snippet (§L1) and the full L1-vs-L3 semantics note (§"The
+L1-vs-L3 drift-semantics difference"); the guide is the *canonical, hardened*
+adoption home, and it recaps + cross-links the ADR rather than duplicating it.
+
+**Templating note.** `template/managed/.github/workflows/harness-drift.yml` uses
+`{{repo_short}}` / `{{default_codeowner}}` placeholders (root ≠ template
+byte-identical; `sync` substitutes them). The leading `#` comment block has no
+placeholders, so a header-comment-only template edit + `sync --mode=apply` regenerates
+the root copy cleanly with `sync --mode=check` staying green.
+
+**`.harness-lock.json` refresh (orchestrator decision, 2026-07-05).** Editing the
+managed `harness-drift.yml` template + `sync --mode=apply` refreshes the lock.
+The committed lock on `main` was **pre-existingly stale from `cs108/content`**
+(`harness_ref: cs108/content`), so a full apply refreshed CS90a's legitimate
+`harness-drift.yml` `rendered_hash` **plus** unrelated cs108 bookkeeping catch-up
+(REVIEWS.md `reviews.project-gates` provenance `seeded-empty`→`user-authored`;
+seeded CONTEXT/LEARNINGS/WORKBOARD + READMEGUIDE hashes) — **no on-disk content
+file changed**, only lock records. The implementer sub-agent initially reverted
+the lock to keep the diff minimal; the orchestrator **overrode** that and commits
+the full lock refresh, per the established convention that content PRs touching
+managed/composed templates commit the lock (latest precedent: CS108 / PR #507).
+Rationale: leaving the lock stale would keep the `harness-drift.yml` lock entry
+wrong (phantom future drift polluting a later CS's diff) and perpetuate the debt;
+`sync --mode=check` is lock-independent (disk-hash vs re-rendered-hash,
+`lib/sync.mjs`) so the drift gate stays green either way. Filed as a learning
+candidate at close-out.
 
 ## Plan-vs-implementation review
 
