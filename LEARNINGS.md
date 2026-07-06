@@ -239,7 +239,7 @@ id: LRN-211
 date: 2026-07-05
 category: process
 source_cs: CS89
-status: open
+status: applied
 tags: [harness-review, model-audit, review-log, a3, a5, copilot-engage, review-evidence]
 claim_area: review-gates
 ```
@@ -250,7 +250,7 @@ claim_area: review-gates
 
 **Evidence:** CS89 PR #500 `read-only-gates` run 28747263373 failed A3 only ("both yoga-ah-c2"); A4 passed (R3 Go @ `e2d74ec` == HEAD), copilot-review-attached passed (Copilot COMMENTED `16:25:04Z` > local Go `16:22:02Z`). Fixed by editing the body `Reviewer agent | yoga-ah-c2` → `Reviewer agent | rubber-duck` (+ R3 Review-log actor → `rubber-duck`); re-run 28747339515 (16:28) green. `scripts/check-review-evidence.mjs` (A3 Model-audit agent-identity); `lib/review.mjs:206-236` (localGoAt then engage `submittedAfter=localGoAt`).
 
-**Disposition:** Open — extends LRN-197 / LRN-210. Candidate harness fix: `harness review` should stamp `## Model audit` **Reviewer agent** with a reviewer identity (e.g. `rubber-duck` or the dispatched reviewer's id), never the orchestrator/implementer agent-id, in BOTH the single-call and `--copilot-only` legs.
+**Disposition:** Applied (CS113, PR #534, commit `2fafb01`, 2026-07-06) — `harness review` now stamps `## Model audit` **Reviewer agent** from `DEFAULT_REVIEWER_AGENT` (`rubber-duck`), decoupled from `actor`, in BOTH the single-call and `--copilot-only` legs (`lib/review.mjs`; the CLI `reviewerAgent: actor` binding was removed in `bin/harness.mjs`; no `opts.actor` fallback in `upsertModelAudit`), so A3 no longer trips. Flipped together with LRN-197 / LRN-210.
 
 ### LRN-212
 
@@ -299,7 +299,7 @@ id: LRN-210
 date: 2026-07-05
 category: process
 source_cs: CS88
-status: open
+status: applied
 tags: [review-evidence, a5, a3, copilot-engage, review-log, model-audit]
 claim_area: review-gates
 ```
@@ -310,7 +310,7 @@ claim_area: review-gates
 
 **Evidence:** PR #494 `read-only-gates` run 28729749112: A5+A16 fail with Copilot `04:38:47Z` < latest Go row `04:38:48Z` (`yoga-ah-c2`). Fixed by rebuilding the Review log rubber-duck-only (latest rubber-duck `04:36:05Z` < Copilot `04:38:47Z`) → local `check-copilot-review` 0 errors, CI `read-only-gates` pass. Earlier A3 failure: "Implementer agent and Reviewer agent are both yoga-ah-c2"; fixed by setting Reviewer agent → `rubber-duck`.
 
-**Disposition:** Open. Candidate harness fix: `harness review --copilot-only` should either record its Review-log row with `actor=copilot-pull-request-reviewer` (so A5 excludes it) or not append a Review-log row at all (A16 already sources Copilot evidence from GitHub), and should not overwrite the Model audit `Reviewer agent`.
+**Disposition:** Applied (CS113, PR #534, commit `2fafb01`, 2026-07-06) — `harness review --copilot-only` now SKIPS the redundant orchestrator-actor `## Review log` Go row (`skipReviewLog`; A16 already sources Copilot evidence from GitHub), so no record-time local Go postdates the Copilot review and A5 no longer trips, and it stamps a distinct `rubber-duck` **Reviewer agent** (A3). Sibling of LRN-197 / LRN-211.
 
 ### LRN-208
 
@@ -539,7 +539,7 @@ id: LRN-197
 date: 2026-07-04
 category: architectural
 source_cs: CS87
-status: open
+status: applied
 tags: [harness-review, copilot-engage, model-audit, review-log, a3, a5, review-evidence]
 claim_area: review
 ```
@@ -550,7 +550,7 @@ claim_area: review
 
 **Evidence:** PR #460 `read-only-gates` first failed A3 ("Implementer agent and Reviewer agent are both \"yoga-ah-c2\""), then — after restoring `Reviewer agent | rubber-duck (gpt-5.5)` — failed A5 ("latest copilot-pull-request-reviewer review (2026-07-04T01:44:26Z) was submitted BEFORE the latest local Go review (2026-07-04T01:44:40Z)"). Removing the extra Review-log row (leaving only the R1 rubber-duck Go at `01:40:38Z`) made A5 pass; `check-review-evidence` + `check-copilot-review` then green locally and in CI. `scripts/check-copilot-review.mjs:286-296` (A5) + `:358-360` (Copilot-actor exclusion); `scripts/check-review-evidence.mjs:537-547` (A3).
 
-**Disposition:** Open — workaround documented (after `--copilot-only`, restore the distinct `Reviewer agent` value and delete any Copilot-engage Review-log row that post-dates the rubber-duck Go). Prefer the single-call `harness review <pr>` flow. A follow-up CS should make the `--copilot-only` leg preserve pre-existing rubber-duck `## Model audit` / `## Review log` evidence rather than regenerating it.
+**Disposition:** Applied (CS113, PR #534, commit `2fafb01`, 2026-07-06) — the `--copilot-only` leg is now evidence-preserving: it PRESERVES a genuine pre-existing rubber-duck `## Model audit` **Reviewer model** / **Reviewer agent** (`preserveReviewerIdentity` + the `isRealAuditValue` / `equalsAuditAgent` distinctness guards — a pre-existing `Reviewer agent == Implementer agent` is overwritten with the `rubber-duck` default so A3 stays green) and SKIPS the record-time Review-log Go row (`skipReviewLog`) that tripped A5. Root of the LRN-197/210/211 cluster (all flipped together).
 
 
 ### LRN-196
