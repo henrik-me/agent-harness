@@ -90,14 +90,14 @@ None. This is a low-risk, self-contained tooling fix to `harness review` output 
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| C113-1: A3 fix — decouple `reviewerAgent` from `actor` so `harness review` stamps `## Model audit` **Reviewer agent** with a reviewer identity (default `rubber-duck`) in BOTH legs (`lib/review.mjs`, `bin/harness.mjs`) | pending | yoga-ah | role=implementer \| report-status=pending |
-| C113-2: A5 + evidence-preservation — `--copilot-only` leg preserves pre-existing rubber-duck `## Model audit`/`## Review log` rows and does NOT append an orchestrator-actor Go row (append nothing, or `actor=copilot-pull-request-reviewer`) | pending | yoga-ah | role=implementer \| report-status=pending |
-| C113-3: preserve single-call `localGoAt`→engage ordering (`lib/review.mjs` localGo-first/engage-after) unchanged | pending | yoga-ah | role=implementer \| report-status=pending |
-| C113-4: regression tests (`node --test`) — reviewer-id ≠ implementer-id after single-call; `--copilot-only` preserves evidence + no local Go postdates Copilot | pending | yoga-ah | role=implementer \| report-status=pending |
-| CHANGELOG.md: add `[Unreleased]` → `Fixed` entry (Patch) | pending | yoga-ah | report-status=pending |
-| Local review — GPT-5.5 rubber-duck (independence invariant, REVIEWS.md § 2.3) + Copilot engage | pending | rubber-duck | role=reviewer \| report-status=pending |
-| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | pending | yoga-ah | role=orchestrator \| report-status=pending |
-| Close-out: learnings + follow-ups (LEARNINGS.md — flip LRN-197/210/211 → applied) | pending | yoga-ah | role=orchestrator \| report-status=pending \| learnings=0 |
+| C113-1: A3 fix — decouple `reviewerAgent` from `actor` so `harness review` stamps `## Model audit` **Reviewer agent** with a reviewer identity (default `rubber-duck`) in BOTH legs (`lib/review.mjs`, `bin/harness.mjs`) | done | yoga-ah | role=implementer \| report-status=complete — `DEFAULT_REVIEWER_AGENT='rubber-duck'`; no `opts.actor` fallback; CLI `reviewerAgent: actor` binding removed; `cs113-impl` |
+| C113-2: A5 + evidence-preservation — `--copilot-only` leg preserves pre-existing rubber-duck `## Model audit`/`## Review log` rows and does NOT append an orchestrator-actor Go row (append nothing, or `actor=copilot-pull-request-reviewer`) | done | yoga-ah | role=implementer \| report-status=complete — `skipReviewLog` (append-nothing) + `preserveReviewerIdentity`; `equalsAuditAgent` distinctness guard (R1 fix) overwrites a preserved `Reviewer agent == Implementer agent` |
+| C113-3: preserve single-call `localGoAt`→engage ordering (`lib/review.mjs` localGo-first/engage-after) unchanged | done | yoga-ah | role=implementer \| report-status=complete — ordering untouched (verified by PVI) |
+| C113-4: regression tests (`node --test`) — reviewer-id ≠ implementer-id after single-call; `--copilot-only` preserves evidence + no local Go postdates Copilot | done | yoga-ah | role=implementer \| report-status=complete — +7 tests (`tests/cs113-review-stamping.test.mjs`, os.tmpdir); full suite 2104 pass |
+| CHANGELOG.md: add `[Unreleased]` → `Fixed` entry (Patch) | done | yoga-ah | report-status=complete |
+| Local review — GPT-5.5 rubber-duck (independence invariant, REVIEWS.md § 2.3) + Copilot engage | done | rubber-duck | role=reviewer \| report-status=complete — gpt-5.5 R1 Needs-Fix → R2 Go (`cs113-review`/`cs113-review-r2`); Copilot COMMENTED 0 findings; PR #534 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | done | yoga-ah | role=orchestrator \| report-status=complete |
+| Close-out: learnings + follow-ups (LEARNINGS.md — flip LRN-197/210/211 → applied) | done | yoga-ah | role=orchestrator \| report-status=complete \| learnings=0 — flipped LRN-197/210/211 → applied |
 
 ## Notes / Learnings
 
@@ -107,4 +107,22 @@ None. This is a low-risk, self-contained tooling fix to `harness review` output 
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, `cs113-pvi`) — independent of implementer claude-opus-4.8 (REVIEWS.md § 2.3).
+**Date:** 2026-07-06
+**Outcome:** GO
+
+**Analyzed:** merged content at `main` HEAD `2fafb01` (PR #534); `git diff HEAD~1..HEAD`.
+
+| Deliverable | Outcome | Notes |
+|---|---|---|
+| 1. `lib/review.mjs` (C113-1/-2/-3) | match | `DEFAULT_REVIEWER_AGENT='rubber-duck'`; no `opts.actor` fallback; `--copilot-only` sets `skipReviewLog`+`preserveReviewerIdentity`; single-call `localGoAt→engage→Review-log` ordering unchanged. |
+| 2. `bin/harness.mjs` (C113-1) | match | `runReview` call no longer passes `reviewerAgent: actor`; `actor` still feeds the Review-log actor column. |
+| 3. Tests (C113-4) | match | `tests/cs113-review-stamping.test.mjs` +7 tests: single-call A3/A5 ordering, `--copilot-only` preservation/no-new-Go, placeholder-fill, R1 overwrite regression. |
+| 4. `CHANGELOG.md` (C113-5) | match | `[Unreleased] → Fixed` Patch entry matches shipped behavior. |
+| 5. lint + tests green | match | full suite 2104 pass / 0 fail / 5 skip (+7); `harness lint` 43/0/3. |
+
+**Test coverage:** sufficient — no blocking gaps (A3 both legs + fresh body; A5 `--copilot-only` no post-dating Go vs the real `findLatestLocalGoTimestamp`; single-call ordering; R1 `Reviewer agent == Implementer agent` overwrite; placeholder-fill).
+
+**Fact-claims:** verified against `check-review-evidence.mjs` (A3), `check-copilot-review.mjs` (A5/`findLatestLocalGoTimestamp`), `DEFAULT_REVIEWER_AGENT`, the removed CLI binding, and CHANGELOG.
+
+**Review history:** R1 gpt-5.5 rubber-duck Needs-Fix (Blocking — `--copilot-only` preserve path kept `Reviewer agent == Implementer agent`, leaving A3 red) → fixed (`equalsAuditAgent` distinctness guard + regression test) → R2 gpt-5.5 Go → PVI gpt-5.5 GO.
