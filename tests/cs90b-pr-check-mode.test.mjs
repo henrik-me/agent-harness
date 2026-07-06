@@ -285,6 +285,21 @@ describe('CS90b — detectPrCheckLintOverlap()', () => {
     assert.equal(r.overlap, true);
     assert.deepEqual(r.overlappingWorkflows, ['.github/workflows/drift-gate.yml']);
   });
+
+  it('matches lint / sync-check signals case-insensitively', async () => {
+    // A workflow with an unusual casing (`Harness Lint`) must still be detected —
+    // the scan lowercases the haystack before matching (Copilot #526).
+    buildConsumerRepo(consumerDir, {
+      mode: 'lint+drift',
+      adoptViaDisk: true,
+      siblingWorkflows: {
+        'ci.yml': 'name: ci\njobs:\n  l:\n    steps:\n      - run: Harness Lint --cwd .\n',
+      },
+    });
+    const config = JSON.parse(readFileSync(path.join(consumerDir, 'harness.config.json'), 'utf8'));
+    const r = await detectPrCheckLintOverlap({ config, consumerRepoPath: consumerDir });
+    assert.equal(r.overlap, true);
+  });
 });
 
 // ---------------------------------------------------------------------------
