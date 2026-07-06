@@ -1,9 +1,9 @@
 # CS90b — #392 L3: `harness-pr-check` `pr_check.mode` (drift-only vs lint+drift) + adoption-overlap warning + schema
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs90b/content
+**Started:** 2026-07-06
 **Closed:** —
 **Filed by:** CS90 deliverable 2 / C90-6 (2026-07-05 by `yoga-ah`) — implements inbound issue [#392](https://github.com/henrik-me/agent-harness/issues/392) under the layering model fixed by [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) (L3). One of the three mandatory sub-CSs split from CS90 (C90-6).
 **Depends on:** **CS90** (HARD) — [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) fixes the L3 layer and the `pr_check.mode` decision. Do NOT claim before user-approval **G90-1** (ADR layering model + CS90a/b/c breakdown) is granted.
@@ -70,11 +70,28 @@ Grounding (verify at claim HEAD):
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs90-plan-review (yoga-ah) | ad86c005931e | 2026-07-05T16:50:00Z | Go | Verified #392 OPEN; pr_check exists but `mode` absent, base-config read, lint+drift job, flags/paths. No plan amendments. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | CS90b implements #392 L3 (`pr_check.mode` drift-only + adoption-overlap warning + schema) per ADR-0005. Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C90b-1: add `pr_check.mode` enum `{lint+drift, drift-only}` (default `lint+drift`) to `schemas/harness.config.schema.json` with description (schema-first) | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
+| C90b-2: wire `template/managed/.github/workflows/harness-pr-check.yml` — read `pr_check.mode` from BASE config; in `drift-only` run managed-drift + `harness-managed-edit-ack` escape valve but SKIP `harness lint` | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
+| C90b-4: adoption-overlap warning (`harness sync` or `doctor` — Q1) when the consumer already runs `harness lint` / `sync --mode=check`; warn-only, never a hard failure | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
+| C90b-5: tests (`node --test`) — schema accepts `drift-only`/`lint+drift` + rejects other values; `drift-only` skip-lint path; overlap-warning fire/silent cases | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
+| CHANGELOG.md: add `[Unreleased]` entry; reference #392 for auto-close on merge | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | pending | — | role=reviewer \| report-status=pending \| learnings=0 |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
