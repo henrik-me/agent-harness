@@ -667,15 +667,22 @@ Advisory failures (dirty worktree, pull-blocked) print as ⚠ but exit 0.
 
 Checks (in order):
   1. git fast-forward probe (opt-in via --pull-ff-only)              advisory
-  2. clean-worktree check                                            advisory
-  3. node --test tests/*.test.mjs                                    broken
-  4. harness lint --quiet                                            broken
-  5. harness sync --mode=check                                       broken
+  2. version pin (get-latest-first, vs harness.config.json)          broken
+  3. clean-worktree check                                            advisory
+  4. node --test tests/*.test.mjs                                    broken
+  5. harness lint --quiet                                            broken
+  6. harness sync --mode=check                                       broken
+
+The version-pin check (CS111, #502) fails fast when the running CLI version
+does not match the pinned harness.config.json version, naming both versions and
+the corrective 'npx …#<config.version> …' re-run command. It is exempt on the
+self-host / pre-release sentinel and on a SHA pin the CLI cannot self-identify.
 
 Options:
-  --pull-ff-only   Also run 'git pull --ff-only origin main' first (advisory)
-  --cwd <path>     Consumer repo path (default: cwd)
-  --help           Print this help
+  --pull-ff-only        Also run 'git pull --ff-only origin main' first (advisory)
+  --skip-version-check  Skip the get-latest-first version-pin preflight (escape hatch)
+  --cwd <path>          Consumer repo path (default: cwd)
+  --help                Print this help
 `.trimStart(),
 
   'review-doc': `
@@ -5326,6 +5333,7 @@ function flagValue(args, i, flag) {
 
 async function cmdStartup(args, global) {
   let pullFfOnly = false;
+  let skipVersionCheck = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--help' || a === '-h') {
@@ -5333,6 +5341,8 @@ async function cmdStartup(args, global) {
       process.exit(0);
     } else if (a === '--pull-ff-only') {
       pullFfOnly = true;
+    } else if (a === '--skip-version-check') {
+      skipVersionCheck = true;
     } else {
       die(`Unknown flag: ${a}\n\n${SUBCOMMAND_HELP['startup']}`, 2);
     }
@@ -5350,7 +5360,7 @@ async function cmdStartup(args, global) {
     cwd,
     harnessBin: __filename,
     agentId,
-    opts: { pullFfOnly },
+    opts: { pullFfOnly, skipVersionCheck },
   });
   process.stdout.write(formatStartupReport(result));
   process.exit(result.exitCode);
