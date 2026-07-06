@@ -95,6 +95,12 @@ describe('CS111 (1) evaluateVersionMatch — normalized compare + exemptions', (
     assert.equal(v.exemptReason, 'sentinel');
   });
 
+  it('sentinel exempt: v-prefixed sentinel (v0.0.0-pre) checked on the normalized form', () => {
+    const v = evaluateVersionMatch({ runningPkgVersion: '0.17.0', configVersion: 'v0.0.0-pre' });
+    assert.equal(v.outcome, 'exempt');
+    assert.equal(v.exemptReason, 'sentinel');
+  });
+
   it('SHA-pin config with no provenance → exempt (sha-pin-unresolvable)', () => {
     const v = evaluateVersionMatch({ runningPkgVersion: '0.17.0', configVersion: SHA_A });
     assert.equal(v.outcome, 'exempt');
@@ -126,10 +132,11 @@ describe('CS111 (1) evaluateVersionMatch — normalized compare + exemptions', (
     assert.equal(evaluateVersionMatch({ runningPkgVersion: '', configVersion: '0.17.0' }).exemptReason, 'running-version-unknown');
   });
 
-  it('helpers: normalizeVersion strips a single leading v; computeRerunRef keeps v/SHA verbatim', () => {
+  it('helpers: normalizeVersion strips a single leading v; computeRerunRef normalizes the v prefix to lowercase, keeps SHAs verbatim', () => {
     assert.equal(normalizeVersion('V0.17.0'), '0.17.0');
     assert.equal(computeRerunRef('0.17.0'), 'v0.17.0');
     assert.equal(computeRerunRef('v0.17.0'), 'v0.17.0');
+    assert.equal(computeRerunRef('V0.17.0'), 'v0.17.0');
     assert.equal(computeRerunRef(SHA_A), SHA_A);
   });
 });
