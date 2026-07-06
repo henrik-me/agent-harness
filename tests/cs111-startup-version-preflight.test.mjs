@@ -187,6 +187,28 @@ describe('CS111 (2) runStartup — version-pin preflight via the injected runner
     assert.match(vc.message, /v0\.17\.0/);
     assert.match(vc.message, /npx -y github:henrik-me\/agent-harness#v0\.17\.0 startup/);
     assert.match(vc.message, /--skip-version-check/);
+    // Short-circuit (C111-3 / Copilot): a mismatch must SKIP the remaining
+    // clean/tests/lint/sync checks so the operator sees only the re-run message.
+    assert.equal(r.checks.length, 1, 'mismatch short-circuits — only the version-pin check runs');
+    for (const name of ['clean worktree', 'node --test tests/*.test.mjs', 'harness lint --quiet', 'harness sync --mode=check']) {
+      assert.equal(r.checks.find((c) => c.name === name), undefined, `${name} must be skipped on mismatch`);
+    }
+  });
+
+  it('mismatch with --pull-ff-only → ff-probe kept, but clean/tests/lint/sync short-circuited', () => {
+    const r = runStartup({
+      runner: makeRunner({ pkgVersion: '0.16.0', configVersion: 'v0.17.0', provenance: null }),
+      snapshot: emptySnapshot(),
+      agentId: 'omni-ah',
+      opts: { pullFfOnly: true },
+    });
+    assert.equal(r.exitCode, 1);
+    assert.ok(r.checks.find((c) => c.name === 'git fast-forward probe'), 'ff-probe runs before the version pin and is kept');
+    assert.equal(versionCheck(r).status, 'fail');
+    assert.equal(r.checks.length, 2, 'only ff-probe + version-pin run; the rest are short-circuited');
+    for (const name of ['clean worktree', 'node --test tests/*.test.mjs', 'harness lint --quiet', 'harness sync --mode=check']) {
+      assert.equal(r.checks.find((c) => c.name === name), undefined, `${name} must be skipped on mismatch`);
+    }
   });
 
   it('exact match → pass check, exitCode 0', () => {
