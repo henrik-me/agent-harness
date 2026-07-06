@@ -1,10 +1,10 @@
 # CS90a — #391 L1: documented per-PR `sync --mode=check` baseline drift snippet + `harness-drift.yml` low-activity repositioning
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs90a/content
 **Started:** 2026-07-05
-**Closed:** —
+**Closed:** 2026-07-05
 **Filed by:** CS90 deliverable 2 / C90-6 (2026-07-05 by `yoga-ah`) — implements inbound issue [#391](https://github.com/henrik-me/agent-harness/issues/391) under the layering model fixed by [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) (L1 + L2 repositioning). One of the three mandatory sub-CSs split from CS90 (C90-6).
 **Depends on:** **CS90** (HARD) — [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) fixes the L1/L2 layering model and the L1-vs-L3 drift-semantics this CS documents. Do NOT claim before user-approval **G90-1** (ADR layering model + CS90a/b/c breakdown) is granted.
 
