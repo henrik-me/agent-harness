@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-223
+
+```yaml
+id: LRN-223
+date: 2026-07-05
+category: process
+source_cs: CS113
+status: open
+tags: [multi-orchestrator, stale-base, triage, harvest, race, get-latest-first, filing, claim]
+claim_area: orchestrator
+```
+
+**Problem:** A long orchestrator session that runs `git pull` / `harness startup` only at session start can be fully overtaken by a concurrent orchestrator before it files. This session (`yoga-ah`) spent ~1.5h triaging inbound issues + drafting harvest CSs from a base pinned at session start (`f2b4607`, where `harness status` showed the planned queue CS90b/90c/106 and an empty Active Work). Meanwhile `yoga-ah-c2` merged the **identical** triage (#521: CS110/111/112 for the same #506/#502/#496+#515 + #497→CS90c), the weekly harvest (#522), and a CS90b claim (#523), advancing `main` to `4c9881c`. The result was a fully duplicate triage PR (#524) that both duplicated the work AND could not merge: its `validate-and-approve` failed on the immutable-diff file-count guard ("11 files but PR reports 6") because the PR base had moved and the diff now showed the sibling's CS110/111/112 as deletions + CS90b as an active→planned rename.
+
+**Finding:** A session-start pull is NOT sufficient in a multi-orchestrator repo — re-fetch `origin/main` and re-derive the plan (open issues, planned/active queue, open+merged PRs, next free CS/LRN id) IMMEDIATELY before filing a triage/harvest PR or claiming, especially after any long investigation. Cheap pre-file checks that would have caught this: `git fetch origin main` then compare `git rev-parse origin/main` to the session-start SHA; `gh pr list --state merged --limit 10` for concurrent triage/harvest/claim PRs; and re-run `harness status`. Pick collision-free CS/LRN numbers against `origin/main` at file-time, not session-start (both orchestrators independently chose CS110/111/112 for the same three issues, only permuted). This is the FILING/CLAIM-time analogue of LRN-186/187 (which added exact-full-id ownership gating to `harness status`/`claim`) and of issue #502 / CS111 ("get-latest-first" for `harness startup`).
+
+**Evidence:** This session, 2026-07-05, agent `yoga-ah`. Session-start base `f2b4607` (startup clean; queue CS90b/90c/106; Active Work empty); ~1.5h later `origin/main` = `4c9881c` after #521/#522/#523. Duplicate PR #524 (`docs/file-planned-cs110-cs113`) `validate-and-approve`: "workboard-auto-approve: immutable git diff returned 11 files but PR reports 6 changed files; refusing inconsistent validation." Closed #524; re-derived against `4c9881c` and re-filed only the genuinely non-duplicate remainder (CS113 review-evidence fix + LRN-222) as #525 (merged `ba89019`).
+
+**Disposition:** Open — orchestrator guidance: re-fetch + re-derive the plan (issues / planned+active queue / open+merged PRs / next free CS+LRN id) immediately before any file or claim, not only at session start. Candidate tooling: a `harness status` / `harness claim` / pre-file preflight that warns when `origin/main` has advanced beyond the local base since the session's last sync (extends #502 / CS111 "get-latest-first" from `startup` to the file/claim step, and LRN-186/187 ownership gating from status/claim to filing). claim_area: orchestrator.
+
 ### LRN-222
 
 ```yaml
