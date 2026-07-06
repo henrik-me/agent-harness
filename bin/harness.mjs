@@ -4162,7 +4162,6 @@ async function cmdReview(args, global) {
       noPoll: parsed.noPoll,
       timeoutMinutes: parsed.timeoutMinutes,
       actor,
-      reviewerAgent: actor,
       promptRubberDuck,
       implementerModelsFlag: parsed.implementerModels,
     });
