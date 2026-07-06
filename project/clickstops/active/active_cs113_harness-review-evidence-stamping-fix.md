@@ -1,9 +1,9 @@
 # CS113 — fix `harness review` evidence-stamping (A3/A5): stamp a reviewer identity + stop appending a Copilot-engage local Go row
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah-c2
+**Branch:** cs113/content
+**Started:** 2026-07-06
 **Closed:** —
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — weekly-harvest disposition (2026-07-05) of open learnings LRN-197 / LRN-210 / LRN-211 (recurring review-evidence tooling gap that trips A3/A5 on nearly every content PR).
 **Depends on:** none
@@ -76,11 +76,28 @@ None. This is a low-risk, self-contained tooling fix to `harness review` output 
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs113-plan-review (yoga-ah) | b806d9f984dc | 2026-07-06T04:17:25Z | Go-with-amendments | Verified A3 root cause (reviewerAgent=actor, two sites) + A5 asymmetry + Patch classification; applied rubber-duck citation fix (REVIEWS.md:593 was copilot → :626 / LRN-210). |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah-c2 |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah-c2) |
+| Notes | CS113 fixes `harness review` A3/A5 evidence-stamping (open learnings LRN-197/210/211; context LRN-200/220). Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C113-1: A3 fix — decouple `reviewerAgent` from `actor` (`lib/review.mjs:96` default + `bin/harness.mjs:4165` call site) so `## Model audit` **Reviewer agent** stamps a reviewer id (`rubber-duck`) in BOTH legs | planned | yoga-ah-c2 | agent-id=cs113-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C113-2: A5 + preservation (`--copilot-only`) — preserve pre-existing rubber-duck `## Model audit` / `## Review log` evidence + do NOT append an orchestrator-actor Go row (append nothing, or `actor=copilot-pull-request-reviewer`) | planned | yoga-ah-c2 | agent-id=cs113-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C113-3: preserve single-call `localGoAt`→engage ordering (`lib/review.mjs:219`/`:236`/`:258`) unchanged | planned | yoga-ah-c2 | agent-id=cs113-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| C113-4: regression tests (`node --test`, `tests/`) — single-call Reviewer agent ≠ implementer; `--copilot-only` preserves rubber-duck rows + no local-actor Go row post-dates recorded Copilot; update any test asserting the old `Reviewer agent == actor` | planned | yoga-ah-c2 | agent-id=cs113-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| CHANGELOG.md `[Unreleased]` → `Fixed` entry (Patch) describing the A3/A5 evidence-stamping fix | planned | yoga-ah-c2 | agent-id=cs113-impl \| role=implementer \| report-status=pending \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | planned | — | role=reviewer \| report-status=pending |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | yoga-ah-c2 | role=orchestrator \| report-status=pending |
+| Close-out: learnings + follow-ups (LEARNINGS.md — flip LRN-197/210/211 to `applied` on merge) | planned | yoga-ah-c2 | role=orchestrator \| report-status=pending \| learnings=0 |
 
 ## Notes / Learnings
 
