@@ -74,10 +74,14 @@ jobs:
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       - id: optout
-        name: Check pr_check opt-out (BASE config, never PR head)
+        name: Check pr_check opt-out + resolve mode (BASE config, never PR head)
         # CS63 R13: read pr_check.enabled from the BASE tree, NEVER the PR head —
         # otherwise a PR could set pr_check.enabled=false in its own diff to
-        # disable the structural gate on itself.
+        # disable the structural gate on itself. CS90b (C90b-3): pr_check.mode is
+        # read the SAME BASE-tree way so a PR cannot flip lint+drift -> drift-only
+        # on itself either. Any value other than the literal "drift-only" (absent,
+        # malformed, or unknown) resolves to the default "lint+drift" (fail-safe:
+        # a broken config keeps the stricter, lint-inclusive gate).
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -85,6 +89,9 @@ jobs:
           enabled=$(printf '%s' "$base_config" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(String(JSON.parse(s).pr_check?.enabled!==false))}catch{process.stdout.write('true')}})")
           echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
           if [ "$enabled" != "true" ]; then echo "harness-pr-check disabled via pr_check.enabled=false (base config); skipping."; fi
+          mode=$(printf '%s' "$base_config" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).pr_check?.mode==='drift-only'?'drift-only':'lint+drift')}catch{process.stdout.write('lint+drift')}})")
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "pr_check.mode=$mode (base config)."
 
       - id: ack
         name: Detect managed-edit-ack valve
@@ -106,6 +113,7 @@ jobs:
         env:
           CLI_REF: ${{ steps.derive-ref.outputs.ref }}
           ACK: ${{ steps.ack.outputs.ack }}
+          MODE: ${{ steps.optout.outputs.mode }}
         run: |
           set -euo pipefail
           consumer="$GITHUB_WORKSPACE"
@@ -113,8 +121,17 @@ jobs:
           git clone --quiet --no-checkout https://github.com/henrik-me/agent-harness.git "$tmp"
           ( cd "$tmp" && git checkout --quiet "$CLI_REF" && npm ci --omit=optional --no-audit --no-fund )
           set +e
-          node "$tmp/bin/harness.mjs" lint --quiet --cwd "$consumer"
-          lint_rc=$?
+          # CS90b (C90b-2): in drift-only mode SKIP the redundant `harness lint`
+          # (the consumer already lints in its own CI) but STILL run the managed/
+          # composed drift classifier + the harness-managed-edit-ack escape valve.
+          # lint+drift (default) is behaviourally identical to the pre-CS90b gate.
+          if [ "$MODE" = "drift-only" ]; then
+            echo "::notice::pr_check.mode=drift-only: skipping the redundant 'harness lint'; running the managed/composed drift classifier + harness-managed-edit-ack escape valve only."
+            lint_rc=0
+          else
+            node "$tmp/bin/harness.mjs" lint --quiet --cwd "$consumer"
+            lint_rc=$?
+          fi
           node "$tmp/scripts/check-managed-drift.mjs" --cwd "$consumer" --harness-repo "$tmp"
           drift_rc=$?
           set -e
