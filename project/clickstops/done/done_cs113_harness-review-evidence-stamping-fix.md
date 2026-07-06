@@ -1,10 +1,10 @@
 # CS113 — fix `harness review` evidence-stamping (A3/A5): stamp a reviewer identity + stop appending a Copilot-engage local Go row
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs113/content
 **Started:** 2026-07-06
-**Closed:** —
+**Closed:** 2026-07-06
 **Filed by:** yoga-ah (orchestrator, Claude Opus 4.8) — weekly-harvest disposition (2026-07-05) of open learnings LRN-197 / LRN-210 / LRN-211 (recurring review-evidence tooling gap that trips A3/A5 on nearly every content PR).
 **Depends on:** none
 
