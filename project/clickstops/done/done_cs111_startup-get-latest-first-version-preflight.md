@@ -1,10 +1,10 @@
 # CS111 — `harness startup`: enforce get-latest-first (version-mismatch preflight + clearer template-not-found error)
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah
 **Branch:** cs111/content
 **Started:** 2026-07-06
-**Closed:** —
+**Closed:** 2026-07-06
 **Filed by:** yoga-ah-c2 (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#502](https://github.com/henrik-me/agent-harness/issues/502) (2026-07-05). Directed by @henrik-me ("if there are open issues evaluate if those are all triaged … if not triage issues").
 **Depends on:** none.
 
@@ -79,14 +79,14 @@ Make the discipline "**get latest FIRST, then invoke the harness at the pulled p
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| C111-1/C111-2: version-mismatch preflight (shared helper) — normalized compare reusing `normalizeInitVersion`; sentinel (`0.0.0-pre`)/SHA-pin/local-checkout exemption; `--skip-version-check` escape hatch; fail-fast naming both versions + the `npx …#<config.version>` re-run command | planned | yoga-ah | role=implementer |
-| C111-3: post-pull ordering — the preflight runs AFTER `--pull-ff-only` so a pin advance is evaluated against the pulled version | planned | yoga-ah | role=implementer |
-| C111-5: clearer `Template file not found` (`lib/sync.mjs` `ESYNC_MISSING_TEMPLATE`) — hint at a version mismatch + print both `pkg.version` and `config.version` | planned | yoga-ah | role=implementer |
-| Tests (`node --test`) — preflight fires on a real mismatch; stays silent on exact/normalized (`0.17.0`≡`v0.17.0`) match, the `0.0.0-pre` sentinel, and a SHA-pin the CLI can't self-identify against; `--skip-version-check` suppresses; the improved template-not-found error includes both versions | planned | yoga-ah | role=implementer |
-| CHANGELOG.md: add `[Unreleased]` entry (Minor); reference #502 for auto-close on merge | planned | yoga-ah | role=implementer |
-| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | planned | rubber-duck | role=reviewer |
-| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | yoga-ah | role=orchestrator |
-| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | yoga-ah | role=orchestrator |
+| C111-1/C111-2: version-mismatch preflight (shared helper) — normalized compare; sentinel (`0.0.0`/`0.0.0-*`, checked on the normalized form)/SHA-pin/config-less exemption; `--skip-version-check` escape hatch; fail-fast naming both versions + the `npx …#<config.version>` re-run command | done | yoga-ah | role=implementer \| report-status=complete — new pure `lib/version-check.mjs` (no `bin/` import); `cs111-impl` |
+| C111-3: post-pull ordering — the preflight runs AFTER `--pull-ff-only` (evaluated against the pulled version) + short-circuits the remaining checks on a mismatch | done | yoga-ah | role=implementer \| report-status=complete |
+| C111-5: clearer `Template file not found` (`lib/sync.mjs` `ESYNC_MISSING_TEMPLATE`) — hint at a version mismatch + print both `pkg.version` and `config.version` | done | yoga-ah | role=implementer \| report-status=complete |
+| Tests (`node --test`) — preflight fires on a real mismatch; stays silent on exact/normalized (`0.17.0`≡`v0.17.0`) match, the `0.0.0-pre` sentinel (+ `v0.0.0-pre`), and a SHA-pin the CLI can't self-identify against; `--skip-version-check` suppresses; short-circuit; the improved template-not-found error includes both versions | done | yoga-ah | role=implementer \| report-status=complete — 28 tests (os.tmpdir only) |
+| CHANGELOG.md: add `[Unreleased]` entry (Minor); reference #502 for auto-close on merge | done | yoga-ah | report-status=complete |
+| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | done | rubber-duck | role=reviewer \| report-status=complete — gpt-5.5 Go (`cs111-review`) + 2 delta re-confirms (`cs111-delta`/`cs111-delta2`); Copilot COMMENTED (3 findings addressed, threads resolved; LRN-221 bounded) |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | done | yoga-ah | role=orchestrator \| report-status=complete |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | done | yoga-ah | role=orchestrator \| report-status=complete \| learnings=0 — no new LRN (reinforces LRN-221; bin→lib layering is a general principle) |
 
 ## Notes / Learnings
 
@@ -94,6 +94,14 @@ Make the discipline "**get latest FIRST, then invoke the harness at the pulled p
 
 - **Plan review (pre-claim, two independent gpt-5.5 passes).** An initial pass (2026-07-06) returned **Needs-Fix** on one blocker: a literal `pkg.version` vs `config.version` compare would **false-fail valid consumers**, because `package.json` is a bare `0.17.0` while seeded/init pins are `v`-normalized (or 40-char SHAs) — #502's own repro pins `v0.17.0`. Resolved: **C111-1** now mandates a normalized/equivalent compare (reuse `normalizeInitVersion` so `0.17.0` ≡ `v0.17.0`) + a SHA-pin scoped exemption (**C111-2**), and Deliverables 1/4 + Risk R2 add the `v`-prefixed, `0.0.0-pre` sentinel, and SHA cases. The recorded attestation row (R1, gpt-5.5, **Go**) is the follow-up pass over the fixed Decisions+Deliverables (hash `ca4ef6c555d5`).
 
+- **Execution (2026-07-06, yoga-ah).** Implemented by background sub-agent `cs111-impl` (`claude-opus-4.8`): new pure zero-dep `lib/version-check.mjs` (deliberately **no `bin/` import** — the comparator lives in `lib/`, re-implementing the `v`/SHA compare semantics rather than importing `normalizeInitVersion` from `bin/`, to keep the one-way `bin→lib` dependency); `runStartup` version-pin check + `readVersionInfo()` runner + `--skip-version-check`; `ESYNC_MISSING_TEMPLATE` dual-version hint. Content **PR #530** (`e2dc413`) admin-squash-merged after **gpt-5.5 rubber-duck review-of-record Go** (`cs111-review`, 0 blocking findings) + **Copilot COMMENTED** across two HEADs — 3 findings, all **genuine** and addressed (LRN-221 verified, not hallucinations): (1) `computeRerunRef` must lowercase a `v`/`V` prefix (git refs case-sensitive); (2) the sentinel exemption should be checked on the **normalized** form (so `v0.0.0-pre` is exempt); (3) `runStartup` should **short-circuit** on a mismatch rather than continue into tests/lint/sync — each fixed with a gpt-5.5 delta re-confirm (`cs111-delta`/`cs111-delta2`) + threads resolved; chase **bounded** (merged on the next clean Copilot pass). Re-hit **LRN-217** (async `read-only-gates` needed `gh run rerun --failed` once the Copilot review at HEAD postdated the latest local Go). **PVI GO** by `gpt-5.5` (`cs111-pvi`). **#502 auto-closed.** **SemVer Minor** (additive startup guard; stays `[Unreleased]`).
+
+- **Learnings disposition (close-out).** No new `LRN` filed. The `cs111-impl` candidate ("shared logic needed by both a `bin/` command and `lib/` must live in `lib/` — `bin→lib` only") is a general layering principle, not a novel harness-specific gotcha. The pattern "the independent rubber-duck returned a clean Go, yet Copilot surfaced a genuine, actionable design improvement (the short-circuit)" **reinforces** the existing **LRN-221** (verify Copilot's factual claims; bound the chase; Copilot and the rubber-duck are complementary) rather than establishing anything new — recorded here for the ledger, no duplicate LRN.
+
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, agent `cs111-pvi`) — independent of implementer `claude-opus-4.8`
+**Date:** 2026-07-06
+**Outcome:** GO
+
+All 5 Deliverables **match** (verified at merged squash HEAD `e2dc413`): the version-mismatch preflight (normalized compare, real-mismatch fail-fast, both-version message + corrective `npx …#<config.version> startup`, sentinel/SHA/config-less exemptions, `--skip-version-check`); post-pull ordering (C111-3 — ff-probe → version-pin → clean/tests/lint/sync); the `ESYNC_MISSING_TEMPLATE` dual-version hint (C111-5, error code preserved); 28 focused tests (28/28 targeted, full suite 2102 pass/0 fail/5 skip); the `[Unreleased]` Minor CHANGELOG entry (`gh issue view 502` → CLOSED). Two **added** scopes, both approved: the **mismatch short-circuit** (emerged from Copilot review — the actionable message is not buried behind downstream failures) and the extra fail-soft exemptions (`no-config-version`, `running-version-unknown`, `v`-prefixed sentinel) that extend the exemption set without weakening the core guard. Confirmed: **no config-schema change**; `normalizeInitVersion` stays exported from `bin/harness.mjs`; the self-host `0.0.0-pre` sentinel is exempt (no self-host regression); **C111-4** auto-re-exec correctly deferred. Coverage **sufficient**. No unapproved gaps.
