@@ -1,10 +1,10 @@
 # CS90b — #392 L3: `harness-pr-check` `pr_check.mode` (drift-only vs lint+drift) + adoption-overlap warning + schema
 
-**Status:** active
+**Status:** done
 **Owner:** yoga-ah-c2
 **Branch:** cs90b/content
 **Started:** 2026-07-06
-**Closed:** —
+**Closed:** 2026-07-06
 **Filed by:** CS90 deliverable 2 / C90-6 (2026-07-05 by `yoga-ah`) — implements inbound issue [#392](https://github.com/henrik-me/agent-harness/issues/392) under the layering model fixed by [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) (L3). One of the three mandatory sub-CSs split from CS90 (C90-6).
 **Depends on:** **CS90** (HARD) — [ADR-0005](../../../docs/adr/0005-ci-drift-review-gate-layering.md) fixes the L3 layer and the `pr_check.mode` decision. Do NOT claim before user-approval **G90-1** (ADR layering model + CS90a/b/c breakdown) is granted.
 
