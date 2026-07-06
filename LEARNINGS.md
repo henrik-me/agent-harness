@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-222
+
+```yaml
+id: LRN-222
+date: 2026-07-05
+category: tooling
+source_cs: CS112
+status: open
+tags: [check-workflow-pins, undefined-variable, linter, latent-bug, yaml-parse, fail-open]
+claim_area: linters
+```
+
+**Problem:** During triage of #496/#515 (harness-owned managed-workflow action-pin bumps, tracked by CS112), a code read of `scripts/check-workflow-pins.mjs` surfaced a latent `ReferenceError`: the hard-error branch for a genuine YAML parse failure does `totalErrors++` (`scripts/check-workflow-pins.mjs:283`), but the module never declares a `totalErrors` variable — everywhere else it records failures via `const errors = []` (`:146`) + `logError()` (`:153-154`). On a real YAML parse failure with js-yaml installed, `totalErrors++` throws `ReferenceError: totalErrors is not defined` instead of recording the error and exiting cleanly.
+
+**Finding:** The `yamlParseError` branch (`:278-283`) must record the failure through the same `errors`/`logError()` path the rest of the linter uses (e.g. `logError(\`${relPath}: YAML parse failed …\`)`), not the undefined `totalErrors++`. The bug is latent because it fires only when js-yaml IS installed AND a workflow genuinely fails to parse — a rare path with no test coverage (the js-yaml-absent regex fallback never reaches it). GitHub Actions would also reject such a workflow, masking impact, but an uncaught `ReferenceError` in a linter is still incorrect crash behavior.
+
+**Evidence:** `scripts/check-workflow-pins.mjs:283` (`totalErrors++`) vs `:146` (`const errors = []`), `:153-154` (`logError` pushes to `errors`), `:242` (`let totalPinsChecked = 0` — the only sibling counter; no `totalErrors` declared). Surfaced independently by both a CS-plan draft sub-agent and the orchestrator during 2026-07-05 issue triage; verified by grep (only line 283 references `totalErrors`).
+
+**Disposition:** Open — CS112 (harness-owned managed-workflow action bumps, whose deliverables exercise the `workflow-pins` linter) is the natural fix vehicle; repair the `:283` branch to use `logError()` as a tightly-coupled bug. claim_area: linters.
+
 ### LRN-221
 
 ```yaml
