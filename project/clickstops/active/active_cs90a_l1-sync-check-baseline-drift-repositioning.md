@@ -89,10 +89,10 @@ Grounding (verify at claim HEAD):
 | Cross-link the L1 snippet home from ADR-0005 | done | yoga-ah (impl: claude-opus-4.8) | C90a-3 |
 | Add `CHANGELOG.md` `[Unreleased]` entry referencing #391 for auto-close | done | yoga-ah (impl: claude-opus-4.8) | Deliverable 4 |
 | Validate: `harness lint`, `node --test tests/*.test.mjs`, `sync --mode=check` clean | done | yoga-ah | lint 43/0/3; tests 2031/0/5; sync clean |
-| Local review — GPT-5.5 rubber-duck before opening the content PR | pending | yoga-ah | REVIEWS.md |
-| Plan-vs-implementation review (GPT-5.5) — GO before close-out | pending | yoga-ah | close-out gate |
-| Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | pending | yoga-ah | mandatory |
-| Close-out: learnings + follow-ups — file LEARNINGS.md candidates / planned follow-up CSs | pending | yoga-ah | mandatory |
+| Local review — GPT-5.5 rubber-duck before opening the content PR | done | yoga-ah | REVIEWS.md — R1–R11 (gpt-5.5) all Go on PR #516: full R1–R6/R9 + narrow re-attests R7/R8/R10/R11; Copilot converged (case-quote, leading-alphanumeric anchor, `--detach`; 2 SHA-pin findings verified FALSE POSITIVE — `de0fac2e` **is** checkout v6.0.2) |
+| Plan-vs-implementation review (GPT-5.5) — GO before close-out | done | yoga-ah | GO by gpt-5.5 (`cs90a-pvi-review`) @ `27fcc3e`; 5/5 deliverables match |
+| Close-out: docs + restart state — update WORKBOARD.md, CONTEXT.md, handoff | done | yoga-ah | this close-out PR |
+| Close-out: learnings + follow-ups — file LEARNINGS.md candidates / planned follow-up CSs | done | yoga-ah | LRN-221 filed (Copilot factual-hallucination); re-hit LRN-217 (async `read-only-gates` rerun) — referenced, not duped |
 
 ## Notes / Learnings
 
@@ -134,4 +134,22 @@ candidate at close-out.
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, agent `cs90a-pvi-review`) — independent of implementer `claude-opus-4.8`
+**Date:** 2026-07-06T00:14:00Z
+**Outcome:** GO
+
+Reviewed against merged content HEAD `27fcc3e` (squash of PR #516, base `db282b5`).
+
+| # | Deliverable | Outcome | Notes |
+|---|---|---|---|
+| 1 | Hardened per-PR `sync --mode=check` snippet (npx + clone-then-run, ref allowlist, SHA-pin guidance) | match | `docs/ci-drift-layering.md` Form A/B; SHA-pinned actions, `harness.config.json` ref derivation, POSIX `case` validation. |
+| 2 | `harness-drift.yml` header repositioning as low-activity belt-and-suspenders; behaviour unchanged; self-host regenerated | match | Header-only change in root + template copies; schedule/permissions/check/apply/PR-open behaviour unchanged; `sync --mode=check` clean. |
+| 3 | L1-vs-L3 drift-semantics note at snippet point-of-use, cross-linked to ADR-0005 | match | Guide documents L1 strictness vs L3 classifier and links ADR-0005; ADR links back. |
+| 4 | `CHANGELOG.md` `[Unreleased]` entry; #391 referenced for auto-close | match | Documentation entry added; squash message `Closes #391` (issue auto-closed). |
+| 5 | `harness lint` + `node --test` + `sync --mode=check` green | match | Re-verified: lint 43/0/3; tests 2049 pass/0 fail/5 skip; sync no-drift. |
+
+**Added beyond plan (in-scope refinements of Deliverable 1, not scope additions):** leading-alphanumeric ref anchor (`[!a-zA-Z0-9]*`, matching the documented `^[a-zA-Z0-9][a-zA-Z0-9._/-]*$`) and `git checkout --detach` fail-closed in Form B — both added in response to Copilot review (R9/R11); POSIX-`sh` probe verified.
+
+**Test-coverage assessment:** sufficient. No automated unit test covers the docs-embedded `case` guard and the snippets are not integration-tested end-to-end, but this is a docs/workflow-header CS whose plan required only the three validation commands (all green) and whose risk-bearing ref-validation logic was manually probed with POSIX `sh` (accepts semver/SHA/branch refs; rejects empty, leading non-alphanumeric, whitespace, metacharacters, embedded newline). Adequate for close-out.
+
+**Overall:** GO — merged implementation matches all five planned deliverables, preserves `harness-drift.yml` runtime behaviour, and adds only in-scope hardening. No blocking plan-vs-implementation divergence.
