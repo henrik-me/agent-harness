@@ -124,7 +124,7 @@ jobs:
           # CS90b (C90b-2): in drift-only mode SKIP the redundant `harness lint`
           # (the consumer already lints in its own CI) but STILL run the managed/
           # composed drift classifier + the harness-managed-edit-ack escape valve.
-          # lint+drift (default) is byte-for-byte the pre-CS90b behaviour.
+          # lint+drift (default) is behaviourally identical to the pre-CS90b gate.
           if [ "$MODE" = "drift-only" ]; then
             echo "::notice::pr_check.mode=drift-only: skipping the redundant 'harness lint'; running the managed/composed drift classifier + harness-managed-edit-ack escape valve only."
             lint_rc=0
