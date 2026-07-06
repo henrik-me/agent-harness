@@ -84,19 +84,27 @@ Grounding (verify at claim HEAD):
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| C90b-1: add `pr_check.mode` enum `{lint+drift, drift-only}` (default `lint+drift`) to `schemas/harness.config.schema.json` with description (schema-first) | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
-| C90b-2: wire `template/managed/.github/workflows/harness-pr-check.yml` — read `pr_check.mode` from BASE config; in `drift-only` run managed-drift + `harness-managed-edit-ack` escape valve but SKIP `harness lint` | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
-| C90b-4: adoption-overlap warning (`harness sync` or `doctor` — Q1) when the consumer already runs `harness lint` / `sync --mode=check`; warn-only, never a hard failure | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
-| C90b-5: tests (`node --test`) — schema accepts `drift-only`/`lint+drift` + rejects other values; `drift-only` skip-lint path; overlap-warning fire/silent cases | pending | yoga-ah-c2 | role=implementer \| report-status=pending \| learnings=0 |
-| CHANGELOG.md: add `[Unreleased]` entry; reference #392 for auto-close on merge | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
-| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | pending | — | role=reviewer \| report-status=pending \| learnings=0 |
-| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
-| Close-out: learnings + follow-ups (LEARNINGS.md) | pending | yoga-ah-c2 | report-status=pending \| learnings=0 |
+| C90b-1: add `pr_check.mode` enum `{lint+drift, drift-only}` (default `lint+drift`) to `schemas/harness.config.schema.json` with description (schema-first) | done | yoga-ah-c2 | role=implementer \| report-status=complete \| learnings=0 |
+| C90b-2: wire `template/managed/.github/workflows/harness-pr-check.yml` — read `pr_check.mode` from BASE config; in `drift-only` run managed-drift + `harness-managed-edit-ack` escape valve but SKIP `harness lint` | done | yoga-ah-c2 | role=implementer \| report-status=complete \| learnings=0 |
+| C90b-4: adoption-overlap warning (`harness sync` — Q1 resolved: sync, not a new doctor verb) when the consumer already runs `harness lint` / `sync --mode=check`; warn-only, never a hard failure | done | yoga-ah-c2 | role=implementer \| report-status=complete \| learnings=0 |
+| C90b-5: tests (`node --test`) — schema accepts `drift-only`/`lint+drift` + rejects other values; `drift-only` skip-lint path; overlap-warning fire/silent cases (20 tests) | done | yoga-ah-c2 | role=implementer \| report-status=complete \| learnings=0 |
+| CHANGELOG.md: add `[Unreleased]` entry; reference #392 for auto-close on merge | done | yoga-ah-c2 | report-status=complete \| learnings=0 |
+| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | done | rubber-duck | role=reviewer \| report-status=complete \| learnings=0 — gpt-5.5 Go (cs90b-review) + Copilot COMMENTED (3 nits addressed, threads resolved) |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | in_progress | yoga-ah-c2 | report-status=in_progress \| learnings=0 |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | in_progress | yoga-ah-c2 | report-status=in_progress \| learnings=0 |
 
 ## Notes / Learnings
 
-(filled during execution)
+- **Implementation.** Delivered by background sub-agent `cs90b-impl` (`claude-opus-4.8`): schema `pr_check.mode` (schema-first), workflow BASE-tree mode read + `drift-only` skip-lint (fail-safe to `lint+drift` on any non-`drift-only` value), and an exported `detectPrCheckLintOverlap()` + report-only `harness sync` advisory (self-host-safe: silent unless `harness-pr-check.yml` is adopted, which the self-host is not). 20 tests, all scratch under `os.tmpdir()`.
+- **Review-of-record.** `gpt-5.5` rubber-duck **Go** (`cs90b-review`, no findings) + two delta confirms (`cs90b-review-r2` cosmetic wording, `cs90b-review-r3` case-insensitive scan). Copilot **COMMENTED** with 3 non-blocking nits (byte-for-byte wording, C90-3 vs CS90b naming, case-sensitive scan) — all addressed; the 3 review threads resolved. Chase loop bounded per LRN-221 (one fix-then-resolve pass; no further code cycles).
+- **Content PR #526** admin-squash-merged (`47c614b`, CS91 Rec A zero-secret default): the branch was **BEHIND** main because sibling orchestrator filings (**CS113** review-evidence stamping fix + **LRN-222/LRN-223**) advanced main mid-flight — orthogonal (LEARNINGS.md + a new planned CS only; no overlap with CS90b's code files), so a conflict-free admin-merge (the LRN-223 stale-base scenario, cleanly resolved). `read-only-gates` needed a `gh run rerun --failed` after the Go row + Copilot review landed (LRN-194/217).
+- **Q1 resolved:** the adoption-overlap warning lives in `harness sync` (report-only advisory mirroring the C64b new-managed-files advisory), NOT a new `harness doctor` verb — avoids net-new CLI surface.
+- **No SemVer bump here** (config field + workflow toggle ship under `[Unreleased]`; the next release CS promotes it). Minor when released (new optional `pr_check.mode` field).
 
 ## Plan-vs-implementation review
 
-> _(filled at close-out per the gate — see [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](../../../OPERATIONS.md#plan-vs-implementation-review-close-out-gate))_
+**Reviewer:** GPT-5.5 (rubber-duck, agent `cs90b-pvi`) — independent of implementer `claude-opus-4.8`
+**Date:** 2026-07-06
+**Outcome:** GO
+
+All 6 Deliverables **match** and all 5 Exit criteria are **met** (verified at merged HEAD `47c614b`): schema `pr_check.mode` enum/default (`schemas/harness.config.schema.json:154-159`); workflow BASE-tree mode read + `drift-only` skip-lint keeping the drift classifier + ack downgrade (`harness-pr-check.yml`); exported `detectPrCheckLintOverlap()` + report-only advisory (`lib/sync.mjs`); 20 tests (targeted 20/20 pass); `[Unreleased]` CHANGELOG entry with #392 (`gh issue view 392` → CLOSED); `harness lint` 43/0/3, `sync --mode=check` no-drift, `node --test tests/*.test.mjs` green. Divergences all **approved** (exported/testable helper; case-insensitive scan per Copilot; workflow fail-safe to `lint+drift`). No unapproved gaps.
