@@ -1,9 +1,9 @@
 # CS111 — `harness startup`: enforce get-latest-first (version-mismatch preflight + clearer template-not-found error)
 
-**Status:** planned
-**Owner:** —
-**Branch:** —
-**Started:** —
+**Status:** active
+**Owner:** yoga-ah
+**Branch:** cs111/content
+**Started:** 2026-07-06
 **Closed:** —
 **Filed by:** yoga-ah-c2 (orchestrator, Claude Opus 4.8) — triage of untriaged inbound issue [#502](https://github.com/henrik-me/agent-harness/issues/502) (2026-07-05). Directed by @henrik-me ("if there are open issues evaluate if those are all triaged … if not triage issues").
 **Depends on:** none.
@@ -65,11 +65,28 @@ Make the discipline "**get latest FIRST, then invoke the harness at the pulled p
 |---|---|---|---|---|---|---|---|
 | R1 | gpt-5.5 | claude-opus-4.8 | cs111-plan-review (yoga-ah-c2) | ca4ef6c555d5 | 2026-07-06T04:02:00Z | Go | Pre-pass Needs-Fix (literal version compare false-fails v-prefixed/SHA pins) fixed: normalized compare (normalizeInitVersion) + SHA exemption + tests. Faithful to #502 MVP. |
 
+## Model audit
+
+| Field | Value |
+|---|---|
+| Implementer models | claude-opus-4.8 |
+| Reviewer model | gpt-5.5 |
+| Implementer agent | yoga-ah |
+| Reviewer agent | rubber-duck (orchestrator: yoga-ah) |
+| Notes | CS111 implements #502 (`harness startup` version-mismatch preflight + clearer template-not-found error). Independence per REVIEWS.md § 2.3 — reviewer `gpt-5.5` ≠ implementer `claude-opus-4.8`. |
+
 ## Tasks
 
 | Task | State | Owner | Notes |
 |---|---|---|---|
-| (populated at claim time per § Claim) | planned | — | — |
+| C111-1/C111-2: version-mismatch preflight (shared helper) — normalized compare reusing `normalizeInitVersion`; sentinel (`0.0.0-pre`)/SHA-pin/local-checkout exemption; `--skip-version-check` escape hatch; fail-fast naming both versions + the `npx …#<config.version>` re-run command | planned | yoga-ah | role=implementer |
+| C111-3: post-pull ordering — the preflight runs AFTER `--pull-ff-only` so a pin advance is evaluated against the pulled version | planned | yoga-ah | role=implementer |
+| C111-5: clearer `Template file not found` (`lib/sync.mjs` `ESYNC_MISSING_TEMPLATE`) — hint at a version mismatch + print both `pkg.version` and `config.version` | planned | yoga-ah | role=implementer |
+| Tests (`node --test`) — preflight fires on a real mismatch; stays silent on exact/normalized (`0.17.0`≡`v0.17.0`) match, the `0.0.0-pre` sentinel, and a SHA-pin the CLI can't self-identify against; `--skip-version-check` suppresses; the improved template-not-found error includes both versions | planned | yoga-ah | role=implementer |
+| CHANGELOG.md: add `[Unreleased]` entry (Minor); reference #502 for auto-close on merge | planned | yoga-ah | role=implementer |
+| Local review — GPT-5.5 rubber-duck of the implementation (independence invariant, REVIEWS.md § 2.3) + Copilot engage | planned | rubber-duck | role=reviewer |
+| Close-out: docs + restart state (WORKBOARD + CONTEXT + handoff) | planned | yoga-ah | role=orchestrator |
+| Close-out: learnings + follow-ups (LEARNINGS.md) | planned | yoga-ah | role=orchestrator |
 
 ## Notes / Learnings
 
