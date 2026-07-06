@@ -179,7 +179,7 @@ id: LRN-215
 date: 2026-07-05
 category: architectural
 source_cs: CS108
-status: open
+status: applied
 tags: [harness-lock, template-prose-hash, composed, sync, drift]
 claim_area: sync
 ```
@@ -190,7 +190,7 @@ claim_area: sync
 
 **Evidence:** During CS108 the OPERATIONS.md composed-template edit could not auto-adopt (lock `template_prose_hash` ≠ current root skeleton); the implementer deleted + regenerated the root to correct it. Related to LRN-201 (sync validates content, not lock bookkeeping) and LRN-209 (stale-lock fail-close on composed-template edits).
 
-**Disposition:** Open — candidate follow-up CS to audit ALL composed-file `template_prose_hash` lock entries for latent staleness (a dedicated lock-resync, per LRN-201's deferred ask), so the next composed-prose edit to any doc does not force an unexpected lock regeneration.
+**Disposition:** Applied (weekly harvest 2026-07-06) — the dedicated lock-resync (LRN-201's ask) shipped in **CS90a**: a full `sync --mode=apply` refreshed ALL composed-file `template_prose_hash` lock entries from a clean baseline and committed the lock (`harness_ref: cs90a/content`), so the next composed-prose edit no longer forces an unexpected lock regeneration (done_cs90a Notes).
 
 ### LRN-211
 
@@ -239,7 +239,7 @@ id: LRN-209
 date: 2026-07-05
 category: tooling
 source_cs: CS88
-status: open
+status: applied
 tags: [sync, composed-template, harness-lock, fail-close, emerge-legacy-unmapped]
 claim_area: sync
 ```
@@ -250,7 +250,7 @@ claim_area: sync
 
 **Evidence:** CS88 sub-agent escalation on PR #494: `sync --mode=apply` threw `EMERGE_LEGACY_UNMAPPED`; the two root mirrors were hand-rendered and ground-truthed by `sync --mode=check` → "No drift detected" (lint 37/0/3, tests green). CS76 PR #483 body documents the same "lock deliberately not committed" pattern.
 
-**Disposition:** Open. A future maintenance CS could refresh `.harness-lock.json` `template_prose_hash` values (run `sync --mode=apply` from a clean baseline and commit the lock) so composed-template edits can use `sync --mode=apply` directly instead of hand-rendering the mirror.
+**Disposition:** Applied (weekly harvest 2026-07-06) — **CS90a** ran the full `sync --mode=apply` from a clean baseline and committed the refreshed `.harness-lock.json` (`harness_ref: cs90a/content`), so composed-template `template_prose_hash` entries are current and `sync --mode=apply` no longer fail-closes with `EMERGE_LEGACY_UNMAPPED` on the next composed-template edit (done_cs90a Notes).
 
 ### LRN-210
 
@@ -419,7 +419,7 @@ id: LRN-201
 date: 2026-07-04
 category: architectural
 source_cs: CS24
-status: open
+status: applied
 tags: [harness-lock, sync, drift-check, composed-templates, bookkeeping]
 claim_area: harness-cli
 ```
@@ -430,7 +430,7 @@ claim_area: harness-cli
 
 **Evidence:** CS24, 2026-07-04. Committed lock `resolved_sha`=576067…, `harness_ref`=cs55/content, `synced_at`=2026-05-28; HEAD was 4e60a1a; `sync --mode=check` = no drift. A plain `sync --mode=apply` on the CS24 template edit rewrote 103 lock lines incl. INSTRUCTIONS.md class managed→composed. Reverting the lock + keeping only the OPERATIONS.md prose render kept `sync --mode=check` green.
 
-**Disposition:** Open — recommend a dedicated "lock resync" CS to regenerate `.harness-lock.json` in isolation, and/or extend `sync --mode=check` to WARN on lock-bookkeeping staleness (harness_ref/synced_at/class drift). claim_area: harness-cli.
+**Disposition:** Applied (weekly harvest 2026-07-06) — the recommended dedicated "lock resync" shipped in **CS90a**: a full `sync --mode=apply` regenerated + committed `.harness-lock.json` (now `harness_ref: cs90a/content`), catching up the cs108/cs55-stale bookkeeping (done_cs90a Notes "`.harness-lock.json` refresh"). The optional "extend `sync --mode=check` to WARN on lock-bookkeeping staleness" half remains a possible future enhancement, non-blocking. claim_area: harness-cli.
 
 ### LRN-200
 
@@ -642,7 +642,7 @@ id: LRN-190
 date: 2026-07-03
 category: process
 source_cs: CS100
-status: open
+status: obsolete
 tags: [harness-claim, clickstop, lint, model-audit, workboard]
 claim_area: harness-claim
 ```
@@ -653,7 +653,7 @@ claim_area: harness-claim
 
 **Evidence:** CS100 (#421) claim PR #435 — `smoke/harness-lint` + `validate` failed ("Status is planned but file is in active/"; active clickstop missing Model audit) until the header + Model audit + Tasks were added manually.
 
-**Disposition:** Open — candidate for a `harness claim` scaffolding enhancement CS; workaround (manual fill at claim time) documented here.
+**Disposition:** Obsolete (weekly harvest 2026-07-06) — superseded by the fuller **LRN-216** (same `harness claim --apply` scaffolding gap: leaves `**Status:** planned` + no `## Model audit` + unpopulated `## Tasks`, so the just-claimed active file fails lint). LRN-216 (CS90, 2026-07-05) carries the fuller finding incl. the CHANGELOG-touch row + `check-clickstop-implementer-not-reviewer` specifics; track the candidate `harness claim` scaffolding fix there. First observed CS100/#421 PR #435; manual-fill workaround documented in both.
 
 ### LRN-189
 
