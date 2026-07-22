@@ -246,6 +246,8 @@ The notes below are specific to the **agent-harness** self-host
 file receive an empty block; the harness preserves its institutional content
 here so the generic sections above stay clean.
 
+Agent memory (the `store_memory` tool) is disabled in this repo — record durable knowledge in `LEARNINGS.md` or the relevant process doc (INSTRUCTIONS.md § "Knowledge lives in the repo, not agent memory"), never in agent memory; enforced by the `.github/hooks/no-memory.json` `preToolUse` deny hook.
+
 ### Cross-repo handoff scope (self-host)
 
 The harness orchestrator operates directly **only in `henrik-me/agent-harness`**.
