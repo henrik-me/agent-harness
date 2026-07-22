@@ -12,6 +12,26 @@ This file captures durable, project-applicable insights surfaced by completing C
 
 ## Open
 
+### LRN-224
+
+```yaml
+id: LRN-224
+date: 2026-07-22
+category: tooling
+source_cs: CS91
+status: open
+tags: [tests, windows, wsl-bash, posix-class, parameter-expansion, capability-probe, skip-guard, ambient-toolchain]
+claim_area: testing
+```
+
+**Problem:** `tests/cs91-workboard-auto-approve-hardening.test.mjs` group (g) deterministically FAILS on a developer machine where `bash` resolves to WSL bash (`…\WindowsApps\bash.exe`). The (g) tests run the SHIPPED C91-1 trim expansion `${p#"${p%%[![:space:]]*}"}; …` under `bash`; WSL bash mis-evaluates the POSIX `[![:space:]]` class inside `${..%%..}` parameter expansion (the negated class matches spaces too), collapsing the trim to empty, so `trims surrounding whitespace…` asserts `[WORKBOARD.md]` but gets `[]`. The gate `hasBash()` was a mere PRESENCE probe (`bash -c 'printf ok'`), so it returned true for WSL bash and let the assertion run and fail. `harness startup` then reports a broken tree (2105 pass / 1 fail) though CI (Linux bash) and git-for-windows bash are correct and the shipped workflow works.
+
+**Finding:** A test that shells out to `bash` to exercise SHIPPED shell behaviour must gate on a CAPABILITY probe, not a presence probe — run the actual construct and enable the execution tests only when `bash` produces the expected result. The fix (`bashTrimsCorrectly()`) runs `TRIM_EXPANSION` on `"  x  "` and requires stdout `[x]`; on a mis-evaluating build the (g) tests SKIP (reason: "…mis-evaluates the POSIX [:space:] trim (e.g. WSL bash)") instead of failing, and still RUN on Linux CI / git-bash. Generalises: never let a test's pass/fail hinge on WHICH ambient tool resolves on PATH — probe the capability or pin the toolchain. This was NOT a parallel-race flake (it fails identically in isolation); it is ambient-toolchain dependence. The (g) block writes no files, so it is already parallel/order-safe.
+
+**Evidence:** This session, 2026-07-22, agent `omni-ah`, on `HENRIKM-OMNI`. `Get-Command bash` → `C:\Users\henri\AppData\Local\Microsoft\WindowsApps\bash.exe` (v5.2.21). Node `spawnSync('bash',['-c',trim])` on `"   WORKBOARD.md   "` → `[]` under WSL bash but `[WORKBOARD.md]` under `C:\Program Files\Git\bin\bash.exe`; even `${p%%[![:space:]]*}` returns `[]` under WSL bash, while `[[ "abc" == [![:space:]]* ]]` → MATCH (the class works in `[[ ]]` but not in `${..%%..}` on that build). `tests/cs91-…:75-83` (old presence probe), `:106-117` (test (c) asserts `TRIM_EXPANSION` == the workflow trim). Full suite after the fix: 2104 pass / 0 fail / 5 skip.
+
+**Disposition:** Open — fixed by CS115 (`bashTrimsCorrectly()` capability-probe skip guard + clearer skip reason). Flip to `applied` at CS115 close-out. claim_area: testing.
+
 ### LRN-223
 
 ```yaml
