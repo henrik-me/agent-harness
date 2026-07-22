@@ -10,8 +10,11 @@
 
 - Use **lowercase kebab-case** for all source files and directories: `my-module.mjs`,
   `user-auth/`, `check-composed-blocks.mjs`.
-- Test files mirror the module they test, suffixed with `.test`: `composed.test.mjs` tests
-  `lib/composed.mjs`.
+- Test files are named for **what they verify**: mirror the module under test where there is one
+  (`composed.test.mjs` tests `lib/composed.mjs`), otherwise name a behaviour/feature/integration
+  test for the behaviour it verifies (`no-memory-hook.test.mjs`) — **never** the clickstop or work
+  item that prompted it. Record any originating work-item link (e.g. a clickstop) in an in-file
+  comment, not in the filename.
 - Configuration and schema files use kebab-case: `harness.config.json`,
   `harness.config.schema.json`.
 - Markdown documents use `SCREAMING_SNAKE_CASE.md` for process docs (`CONVENTIONS.md`,
