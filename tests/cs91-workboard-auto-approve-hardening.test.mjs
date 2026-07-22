@@ -72,15 +72,25 @@ function extractBranchRegex(src) {
   return new RegExp(m[1]);
 }
 
-function hasBash() {
+// Capability probe (not mere presence): the optional (g) execution tests below
+// run the REAL C91-1 trim expansion, which relies on the POSIX `[![:space:]]`
+// class inside `${..%%..}` parameter expansion. Some bash builds reachable from
+// a developer machine — notably WSL bash invoked from Windows — mis-evaluate
+// that class and collapse the trim to empty, which would FAIL the assertion even
+// though the SHIPPED workflow (run on Linux CI, where bash is correct) is fine.
+// So probe the actual trim behaviour and enable the (g) tests only when bash
+// evaluates it correctly. This keeps the suite deterministic in isolation, in
+// parallel, and in any order regardless of which `bash` resolves on PATH.
+function bashTrimsCorrectly() {
   try {
-    const r = spawnSync('bash', ['-c', 'printf ok'], { encoding: 'utf8' });
-    return r.status === 0 && (r.stdout || '').includes('ok');
+    const script = `p="  x  "\n${TRIM_EXPANSION}\nprintf '[%s]' "$p"`;
+    const r = spawnSync('bash', ['-c', script], { encoding: 'utf8' });
+    return r.status === 0 && r.stdout === '[x]';
   } catch {
     return false;
   }
 }
-const BASH_AVAILABLE = hasBash();
+const BASH_TRIM_OK = bashTrimsCorrectly();
 
 describe('CS91 — workboard-auto-approve.yml hardening (#394 / #395)', () => {
   it('(a) root and template copies are byte-identical', () => {
@@ -199,7 +209,7 @@ describe('CS91 — workboard-auto-approve.yml hardening (#394 / #395)', () => {
 
     it(
       'trims surrounding whitespace from an allowlist entry',
-      { skip: BASH_AVAILABLE ? false : 'bash unavailable' },
+      { skip: BASH_TRIM_OK ? false : 'bash unavailable or mis-evaluates the POSIX [:space:] trim (e.g. WSL bash)' },
       () => {
         assert.ok(trimLine, 'trim expansion line must be extractable from the workflow');
         const script = `p="   WORKBOARD.md   "\n${trimLine}\nprintf '[%s]' "$p"`;
@@ -211,7 +221,7 @@ describe('CS91 — workboard-auto-approve.yml hardening (#394 / #395)', () => {
 
     it(
       'reduces a whitespace-only line to empty (so it is skipped too)',
-      { skip: BASH_AVAILABLE ? false : 'bash unavailable' },
+      { skip: BASH_TRIM_OK ? false : 'bash unavailable or mis-evaluates the POSIX [:space:] trim (e.g. WSL bash)' },
       () => {
         assert.ok(trimLine, 'trim expansion line must be extractable from the workflow');
         const script = `p="     "\n${trimLine}\nprintf '[%s]' "$p"`;
