@@ -160,7 +160,7 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // CS57 — model-ID normalization, GPT-5.5 overlap exception, configurable
+  // CS57 — model-ID normalization, GPT-5.6 Sol overlap exception, configurable
   // high-risk set (fail-closed), and date-gated missing-audit enforcement.
   // ---------------------------------------------------------------------------
 
@@ -191,36 +191,36 @@ describe('scripts/check-clickstop-implementer-not-reviewer.mjs', () => {
     return lines.join('\n');
   }
 
-  it('GPT-5.5 model overlap is allowed for non-high-risk clickstops', () => {
+  it('GPT-5.6 Sol model overlap is allowed for non-high-risk clickstops', () => {
     const r = run(path.join(FIXTURES, 'gpt-overlap-allowed'));
     assert.equal(r.status, 0, `stdout:\n${r.stdout}`);
     assert.doesNotMatch(r.stdout, /model-independence violation/);
   });
 
-  it('GPT-5.5 model overlap exits 1 for high-risk clickstops', () => {
+  it('GPT-5.6 Sol model overlap exits 1 for high-risk clickstops', () => {
     const r = run(path.join(FIXTURES, 'gpt-overlap-high-risk'));
     assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /model-independence violation/);
-    assert.match(r.stdout, /gpt-5\.5/);
+    assert.match(r.stdout, /gpt-5\.6-sol/);
   });
 
   it('high-risk set can be configured from harness.config.json reviews.high_risk_clickstops', () => {
     const cwd = writeTempRepo('config-high-risk-', {
       'harness.config.json': JSON.stringify({ reviews: { high_risk_clickstops: ['CS41'] } }),
       'project/clickstops/active/active_cs41_configured-high-risk.md':
-        auditBlock({ impl: 'gpt-5.5', rev: 'gpt-5.5' }),
+        auditBlock({ impl: 'gpt-5.6-sol', rev: 'gpt-5.6-sol' }),
     });
     const r = run(cwd);
     assert.equal(r.status, 1, `stdout:\n${r.stdout}`);
     assert.match(r.stdout, /model-independence violation/);
   });
 
-  it('C57-3: an explicit empty high_risk_clickstops array is honored as empty (GPT-5.5 overlap allowed on a would-be-high-risk CS)', () => {
+  it('C57-3: an explicit empty high_risk_clickstops array is honored as empty (GPT-5.6 Sol overlap allowed on a would-be-high-risk CS)', () => {
     const cwd = writeTempRepo('config-empty-high-risk-', {
       'harness.config.json': JSON.stringify({ reviews: { high_risk_clickstops: [] } }),
       // CS03 is high-risk under the default; with [] it must NOT be treated as high-risk.
       'project/clickstops/active/active_cs03_empty-high-risk.md':
-        auditBlock({ impl: 'claude-opus-4.7, gpt-5.5', rev: 'gpt-5.5' }),
+        auditBlock({ impl: 'claude-opus-4.7, gpt-5.6-sol', rev: 'gpt-5.6-sol' }),
     });
     const r = run(cwd);
     assert.equal(r.status, 0, `stdout:\n${r.stdout}`);

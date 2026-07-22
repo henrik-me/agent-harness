@@ -33,7 +33,7 @@ the shape from an existing CS file.
    line endings and no BOM (the text-encoding gate rejects CRLF/BOM).
 3. **Author the plan** from the skeleton below.
 4. **Get an independent plan review.** Dispatch the `## Decisions` +
-   `## Deliverables` to the primary reviewer model (GPT-5.5; see
+   `## Deliverables` to the primary reviewer model (GPT-5.6 Sol; see
    [REVIEWS.md](REVIEWS.md)), which MUST differ from every `Plan author
    model(s)`. Iterate until the verdict is `Go` or `Go-with-amendments`.
 5. **Pin the attestation.** Compute the 12-char hash of the current
@@ -132,7 +132,7 @@ Every CS produces exactly three PRs in sequence:
    passes the workboard-only validation gate.)*
 
 2. **Content PR** — branch `cs<NN>/content`; all implementation work lives
-   here. Standard review loop (GPT-5.5 + user). Squash-merge only.
+   here. Standard review loop (GPT-5.6 Sol + user). Squash-merge only.
 
 3. **Close-out PR** — branch `cs<NN>/close-out`; touches only
    `WORKBOARD.md` (Active Work row removed for this CS), the clickstop
@@ -288,7 +288,7 @@ This gate is **mandatory** before opening the close-out PR and before
 the `active → done` rename. Run it against the merged content HEAD (or the
 content diff), not a half-migrated close-out worktree.
 
-**Reviewer:** GPT-5.5 (rubber-duck). Fallback: Claude Sonnet 4.6, subject
+**Reviewer:** GPT-5.6 Sol (rubber-duck). Fallback: Claude Sonnet 4.6, subject
 to the independence invariant in [REVIEWS.md](REVIEWS.md) (non-high-risk
 only; user waiver always allowed).
 
@@ -348,7 +348,7 @@ above. Per CS35b decisions C35b-1 through C35b-15, every clickstop file in
 `## Plan review` H2 section recording one or more independent plan reviews.
 Done files are exempt — the close-out gate above already covers that surface.
 
-**Reviewer:** GPT-5.5 (rubber-duck). Fallback rules from [REVIEWS.md](REVIEWS.md)
+**Reviewer:** GPT-5.6 Sol (rubber-duck). Fallback rules from [REVIEWS.md](REVIEWS.md)
 apply (independence invariant per C35b-4: reviewer model MUST NOT appear in
 the row's `Plan author model(s)` column or in any earlier row's
 `Plan author model(s)`).
@@ -490,9 +490,9 @@ Content PRs MUST pass four PR-side status checks before merge:
 
 | Check | What it verifies |
 |---|---|
-| `review-log-evidence` | `## Review log` contains at least one real `Go` / `Conditional Go` row by GPT-5.5, or by an approved fallback with `## Model audit` fallback rationale populated; template placeholders fail the gate. |
+| `review-log-evidence` | `## Review log` contains at least one real `Go` / `Conditional Go` row by GPT-5.6 Sol, or by an approved fallback with `## Model audit` fallback rationale populated; template placeholders fail the gate. |
 | `copilot-review-attached` | The configured Copilot PR reviewer (default `copilot-pull-request-reviewer[bot]`) has submitted a review; when missing, the workflow posts `@copilot review` as a best-effort trigger, and comment-permission failures leave the gate failed with an actionable error. |
-| `independence-invariant` | `## Model audit` has populated implementer/reviewer model rows and rejects implementer/reviewer model overlap except the GPT-5.5 allowance for non-HIGH-RISK CSs. |
+| `independence-invariant` | `## Model audit` has populated implementer/reviewer model rows and rejects implementer/reviewer model overlap except the GPT-5.6 Sol allowance for non-HIGH-RISK CSs. |
 | `review-threads-resolved` | Every GitHub review thread on the PR is resolved. |
 
 The `review-gates.yml` workflow runs on every PR except PRs labeled
@@ -805,7 +805,7 @@ agent has a single source of truth.
      doctrine above; the Model audit must record the actual PR author)
    - `Reviewer agent` (the reviewer's identity, e.g. `rubber-duck`)
    - Optional `Fallback rationale` when the reviewer model is an
-     approved fallback (e.g. `sonnet-4.6` because GPT-5.5 was
+     approved fallback (e.g. `sonnet-4.6` because GPT-5.6 Sol was
      unavailable per § 2.2), not for implementer/reviewer overlap
      (overlap is enforced separately by the `independence-invariant`
      gate and is normally merge-blocking).
@@ -901,7 +901,7 @@ Copilot inline findings (typical: doc-only or 1-2 line code cleanups,
 no behaviour change), a full rubber-duck re-review on every new HEAD
 is overkill. The "narrow re-attest" pattern (per LRN-135) is the
 cheap mitigation that keeps A4 (stale-diff currency) green without
-re-paying the full GPT-5.5 round-trip.
+re-paying the full GPT-5.6 Sol round-trip.
 
 **Three preconditions:**
 
@@ -956,7 +956,7 @@ deterministic and read-only.
 |---|---|
 | Orchestrator | Claude Opus 4.8 (fallback Claude Opus 4.7) |
 | Coding, unit-test & implementation sub-tasks (code/docs/config) | Claude Opus 4.8 (fallback Claude Opus 4.7) |
-| Local review (primary) | GPT-5.5 |
+| Local review (primary) | GPT-5.6 Sol |
 | Local review (fallback, non-high-risk) | Claude Sonnet 4.6 (independence invariant — see REVIEWS.md) |
 
 ### Briefing template
@@ -1318,7 +1318,7 @@ explicit deferral note in the CS file.
 
 ### Review fix-round heuristic ([LRN-047](LEARNINGS.md#lrn-047))
 
-When GPT-5.5 review surfaces findings after a dispatch wave:
+When GPT-5.6 Sol review surfaces findings after a dispatch wave:
 
 - **(# findings) × (# affected files) ≤ ~6:** handle inline by the
   orchestrator in the same session.
@@ -2205,7 +2205,7 @@ Adopt a dependency bump with these ordered steps:
    sources the implementer set from the flag and/or the PR body's existing
    `## Model audit` on a non-CS branch (C68-3) — so the evidence is produced by
    `harness review`, not hand-authored.
-5. **Obtain the independent reviews** — a GPT-5.5 rubber-duck `Go` plus a
+5. **Obtain the independent reviews** — a GPT-5.6 Sol rubber-duck `Go` plus a
    Copilot review — then confirm the review-evidence gates
    (`copilot-review-attached`, `independence-invariant`, `review-log-evidence`)
    are green.
@@ -2341,7 +2341,7 @@ All file edits land on the `cs<NN>/content` branch:
    node --test tests/*.test.mjs        # expect: 0 failed
    ```
 
-5. **Local review.** GPT-5.5 rubber-duck mandatory per
+5. **Local review.** GPT-5.6 Sol rubber-duck mandatory per
    [§ Plan-vs-implementation review (close-out gate)](#plan-vs-implementation-review-close-out-gate)
    and `INSTRUCTIONS.md § Every CS` *(if your consumer syncs it)*. Record model + timestamp + verdict in
    the PR body's `## Model audit` + `## Review log` sections.
@@ -2436,7 +2436,7 @@ permitted **only** when **all** of the following hold:
 
 1. The orchestrator is operating solo (no human co-maintainer is available
    to submit an approving review).
-2. The mandatory GPT-5.5 rubber-duck review returned `Go` (or
+2. The mandatory GPT-5.6 Sol rubber-duck review returned `Go` (or
    `Conditional Go` with all conditions met) at the current HEAD, recorded
    verbatim in the PR body's `## Review log`.
 3. The Copilot review is attached at the current HEAD per the A5 ordering

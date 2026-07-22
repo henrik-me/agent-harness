@@ -558,7 +558,7 @@ function checkA3() {
     logError(
       `${prBodyFile}:${reviewerModelLine}: ` +
       `## Model audit "Reviewer model" value is empty. ` +
-      `Fix: set to a single model id from the C35-2 fallback ladder (e.g. gpt-5.5).`
+      `Fix: set to a single model id from the C35-2 fallback ladder (e.g. gpt-5.6-sol).`
     );
     return;
   }

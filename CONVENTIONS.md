@@ -69,7 +69,7 @@
 - PR title follows the same imperative-subject format as commit messages.
 - The PR description includes: **What** changed, **Why** it was needed, **Testing** done,
   and any **Known limitations** or follow-up work.
-- All PRs undergo a GPT-5.5 rubber-duck pre-merge review (or a documented fallback) before
+- All PRs undergo a GPT-5.6 Sol rubber-duck pre-merge review (or a documented fallback) before
   merge — see `REVIEWS.md` for the process. This requirement holds in the private phase
   except via explicit waiver.
 - Keep PRs small and focused. A PR should ideally change one logical area; split large

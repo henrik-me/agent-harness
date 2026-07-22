@@ -42,7 +42,7 @@ describe('CS52 review library helpers', () => {
       '',
       '| Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |',
       '|---|---|---|---|---|---|---|---|',
-      '| R1 | gpt-5.5 | claude-haiku-4.5 | rubber-duck | abcdef123456 | 2026-05-14T00:00:00Z | Go | ok |',
+      '| R1 | gpt-5.6-sol | claude-haiku-4.5 | rubber-duck | abcdef123456 | 2026-05-14T00:00:00Z | Go | ok |',
       '',
       '| Task | State | Owner | Notes |',
       '|---|---|---|---|',
@@ -64,7 +64,7 @@ describe('CS52 review library helpers', () => {
         reviewerModel: 'sonnet-4.6',
         implementerModels: new Set(['Claude Sonnet 4.6']),
         csId: 'CS52',
-        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.5', high_risk_clickstops: [] },
+        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.6-sol', high_risk_clickstops: [] },
       }),
       (err) => err instanceof ReviewError && err.kind === 'policy' && /Independence guard refused/.test(err.message),
     );
@@ -74,7 +74,7 @@ describe('CS52 review library helpers', () => {
         reviewerModel: 'sonnet-4.6',
         implementerModels: new Set(['claude-opus-4.7']),
         csId: 'CS03',
-        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.5', high_risk_clickstops: ['CS03'] },
+        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.6-sol', high_risk_clickstops: ['CS03'] },
       }),
       (err) => err instanceof ReviewError && err.kind === 'policy' && /HIGH-RISK CS03/.test(err.message),
     );
@@ -93,7 +93,7 @@ describe('CS52 review library helpers', () => {
       round: 'R1',
       analyzedHead: HEAD,
       actor: 'yoga-ah',
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       verdict: 'Go',
     });
     assert.equal(r1.added, true);
@@ -103,7 +103,7 @@ describe('CS52 review library helpers', () => {
       round: 'R1',
       analyzedHead: HEAD,
       actor: 'yoga-ah',
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       verdict: 'Go',
     });
     assert.equal(r1Again.added, false);
@@ -112,7 +112,7 @@ describe('CS52 review library helpers', () => {
     const r2 = appendReviewLogRow(r1.body, {
       analyzedHead: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       actor: 'yoga-ah',
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       verdict: 'Needs-Fix',
     });
     assert.equal(r2.round, 'R2');

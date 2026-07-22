@@ -44,9 +44,9 @@ function run(script, args) {
 
 function body({
   reviewVerdict = 'Go',
-  reviewModel = 'gpt-5.5',
+  reviewModel = 'gpt-5.6-sol',
   implementers = 'claude-opus-4.7',
-  reviewer = 'gpt-5.5',
+  reviewer = 'gpt-5.6-sol',
   fallback = null,
   copilotLogin = 'copilot-pull-request-reviewer[bot]',
   copilotState = 'COMMENTED',
@@ -97,7 +97,7 @@ describe('CS51 review gate scripts', () => {
     }
   });
 
-  it('review-log-evidence passes a real GPT-5.5 Go row and fails placeholders/missing passing rows', () => {
+  it('review-log-evidence passes a real GPT-5.6 Sol Go row and fails placeholders/missing passing rows', () => {
     const pass = writeBody('review-log-pass.md', body({ reviewVerdict: 'Conditional Go' }));
     const ok = run(SCRIPTS.reviewLog, ['--pr-body', pass]);
     assert.equal(ok.status, 0, ok.stdout + ok.stderr);
@@ -109,7 +109,7 @@ describe('CS51 review gate scripts', () => {
   });
 
   it('review-log-evidence accepts fallback reviewer only with fallback rationale', () => {
-    const pass = writeBody('fallback-pass.md', body({ reviewModel: 'claude-sonnet-4.6', reviewer: 'claude-sonnet-4.6', fallback: 'GPT-5.5 unavailable after two attempts.' }));
+    const pass = writeBody('fallback-pass.md', body({ reviewModel: 'claude-sonnet-4.6', reviewer: 'claude-sonnet-4.6', fallback: 'GPT-5.6 Sol unavailable after two attempts.' }));
     assert.equal(run(SCRIPTS.reviewLog, ['--pr-body', pass]).status, 0);
 
     const fail = writeBody('fallback-fail.md', body({ reviewModel: 'claude-sonnet-4.6', reviewer: 'claude-sonnet-4.6' }));
@@ -146,7 +146,7 @@ describe('CS51 review gate scripts', () => {
     assert.match(r2.stdout, /non-bare reviewer model/i);
 
     // Sanity: a bare reviewer model still passes when the rest of the body is well-formed.
-    const bareOk = writeBody('bare-ok.md', body({ reviewModel: 'gpt-5.5' }));
+    const bareOk = writeBody('bare-ok.md', body({ reviewModel: 'gpt-5.6-sol' }));
     assert.equal(run(SCRIPTS.reviewLog, ['--pr-body', bareOk]).status, 0);
 
     // Additional decoration shape: explicit "(reviewer)" annotation — must also fail with decoration message.
@@ -204,8 +204,8 @@ describe('CS51 review gate scripts', () => {
     assert.match(bad.stdout, /no acceptable review/i);
   });
 
-  it('independence-invariant allows GPT-5.5 overlap for normal CSs but rejects non-GPT overlap and high-risk GPT overlap', () => {
-    const gptOverlap = writeBody('independence-gpt-overlap.md', body({ implementers: 'gpt-5.5, claude-opus-4.7', reviewer: 'gpt-5.5' }));
+  it('independence-invariant allows GPT-5.6 Sol overlap for normal CSs but rejects non-GPT overlap and high-risk GPT overlap', () => {
+    const gptOverlap = writeBody('independence-gpt-overlap.md', body({ implementers: 'gpt-5.6-sol, claude-opus-4.7', reviewer: 'gpt-5.6-sol' }));
     assert.equal(run(SCRIPTS.independence, ['--pr-body', gptOverlap]).status, 0);
 
     const nonGpt = writeBody('independence-non-gpt.md', body({ implementers: 'claude-sonnet-4.6', reviewer: 'claude-sonnet-4.6', reviewModel: 'claude-sonnet-4.6', fallback: 'Fallback attempted.' }));
@@ -213,7 +213,7 @@ describe('CS51 review gate scripts', () => {
     assert.equal(bad.status, 1, bad.stdout + bad.stderr);
     assert.match(bad.stdout, /independence invariant violation/i);
 
-    const highRisk = writeBody('independence-high-risk.md', body({ implementers: 'gpt-5.5', reviewer: 'gpt-5.5' }));
+    const highRisk = writeBody('independence-high-risk.md', body({ implementers: 'gpt-5.6-sol', reviewer: 'gpt-5.6-sol' }));
     const highRiskBad = run(SCRIPTS.independence, ['--pr-body', highRisk, '--cs-id', 'CS03']);
     assert.equal(highRiskBad.status, 1, highRiskBad.stdout + highRiskBad.stderr);
     assert.match(highRiskBad.stdout, /high-risk CS03/i);

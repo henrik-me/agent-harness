@@ -60,7 +60,7 @@ function deriveFilledBody(template) {
   let body = template.replace(/^<!--[\s\S]*?-->\s*/, '');
   body = body
     .replace(/\| Implementer models \| _\([^)]*\)_ \|/, '| Implementer models | claude-opus-4.8 |')
-    .replace(/\| Reviewer model \| _\([^)]*\)_ \|/, '| Reviewer model | gpt-5.5 |')
+    .replace(/\| Reviewer model \| _\([^)]*\)_ \|/, '| Reviewer model | gpt-5.6-sol |')
     .replace(/\| Implementer agent \| _\([^)]*\)_ \|/, '| Implementer agent | yoga-ah-c2 |')
     .replace(/\| Reviewer agent \| _\([^)]*\)_ \|/, '| Reviewer agent | copilot |')
     .replace(/\| Notes \| _\([^)]*\)_ \|/, '| Notes | strict-schema fixture |');
@@ -69,7 +69,7 @@ function deriveFilledBody(template) {
   // timestamp-placeholder text.
   body = body.replace(
     /^\|[^\n]*_\(40-char SHA\)_[^\n]*\|$/m,
-    `| 2026-06-06T00:00:00Z | ${FIXTURE_HEAD} | yoga-ah-c2 | gpt-5.5 | Go | https://github.com/henrik-me/agent-harness/pull/1 |`
+    `| 2026-06-06T00:00:00Z | ${FIXTURE_HEAD} | yoga-ah-c2 | gpt-5.6-sol | Go | https://github.com/henrik-me/agent-harness/pull/1 |`
   );
   // Blank every remaining prose placeholder (Summary/Changes/Testing/Notes).
   body = body.replace(/_\([\s\S]*?\)_/g, 'Filled for the CS54b strict-schema fixture test.');

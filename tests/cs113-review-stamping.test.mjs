@@ -181,7 +181,7 @@ describe('CS113 — --copilot-only preserves rubber-duck evidence + appends no l
 
     // Pre-existing REAL rubber-duck evidence from a prior single-call run. The
     // Reviewer model (gpt-5.4) deliberately differs from this run's default
-    // (gpt-5.5) so preservation is observable, and the earlier Go row's
+    // (gpt-5.6-sol) so preservation is observable, and the earlier Go row's
     // timestamp (11:00:00Z) is well before Copilot.
     const incomingBody = [
       '## Summary', '', 'x', '',
@@ -222,7 +222,7 @@ describe('CS113 — --copilot-only preserves rubber-duck evidence + appends no l
     assert.ok(capturedBody, 'PR body must be written');
 
     // C113-2 preservation: pre-existing rubber-duck Reviewer model/agent survive
-    // (NOT clobbered by this run's gpt-5.5 default nor the orchestrator id).
+    // (NOT clobbered by this run's gpt-5.6-sol default nor the orchestrator id).
     assert.equal(modelAuditValue(capturedBody, 'Reviewer model'), 'gpt-5.4');
     assert.equal(modelAuditValue(capturedBody, 'Reviewer agent'), 'rubber-duck');
 

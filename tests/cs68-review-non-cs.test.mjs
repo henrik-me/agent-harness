@@ -39,7 +39,7 @@ const AUDIT_BODY = (models) => [
   '| Field | Value |',
   '|---|---|',
   `| Implementer models | ${models} |`,
-  '| Reviewer model | gpt-5.5 |',
+  '| Reviewer model | gpt-5.6-sol |',
   '',
 ].join('\n');
 
@@ -64,7 +64,7 @@ describe('CS68 resolveNonCsImplementerModels — flag/PR-body source with supers
     const models = resolveNonCsImplementerModels({ prBody: AUDIT_BODY('claude-opus-4.8') });
     assert.deepEqual([...models], ['claude-opus-4.8']);
     // The audit's reviewer-model row must NOT be treated as an implementer.
-    assert.equal(models.has('gpt-5.5'), false);
+    assert.equal(models.has('gpt-5.6-sol'), false);
   });
 
   it('both present, flag is a proper superset of the body audit: returns the union (== flag), no throw', () => {
@@ -127,7 +127,7 @@ describe('CS68 independence guard is preserved on the non-CS path (R4)', () => {
         reviewerModel: 'sonnet-4.6',
         implementerModels,
         csId: null,
-        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.5', high_risk_clickstops: [] },
+        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.6-sol', high_risk_clickstops: [] },
       }),
       (err) => err instanceof ReviewError && err.kind === 'policy' && /Independence guard refused/.test(err.message),
     );
@@ -145,7 +145,7 @@ describe('CS68 independence guard is preserved on the non-CS path (R4)', () => {
         reviewerModel: 'claude-opus-4.8',
         implementerModels,
         csId: null,
-        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.5', high_risk_clickstops: [] },
+        config: { fallback_model: 'sonnet-4.6', rubber_duck_model: 'gpt-5.6-sol', high_risk_clickstops: [] },
       }),
       (err) => err instanceof ReviewError && err.kind === 'policy' && /Independence guard refused/.test(err.message),
     );
@@ -181,7 +181,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
       cwd: process.cwd(),
       repo: 'o/r',
       prNumber: 262,
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       rubberDuckOnly: true,
       noPoll: true,
       actor: 'yoga-ah',
@@ -204,7 +204,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
       cwd: process.cwd(),
       repo: 'o/r',
       prNumber: 262,
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       rubberDuckOnly: true,
       noPoll: true,
       actor: 'yoga-ah',
@@ -220,7 +220,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
       cwd: process.cwd(),
       repo: 'o/r',
       prNumber: 262,
-      reviewerModel: 'gpt-5.5',
+      reviewerModel: 'gpt-5.6-sol',
       rubberDuckOnly: true,
       noPoll: true,
       actor: 'yoga-ah',
@@ -237,7 +237,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
         cwd: process.cwd(),
         repo: 'o/r',
         prNumber: 262,
-        reviewerModel: 'gpt-5.5',
+        reviewerModel: 'gpt-5.6-sol',
         rubberDuckOnly: true,
         noPoll: true,
         actor: 'yoga-ah',
@@ -272,7 +272,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
         cwd: process.cwd(),
         repo: 'o/r',
         prNumber: 262,
-        reviewerModel: 'gpt-5.5',
+        reviewerModel: 'gpt-5.6-sol',
         rubberDuckOnly: true,
         noPoll: true,
         actor: 'yoga-ah',
@@ -301,7 +301,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
       return { status: 1, stdout: '', stderr: `unexpected ${cmd}` };
     };
     await runReview({
-      cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.5',
+      cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.6-sol',
       rubberDuckOnly: true, noPoll: true, actor: 'yoga-ah', implementerModelsFlag: 'claude-opus-4.8',
     });
     assert.ok(
@@ -327,7 +327,7 @@ describe('CS68 runReview end-to-end on a non-CS branch', () => {
     };
     await assert.rejects(
       () => runReview({
-        cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.5',
+        cwd: process.cwd(), repo: 'o/r', prNumber: 262, reviewerModel: 'gpt-5.6-sol',
         rubberDuckOnly: true, noPoll: true, actor: 'yoga-ah', implementerModelsFlag: 'claude-opus-4.8',
       }),
       (err) => err instanceof ReviewError && err.kind === 'bad-input' && /from a fork/.test(err.message),

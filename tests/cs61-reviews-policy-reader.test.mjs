@@ -89,11 +89,11 @@ test('applies defaults for absent fields and keeps present valid values', async 
   const cwd = await makeTmpDir('cs61-reader-partial-');
   t.after(() => rm(cwd, { recursive: true, force: true }));
 
-  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.5-custom', enforce_gates: false } });
+  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.6-sol-custom', enforce_gates: false } });
   const policy = loadReviewsPolicy({ cwd });
   const defaults = schemaReviewsDefaults();
 
-  assert.equal(policy.rubber_duck_model, 'gpt-5.5-custom');
+  assert.equal(policy.rubber_duck_model, 'gpt-5.6-sol-custom');
   assert.equal(policy.enforce_gates, false);
   // Absent fields fall back to schema defaults.
   assert.equal(policy.fallback_model, defaults.fallback_model);
@@ -105,9 +105,9 @@ test('trims whitespace on present string fields', async (t) => {
   const cwd = await makeTmpDir('cs61-reader-trim-');
   t.after(() => rm(cwd, { recursive: true, force: true }));
 
-  await writeConfigFile(cwd, { reviews: { rubber_duck_model: '  gpt-5.5  ' } });
+  await writeConfigFile(cwd, { reviews: { rubber_duck_model: '  gpt-5.6-sol  ' } });
   const policy = loadReviewsPolicy({ cwd });
-  assert.equal(policy.rubber_duck_model, 'gpt-5.5');
+  assert.equal(policy.rubber_duck_model, 'gpt-5.6-sol');
 });
 
 test('accepts a fully-specified reviews block', async (t) => {
@@ -115,7 +115,7 @@ test('accepts a fully-specified reviews block', async (t) => {
   t.after(() => rm(cwd, { recursive: true, force: true }));
 
   const reviews = {
-    rubber_duck_model: 'gpt-5.5',
+    rubber_duck_model: 'gpt-5.6-sol',
     fallback_model: 'sonnet-4.6',
     enforce_gates: true,
     require_copilot_review: false,
@@ -257,9 +257,9 @@ test('subtree-only: a config that omits unrelated required top-level keys still 
 
   // No version/project/managed/... — these are required by the full schema,
   // but the reviews-policy reader must not run full-config validation.
-  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.5' } });
+  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.6-sol' } });
   const policy = loadReviewsPolicy({ cwd });
-  assert.equal(policy.rubber_duck_model, 'gpt-5.5');
+  assert.equal(policy.rubber_duck_model, 'gpt-5.6-sol');
 });
 
 test('subtree-only: unknown reviews keys fail closed (schema additionalProperties:false)', async (t) => {
@@ -268,7 +268,7 @@ test('subtree-only: unknown reviews keys fail closed (schema additionalPropertie
 
   // The schema sets reviews.additionalProperties:false, so a typo'd/unknown
   // reviews.* key the full schema would reject must also fail closed here.
-  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.5', made_up_key: true } });
+  await writeConfigFile(cwd, { reviews: { rubber_duck_model: 'gpt-5.6-sol', made_up_key: true } });
   assert.throws(
     () => loadReviewsPolicy({ cwd }),
     (err) => {

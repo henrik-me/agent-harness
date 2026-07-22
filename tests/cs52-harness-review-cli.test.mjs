@@ -65,7 +65,7 @@ describe('harness review CLI', () => {
       'henrik-me/agent-harness',
       '--dry-run',
       '--model',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       '--round',
       'R2',
       '--rubber-duck-only',
@@ -73,7 +73,7 @@ describe('harness review CLI', () => {
     ]);
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /review: dry-run/);
-    assert.match(result.stdout, /reviewer model: gpt-5\.5/);
+    assert.match(result.stdout, /reviewer model: gpt-5\.6-sol/);
     assert.match(result.stdout, /round: R2/);
     assert.match(result.stdout, /would compose manual rubber-duck prompt/);
     assert.match(result.stdout, /would skip polling and PR-body update/);
