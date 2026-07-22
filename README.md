@@ -92,13 +92,13 @@ Per-path purpose:
 | `WORKBOARD.md` | Live coordination only — Orchestrators table + Active Work table. Nothing else. The queue lives in `project/clickstops/planned/` and history in `project/clickstops/done/`; WORKBOARD never duplicates either. |
 | `LEARNINGS.md` | Process learnings (LRN-001..N), schema-validated, sectioned by status |
 | `ARCHITECTURE.md` | Architecture overview — Components, Data model, Decision log |
-| `REVIEWS.md` | Independent-reviewer model, taxonomy, HIGH-RISK CS list, GPT-5.5 fallback rules |
+| `REVIEWS.md` | Independent-reviewer model, taxonomy, HIGH-RISK CS list, GPT-5.6 Sol fallback rules |
 | `template/managed/` | Process truth — files synced verbatim into consumer repos; overwrite-on-sync |
 | `template/composed/` | Managed-core docs that consumers can extend via local blocks; recomposed on sync |
 | `template/seeded/` | Create-if-missing skeletons; seeded once into consumers and never overwritten |
 | `project/clickstops/active/` | Currently in-flight CS spec (one file when active, empty when stable) |
 | `project/clickstops/planned/` | Queued CSs in priority order (`planned_cs<NN>_<short-name>.md`) |
-| `project/clickstops/done/` | Completed CS files with full actuals (sub-agent ledger, GPT-5.5 review log, learnings filed, follow-up planned CSs) |
+| `project/clickstops/done/` | Completed CS files with full actuals (sub-agent ledger, review log, learnings filed, follow-up planned CSs) |
 
 ## Starting an agent session
 

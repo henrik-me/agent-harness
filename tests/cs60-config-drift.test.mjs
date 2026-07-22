@@ -82,12 +82,12 @@ describe('CS60 config drift guard for independence invariant', () => {
     // Schema marks neither field required and supplies defaults, so a config
     // that omits them must inherit the defaults rather than be rejected.
     const overlapBody = writeBody('body.md', {
-      implementers: 'gpt-5.5',
-      reviewer: 'gpt-5.5',
+      implementers: 'gpt-5.6-sol',
+      reviewer: 'gpt-5.6-sol',
     });
 
     const onlyModel = writeJson('only-model.json', {
-      reviews: { rubber_duck_model: 'gpt-5.5' },
+      reviews: { rubber_duck_model: 'gpt-5.6-sol' },
     });
     // CS60 is not in the default high-risk list, so overlap is tolerated.
     const tolerated = run(['--pr-body', overlapBody, '--config', onlyModel, '--cs-id', 'CS60']);

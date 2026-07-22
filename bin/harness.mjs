@@ -505,7 +505,7 @@ Exit codes:
 Usage: harness review <pr> [options]
 
 Orchestrate a content-PR review round: sanity-check the PR, compose the
-manual MVP rubber-duck prompt (GPT-5.5 by default, Sonnet 4.6 fallback only
+manual MVP rubber-duck prompt (GPT-5.6 Sol by default, Sonnet 4.6 fallback only
 when permitted), trigger Copilot, wait for completed review evidence, update
 ## Review log + ## Model audit in the PR body, and print a verdict.
 
@@ -516,7 +516,7 @@ Options:
   --repo <owner/repo>      GitHub repo (default: auto-detect from git remote)
   --rubber-duck-only      Skip Copilot trigger/poll; only run the rubber-duck leg
   --copilot-only          Skip rubber-duck prompt/output; only trigger/poll Copilot
-  --model <id>            Reviewer model override: gpt-5.5 | sonnet-4.6
+  --model <id>            Reviewer model override: gpt-5.6-sol | sonnet-4.6
   --round R<n>            Explicit review round (default: next available)
   --dry-run               Print planned actions without dispatching/commenting
   --no-poll               Dispatch only (print prompt / trigger Copilot), then exit
@@ -4269,8 +4269,8 @@ function parseReviewArgs(args, cwd) {
   if (rubberDuckOnly && copilotOnly) {
     throw new ReviewError('--rubber-duck-only and --copilot-only cannot be combined', 'bad-input');
   }
-  if (model !== null && !['gpt-5.5', 'sonnet-4.6'].includes(model)) {
-    throw new ReviewError(`--model must be one of: gpt-5.5, sonnet-4.6; got '${model}'`, 'bad-input');
+  if (model !== null && !['gpt-5.6-sol', 'sonnet-4.6'].includes(model)) {
+    throw new ReviewError(`--model must be one of: gpt-5.6-sol, sonnet-4.6; got '${model}'`, 'bad-input');
   }
   if (round !== null && !/^R\d+$/.test(round)) {
     throw new ReviewError(`--round must match R<n> (for example R1); got '${round}'`, 'bad-input');

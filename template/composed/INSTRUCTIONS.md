@@ -117,7 +117,7 @@ Re-read this section after every `git pull`, even if INSTRUCTIONS.md did not cha
 - A CS must exist as a `planned` plan before it can be claimed. To create one,
   follow [OPERATIONS.md § Filing a clickstop](OPERATIONS.md#filing-a-clickstop):
   pick a collision-free `CS<NN>`, author the plan from the canonical skeleton,
-  get an independent GPT-5.5 plan review, pin the `## Plan review` attestation
+  get an independent GPT-5.6 Sol plan review, pin the `## Plan review` attestation
   hash, then run `harness lint`. The procedure and skeleton live there — don't
   reverse-engineer the shape from an existing CS file.
 
@@ -186,7 +186,7 @@ record.
 
 ### Closing a CS
 
-- **Run the plan-vs-implementation review gate (GPT-5.5)** — see
+- **Run the plan-vs-implementation review gate (GPT-5.6 Sol)** — see
   [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
   Capture the review in the active CS file's `## Plan-vs-implementation review`
   section before the `active → done` rename. NEEDS-FIX outcome blocks close-out.
@@ -221,11 +221,11 @@ record.
   |---|---|
   | Orchestrator | Claude Opus 4.8 (fallback Claude Opus 4.7) |
   | Coding, unit-test & implementation sub-tasks (code/docs/config) | Claude Opus 4.8 (fallback Claude Opus 4.7) |
-  | Local review (primary) | GPT-5.5 |
+  | Local review (primary) | GPT-5.6 Sol |
   | Local review (fallback, non-high-risk) | Claude Sonnet 4.6 (independence invariant) |
 
 - **Local review is mandatory** before opening any PR and before committing any
-  template change. Use GPT-5.5 rubber-duck. Record the model used and timestamp in
+  template change. Use GPT-5.6 Sol rubber-duck. Record the model used and timestamp in
   the PR body. Fallback rules and independence invariant are in
   [REVIEWS.md](REVIEWS.md).
   - **Rubber-duck scope — fact-claim verification (REVIEWS.md § 2.6a).** A "Go"
@@ -326,7 +326,7 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
    lost-work briefing. Do not declare a parallel wave complete until the disk state
    matches every sub-agent's reported deliverables.
 
-6. **Local review.** GPT-5.5 rubber-duck mandatory. Record model + timestamp + fallback
+6. **Local review.** GPT-5.6 Sol rubber-duck mandatory. Record model + timestamp + fallback
    reason (if any) and the list of CS implementers in the PR body.
 
 7. **Open PR** using the pull request template. Ensure the title is `<type>(scope): ...`
@@ -342,7 +342,7 @@ Complete these steps in order for every clickstop. Do not skip or reorder.
 10. **Resolve all threads**, then **squash-merge**. Never merge with unresolved
     suggestions or blocking review threads.
 
-11. **Plan-vs-implementation review gate (GPT-5.5).** Run before the close-out PR.
+11. **Plan-vs-implementation review gate (GPT-5.6 Sol).** Run before the close-out PR.
     See [OPERATIONS.md § Plan-vs-implementation review (close-out gate)](OPERATIONS.md#plan-vs-implementation-review-close-out-gate).
     Record the review in the active CS file's `## Plan-vs-implementation review`
     section. NEEDS-FIX outcome blocks close-out.

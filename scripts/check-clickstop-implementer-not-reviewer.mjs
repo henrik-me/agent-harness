@@ -9,7 +9,7 @@
  * family+version form (so `"Claude Sonnet 4.6"` and `claude-sonnet-4-6` compare
  * equal); a reviewer/implementer overlap is an ERROR unless the reviewer model
  * is the configured primary reviewer (`reviews.rubber_duck_model`, schema
- * default `gpt-5.5`) AND the clickstop is NOT high-risk. Both the primary
+ * default `gpt-5.6-sol`) AND the clickstop is NOT high-risk. Both the primary
  * reviewer model and the high-risk set are read from `harness.config.json` →
  * `reviews.*` via the shared `loadReviewsPolicy` reader (CS61, applying
  * LRN-145; CS57 C57-3); a malformed config fails closed (CS57 C57-6).

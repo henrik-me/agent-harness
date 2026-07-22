@@ -168,9 +168,9 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Primary rubber-duck reviewer model used by `harness review` when --model is omitted. Defaults to GPT-5.5 per REVIEWS.md §2.1.",
-          "default": "gpt-5.5",
-          "examples": ["gpt-5.5"]
+          "description": "Primary rubber-duck reviewer model used by `harness review` when --model is omitted. Defaults to GPT-5.6 Sol per REVIEWS.md §2.1.",
+          "default": "gpt-5.6-sol",
+          "examples": ["gpt-5.6-sol"]
         },
         "fallback_model": {
           "type": "string",

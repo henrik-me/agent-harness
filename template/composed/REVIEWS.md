@@ -14,7 +14,7 @@ Every clickstop (CS) passes through a three-phase review lifecycle:
 
 1. **Claim PR review** — a brief local review performed before opening the
    content PR, confirming the work is coherent enough to share.
-2. **Content PR review** — iterative GPT-5.5 (or approved fallback) review
+2. **Content PR review** — iterative GPT-5.6 Sol (or approved fallback) review
    rounds on the open PR until all blocking findings are resolved.
 3. **Close-out PR review** — a final pass confirming that non-blocking
    findings have been tracked or addressed and that the retrospective entry is
@@ -45,10 +45,10 @@ before the PR is raised.
 
 ### 2.1 Review model
 
-**Primary reviewer: GPT-5.5.**
+**Primary reviewer: GPT-5.6 Sol.**
 
-GPT-5.5 is the sole approved primary reviewer for all content PRs. Every CS
-implementation must receive at least one GPT-5.5 review before the PR is
+GPT-5.6 Sol is the sole approved primary reviewer for all content PRs. Every CS
+implementation must receive at least one GPT-5.6 Sol review before the PR is
 considered merge-ready.
 
 **Fallback: Claude Sonnet 4.6** — subject to the independence invariant and
@@ -56,7 +56,7 @@ risk-class restrictions below.
 
 ### 2.2 Fallback policy (Decision #22)
 
-If GPT-5.5 is unavailable for more than 30 minutes, or after two failed
+If GPT-5.6 Sol is unavailable for more than 30 minutes, or after two failed
 attempts, the orchestrator may fall back to a Claude Sonnet 4.6 rubber-duck
 review. The following conditions must all hold before the fallback is allowed:
 
@@ -67,22 +67,22 @@ review. The following conditions must all hold before the fallback is allowed:
 | Documentation | The PR body must record: model used, timestamp, fallback reason, and the implementer-model-list for the CS. |
 
 If Sonnet 4.6 cannot be used (independence violation or HIGH-RISK CS), the
-only permitted options are: retry GPT-5.5, or obtain an explicit user waiver.
+only permitted options are: retry GPT-5.6 Sol, or obtain an explicit user waiver.
 A user waiver must be recorded in the PR body with the waiver rationale.
 
 ### 2.2.1 Reviewer model fallback ladder (CS35 C35-2)
 
 The fallback ladder governs which model to use when the primary reviewer
-(GPT-5.5) is unavailable:
+(GPT-5.6 Sol) is unavailable:
 
-> GPT-highest-available (5.5 → 5.4 → ...) → Claude Sonnet-highest (4.7 → 4.6 → ...) → orchestrator's own model (last resort with explicit user waiver). The independence invariant (no implementer/reviewer model overlap) applies at every step of the ladder.
+> GPT-5.6 Sol → next-highest-available GPT (aspirational) → Claude Sonnet-highest (4.7 → 4.6 → ...) → orchestrator's own model (last resort with explicit user waiver). The independence invariant (no implementer/reviewer model overlap) applies at every step of the ladder.
 
 See §2.3 for risk-class restrictions: HIGH-RISK CSs forbid the
 orchestrator-own-model rung absent an explicit user waiver.
 
 ### 2.3 Risk-class restrictions
 
-HIGH-RISK CSs require GPT-5.5 **or explicit user waiver only** — no Sonnet
+HIGH-RISK CSs require GPT-5.6 Sol **or explicit user waiver only** — no Sonnet
 fallback regardless of independence:
 
 - CS03 (sync engine)
@@ -106,7 +106,7 @@ regardless of round count.
 | HIGH-RISK (sync engine, schema authoring, public-flip, migration) | 5–8 | [LRN-024](LEARNINGS.md#lrn-024) |
 | Thin plumbing / tooling | ~2 | heuristic |
 
-**Do not close the content PR until GPT-5.5 (or approved fallback) issues an
+**Do not close the content PR until GPT-5.6 Sol (or approved fallback) issues an
 explicit GO verdict.**
 
 Key observations from [LRN-024](LEARNINGS.md#lrn-024) and
@@ -128,7 +128,7 @@ Key observations from [LRN-024](LEARNINGS.md#lrn-024) and
 For content PR review rounds, the canonical orchestrator entry point is:
 
 ```
-harness review <pr> [--repo owner/name] [--model gpt-5.5|sonnet-4.6] [--round R<n>] [--no-poll|--dry-run]
+harness review <pr> [--repo owner/name] [--model gpt-5.6-sol|sonnet-4.6] [--round R<n>] [--no-poll|--dry-run]
 ```
 
 `harness.config.json` → `reviews.require_copilot_review` defaults to `true`;
@@ -174,7 +174,7 @@ Content-PR review churn is minimised by sequencing the rubber-duck and Copilot
 legs deliberately, rather than interleaving them:
 
 1. **Rubber-duck to Go before the first Copilot engage.** Drive the local
-   GPT-5.5 (or approved-fallback) review to an explicit `Go` at the current
+   GPT-5.6 Sol (or approved-fallback) review to an explicit `Go` at the current
    HEAD *before* requesting the Copilot reviewer. Engaging Copilot on a diff the
    rubber-duck has not yet cleared produces two independent streams of findings
    on the same unsettled code.
@@ -459,7 +459,7 @@ Every content PR body must record the following fields before merge:
 
 | timestamp | analyzed_head | actor | model | verdict | evidence_link |
 |---|---|---|---|---|---|
-| 2026-05-14T10:32:00Z | a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 | yoga-ah | gpt-5.5 | Go | https://github.com/henrik-me/agent-harness/pull/150#issuecomment-123456 |
+| 2026-05-14T10:32:00Z | a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 | yoga-ah | gpt-5.6-sol | Go | https://github.com/henrik-me/agent-harness/pull/150#issuecomment-123456 |
 ```
 
 **Review log column rules:**
@@ -557,7 +557,7 @@ plan-vs-implementation reviews, also conform to OPERATIONS.md
 
 **required-output-fields:** Every plan-vs-implementation review row you (or the orchestrator on your behalf) record in the active CS file's `## Plan-vs-implementation review` table MUST contain these five fields, in this order:
 
-- `model:` the reviewer model identifier (e.g., `gpt-5.5`) — drawn from the C35-2 fallback ladder above; must satisfy the independence invariant against `Implementer models`.
+- `model:` the reviewer model identifier (e.g., `gpt-5.6-sol`) — drawn from the C35-2 fallback ladder above; must satisfy the independence invariant against `Implementer models`.
 - `branch HEAD SHA:` the full 40-char SHA you reviewed against. Per CS35 C35-3 stale-diff doctrine, a verdict row whose SHA ≠ current HEAD at merge time is INVALID and forces a re-review (A4 enforces this mechanically in CS36).
 - `R-round:` `R1` / `R2` / `R3`. Capped at 3 rounds per C35-2; if R3 returns Needs-Fix, the orchestrator MUST escalate to the user rather than open R4.
 - `verdict:` exactly one of `Go` / `Needs-Fix` / `Block` (matches `output-schema-link` above and the A3/A4 PR-evidence parsers in CS36).
@@ -588,7 +588,7 @@ Example block (paste into the active CS file):
 | Field | Value |
 |---|---|
 | Implementer models | claude-opus-4.8, claude-opus-4.7 |
-| Reviewer model | gpt-5.5 |
+| Reviewer model | gpt-5.6-sol |
 | Implementer agent | yoga-ah |
 | Reviewer agent | copilot |
 ```
@@ -621,7 +621,7 @@ aggregator as gate A6 (C35b-9). Doctrine + procedure: see
 | Column | Description |
 |---|---|
 | Round | `R1`, `R2`, ... — first review then one row per amendment round |
-| Reviewer model | The model ID that performed the review (e.g. `gpt-5.5`) |
+| Reviewer model | The model ID that performed the review (e.g. `gpt-5.6-sol`) |
 | Plan author model(s) | Comma-separated model IDs the orchestrator used to author / amend |
 | Reviewer agent | Agent identity that ran the review (e.g. `rubber-duck dispatched (orchestrator: yoga-ah)`) |
 | Reviewed sections hash | 12-char SHA-256 prefix of trimmed Decisions + Deliverables bodies (`harness plan-review-hash <file>`) |
@@ -663,7 +663,7 @@ Example block (paste into the plan file after `## Decisions`, before
 
 | Round | Reviewer model | Plan author model(s) | Reviewer agent | Reviewed sections hash | Timestamp (UTC) | Verdict | Findings recap (≤200 chars) |
 |---|---|---|---|---|---|---|---|
-| R1 | gpt-5.5 | claude-opus-4.7 | rubber-duck dispatched (orchestrator: yoga-ah) | abcd1234ef56 | 2026-05-13T12:34:56Z | Go | Plan accepted on first round; no amendments. |
+| R1 | gpt-5.6-sol | claude-opus-4.7 | rubber-duck dispatched (orchestrator: yoga-ah) | abcd1234ef56 | 2026-05-13T12:34:56Z | Go | Plan accepted on first round; no amendments. |
 ```
 
 ## PR-evidence gates (B1, A2–A6, A16 reference)
@@ -700,9 +700,9 @@ content.
 
 | Status check | How to satisfy it |
 |---|---|
-| `review-log-evidence` | Fill `## Review log` with at least one non-placeholder row whose verdict is `Go` or `Conditional Go` (the historical `Go-with-amendments` spelling is accepted) and whose reviewer model is GPT-5.5, or an approved fallback with `## Model audit` `Fallback rationale` populated. |
+| `review-log-evidence` | Fill `## Review log` with at least one non-placeholder row whose verdict is `Go` or `Conditional Go` (the historical `Go-with-amendments` spelling is accepted) and whose reviewer model is GPT-5.6 Sol, or an approved fallback with `## Model audit` `Fallback rationale` populated. |
 | `copilot-review-attached` | Ensure the configured Copilot PR reviewer has submitted a review. If the gate fails because no review exists yet, it posts `@copilot review`; wait for Copilot to submit and rerun the check. If token permissions prevent the comment, the check remains failed and reports the posting error. Repos without Copilot reviews may set `reviews.require_copilot_review=false`. |
-| `independence-invariant` | Fill `## Model audit` with `Implementer models` and `Reviewer model`. The reviewer model must not appear in the implementer list unless the reviewer is GPT-5.5 on a non-HIGH-RISK CS; HIGH-RISK CSs forbid overlap regardless. |
+| `independence-invariant` | Fill `## Model audit` with `Implementer models` and `Reviewer model`. The reviewer model must not appear in the implementer list unless the reviewer is GPT-5.6 Sol on a non-HIGH-RISK CS; HIGH-RISK CSs forbid overlap regardless. |
 | `review-threads-resolved` | Resolve every GitHub PR review thread before merge. |
 
 `harness init --enable-review-gates` and `harness sync --mode=apply` install the
@@ -761,9 +761,9 @@ Fields (descriptions adapted from `schemas/harness.config.schema.json`; schema r
 
 Fields (descriptions adapted from `schemas/harness.config.schema.json`; schema remains source-of-truth):
 
-- `rubber_duck_model` (string, default `gpt-5.5`): Primary rubber-duck
+- `rubber_duck_model` (string, default `gpt-5.6-sol`): Primary rubber-duck
   reviewer model used by `harness review` when `--model` is omitted.
-  Defaults to GPT-5.5 per [§ 2.1](#21-review-model).
+  Defaults to GPT-5.6 Sol per [§ 2.1](#21-review-model).
 - `fallback_model` (string, default `sonnet-4.6`): Fallback rubber-duck
   reviewer model allowed only when [§ 2.2](#22-fallback-policy) permits
   fallback and the independence guard passes.
@@ -840,12 +840,12 @@ reviewer of that CS.
 merely mechanical find-replace or scaffolding.
 
 Violation handling:
-1. If GPT-5.5 is available: use GPT-5.5. No invariant concern (GPT-5.5 is
+1. If GPT-5.6 Sol is available: use GPT-5.6 Sol. No invariant concern (GPT-5.6 Sol is
    never used as an implementer in this harness).
-2. If GPT-5.5 is unavailable and Sonnet 4.6 is the candidate fallback:
+2. If GPT-5.6 Sol is unavailable and Sonnet 4.6 is the candidate fallback:
    check the implementer-model-list for the CS. If Sonnet 4.6 did
    non-trivial implementation work, the fallback is forbidden. Escalate to
-   GPT-5.5 retry or user waiver.
+   GPT-5.6 Sol retry or user waiver.
 3. If neither is available: block the review, do not merge, escalate to user.
 
 Beyond model independence (above), CS35 C35-18 introduces agent-identity
@@ -862,7 +862,7 @@ C42-6, after which missing columns become a hard failure.
 | Phase | PR type | Review required | Auto-merge eligible |
 |---|---|---|---|
 | Claim | `workboard-only` | No | Yes, via `workboard-auto-approve.yml` |
-| Content | Normal | Yes — GPT-5.5 GO | No |
+| Content | Normal | Yes — GPT-5.6 Sol GO | No |
 | Close-out | `workboard-only` | No (post-review confirmation only) | Yes, via `workboard-auto-approve.yml` |
 
 ---
