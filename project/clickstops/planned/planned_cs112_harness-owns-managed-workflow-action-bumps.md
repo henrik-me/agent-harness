@@ -84,6 +84,12 @@ Make the harness **OWN, VALIDATE, and SHIP** the pinned GitHub Actions versions 
 
 (filled during execution)
 
+- **Confirmed in the wild (2026-07-24, `omni-ah` / `claude-opus-5`, repo evaluation; `main` @ `8deaa32`).** The blockage this CS predicts is now observed, not hypothetical — both open Dependabot PRs are stalled and `mergeState=BEHIND`:
+  - **#536** (`chore(deps): Bump the github-actions group across 1 directory with 2 updates`) — open since 2026-07-20. This is exactly the managed-workflow action-bump case C112 exists to take over.
+  - **#311** (`chore(deps): Bump js-yaml from 4.2.0 to 5.2.1`) — open since **2026-06-22 (~1 month)**. A *major* bump of a **runtime** dependency, and `js-yaml` is the parser `scripts/check-workflow-pins.mjs` relies on.
+
+  These are the only two open PRs on the repo. Two implications for this CS: (a) it strengthens the priority argument in the Background — consumer/self-host Dependabot PRs are demonstrably stalling on the managed-drift interaction, not merely at risk of it; (b) **#311 is out of scope here** (npm runtime dep, not a managed-workflow action pin) but should be drained separately — flagged so it is not mistaken for CS112 work. No Decisions or Deliverables change, so the pinned attestation hash `e62c8aa74798` remains current.
+
 - **Plan review (pre-claim, two independent gpt-5.5 passes).** An initial pass (2026-07-06) returned **Needs-Fix** on two blockers: (B1) the template set was incomplete — `template/.github/workflows/review-gates.yml` also carries the pin and `tests/cs51-review-gates-workflow.test.mjs` requires it to match the `template/managed` copy, and `pr-evidence-lint.yml` has **two** checkout pins; (B2) the self-host-managed claim was wrong for `workboard-auto-approve.yml` — it is **not** in `harness.config.json` `managed.files`, so `sync --mode=apply` won't regenerate its root copy (lockstep edit or add to `managed.files`). Both resolved: the Background/C112-3/Deliverable 1/R3 now enumerate all 6 template files (both review-gates mirrors + both pr-evidence-lint pins) and the asymmetric regeneration. The recorded attestation row (R1, gpt-5.5, **Go-with-amendments**) is the follow-up pass over the fixed Decisions+Deliverables (hash `e62c8aa74798`); its sole amendment — Deliverable 4 corrects that Dependabot `github-actions` `ignore` is dependency-name-based (path/file excludes unsupported) — is applied and covered by the pinned hash.
 
 ## Plan-vs-implementation review
